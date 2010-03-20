@@ -112,6 +112,13 @@
 
 using namespace std;
 
+//jcoxon include files
+#include <curl/curl.h>
+#include <curl/types.h>
+#include <curl/easy.h>
+#include "misc/extra.h"
+//
+
 string appname;
 
 string scDevice[2];
@@ -188,10 +195,15 @@ static void arg_error(const char* name, const char* arg, bool missing) noreturn_
 #  define SHOW_WIZARD_BEFORE_MAIN_WINDOW 0
 #endif
 
+
 int main(int argc, char ** argv)
 {
 	appname = argv[0];
 	debug_exec(argv);
+	
+	//jcoxon
+	serverCommunicator();
+	//
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
 
