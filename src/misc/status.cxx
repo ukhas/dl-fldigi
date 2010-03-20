@@ -208,7 +208,7 @@ void status::saveLastState()
 	spref.set("main_x", mainX);
 	spref.set("main_y", mainY);
 	spref.set("main_w", mainW);
-if (!bWF_only) {
+if (!bWF_only and !bHAB) {
 	spref.set("main_h", mainH);
 	spref.set("rx_text_height", RxTextHeight);
 }
