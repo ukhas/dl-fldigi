@@ -206,13 +206,20 @@ AC_FLDIGI_XMLRPC
 # Define USE_OSS in config.h
 AC_FLDIGI_OSS
 
+### libcurl
+# check if curl is available
+if test "x$ac_cv_want_fldigi" = "xyes"; then
+	AC_FLDIGI_PKG_CHECK([curl], [libcurl >= 7.10.0], [no], [no])
+fi
+
+
 ### libpng
 # Required if $ac_cv_want_fldigi is "yes"
 # Set ac_cv_png to yes/no    (not used)
 # Define USE_PNG in config.h (as above)
 # Substitute PNG_CFLAGS and PNG_LIBS in Makefile
 if test "x$ac_cv_want_fldigi" = "xyes"; then
-    AC_FLDIGI_PKG_CHECK([png], [libpng >= 1.2.8], [no], [no])
+    AC_FLDIGI_PKG_CHECK([png], [libpng >= 1.2.0], [no], [no])
 fi
 
 ### libsamplerate
