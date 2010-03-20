@@ -4202,7 +4202,6 @@ void create_fl_digi_main_dl_fldigi() {
 //jcoxon
 //	HAB_height = Hmenu + Hwfall + Hstatus + 4 * pad;
 	HAB_height = Hmenu + Hwfall + minRxHeight + Hstatus + 4 * pad;
-	
 	cout << HAB_height << endl;
 
 	fl_digi_main = new Fl_Double_Window(progStatus.mainW, HAB_height);
@@ -4350,10 +4349,12 @@ void create_fl_digi_main_dl_fldigi() {
 					progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
 					Y,
 					bwAfcOnOff, Hstatus, "AFC");
+				btnAFC->selection_color(progdefaults.AfcColor);
 				btnSQL = new Fl_Light_Button(
 					progStatus.mainW - bwSqlOnOff,
 					Y,
 					sql_width, Hstatus, "SQL");
+				btnSQL->selection_color(progdefaults.Sql1Color);
 			}
 			btnAFC->callback(cbAFC, 0);
 			btnAFC->value(1);
@@ -4416,7 +4417,10 @@ void create_fl_digi_main(int argc, char** argv)
 		create_fl_digi_main_WF_only();
 //jcoxon
 	else if (bHAB)
+	{
 		create_fl_digi_main_dl_fldigi();
+		cout << HAB_height << endl;
+		}
 //
 	else
 		create_fl_digi_main_primary();
@@ -4435,15 +4439,11 @@ void create_fl_digi_main(int argc, char** argv)
 
 //jcoxon
 if (bHAB) {
-	fl_digi_main->size_range(
-		WMIN, HAB_height, 0, HAB_height);
-		cout << HAB_height << endl;
+	fl_digi_main->size_range(WMIN, HAB_height, 0, HAB_height);
 }
 
 else {
-	fl_digi_main->size_range(
-		WMIN, bWF_only ? WF_only_height : HMIN,
-		0, bWF_only ? WF_only_height : 0);
+	fl_digi_main->size_range(WMIN, bWF_only ? WF_only_height : HMIN, 0, bWF_only ? WF_only_height : 0);
 	}
 //
 }
