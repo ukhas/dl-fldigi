@@ -135,6 +135,11 @@
 
 using namespace std;
 
+//jcoxon
+#include <iostream>
+bool bHAB = false;
+//
+
 bool bWF_only = false;
 bool withnoise = false;
 
@@ -618,11 +623,18 @@ void startup_modem(modem* m, int f)
 		FHdisp->show();
 		sldrHellBW->value(progdefaults.HELL_BW);
 	}
+//jcoxon 
+/*
 	else if (!bWF_only) {
 		ReceiveText->show();
 		FHdisp->hide();
 	}
-
+	*/
+	else if (!bWF_only && !bHAB) {
+		ReceiveText->show();
+		FHdisp->hide();
+	}
+//
 	if (id == MODE_RTTY)
 	    sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
 	else if (id >= MODE_PSK_FIRST && id <= MODE_PSK_LAST)
@@ -1529,6 +1541,9 @@ string new_call;
 void clearQSO()
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
 	Fl_Input* in[] = {
 		inpCall1, inpCall2, inpCall3, inpCall4,
 		inpName1, inpName2,
@@ -1595,6 +1610,9 @@ void cb_loc(Fl_Widget* w, void*)
 void cb_call(Fl_Widget* w, void*)
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
 	if (progdefaults.calluppercase) {
 		int pos = inpCall->position();
 		char* uc = new char[inpCall->size()];
@@ -2008,7 +2026,10 @@ void UI_select()
 {
 	if (bWF_only)
 		return;
-
+//jcoxon
+	if (bHAB)
+		return;
+//
 	Fl_Menu_Item* cf = getMenuItem(CONTEST_FIELDS_MLABEL);
 	if (progStatus.NO_RIGLOG || progStatus.Rig_Contest_UI || progStatus.Rig_Log_UI) {
 		cf->clear();
@@ -2569,6 +2590,10 @@ void update_main_title()
 	buf.append(" - ");
 	if (bWF_only)
 		buf.append(_("waterfall-only mode"));
+//jcoxon
+	else if (bHAB)
+		buf = "dl-fldigi for High Altitude Balloon Tracking";
+//
 	else
 		buf.append(progdefaults.myCall.empty() ? _("NO CALLSIGN SET") : progdefaults.myCall.c_str());
 	if (fl_digi_main)
@@ -4157,11 +4182,250 @@ void create_fl_digi_main_WF_only() {
 
 }
 
+//jcoxon
+
+int HAB_height = 0;
+
+void create_fl_digi_main_dl_fldigi() {
+
+	int fnt = fl_font();
+	int fsize = fl_size();
+	int freqheight = Hentry + 2 * pad;
+	int Y = 0;
+
+	fl_font(fnt, freqheight);
+	fl_font(fnt, fsize);
+
+//jcoxon
+	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
+	int minRxHeight = 100;
+
+	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
+	Hwfall = progdefaults.wfheight;
+	Wwfall = progStatus.mainW - 2 * DEFAULT_SW - 2 * pad;
+//jcoxon
+//	HAB_height = Hmenu + Hwfall + Hstatus + 4 * pad;
+	HAB_height = Hmenu + Hwfall + minRxHeight + Hstatus + 4 * pad;
+	cout << HAB_height << endl;
+
+	fl_digi_main = new Fl_Double_Window(progStatus.mainW, HAB_height);
+
+		mnuFrame = new Fl_Group(0,0,progStatus.mainW, Hmenu);
+
+			mnu = new Fl_Menu_Bar(0, 0, progStatus.mainW - 200 - pad, Hmenu);
+// do some more work on the menu
+			for (size_t i = 0; i < sizeof(alt_menu_)/sizeof(alt_menu_[0]); i++) {
+// FL_NORMAL_SIZE may have changed; update the menu items
+				if (alt_menu_[i].text) {
+					alt_menu_[i].labelsize_ = FL_NORMAL_SIZE;
+				}
+// set the icon label for items with the multi label type
+				if (alt_menu_[i].labeltype() == _FL_MULTI_LABEL)
+					set_icon_label(&alt_menu_[i]);
+			}
+			mnu->menu(alt_menu_);
+
+			btnAutoSpot = new Fl_Light_Button(progStatus.mainW - 200 - pad, 0, 50, Hmenu, "Spot");
+			btnAutoSpot->selection_color(FL_YELLOW);
+			btnAutoSpot->callback(cbAutoSpot, 0);
+			btnAutoSpot->deactivate();
+
+			btnRSID = new Fl_Light_Button(progStatus.mainW - 150 - pad, 0, 50, Hmenu, "RxID");
+			btnRSID->selection_color(FL_GREEN);
+			btnRSID->tooltip("Receive RSID");
+			btnRSID->callback(cbRSID, 0);
+
+			btnTxRSID = new Fl_Light_Button(progStatus.mainW - 100 - pad, 0, 50, Hmenu, "TxID");
+			btnTxRSID->selection_color(FL_BLUE);
+			btnTxRSID->tooltip("Transmit RSID");
+			btnTxRSID->callback(cbTxRSID, 0);
+
+			btnTune = new Fl_Light_Button(progStatus.mainW - 50 - pad, 0, 50, Hmenu, "TUNE");
+			btnTune->selection_color(FL_RED);
+			btnTune->callback(cbTune, 0);
+
+		mnuFrame->resizable(mnu);
+		mnuFrame->end();
+
+//jcoxon
+
+		Y = Hmenu + pad;
+		
+		TiledGroup = new Fl_Tile_Check(0, Y, progStatus.mainW, Htext);
+			ReceiveText = new FTextRX(0, Y, progStatus.mainW, minRxHeight, "");
+			ReceiveText->color(
+				fl_rgb_color(
+					progdefaults.RxColor.R,
+					progdefaults.RxColor.G,
+					progdefaults.RxColor.B));
+			ReceiveText->setFont(progdefaults.RxFontnbr);
+			ReceiveText->setFontSize(progdefaults.RxFontsize);
+			ReceiveText->setFontColor(progdefaults.RxFontcolor, FTextBase::RECV);
+			ReceiveText->setFontColor(progdefaults.XMITcolor, FTextBase::XMIT);
+			ReceiveText->setFontColor(progdefaults.CTRLcolor, FTextBase::CTRL);
+			ReceiveText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
+			ReceiveText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
+			
+//
+
+		Y = Hmenu + pad + minRxHeight;
+
+		Fl_Pack *wfpack = new Fl_Pack(0, Y, progStatus.mainW, Hwfall);
+			wfpack->type(1);
+			wf = new waterfall(0, Y, Wwfall, Hwfall);
+			wf->end();
+
+			pgrsSquelch = new Progress(
+				rightof(wf), Y + pad,
+				DEFAULT_SW, Hwfall - 2 * pad,
+				"");
+			pgrsSquelch->color(FL_BACKGROUND2_COLOR, FL_DARK_GREEN);
+			pgrsSquelch->type(Progress::VERTICAL);
+			pgrsSquelch->tooltip(_("Detected signal level"));
+
+			sldrSquelch = new Fl_Slider2(
+				rightof(pgrsSquelch), Y + pad,
+				DEFAULT_SW, Hwfall - 2 * pad,
+				"");
+			sldrSquelch->minimum(100);
+			sldrSquelch->maximum(0);
+			sldrSquelch->step(1);
+			sldrSquelch->value(progStatus.sldrSquelchValue);
+			sldrSquelch->callback((Fl_Callback*)cb_sldrSquelch);
+			sldrSquelch->color(FL_INACTIVE_COLOR);
+			sldrSquelch->tooltip(_("Squelch level"));
+			Fl_Group::current()->resizable(wf);
+		wfpack->end();
+
+		Y += (Hwfall + pad);
+
+		Fl_Pack *hpack = new Fl_Pack(0, Y, progStatus.mainW, Hstatus);
+			hpack->type(1);
+			MODEstatus = new Fl_Button(0, Y, Wmode+30, Hstatus, "");
+			MODEstatus->box(FL_DOWN_BOX);
+			MODEstatus->color(FL_BACKGROUND2_COLOR);
+			MODEstatus->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+			MODEstatus->callback(status_cb, (void *)0);
+			MODEstatus->when(FL_WHEN_CHANGED);
+			MODEstatus->tooltip(_("Left click: change mode\nRight click: configure"));
+
+			Status1 = new Fl_Box(rightof(MODEstatus), Y, Ws2n, Hstatus, "");
+			Status1->box(FL_DOWN_BOX);
+			Status1->color(FL_BACKGROUND2_COLOR);
+			Status1->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+
+			Status2 = new Fl_Box(rightof(Status1), Y, Wimd, Hstatus, "");
+			Status2->box(FL_DOWN_BOX);
+			Status2->color(FL_BACKGROUND2_COLOR);
+			Status2->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+
+			StatusBar = new Fl_Box(
+				rightof(Status2), Y,
+				progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - rightof(Status2) - 2 * pad,// - 60,
+				Hstatus, "");
+			StatusBar->box(FL_DOWN_BOX);
+			StatusBar->color(FL_BACKGROUND2_COLOR);
+			StatusBar->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+
+			WARNstatus = new Fl_Box(
+				rightof(StatusBar) + pad, Y,
+				Wwarn, Hstatus, "");
+			WARNstatus->box(FL_DIAMOND_DOWN_BOX);
+			WARNstatus->color(FL_BACKGROUND_COLOR);
+			WARNstatus->labelcolor(FL_RED);
+			WARNstatus->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+
+			int sql_width = bwSqlOnOff;
+#ifdef __APPLE__
+			sql_width -= 15; // leave room for resize handle
+#endif
+			if (progdefaults.useCheckButtons) {
+				btnAFC = new Fl_Check_Button(
+					progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
+					Y,
+					bwAfcOnOff, Hstatus, "AFC");
+				btnSQL = new Fl_Check_Button(
+					progStatus.mainW - bwSqlOnOff,
+					Y,
+					sql_width, Hstatus, "SQL");
+			} else {
+				btnAFC = new Fl_Light_Button(
+					progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
+					Y,
+					bwAfcOnOff, Hstatus, "AFC");
+				btnAFC->selection_color(progdefaults.AfcColor);
+				btnSQL = new Fl_Light_Button(
+					progStatus.mainW - bwSqlOnOff,
+					Y,
+					sql_width, Hstatus, "SQL");
+				btnSQL->selection_color(progdefaults.Sql1Color);
+			}
+			btnAFC->callback(cbAFC, 0);
+			btnAFC->value(1);
+			btnAFC->tooltip(_("Automatic Frequency Control"));
+			btnSQL->callback(cbSQL, 0);
+			btnSQL->value(1);
+			btnSQL->tooltip(_("Squelch"));
+
+			Fl_Group::current()->resizable(StatusBar);
+		hpack->end();
+
+	fl_digi_main->end();
+	fl_digi_main->callback(cb_wMain);
+	fl_digi_main->resizable(wf);
+
+	struct {
+		bool var; const char* label;
+	} toggles[] = {
+		{ progStatus.DOCKEDSCOPE, DOCKEDSCOPE_MLABEL }
+	};
+	Fl_Menu_Item* toggle;
+	for (size_t i = 0; i < sizeof(toggles)/sizeof(*toggles); i++) {
+		if (toggles[i].var && (toggle = getMenuItem(toggles[i].label, alt_menu_))) {
+			toggle->set();
+			if (toggle->callback()) {
+				mnu->value(toggle);
+				toggle->do_callback(reinterpret_cast<Fl_Widget*>(mnu));
+			}
+		}
+	}
+
+	make_scopeviewer();
+	noop_controls();
+
+	progdefaults.WF_UIwfcarrier =
+	progdefaults.WF_UIwfreflevel =
+	progdefaults.WF_UIwfampspan =
+	progdefaults.WF_UIwfmode =
+	progdefaults.WF_UIx1 =
+	progdefaults.WF_UIwfshift =
+	progdefaults.WF_UIwfdrop = true;
+	progdefaults.WF_UIrev =
+	progdefaults.WF_UIwfstore =
+	progdefaults.WF_UIxmtlock =
+	progdefaults.WF_UIqsy = false;
+	wf->UI_select(true);
+
+	createConfig();
+	if (withnoise)
+		grpNoise->show();
+	altTabs();
+
+}
+//
+
 
 void create_fl_digi_main(int argc, char** argv)
 {
 	if (bWF_only)
 		create_fl_digi_main_WF_only();
+//jcoxon
+	else if (bHAB)
+	{
+		create_fl_digi_main_dl_fldigi();
+		cout << HAB_height << endl;
+		}
+//
 	else
 		create_fl_digi_main_primary();
 
@@ -4177,9 +4441,15 @@ void create_fl_digi_main(int argc, char** argv)
 
 	fl_digi_main->xclass(PACKAGE_NAME);
 
-	fl_digi_main->size_range(
-		WMIN, bWF_only ? WF_only_height : HMIN,
-		0, bWF_only ? WF_only_height : 0);
+//jcoxon
+if (bHAB) {
+	fl_digi_main->size_range(WMIN, HAB_height, 0, HAB_height);
+}
+
+else {
+	fl_digi_main->size_range(WMIN, bWF_only ? WF_only_height : HMIN, 0, bWF_only ? WF_only_height : 0);
+	}
+//
 }
 
 void put_freq(double frequency)
@@ -4651,6 +4921,9 @@ ret:
 void enable_vol_sliders(bool val)
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
         if (MixerFrame->visible()) {
                 if (val)
                         return;
@@ -4670,6 +4943,9 @@ if (bWF_only) return;
 void resetMixerControls()
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
     if (progdefaults.EnableMixer) {
 	    menuMix->activate();
 	    btnLineIn->activate();

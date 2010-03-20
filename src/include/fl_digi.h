@@ -120,6 +120,9 @@ extern Fl_Button		*btnAltMacros;
 extern Fl_Button		*btnMacroTimer;
 
 extern bool			bWF_only;
+//jcoxon
+extern bool			bHAB;
+//
 extern bool			withnoise;
 extern bool			useCheckButtons;
 extern int			altMacros;

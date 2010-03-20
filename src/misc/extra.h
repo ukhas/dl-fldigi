@@ -3,6 +3,7 @@
 
 //void UpperCase(string& str);
 
+//-------------------------------------//
 /* RJH Pipe vars */
 int rjh_pfds[2];
 pid_t rjh_cpid;
@@ -26,7 +27,7 @@ pid_t rjh_cpid;
    return result;  
  } 
 
-int serverCommunicator()
+void serverCommunicator()
 {
 	if (pipe(rjh_pfds) == -1) { perror("pipe"); exit(EXIT_FAILURE); }
 
@@ -82,7 +83,6 @@ int serverCommunicator()
 						curl_easy_setopt(easyhandle_status, CURLOPT_URL, "http://www.robertharrison.org/listen/listen.php");
 						result = curl_easy_perform(easyhandle_status); /* post away! */
 						cout << "result: " << result  << "\n";
-						LOG_INFO("Server Data: %s", result);
 						curl_easy_cleanup(easyhandle_status);
 					}
 				}
@@ -96,5 +96,5 @@ int serverCommunicator()
 	/* Close the read side of the pipe */
 	close(rjh_pfds[0]);
 }
-
+//-----------------------------------
 #endif
