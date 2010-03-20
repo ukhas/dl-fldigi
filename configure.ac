@@ -209,7 +209,7 @@ AC_FLDIGI_OSS
 ### libcurl
 # check if curl is available
 if test "x$ac_cv_want_fldigi" = "xyes"; then
-	AC_FLDIGI_PKG_CHECK([libcurl], [libcurl >= 7.20.0], [no], [no])
+	AC_FLDIGI_PKG_CHECK([curl], [libcurl >= 7.10.0], [no], [no])
 fi
 
 
