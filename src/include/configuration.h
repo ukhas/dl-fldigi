@@ -1079,7 +1079,10 @@
               "report.pskreporter.info")                                                \
         ELEM_(std::string, pskrep_port, "PSKREPPORT",                                   \
               "Reception report server port",                                           \
-              "4739")
+              "4739")																	\
+		ELEM_(std::string, xmlFields, "", "", "7")											\
+		ELEM_(std::string, xmlField_delimiter, "", "", ",")								\
+		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")
 
 
 // declare the struct
