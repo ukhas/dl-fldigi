@@ -113,10 +113,7 @@
 using namespace std;
 
 //jcoxon include files
-#include <curl/curl.h>
-#include <curl/types.h>
-#include <curl/easy.h>
-#include "misc/extra.h"
+#include "misc/dlpipe.h"
 //
 
 string appname;

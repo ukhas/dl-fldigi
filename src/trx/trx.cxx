@@ -51,6 +51,21 @@ LOG_FILE_SOURCE(debug::LOG_MODEM);
 
 using namespace std;
 
+//New stuff added by jcoxon
+#include <time.h>
+#include <iostream>
+#include "misc/extra.h";
+
+time_t rawtime;
+struct tm * timeinfo;
+  
+time_t seconds;
+int status_count = 901; //Why 1001? well as it'll trigger the status update to be sent when fldigi starts
+int old_seconds = 0;
+
+char date_time [80];
+//
+
 void	trx_reset_loop();
 void	trx_start_modem_loop();
 void	trx_receive_loop();
@@ -89,6 +104,10 @@ void trx_trx_receive_loop()
 {
 	size_t  numread;
 	int  current_samplerate;
+	
+	//jcoxon
+	extern int rjh_pfds[2];
+	//
 	assert(powerof2(SCBLOCKSIZE));
 
 	if (unlikely(!active_modem)) {
@@ -126,6 +145,66 @@ void trx_trx_receive_loop()
 	active_modem->rx_init();
 
 	while (1) {
+		//New stuff added by jcoxon
+		if (status_count >= 1000) {
+			seconds = time (NULL);
+#if !defined(__CYGWIN__)
+			cout << seconds << "\n";
+#endif
+			if (int(seconds) > old_seconds + 900) {
+				//Send status update
+#if !defined(__CYGWIN__)
+				cout << "Send status update\n";
+#endif
+			
+				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
+				UpperCase (identity_callsign);
+				//string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
+				string string_lat = "52.0";
+				UpperCase (string_lat);
+				//string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());
+				string string_lon = "0.0";
+				UpperCase (string_lon);
+				//string string_radio = (progdefaults.myRadio.empty() ? "UNKNOWN" : progdefaults.myRadio.c_str());
+				string string_radio = "radio";
+				UpperCase (string_radio);
+				string string_antenna = (progdefaults.myAntenna.empty() ? "UNKNOWN" : progdefaults.myAntenna.c_str());
+				UpperCase (string_antenna);
+				//string string_payload = (progdefaults.flight_sel.empty() ? "UNKNOWN" : progdefaults.flight_sel.c_str());
+				string string_payload = "Test";
+				UpperCase (string_payload);
+
+				time ( &rawtime );
+				timeinfo = gmtime ( &rawtime );
+				strftime(date_time,80,"%Y-%m-%d %H:%M:%S",timeinfo);
+#if !defined(__CYGWIN__)
+				cout << date_time << "\n";
+#endif
+//--------------------------------------------------------
+				string dlfldigi_version = "r100"; //Please update with revision number
+//-------------------------------------------------------
+				//ZZ,Callsign,Date Time,Lat,Lon,Radio,Antenna
+				string rx_data ="ZZ," + identity_callsign + "," + date_time + "," + string_lat + "," + string_lon + "," + string_radio + "," + string_antenna + "," + dlfldigi_version + "," + string_payload;
+				string postData = "string=" + rx_data + "&identity=" + identity_callsign + "\n";
+				
+				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
+				if (identity_callsign != "UNKNOWN") { 
+					const char* data = postData.c_str();
+					write (rjh_pfds[1],data,strlen(data));
+				}
+				else {
+#if !defined(__CYGWIN__)
+					cout << "Need to enter a callsign, please go to 'Configure' then 'Operator' and add a callsign/nickname.\n";
+#endif
+				}
+				old_seconds = seconds;
+			}
+			status_count = 0;
+		}
+		else {
+			status_count++;
+		}
+		//--------------------------
 		try {
 			numread = 0;
 			while (numread < SCBLOCKSIZE && trx_state == STATE_RX)
