@@ -135,6 +135,11 @@
 
 using namespace std;
 
+//jcoxon
+#include <iostream>
+bool bHAB = false;
+//
+
 bool bWF_only = false;
 bool withnoise = false;
 
@@ -618,11 +623,18 @@ void startup_modem(modem* m, int f)
 		FHdisp->show();
 		sldrHellBW->value(progdefaults.HELL_BW);
 	}
+//jcoxon 
+/*
 	else if (!bWF_only) {
 		ReceiveText->show();
 		FHdisp->hide();
 	}
-
+	*/
+	else if (!bWF_only && !bHAB) {
+		ReceiveText->show();
+		FHdisp->hide();
+	}
+//
 	if (id == MODE_RTTY)
 	    sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
 	else if (id >= MODE_PSK_FIRST && id <= MODE_PSK_LAST)
@@ -1529,6 +1541,9 @@ string new_call;
 void clearQSO()
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
 	Fl_Input* in[] = {
 		inpCall1, inpCall2, inpCall3, inpCall4,
 		inpName1, inpName2,
@@ -1593,6 +1608,9 @@ void cb_loc(Fl_Widget* w, void*)
 void cb_call(Fl_Widget* w, void*)
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
 	if (progdefaults.calluppercase) {
 		int pos = inpCall->position();
 		char* uc = new char[inpCall->size()];
@@ -2006,7 +2024,10 @@ void UI_select()
 {
 	if (bWF_only)
 		return;
-
+//jcoxon
+	if (bHAB)
+		return;
+//
 	Fl_Menu_Item* cf = getMenuItem(CONTEST_FIELDS_MLABEL);
 	if (progStatus.NO_RIGLOG || progStatus.Rig_Contest_UI || progStatus.Rig_Log_UI) {
 		cf->clear();
@@ -2567,6 +2588,10 @@ void update_main_title()
 	buf.append(" - ");
 	if (bWF_only)
 		buf.append(_("waterfall-only mode"));
+//jcoxon
+	else if (bHAB)
+		buf = "dl-fldigi for High Altitude Balloon Tracking";
+//
 	else
 		buf.append(progdefaults.myCall.empty() ? _("NO CALLSIGN SET") : progdefaults.myCall.c_str());
 	if (fl_digi_main)
@@ -4158,6 +4183,10 @@ void create_fl_digi_main(int argc, char** argv)
 {
 	if (bWF_only)
 		create_fl_digi_main_WF_only();
+//jcoxon
+	//else if (bHAB)
+		//create_fl_digi_main_dl_fldigi();
+//
 	else
 		create_fl_digi_main_primary();
 
@@ -4173,9 +4202,18 @@ void create_fl_digi_main(int argc, char** argv)
 
 	fl_digi_main->xclass(PACKAGE_NAME);
 
+//jcoxon
+if (bHAB) {
+	//fl_digi_main->size_range(
+	//	WMIN, HAB_height, 0, HAB_height);
+}
+
+else {
 	fl_digi_main->size_range(
 		WMIN, bWF_only ? WF_only_height : HMIN,
 		0, bWF_only ? WF_only_height : 0);
+	}
+//
 }
 
 void put_freq(double frequency)
@@ -4647,6 +4685,9 @@ ret:
 void enable_vol_sliders(bool val)
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
         if (MixerFrame->visible()) {
                 if (val)
                         return;
@@ -4666,6 +4707,9 @@ if (bWF_only) return;
 void resetMixerControls()
 {
 if (bWF_only) return;
+//jcoxon
+if (bHAB) return;
+//
     if (progdefaults.EnableMixer) {
 	    menuMix->activate();
 	    btnLineIn->activate();
