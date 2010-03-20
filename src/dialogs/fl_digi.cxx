@@ -3858,7 +3858,9 @@ void noop_controls() // create and then hide all controls not being used
 
 	btnMacroTimer = new Fl_Button(defwidget); btnMacroTimer->hide();
 
-	ReceiveText = new FTextRX(0,0,100,100); ReceiveText->hide();
+	if(bWF_only) {
+		ReceiveText = new FTextRX(0,0,100,100); ReceiveText->hide();
+	}
 	TransmitText = new FTextTX(0,0,100,100); TransmitText->hide();
 	FHdisp = new Raster(0,0,10,100); FHdisp->hide();
 
@@ -4184,6 +4186,8 @@ int HAB_height = 0;
 
 void create_fl_digi_main_dl_fldigi() {
 
+	progdefaults.autoextract == true;
+	
 	int fnt = fl_font();
 	int fsize = fl_size();
 	int freqheight = Hentry + 2 * pad;

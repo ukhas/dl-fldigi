@@ -31,10 +31,40 @@
 #include "fl_digi.h"
 #include "configuration.h"
 
+//jcoxon
+#include "extra.h"
+//
+
 using namespace std;
 
-const char *beg = "[WRAP:beg]";
-const char *end = "[WRAP:end]";
+//jcoxon
+void UpperCase(string& str)
+{
+	for(int i = 0; i < str.length(); i++)
+	{
+		str[i] = toupper(str[i]);
+	}
+	return;
+}
+//
+
+void TrimSpaces( string& str)  
+{  
+	
+	// Trim Both leading and trailing spaces  
+	size_t startpos = str.find_first_not_of(" "); // Find the first character position after excluding leading blank spaces  
+	size_t endpos = str.find_last_not_of("\r\n");  // Find the first character position from reverse af  
+
+	// if all spaces or empty return an empty string  
+	if(( string::npos == startpos ) || ( string::npos == endpos))  
+	{  
+		str = "";  
+	}  
+	else  
+		str = str.substr( startpos, endpos-startpos+1 );  
+} 
+
+const char *end = "\n";
 #ifdef __WIN32__
 const char *txtWrapInfo = "\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
@@ -56,6 +86,20 @@ bool bInit = false;
 
 char dttm[64];
 
+//jcoxon
+//Default rules
+int total_string_length = 100;
+int min_number_fields = 10;
+int field_length = 10;
+
+int dodge_data = 0;
+bool validate_output;
+int number_commas;
+int old_i = 0, field_number = 0;
+string rx_buff_edit;
+string tmpfield;
+//
+
 void rx_extract_reset()
 {
 	rx_buff.clear();
@@ -66,6 +110,8 @@ void rx_extract_reset()
 
 void rx_extract_add(int c)
 {
+	extern int rjh_pfds[2];
+	
 	if (!c) return;
 
 	if (!bInit) {
@@ -76,7 +122,11 @@ void rx_extract_add(int c)
 
 	memmove(rx_extract_buff, &rx_extract_buff[1], bufsize - 1);
 	rx_extract_buff[bufsize - 1] = ch;
-
+//jcoxon
+	//Reads the stentence delimter previously read from the xml file.
+	//const char* beg = (progdefaults.xmlSentence_delimiter.empty() ? "UNKNOWN" : progdefaults.xmlSentence_delimiter.c_str());
+	const char* beg = "$$";
+//
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
 		rx_buff = beg;
 		rx_extract_msg = "Extracting";
@@ -107,6 +157,48 @@ void rx_extract_add(int c)
 			rx_extract_msg.append(WRAP_recv_dir);
 			put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 
+//jcoxon
+			//Trim Spaces
+			TrimSpaces(rx_buff);
+			
+			// Find the sentence start marker and remove up to the end of it
+			// dkjhdskdkfdakhd $$icarus,...   -> icarus,...
+
+			rx_buff = rx_buff.substr(
+				rx_buff.find(progdefaults.xmlSentence_delimiter)+
+				progdefaults.xmlSentence_delimiter.length());
+			//I've removed the old swap callsign function as its not needed any longer.
+
+			//Counts number of fields
+			number_commas = count(rx_buff.begin(), rx_buff.end(), progdefaults.xmlField_delimiter.at(0));
+			
+			//Gets info for number of fields
+			//min_number_fields = atoi(progdefaults.xmlFields.c_str());
+			
+			//Check rules - telem string length and number of fields and whether each field has been validated
+			if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) {
+					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
+					UpperCase (identity_callsign);
+
+					string postData = "string=" + rx_buff + "&identity=" + identity_callsign + "\n";
+					
+					//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
+					if (identity_callsign != "UNKNOWN") { 
+#if !defined(__CYGWIN__)
+						cout << "PARENT: sent " + postData ;
+#endif
+						const char* data = postData.c_str();
+						write (rjh_pfds[1],data,strlen(data));
+						rx_extract_msg = "Data uploaded to server";
+						put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
+					}
+					else {
+#if !defined(__CYGWIN__)
+						cout << "Need to enter a callsign, please go to 'Configure' then 'Operator' and add a callsign/nickname.\n";
+#endif
+					}
+			}
+//
 			rx_extract_reset();
 		} else if (rx_buff.length() > 16384) {
 			rx_extract_msg = "Extract length exceeded 16384 bytes";
