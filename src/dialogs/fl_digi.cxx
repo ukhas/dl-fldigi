@@ -1573,6 +1573,8 @@ if (bHAB) return;
 	inpSearchString->value ("");
 	old_call.clear();
 	new_call.clear();
+	qso_time.clear();
+	qso_exchange.clear();
 	oktoclear = true;
 }
 
@@ -3616,10 +3618,12 @@ void create_fl_digi_main_primary() {
 								progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
 								Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
 								bwAfcOnOff, Hstatus, "AFC");
+				btnAFC->selection_color(progdefaults.AfcColor);
 				btnSQL = new Fl_Light_Button(
 								progStatus.mainW - bwSqlOnOff,
 								Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
 								sql_width, Hstatus, "SQL");
+				btnSQL->selection_color(progdefaults.Sql1Color);
 			}
 			btnAFC->callback(cbAFC, 0);
 			btnAFC->value(1);
