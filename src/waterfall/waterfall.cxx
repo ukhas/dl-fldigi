@@ -44,6 +44,8 @@
 #include <FL/Fl_Counter.H>
 #include <FL/Enumerations.H>
 
+#include <png.h>
+
 #include "fl_digi.h"
 #include "trx.h"
 #include "misc.h"
@@ -823,6 +825,14 @@ void WFdisp::update_waterfall() {
 }
 
 void WFdisp::drawcolorWF() {
+        static int waterwheel = 0;
+	FILE *fp;
+	png_structp png_ptr;
+	png_infop info_ptr;
+	png_colorp png_palette;
+	png_bytep row_pointers[image_height];
+	png_byte tmp_image[image_height][w() * 3];
+
 	uchar *pixmap = (uchar *)fft_img;
 
 	update_waterfall();
@@ -852,6 +862,75 @@ void WFdisp::drawcolorWF() {
 		disp_width, image_height,
 		sizeof(RGBI), disp_width * sizeof(RGBI) );
 	drawScale();
+
+	if (waterwheel == 0)
+	{
+
+		fp = fopen("dl-fldigi-waterfall.png", "w");
+		if (fp == NULL)
+		{
+			perror("waterfall export fopen");
+			return;
+		}
+
+		png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+		if (png_ptr == NULL)
+		{
+			fclose(fp);
+			fprintf(stderr, "waterfall export png_create_write_struct failed.\n");
+			return;
+		}
+
+		/* Allocate/initialize the image information data.  REQUIRED */
+		info_ptr = png_create_info_struct(png_ptr);
+		if (info_ptr == NULL)
+		{
+			fclose(fp);
+			png_destroy_write_struct(&png_ptr,  png_infopp_NULL);
+			fprintf(stderr, "waterfall export png_create_info_struct failed.\n");
+			return;
+		}
+
+		if (setjmp(png_jmpbuf(png_ptr)))
+		{
+			/* If we get here, we had a problem writing the file */
+			fclose(fp);
+			png_destroy_write_struct(&png_ptr, &info_ptr);
+			fprintf(stderr, "waterfall export libpng is bailing out!\n");
+			return;
+		}
+
+		png_init_io(png_ptr, fp);
+
+		png_set_IHDR(png_ptr, info_ptr, disp_width, image_height, 8, PNG_COLOR_TYPE_RGB,
+			     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+		for (int y = 0; y < image_height; y++) for (int x = 0; x < disp_width; x++)
+		{
+			memcpy(&(tmp_image[y][x * 3]), pixmap + ((x + (y * disp_width)) * sizeof(RGBI)), 3);
+		}
+
+		for (int k = 0; k < image_height; k++)
+		{
+			row_pointers[k] = (png_byte *) tmp_image + k * w() * 3;
+		}
+
+		png_write_info(png_ptr, info_ptr);
+		png_write_image(png_ptr, row_pointers);
+		png_write_end(png_ptr, info_ptr);
+
+		png_destroy_write_struct(&png_ptr, &info_ptr);
+
+		fclose(fp);
+	}
+
+	waterwheel++;
+
+	if (waterwheel > image_height / 2)
+	{
+		waterwheel = 0;
+	}
 }
 
 // following method is not used in versions > 3.12

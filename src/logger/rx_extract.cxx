@@ -33,6 +33,7 @@
 
 //jcoxon
 #include "extra.h"
+#include <algorithm>
 //
 
 using namespace std;
@@ -40,7 +41,7 @@ using namespace std;
 //jcoxon
 void UpperCase(string& str)
 {
-	for(int i = 0; i < str.length(); i++)
+	for(unsigned int i = 0; i < str.length(); i++)
 	{
 		str[i] = toupper(str[i]);
 	}
@@ -88,7 +89,7 @@ char dttm[64];
 
 //jcoxon
 //Default rules
-int total_string_length = 100;
+unsigned int total_string_length = 100;
 int min_number_fields = 10;
 int field_length = 10;
 
@@ -188,7 +189,13 @@ void rx_extract_add(int c)
 						cout << "PARENT: sent " + postData ;
 #endif
 						const char* data = postData.c_str();
-						write (rjh_pfds[1],data,strlen(data));
+						unsigned int result = write (rjh_pfds[1],data,strlen(data));
+                                                if(result != strlen(data)) {
+#if !defined(__CYGWIN__)
+                                                    cout << "Error writing data to server" << endl;
+#endif
+                                                }
+
 						rx_extract_msg = "Data uploaded to server";
 						put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 					}
