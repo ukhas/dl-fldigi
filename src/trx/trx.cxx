@@ -54,7 +54,7 @@ using namespace std;
 //New stuff added by jcoxon
 #include <time.h>
 #include <iostream>
-#include "extra.h";
+#include "extra.h"
 
 time_t rawtime;
 struct tm * timeinfo;
@@ -190,7 +190,9 @@ void trx_trx_receive_loop()
 				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
 				if (identity_callsign != "UNKNOWN") { 
 					const char* data = postData.c_str();
-					write (rjh_pfds[1],data,strlen(data));
+					if ((unsigned int) write(rjh_pfds[1],data,strlen(data)) != strlen(data)) {
+						perror("Error writing status update to server");
+					}
 				}
 				else {
 #if !defined(__CYGWIN__)
