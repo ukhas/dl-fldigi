@@ -21,6 +21,16 @@
 #if USE_HAMLIB
   #include "hamlib.h"
 #endif
+
+//Added by jcoxon
+#include <curl/curl.h>
+#include <curl/types.h>
+#include <curl/easy.h>
+#include "irrXML.h"
+using namespace irr; // irrXML is located 
+using namespace io;  // in the namespace irr::io
+//
+
 Fl_Double_Window *dlgConfig; 
 Mode_Browser* mode_browser; 
 
@@ -33,6 +43,16 @@ for (size_t i = 0; i < sizeof(qrzb)/sizeof(*qrzb); i++)
 }
 
 Fl_Tabs *tabsConfigure=(Fl_Tabs *)0;
+
+//jcoxon 21/3/10
+Fl_Group *tabDL=(Fl_Group *)0;
+
+Fl_Tabs *tabsDL=(Fl_Tabs *)0;
+
+Fl_Group *tabDLConf=(Fl_Group *)0;
+Fl_Group *tabDLGPS=(Fl_Group *)0;
+Fl_Group *tabDLRemote=(Fl_Group *)0;
+
 
 Fl_Group *tabOperator=(Fl_Group *)0;
 
@@ -5614,7 +5634,40 @@ d frequency"));
           o->end();
         } // Fl_Group* o
         tabQRZ->end();
-      } // Fl_Group* tabQRZ
+		
+//
+      } // Fl_Group* tabDL
+		{ tabDL = new Fl_Group(0, 25, 500, 345, _("DL Client"));
+        tabDL->hide();
+		{ tabDL = new Fl_Tabs(0, 25, 500, 345);
+          tabDL->selection_color(FL_LIGHT1);
+          { tabDLConf = new Fl_Group(0, 50, 500, 320, _("Config"));
+            { Fl_Group* o = new Fl_Group(5, 60, 490, 300);
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->end();
+            } // Fl_Group* o
+            tabDLConf->end();
+			  }
+          { tabDLGPS = new Fl_Group(0, 50, 500, 320, _("GPS"));
+            { Fl_Group* o = new Fl_Group(5, 60, 490, 300);
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->end();
+            } // Fl_Group* o
+            tabDLGPS->end();
+			  }
+          { tabDLRemote = new Fl_Group(0, 50, 500, 320, _("Remote"));
+            { Fl_Group* o = new Fl_Group(5, 60, 490, 300);
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->end();
+            } // Fl_Group* o
+            tabDLRemote->end();
+			  }
+		}
+		}
+//
       tabsConfigure->end();
     } // Fl_Tabs* tabsConfigure
     { btnSaveConfig = new Fl_Button(235, 375, 130, 22, _("Save"));

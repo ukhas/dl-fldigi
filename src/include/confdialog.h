@@ -23,6 +23,13 @@ extern Fl_Input2 *inpMyName;
 extern Fl_Input2 *inpMyQth;
 extern Fl_Input2 *inpMyLocator;
 extern Fl_Input2 *inpMyAntenna;
+//jcoxon
+extern Fl_Group *tabDL;
+extern Fl_Tabs *tabsDL;
+extern Fl_Group *tabDLConf;
+extern Fl_Group *tabDLGPS;
+extern Fl_Group *tabDLRemote;
+//
 extern Fl_Group *grpNoise;
 #include <FL/Fl_Check_Button.H>
 extern Fl_Check_Button *btnNoiseOn;

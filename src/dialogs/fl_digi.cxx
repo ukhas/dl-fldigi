@@ -1092,8 +1092,7 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 
 void cb_mnuConfigDLClient(Fl_Menu_*, void*) {
 	progdefaults.loadDefaults();
-	tabsConfigure->value(tabModems);
-	//tabsConfigure->value(tabDLConf); //until i added in the DL Client Tab
+	tabsConfigure->value(tabDL);
 	dlgConfig->show();
 }
 
