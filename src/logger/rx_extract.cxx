@@ -33,6 +33,7 @@
 
 //jcoxon
 #include "extra.h"
+#include <algorithm>
 //
 
 using namespace std;
