@@ -393,6 +393,8 @@ void status::initLastState()
 
 if (bWF_only) 
 	fl_digi_main->resize(mainX, mainY, mainW, Hmenu + Hwfall + Hstatus + 4);
+else if (bHAB) 
+	fl_digi_main->resize(mainX, mainY, mainW, Hmenu + Hwfall + 100 + Hstatus + 4);
 else {
 	fl_digi_main->resize(mainX, mainY, mainW, mainH);
 	if (!(RxTextHeight > 0 && RxTextHeight < TiledGroup->h()))

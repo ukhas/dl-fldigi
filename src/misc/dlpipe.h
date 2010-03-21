@@ -1,7 +1,9 @@
 #ifndef _EXTRA_H_
 #define _EXTRA_H_
-
-//void UpperCase(string& str);
+#include <string>
+#include <curl/curl.h>
+#include <curl/types.h>
+#include <curl/easy.h>
 
 //-------------------------------------//
 /* RJH Pipe vars */
