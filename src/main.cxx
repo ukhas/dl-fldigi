@@ -197,6 +197,10 @@ int main(int argc, char ** argv)
 {
 	appname = argv[0];
 	debug_exec(argv);
+
+	//DL_FLDIGI Start
+	dlServerCommunicator();
+	//DL_FLDIGI End
 	
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
