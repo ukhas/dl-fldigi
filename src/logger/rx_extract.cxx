@@ -189,7 +189,13 @@ void rx_extract_add(int c)
 						cout << "PARENT: sent " + postData ;
 #endif
 						const char* data = postData.c_str();
-						write (rjh_pfds[1],data,strlen(data));
+						unsigned int result = write (rjh_pfds[1],data,strlen(data));
+                                                if(result != strlen(data)) {
+#if !defined(__CYGWIN__)
+                                                    cout << "Error writing data to server" << endl;
+#endif
+                                                }
+
 						rx_extract_msg = "Data uploaded to server";
 						put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 					}
