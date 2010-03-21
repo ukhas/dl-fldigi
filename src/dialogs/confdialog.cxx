@@ -53,6 +53,29 @@ Fl_Group *tabDLConf=(Fl_Group *)0;
 Fl_Group *tabDLGPS=(Fl_Group *)0;
 Fl_Group *tabDLRemote=(Fl_Group *)0;
 
+//tab DLGPS
+Fl_Input2 *inpgpsDevice=(Fl_Input2 *)0;
+
+static void cb_inpgpsDevice(Fl_Input2* o, void*) {
+  progdefaults.gpsDevice = o->value();
+progdefaults.changed = true;
+}
+Fl_Input2 *inpgpsSpeed=(Fl_Input2 *)0;
+
+static void cb_inpgpsSpeed(Fl_Input2* o, void*) {
+  progdefaults.gpsSpeed = o->value();
+progdefaults.changed = true;
+}
+//
+//tab DLRemote
+Fl_Check_Button *chkwfall_png=(Fl_Check_Button *)0;
+
+static void cb_chkwfall_png(Fl_Check_Button* o, void*) {
+  progdefaults.png_wfall=o->value();
+progdefaults.changed = true;
+}
+//
+
 
 Fl_Group *tabOperator=(Fl_Group *)0;
 
@@ -5653,6 +5676,32 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 300);
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+			   { inpgpsDevice = new Fl_Input2(110, 64, 320, 24, _("GPS Device:"));
+				inpgpsDevice->tooltip(_("GPS Device"));
+				inpgpsDevice->box(FL_DOWN_BOX);
+				inpgpsDevice->color(FL_BACKGROUND2_COLOR);
+				inpgpsDevice->selection_color(FL_SELECTION_COLOR);
+				inpgpsDevice->labeltype(FL_NORMAL_LABEL);
+				inpgpsDevice->labelfont(0);
+				inpgpsDevice->labelsize(13);
+				inpgpsDevice->labelcolor(FL_FOREGROUND_COLOR);
+				inpgpsDevice->callback((Fl_Callback*)cb_inpgpsDevice);
+				inpgpsDevice->align(FL_ALIGN_LEFT);
+				inpgpsDevice->when(FL_WHEN_RELEASE);
+			  } // Fl_Input2* inpgpsDevice
+			  { inpgpsSpeed = new Fl_Input2(110, 98, 320, 24, _("GPS Speed:"));
+				inpgpsSpeed->tooltip(_("GPS Speed"));
+				inpgpsSpeed->box(FL_DOWN_BOX);
+				inpgpsSpeed->color(FL_BACKGROUND2_COLOR);
+				inpgpsSpeed->selection_color(FL_SELECTION_COLOR);
+				inpgpsSpeed->labeltype(FL_NORMAL_LABEL);
+				inpgpsSpeed->labelfont(0);
+				inpgpsSpeed->labelsize(13);
+				inpgpsSpeed->labelcolor(FL_FOREGROUND_COLOR);
+				inpgpsSpeed->callback((Fl_Callback*)cb_inpgpsSpeed);
+				inpgpsSpeed->align(FL_ALIGN_LEFT);
+				inpgpsSpeed->when(FL_WHEN_RELEASE);
+			  } // Fl_Input2* inpgpsSpeed
               o->end();
             } // Fl_Group* o
             tabDLGPS->end();
@@ -5661,6 +5710,16 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 300);
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+			  { Fl_Check_Button* o = chkwfall_png = new Fl_Check_Button(130, 64, 320, 20, _("Save waterfall to png"));
+                chkwfall_png->tooltip(_("Saves waterfall to a png to be used to control fldigi remotely"));
+                chkwfall_png->down_box(FL_DOWN_BOX);
+				chkwfall_png->labeltype(FL_NORMAL_LABEL);
+				chkwfall_png->labelfont(0);
+				chkwfall_png->labelsize(13);
+				chkwfall_png->align(FL_ALIGN_LEFT);
+                chkwfall_png->callback((Fl_Callback*)cb_chkwfall_png);
+                o->value(progdefaults.png_wfall);
+                } // Fl_Check_Button* png_wfall
               o->end();
             } // Fl_Group* o
             tabDLRemote->end();

@@ -599,6 +599,11 @@ int configuration::setDefaults()
 	chkRSidWideSearch->value(rsidWideSearch);
 	chkSlowCpu->value(slowcpu);
 	
+	//New tab - jcoxon
+	inpgpsDevice->value(gpsDevice.c_str());
+	inpgpsSpeed->value(gpsSpeed.c_str());
+//
+	
 	Fl_Button* qrzb = btnQRZnotavailable;
 	switch (QRZ) {
 	case QRZNONE:
