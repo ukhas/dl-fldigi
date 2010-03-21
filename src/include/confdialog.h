@@ -24,14 +24,17 @@ extern Fl_Input2 *inpMyQth;
 extern Fl_Input2 *inpMyLocator;
 extern Fl_Input2 *inpMyAntenna;
 //jcoxon
+#include <FL/Fl_Check_Button.H>
 extern Fl_Group *tabDL;
 extern Fl_Tabs *tabsDL;
 extern Fl_Group *tabDLConf;
 extern Fl_Group *tabDLGPS;
 extern Fl_Group *tabDLRemote;
+extern Fl_Input2 *inpgpsDevice;
+extern Fl_Input2 *inpgpsSpeed;
+extern Fl_Check_Button *chkwfall_png;
 //
 extern Fl_Group *grpNoise;
-#include <FL/Fl_Check_Button.H>
 extern Fl_Check_Button *btnNoiseOn;
 extern Fl_Counter2 *noiseDB;
 extern Fl_Group *tabUI;
