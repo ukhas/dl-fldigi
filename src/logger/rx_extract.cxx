@@ -41,7 +41,7 @@ using namespace std;
 //jcoxon
 void UpperCase(string& str)
 {
-	for(int i = 0; i < str.length(); i++)
+	for(unsigned int i = 0; i < str.length(); i++)
 	{
 		str[i] = toupper(str[i]);
 	}
@@ -89,7 +89,7 @@ char dttm[64];
 
 //jcoxon
 //Default rules
-int total_string_length = 100;
+unsigned int total_string_length = 100;
 int min_number_fields = 10;
 int field_length = 10;
 
