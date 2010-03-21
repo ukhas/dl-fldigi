@@ -1,3 +1,4 @@
+# Build files
 *.o
 *Makefile
 *Makefile.in
@@ -21,3 +22,6 @@ src/config.h.in
 src/flarq
 src/fldigi
 src/stamp-h1
+
+# Runtime generated files
+dl-fldigi-waterfall.png
