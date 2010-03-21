@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
 // macros.cxx
 //
-// Copyright (C) 2007-2009
+// Copyright (C) 2007-2010
 //		Dave Freese, W1HKJ
-// Copyright (C) 2008-2009
+// Copyright (C) 2008-2010
 //		Stelios Bounanos, M0GLD
 // Copyright (C) 2009
 //		Chris Sylvain, KB3CS
@@ -66,6 +66,7 @@ int mNbr;
 std::string qso_time = "";
 std::string qso_exchange = "";
 bool save_xchg;
+size_t  xbeg = 0, xend = 0;
 
 struct MTAGS { const char *mTAG; void (*fp)(string &, size_t &);};
 
@@ -98,10 +99,13 @@ void pDECR(string &, size_t &);
 void pINCR(string &, size_t &);
 void pXOUT(string &, size_t &);
 void pSAVEXCHG(string &, size_t &);
+void pXBEG(string &, size_t &);
+void pXEND(string &, size_t &);
 void pLOG(string &, size_t &);
 void pTIMER(string &, size_t &);
 void pIDLE(string &, size_t &);
 void pTUNE(string &, size_t &);
+void pMODEM_compat(string &, size_t &);
 void pMODEM(string &, size_t &);
 void pEXEC(string &, size_t &);
 void pSTOP(string &, size_t &);
@@ -159,13 +163,16 @@ MTAGS mtags[] = {
 {"<INCR>",		pINCR},
 {"<X1>",		pXOUT},
 {"<XOUT>",		pXOUT},
+{"<XBEG>",		pXBEG},
+{"<XEND>",		pXEND},
 {"<SAVEXCHG>",	pSAVEXCHG},
 {"<LOG>",		pLOG},
 {"<TIMER:",		pTIMER},
 {"<IDLE:",		pIDLE},
 {"<TUNE:",		pTUNE},
 {"<WAIT:",		pWAIT},
-{"<MODEM>",		pMODEM},
+{"<MODEM>",		pMODEM_compat},
+{"<MODEM:",		pMODEM},
 {"<EXEC>",		pEXEC},
 {"<STOP>",		pSTOP},
 {"<CONT>",		pCONT},
@@ -564,6 +571,18 @@ void pXOUT(string &s, size_t &i)
 	s.replace( i, 6, cutstring(progdefaults.myXchg.c_str()));
 }
 
+void pXBEG(string &s, size_t &i)
+{
+	s.replace( i, 6, "");
+	xbeg = i;
+}
+
+void pXEND(string &s, size_t &i)
+{
+	s.replace( i, 6, "");
+	xend = i;
+}
+
 void pSAVEXCHG(string &s, size_t &i)
 {
 	save_xchg = true;
@@ -576,7 +595,7 @@ void pLOG(string &s, size_t &i)
 	s.replace(i, 5, "");
 }
 
-void pMODEM(string &s, size_t &i)
+void pMODEM_compat(string &s, size_t &i)
 {
 	size_t	j, k,
 			len = s.length();
@@ -598,6 +617,78 @@ void pMODEM(string &s, size_t &i)
 		}
 	}
 	s.erase(i, k-i);
+}
+
+#include <float.h>
+#include "re.h"
+
+void pMODEM(string &s, size_t &i)
+{
+	static fre_t re("<MODEM:([[:alnum:]-]+)((:[[:digit:].+-]*)*)>", REG_EXTENDED);
+
+	if (!re.match(s.c_str() + i)) {
+		size_t end = s.find('>', i);
+		if (end != string::npos)
+			s.erase(i, end - i);
+		return;
+	}
+
+	const std::vector<regmatch_t>& o = re.suboff();
+	string name = s.substr(o[1].rm_so, o[1].rm_eo - o[1].rm_so);
+	trx_mode m;
+	for (m = 0; m < NUM_MODES; m++)
+		if (name == mode_info[m].sname)
+			break;
+	// do we have arguments and a valid modem?
+	if (o.size() == 2 || m == NUM_MODES) {
+		if (m < NUM_MODES && active_modem->get_mode() != mode_info[m].mode)
+			init_modem_sync(mode_info[m].mode);
+		s.erase(i, o[0].rm_eo - i);
+		return;
+	}
+
+	// parse arguments
+	vector<double> args;
+	args.reserve(8);
+	char* end;
+	double d;
+	for (const char* p = s.c_str() + o[2].rm_so + 1; *p; p++) {
+		errno = 0;
+		d = strtod(p, &end);
+		if (!errno && p != end) {
+			args.push_back(d);
+			p = end;
+		}
+		else // push an invalid value
+			args.push_back(DBL_MIN);
+	}
+
+	try {
+		switch (m) {
+		case MODE_RTTY: // carrier shift, baud rate, bits per char
+			if (args.at(0) != DBL_MIN)
+				set_rtty_shift((int)args[0]);
+			if (args.at(1) != DBL_MIN)
+				set_rtty_baud((int)args[1]);
+			if (args.at(2) != DBL_MIN)
+				set_rtty_bits((int)args[2]);
+			break;
+		case MODE_OLIVIA: // bandwidth, tones
+			if (args.at(0) != DBL_MIN)
+				set_olivia_bw((int)args[0]);
+			if (args.at(1) != DBL_MIN)
+				set_olivia_tones((int)args[1]);
+			break;
+		default:
+			break;
+		}
+	}
+	catch (const exception& e) { }
+
+	if (active_modem->get_mode() != mode_info[m].mode)
+		init_modem_sync(mode_info[m].mode);
+
+	s.erase(i, o[0].rm_eo - i);
 }
 
 void pAFC(string &s, size_t &i)
@@ -1040,6 +1131,9 @@ string MACROTEXT::expandMacro(int n)
 	expanded = text[n];
 	MTAGS *pMtags;
 
+	xbeg = xend = -1;
+	save_xchg = false;
+
 	while ((idx = expanded.find('<', idx)) != string::npos) {
 		if (expanded.find("<MACROS:",idx) == idx) {
 			loadnewMACROS(expanded, idx);
@@ -1085,7 +1179,9 @@ string MACROTEXT::expandMacro(int n)
 		return "";
 	}
 
-	if (save_xchg) {
+	if (xbeg != string::npos && xend != string::npos && xend > xbeg) {
+		qso_exchange = expanded.substr(xbeg, xend - xbeg);
+	} else if (save_xchg) {
 		qso_exchange = expanded;
 		save_xchg = false;
 	}

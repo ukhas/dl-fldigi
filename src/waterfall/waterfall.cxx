@@ -70,6 +70,7 @@
 #include "flmisc.h"
 #include "gettext.h"
 #include "rtty.h"
+#include "flslider2.h"
 
 using namespace std;
 
@@ -1517,7 +1518,7 @@ waterfall::waterfall(int x0, int y0, int w0, int h0, char *lbl) :
 	mode->tooltip(_("Waterfall / FFT / Scope"));
 
 	xpos = xpos + (int)(bwFFT*ratio) + wSpace;
-	wfRefLevel = new Fl_Counter(xpos, buttonrow, (int)(cwRef*ratio), BTN_HEIGHT );
+	wfRefLevel = new Fl_Counter2(xpos, buttonrow, (int)(cwRef*ratio), BTN_HEIGHT );
 	wfRefLevel->callback(reflevel_cb, 0);
 	wfRefLevel->step(1.0);
 	wfRefLevel->precision(0);
@@ -1528,7 +1529,7 @@ waterfall::waterfall(int x0, int y0, int w0, int h0, char *lbl) :
 	wfRefLevel->type(FL_SIMPLE_COUNTER);
 
 	xpos = xpos + (int)(cwRef*ratio) + wSpace;
-	wfAmpSpan = new Fl_Counter(xpos, buttonrow, (int)(cwRef*ratio), BTN_HEIGHT );
+	wfAmpSpan = new Fl_Counter2(xpos, buttonrow, (int)(cwRef*ratio), BTN_HEIGHT );
 	wfAmpSpan->callback(ampspan_cb, 0);
 	wfAmpSpan->step(1.0);
 	wfAmpSpan->precision(0);
@@ -1564,7 +1565,7 @@ waterfall::waterfall(int x0, int y0, int w0, int h0, char *lbl) :
 	wfrate->tooltip(_("Waterfall drop speed"));
 
 	xpos = xpos + (int)(bwRate*ratio) + wSpace;
-	wfcarrier = new Fl_Counter(xpos, buttonrow, (int)(cwCnt*ratio), BTN_HEIGHT );
+	wfcarrier = new Fl_Counter2(xpos, buttonrow, (int)(cwCnt*ratio), BTN_HEIGHT );
 	wfcarrier->callback(carrier_cb, 0);
 	wfcarrier->step(1.0);
 	wfcarrier->lstep(10.0);
@@ -1716,7 +1717,7 @@ int waterfall::handle(int event)
 		return 1;
 	}
 
-	return 0;
+	return Fl_Group::handle(event);
 }
 
 static Fl_Cursor cursor = FL_CURSOR_DEFAULT;
