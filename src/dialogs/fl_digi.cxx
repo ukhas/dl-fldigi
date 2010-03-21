@@ -358,6 +358,7 @@ void cb_oliviaCustom(Fl_Widget *w, void *arg);
 
 void cb_rtty45(Fl_Widget *w, void *arg);
 void cb_rtty50(Fl_Widget *w, void *arg);
+void cb_rttyHAB50(Fl_Widget *w, void *arg);
 void cb_rtty75(Fl_Widget *w, void *arg);
 void cb_rttyCustom(Fl_Widget *w, void *arg);
 
@@ -572,6 +573,15 @@ void cb_rtty50(Fl_Widget *w, void *arg)
 	progdefaults.rtty_baud = 2;
 	progdefaults.rtty_bits = 0;
 	progdefaults.rtty_shift = 3;
+	set_rtty_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_rttyHAB50(Fl_Widget *w, void *arg)
+{
+	progdefaults.rtty_baud = 2;
+	progdefaults.rtty_bits = 2;
+	progdefaults.rtty_shift = 8;
 	set_rtty_tab_widgets();
 	cb_init_mode(w, arg);
 }
@@ -3791,6 +3801,7 @@ Fl_Menu_Item alt_menu_[] = {
 {"RTTY", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { "RTTY-45", 0, cb_rtty45, (void *)MODE_RTTY, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "RTTY-50", 0, cb_rtty50, (void *)MODE_RTTY, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "RTTY-HAB-50", 0, cb_rttyHAB50, (void *)MODE_RTTY, 0, FL_NORMAL_LABEL, 0, 14, 0}, 
 { "RTTY-75", 0, cb_rtty75, (void *)MODE_RTTY, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { _("Custom..."), 0, cb_rttyCustom, (void *)MODE_RTTY, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
@@ -4189,8 +4200,6 @@ void create_fl_digi_main_WF_only() {
 int HAB_height = 0;
 
 void create_fl_digi_main_dl_fldigi() {
-
-	progdefaults.autoextract == true;
 	
 	int fnt = fl_font();
 	int fsize = fl_size();
@@ -4408,6 +4417,7 @@ void create_fl_digi_main_dl_fldigi() {
 	progdefaults.WF_UIwfstore =
 	progdefaults.WF_UIxmtlock =
 	progdefaults.WF_UIqsy = false;
+	progdefaults.autoextract = true;
 	wf->UI_select(true);
 
 	createConfig();
