@@ -213,6 +213,8 @@ int main(int argc, char ** argv)
 	set_terminate(diediedie);
 	setup_signal_handlers();
 
+	/* RJH Test */
+
 #ifndef ENABLE_NLS
 	setlocale(LC_TIME, "");
 #endif
