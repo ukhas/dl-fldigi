@@ -582,6 +582,8 @@ void cb_rttyHAB50(Fl_Widget *w, void *arg)
 	progdefaults.rtty_baud = 2;
 	progdefaults.rtty_bits = 2;
 	progdefaults.rtty_shift = 8;
+	progdefaults.rtty_parity = 0;
+	progdefaults.rtty_stop = 1;
 	set_rtty_tab_widgets();
 	cb_init_mode(w, arg);
 }
@@ -1085,6 +1087,32 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 	dlgConfig->show();
 
 }
+
+//jcoxon added 21/3/10
+
+void cb_mnuConfigDLClient(Fl_Menu_*, void*) {
+	progdefaults.loadDefaults();
+	tabsConfigure->value(tabModems);
+	//tabsConfigure->value(tabDLConf); //until i added in the DL Client Tab
+	dlgConfig->show();
+}
+
+void cb_mnuVisitDLClient(Fl_Widget*, void*)
+{
+	cb_mnuVisitURL(0, (void*)string("http://ukhas.org.uk/guides:tracking_guide").c_str());
+}
+
+void cb_mnuVisitTracker(Fl_Widget*, void*)
+{
+	cb_mnuVisitURL(0, (void*)string("http://spacenear.us/tracker").c_str());
+}
+
+void cb_mnuVisitView(Fl_Widget*, void*)
+{
+	cb_mnuVisitURL(0, (void*)string("http://www.robertharrison.org/listen/view.php").c_str());
+}
+
+//End
 
 void cb_logfile(Fl_Widget* w, void*)
 {
@@ -3853,6 +3881,13 @@ Fl_Menu_Item alt_menu_[] = {
 { make_icon_label(MFSK_IMAGE_MLABEL, image_icon), 'm', (Fl_Callback*)cb_mnuPicViewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("PSK Browser")), 'p', (Fl_Callback*)cb_mnuViewer, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { DOCKEDSCOPE_MLABEL, 0, (Fl_Callback*)cb_mnuAltDockedscope, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
+{_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {0,0,0,0,0,0,0,0,0},
