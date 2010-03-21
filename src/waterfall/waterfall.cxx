@@ -829,7 +829,6 @@ void WFdisp::drawcolorWF() {
 	FILE *fp;
 	png_structp png_ptr;
 	png_infop info_ptr;
-	png_colorp png_palette;
 	png_bytep row_pointers[image_height];
 	png_byte tmp_image[image_height][w() * 3];
 
