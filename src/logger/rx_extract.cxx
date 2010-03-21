@@ -111,7 +111,9 @@ void rx_extract_reset()
 
 void rx_extract_add(int c)
 {
-	extern int rjh_pfds[2];
+	// DL_FLDIGI Start
+	extern int dl_fldigi_pfds[2];
+	// DL_FLDIGI End
 	
 	if (!c) return;
 
@@ -189,7 +191,7 @@ void rx_extract_add(int c)
 						cout << "PARENT: sent " + postData ;
 #endif
 						const char* data = postData.c_str();
-						unsigned int result = write (rjh_pfds[1],data,strlen(data));
+						unsigned int result = write (dl_fldigi_pfds[1],data,strlen(data));
                                                 if(result != strlen(data)) {
 #if !defined(__CYGWIN__)
                                                     cout << "Error writing data to server" << endl;

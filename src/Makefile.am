@@ -290,6 +290,7 @@ fldigi_SOURCES += \
 	include/fftfilt.h \
 	include/filters.h \
 	include/fl_digi.h \
+	include/dl_fldigi.h \
 	include/fl_lock.h \
 	include/fldigi-config.h \
 	include/flinput2.h \
@@ -435,6 +436,7 @@ fldigi_SOURCES += \
 	misc/threads.cxx \
 	misc/timeops.cxx \
 	misc/util.cxx \
+	misc/dl_fldigi.cxx \
 	mt63/dsp.cxx \
 	mt63/mt63.cxx \
 	mt63/mt63base.cxx \

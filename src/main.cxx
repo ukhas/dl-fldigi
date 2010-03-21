@@ -31,6 +31,7 @@
 #include <getopt.h>
 #include <sys/types.h>
 
+
 #if !defined(__WOE32__) && !defined(__APPLE__)
 #  include <sys/ipc.h>
 #  include <sys/msg.h>
@@ -109,12 +110,11 @@
 
 #include "icons.h"
 
-
 using namespace std;
 
-//jcoxon include files
-#include "misc/dlpipe.h"
-//
+// DL_FLDIGI Start
+#include "dl_fldigi.h"
+// DL_FLDIGI End
 
 string appname;
 
@@ -198,9 +198,6 @@ int main(int argc, char ** argv)
 	appname = argv[0];
 	debug_exec(argv);
 	
-	//jcoxon
-	serverCommunicator();
-	//
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
 
@@ -212,8 +209,6 @@ int main(int argc, char ** argv)
 	set_unexpected(handle_unexpected);
 	set_terminate(diediedie);
 	setup_signal_handlers();
-
-	/* RJH Test */
 
 #ifndef ENABLE_NLS
 	setlocale(LC_TIME, "");

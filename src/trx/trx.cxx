@@ -105,9 +105,9 @@ void trx_trx_receive_loop()
 	size_t  numread;
 	int  current_samplerate;
 	
-	//jcoxon
-	extern int rjh_pfds[2];
-	//
+	//DL_FLDIGI Start
+	extern int dl_fldigi_pfds[2];
+	//DL_FLDIGI End
 	assert(powerof2(SCBLOCKSIZE));
 
 	if (unlikely(!active_modem)) {
@@ -190,7 +190,7 @@ void trx_trx_receive_loop()
 				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
 				if (identity_callsign != "UNKNOWN") { 
 					const char* data = postData.c_str();
-					if ((unsigned int) write(rjh_pfds[1],data,strlen(data)) != strlen(data)) {
+					if ((unsigned int) write(dl_fldigi_pfds[1],data,strlen(data)) != strlen(data)) {
 						perror("Error writing status update to server");
 					}
 				}
