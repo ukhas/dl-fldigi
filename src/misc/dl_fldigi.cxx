@@ -1,4 +1,7 @@
 #include "dl_fldigi.h"
+// Needed to access --offline flag
+#include "fl_digi.h"
+
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
@@ -56,8 +59,12 @@ void dlServerCommunicator()
 					{
 						curl_easy_setopt(easyhandle_status, CURLOPT_POSTFIELDS, buffer);
 						curl_easy_setopt(easyhandle_status, CURLOPT_URL, "http://www.robertharrison.org/listen/listen.php");
-						result = curl_easy_perform(easyhandle_status); /* post away! */
-						std::cout << "result: " << result  << "\n";
+						if (!offline) {
+							result = curl_easy_perform(easyhandle_status); /* post away! */
+							std::cout << "result: " << result  << "\n";
+						} else {
+							std::cout << "Post inhibited due to --offline mode\n";
+						}
 						curl_easy_cleanup(easyhandle_status);
 					}
 

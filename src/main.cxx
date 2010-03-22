@@ -531,8 +531,11 @@ void generate_option_help(void) {
 	     << "    Hide all controls but the waterfall\n\n"
 //jcoxon		 
 	     << "  --hab\n"
-	     << "    High Altitude Balloon Setup (dl-fldigi)\n\n"
+	     << "    High Altitude Balloon Setup (dl-fldigi)\n"
 //
+	     << "  --offline\n"
+	     << "    Disable posting to the DL tracker (dl-fldigi)\n\n"
+
 	     << "  --debug-level LEVEL\n"
 	     << "    Set the event log verbosity\n\n"
 
@@ -633,6 +636,7 @@ int parse_args(int argc, char **argv, int& idx)
 //jcoxon
 			   OPT_HAB,
 //
+               OPT_OFFLINE,
 #if USE_PORTAUDIO
                OPT_FRAMES_PER_BUFFER,
 #endif
@@ -682,6 +686,7 @@ int parse_args(int argc, char **argv, int& idx)
 //jcoxon
 		{ "hab",		   0, 0, OPT_HAB },
 //
+		{ "offline",       0, 0, OPT_OFFLINE },
 		{ "wo",            0, 0, OPT_WFALL_ONLY },
 
 #if USE_PORTAUDIO
@@ -852,6 +857,10 @@ int parse_args(int argc, char **argv, int& idx)
 			bHAB = true;
 			break;
 //
+		case OPT_OFFLINE:
+			offline = true;
+			break;
+
 		case OPT_NOISE:
 			withnoise = true;
 			break;
