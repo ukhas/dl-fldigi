@@ -20,6 +20,5 @@ extern pid_t dl_fldigi_cpid;
 extern std::string dl_fldigi_rx_string;
 
 // This is the writer call back function used by curl  
-static int writer(char *data, size_t size, size_t nmemb, std::string *buffer);
 void dlServerCommunicator();
 #endif
