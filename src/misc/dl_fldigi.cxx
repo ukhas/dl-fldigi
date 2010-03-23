@@ -1,10 +1,10 @@
 #include "dl_fldigi.h"
+#include "configuration.h"
+
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
-
-bool offline = false;
 
 void dlServerCommunicator()
 {
@@ -58,11 +58,11 @@ void dlServerCommunicator()
 					{
 						curl_easy_setopt(easyhandle_status, CURLOPT_POSTFIELDS, buffer);
 						curl_easy_setopt(easyhandle_status, CURLOPT_URL, "http://www.robertharrison.org/listen/listen.php");
-						if (!offline) {
+						if (progdefaults.dl_online) {
 							result = curl_easy_perform(easyhandle_status); /* post away! */
 							std::cout << "result: " << result  << "\n";
 						} else {
-							std::cout << "        Post inhibited due to --offline mode\n";
+							std::cout << "        DL post inhibited due to dl_online == false\n";
 						}
 						curl_easy_cleanup(easyhandle_status);
 					}
