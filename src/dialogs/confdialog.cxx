@@ -2326,7 +2326,9 @@ progdefaults.changed = true;
 Fl_Group *tabFileExtraction=(Fl_Group *)0;
 
 Fl_Check_Button *chkAutoExtract=(Fl_Check_Button *)0;
-
+//jcoxon
+Fl_Check_Button *dlchkAutoExtract=(Fl_Check_Button *)0;
+//
 static void cb_chkAutoExtract(Fl_Check_Button* o, void*) {
   progdefaults.autoextract = o->value();
 progdefaults.changed = true;
@@ -5669,6 +5671,16 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 300);
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Check_Button* o = dlchkAutoExtract = new Fl_Check_Button(185, 70, 270, 20, _("Enable detection && extraction"));
+                dlchkAutoExtract->tooltip(_("Extract telemetry strings to be parsed and sent to the server"));
+				dlchkAutoExtract->down_box(FL_DOWN_BOX);
+				dlchkAutoExtract->labeltype(FL_NORMAL_LABEL);
+				dlchkAutoExtract->labelfont(0);
+				dlchkAutoExtract->labelsize(13);
+				dlchkAutoExtract->align(FL_ALIGN_LEFT);
+                dlchkAutoExtract->callback((Fl_Callback*)cb_chkAutoExtract);
+                o->value(progdefaults.autoextract);
+              } // Fl_Check_Button* chkAutoExtract
               o->end();
             } // Fl_Group* o
             tabDLConf->end();
@@ -5711,7 +5723,7 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 300);
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-			  { Fl_Check_Button* o = chkwfall_png = new Fl_Check_Button(130, 64, 320, 20, _("Save waterfall to png"));
+			  { Fl_Check_Button* o = chkwfall_png = new Fl_Check_Button(140, 70, 320, 20, _("Save waterfall to png"));
                 chkwfall_png->tooltip(_("Saves waterfall to a png to be used to control fldigi remotely"));
                 chkwfall_png->down_box(FL_DOWN_BOX);
 				chkwfall_png->labeltype(FL_NORMAL_LABEL);
