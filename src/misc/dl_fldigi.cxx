@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <pthread.h>
 
 #include "util.h"
@@ -30,9 +29,15 @@ void dl_fldigi_post(const char *data, const char *identity)
 {
 	char *data_safe, *identity_safe, *post_data;
 	size_t i, data_length, identity_length, post_data_length;
-	CURL *curl;
 	struct dl_fldigi_threadinfo *t;
 	pthread_t thread;
+	CURL *curl;
+	CURLcode r1, r2, r3;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: main/parent thread = %li\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: begin attempting to post string '%s' and identity '%s'\n", data, identity);
+	#endif
 
 	curl = curl_easy_init();
 
@@ -100,7 +105,10 @@ void dl_fldigi_post(const char *data, const char *identity)
 	post_data[i] = '\0';
 	i ++;
 
-	assert(i == post_data_length);
+	if (i != post_data_length)
+	{
+		fprintf(stderr, "dl_fldigi: assertion failed \"i == post_data_length\" (i = %zi, post_data_length = %zi) \n", i, post_data_length);
+	}
 
 	curl_free(data_safe);
 	curl_free(identity_safe);
@@ -114,11 +122,36 @@ void dl_fldigi_post(const char *data, const char *identity)
 		curl_easy_cleanup(curl);
 		return;
 	}
+	else
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stdout, "dl_fldigi: preparing to post '%s'\n", post_data);
+		#endif
+	}
 
-	assert(curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/listen.php"));
+	r1 = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
+	if (r1 != 0)
+	{
+		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_POSTFIELDS) failed: %s\n", curl_easy_strerror(r1));
+		curl_easy_cleanup(curl);
+		return;
+	}
 
-	assert(curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data));
-	assert(curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data_length));
+	r2 = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data_length);
+	if (r2 != 0)
+	{
+		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_POSTFIELDSIZE) failed: %s\n", curl_easy_strerror(r2));
+		curl_easy_cleanup(curl);
+		return;
+	}
+
+	r3 = curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/listen.php");
+	if (r3 != 0)
+	{
+		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_URL) failed: %s\n", curl_easy_strerror(r3));
+		curl_easy_cleanup(curl);
+		return;
+	}
 
 	t = (struct dl_fldigi_threadinfo *) malloc(sizeof(struct dl_fldigi_threadinfo));
 
@@ -140,6 +173,10 @@ void dl_fldigi_post(const char *data, const char *identity)
 	{
 		perror("pthread_create");
         }
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: created a thread to finish the posting, returning now\n");
+	#endif
 }
 
 void *dl_fldigi_thread(void *thread_argument)
@@ -155,7 +192,14 @@ void *dl_fldigi_thread(void *thread_argument)
 	result = curl_easy_perform(t->curl);
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));
+		if (result == 0)
+		{
+			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
+		}
+		else
+		{
+			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+		}
 	#endif
 
 	curl_easy_cleanup(t->curl);
