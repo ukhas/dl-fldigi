@@ -112,17 +112,6 @@
 
 using namespace std;
 
-// DL_FLDIGI Start
-
-int dl_fldigi_pfds[2];
-pid_t dl_fldigi_cpid;
-std::string dl_fldigi_rx_string;
-
-#include "dl_fldigi.h"
-// DL_FLDIGI End
-
-string appname;
-
 string scDevice[2];
 
 string HomeDir;

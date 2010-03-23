@@ -47,14 +47,16 @@
 #  include "benchmark.h"
 #endif
 
-LOG_FILE_SOURCE(debug::LOG_MODEM);
-
-using namespace std;
-
 //New stuff added by jcoxon
 #include <time.h>
 #include <iostream>
 #include "extra.h"
+
+#include "dl_fldigi.h"
+
+LOG_FILE_SOURCE(debug::LOG_MODEM);
+
+using namespace std;
 
 time_t rawtime;
 struct tm * timeinfo;
@@ -105,9 +107,6 @@ void trx_trx_receive_loop()
 	size_t  numread;
 	int  current_samplerate;
 	
-	//DL_FLDIGI Start
-	extern int dl_fldigi_pfds[2];
-	//DL_FLDIGI End
 	assert(powerof2(SCBLOCKSIZE));
 
 	if (unlikely(!active_modem)) {
@@ -159,6 +158,7 @@ void trx_trx_receive_loop()
 			
 				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 				UpperCase (identity_callsign);
+
 				//string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
 				string string_lat = "52.0";
 				UpperCase (string_lat);
@@ -183,16 +183,12 @@ void trx_trx_receive_loop()
 //--------------------------------------------------------
 				string dlfldigi_version = "r100"; //Please update with revision number
 //-------------------------------------------------------
-				//ZZ,Callsign,Date Time,Lat,Lon,Radio,Antenna
-				string rx_data ="ZZ," + identity_callsign + "," + date_time + "," + string_lat + "," + string_lon + "," + string_radio + "," + string_antenna + "," + dlfldigi_version + "," + string_payload;
-				string postData = "string=" + rx_data + "&identity=" + identity_callsign + "\n";
 				
 				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
 				if (identity_callsign != "UNKNOWN") { 
-					const char* data = postData.c_str();
-					if ((unsigned int) write(dl_fldigi_pfds[1],data,strlen(data)) != strlen(data)) {
-						perror("Error writing status update to server");
-					}
+					//ZZ,Callsign,Date Time,Lat,Lon,Radio,Antenna
+					string rx_data ="ZZ," + identity_callsign + "," + date_time + "," + string_lat + "," + string_lon + "," + string_radio + "," + string_antenna + "," + dlfldigi_version + "," + string_payload;
+					dl_fldigi_post(rx_data.c_str(), identity_callsign.c_str());
 				}
 				else {
 #if !defined(__CYGWIN__)

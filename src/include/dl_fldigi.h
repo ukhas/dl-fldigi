@@ -15,10 +15,5 @@
 #include <curl/types.h>
 #include <curl/easy.h>
 
-extern int dl_fldigi_pfds[2];
-extern pid_t dl_fldigi_cpid;
-extern std::string dl_fldigi_rx_string;
-
-// This is the writer call back function used by curl  
-void dlServerCommunicator();
+void dl_fldigi_post(const char *data, const char *identity);
 #endif

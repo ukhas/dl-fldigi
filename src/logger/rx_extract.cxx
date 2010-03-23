@@ -36,6 +36,8 @@
 #include <algorithm>
 //
 
+#include "dl_fldigi.h"
+
 using namespace std;
 
 //jcoxon
@@ -111,10 +113,6 @@ void rx_extract_reset()
 
 void rx_extract_add(int c)
 {
-	// DL_FLDIGI Start
-	extern int dl_fldigi_pfds[2];
-	// DL_FLDIGI End
-	
 	if (!c) return;
 
 	if (!bInit) {
@@ -180,25 +178,15 @@ void rx_extract_add(int c)
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
 			if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) {
-					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
-					UpperCase (identity_callsign);
 
-					string postData = "string=" + rx_buff + "&identity=" + identity_callsign + "\n";
-					
 					//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
 					if (identity_callsign != "UNKNOWN") { 
-#if !defined(__CYGWIN__)
-						cout << "PARENT: sent " + postData ;
-#endif
-						const char* data = postData.c_str();
-						unsigned int result = write (dl_fldigi_pfds[1],data,strlen(data));
-                                                if(result != strlen(data)) {
-#if !defined(__CYGWIN__)
-                                                    cout << "Error writing data to server" << endl;
-#endif
-                                                }
+						string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
+						UpperCase (identity_callsign);
 
-						rx_extract_msg = "Data uploaded to server";
+						dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
+
+						rx_extract_msg = "Data posted to server";
 						put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 					}
 					else {
