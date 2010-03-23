@@ -686,7 +686,7 @@ int parse_args(int argc, char **argv, int& idx)
 //jcoxon
 		{ "hab",		   0, 0, OPT_HAB },
 //
-		{ "offline",       0, 0, OPT_OFFLINE },
+		{ "offline",       no_argument, NULL, OPT_OFFLINE },
 		{ "wo",            0, 0, OPT_WFALL_ONLY },
 
 #if USE_PORTAUDIO

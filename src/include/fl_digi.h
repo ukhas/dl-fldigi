@@ -123,7 +123,6 @@ extern bool			bWF_only;
 //jcoxon
 extern bool			bHAB;
 //
-extern bool			offline;
 extern bool			withnoise;
 extern bool			useCheckButtons;
 extern int			altMacros;
