@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <pthreads.h>
+#include <assert.h>
+#include <pthread.h>
 
 #include "util.h"
-#include "fldigi.h"
+#include "fl_digi.h"
 #include "dl_fldigi.h"
 
 #define DL_FLDIGI_DEBUG
@@ -21,33 +21,33 @@
 struct dl_fldigi_threadinfo
 {
   CURL *curl;
-  const char *post_data;
-}
+  char *post_data;
+};
 
-void dl_fldigi_thread(void *thread_argument);
+void *dl_fldigi_thread(void *thread_argument);
 
 void dl_fldigi_post(const char *data, const char *identity)
 {
-	int i;
 	char *data_safe, *identity_safe, *post_data;
-	size_t data_length, identity_length, post_data_length;
+	size_t i, data_length, identity_length, post_data_length;
 	CURL *curl;
-	struct threadinfo t;
+	struct dl_fldigi_threadinfo *t;
+	pthread_t thread;
 
 	curl = curl_easy_init();
 
 	if (!curl)
 	{
-		fprintf(strerr, "dl_fldigi: curl_easy_init failed\n");
+		fprintf(stderr, "dl_fldigi: curl_easy_init failed\n");
 		return;
 	}
 
-	data_safe     = curl_easy_escape(data);
-	identity_safe = curl_easy_escape(identity);
+	data_safe     = curl_easy_escape(curl, data, 0);
+	identity_safe = curl_easy_escape(curl, identity, 0);
 
 	if (data_safe == NULL || identity_safe == NULL);
 	{
-		fprintf(strerr, "dl_fldigi: curl_easy_escape returned NULL\n");
+		fprintf(stderr, "dl_fldigi: curl_easy_escape returned NULL\n");
 		return;
 	}
 
@@ -58,11 +58,11 @@ void dl_fldigi_post(const char *data, const char *identity)
 	#define POST_IDENTITYKEY    "&identity="
 
 	post_data_length = data_length + identity_length + strlen(POST_DATAKEY) + strlen(POST_IDENTITYKEY) + 1;
-	post_data = malloc(post_data_length);
+	post_data = (char *) malloc(post_data_length);
 
 	if (post_data == NULL)
 	{
-		fprintf(strerr, "dl_fldigi: denied %i bytes of RAM for 'post_data'\n", post_data_length);
+		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'post_data'\n", post_data_length);
 		curl_easy_cleanup(curl);
 		return;
 	}
@@ -93,7 +93,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	if (0 /* offline */)
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stdout, "dl_fldigi: (offline mode) would have posted '%.*s'\n", post_data, post_data_length);
+			fprintf(stdout, "dl_fldigi: (offline mode) would have posted '%s'\n", post_data);
 		#endif
 
 		curl_easy_cleanup(curl);
@@ -105,11 +105,11 @@ void dl_fldigi_post(const char *data, const char *identity)
 	assert(curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data));
 	assert(curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data_length));
 
-	t = malloc(sizeof(struct dl_fldigi_threadinfo));
+	t = (struct dl_fldigi_threadinfo *) malloc(sizeof(struct dl_fldigi_threadinfo));
 
 	if (t == NULL)
 	{
-		fprintf(strerr, "dl_fldigi: denied %i bytes of RAM for 'struct dl_fldigi_threadinfo'\n", sizeof(struct dl_fldigi_threadinfo));
+		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_threadinfo'\n", sizeof(struct dl_fldigi_threadinfo));
 		curl_easy_cleanup(curl);
 		return;
 	}
@@ -121,29 +121,31 @@ void dl_fldigi_post(const char *data, const char *identity)
 	full_memory_barrier();
 
 	/* the 4th argument passes the thread the information it needs */
-	if (pthread_create(t, NULL, dl_fldigi_thread, (void *) t) != 0)
+	if (pthread_create(&thread, NULL, dl_fldigi_thread, (void *) t) != 0)
 	{
 		perror("pthread_create");
         }
 }
 
-void dl_fldigi_thread(void *thread_argument)
+void *dl_fldigi_thread(void *thread_argument)
 {
 	struct dl_fldigi_threadinfo *t;
 	t = (struct dl_fldigi_threadinfo *) thread_argument;
 	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stdout, "dl_fldigi: (thread %i) posting '%.*s'\n", pthread_self(), post_data, post_data_length);
+		fprintf(stdout, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
 	#endif
 
 	result = curl_easy_perform(t->curl);
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stdout, "dl_fldigi: (thread %i) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));
+		fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));
 	#endif
 
 	curl_easy_cleanup(t->curl);
 	free(t->post_data);
 	free(t);
+
+	pthread_exit(0);
 }

@@ -186,16 +186,13 @@ static void arg_error(const char* name, const char* arg, bool missing) noreturn_
 #  define SHOW_WIZARD_BEFORE_MAIN_WINDOW 0
 #endif
 
+std::string appname;
 
 int main(int argc, char ** argv)
 {
 	appname = argv[0];
 	debug_exec(argv);
 
-	//DL_FLDIGI Start
-	dlServerCommunicator();
-	//DL_FLDIGI End
-	
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
 

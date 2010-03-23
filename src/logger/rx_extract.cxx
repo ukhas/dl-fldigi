@@ -178,12 +178,11 @@ void rx_extract_add(int c)
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
 			if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) {
+					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
+					UpperCase (identity_callsign);
 
 					//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
 					if (identity_callsign != "UNKNOWN") { 
-						string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
-						UpperCase (identity_callsign);
-
 						dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
 
 						rx_extract_msg = "Data posted to server";
