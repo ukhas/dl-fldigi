@@ -45,14 +45,23 @@ void dl_fldigi_post(const char *data, const char *identity)
 	data_safe     = curl_easy_escape(curl, data, 0);
 	identity_safe = curl_easy_escape(curl, identity, 0);
 
-	if (data_safe == NULL || identity_safe == NULL);
+	if (data_safe != NULL)
 	{
-		fprintf(stderr, "dl_fldigi: curl_easy_escape returned NULL\n");
-		return;
+		data_length     = strlen(data_safe);
+	}
+	else
+	{
+		data_length = 0;
 	}
 
-	data_length     = strlen(data_safe);
-	identity_length = strlen(identity_safe);
+	if (identity_safe != NULL)
+	{
+		identity_length = strlen(identity_safe);
+	}
+	else
+	{
+		identity_length = 0;
+	}
 
 	#define POST_DATAKEY        "string="
 	#define POST_IDENTITYKEY    "&identity="
@@ -73,14 +82,20 @@ void dl_fldigi_post(const char *data, const char *identity)
 	memcpy(post_data + i, POST_DATAKEY, strlen(POST_DATAKEY));
 	i += strlen(POST_DATAKEY);
 
-	memcpy(post_data + i, data_safe, data_length);
-	i += data_length;
+	if (data_length != 0)
+	{
+		memcpy(post_data + i, data_safe, data_length);
+		i += data_length;
+	}
 
 	memcpy(post_data + i, POST_IDENTITYKEY, strlen(POST_IDENTITYKEY));
 	i += strlen(POST_IDENTITYKEY);
 
-	memcpy(post_data + i, identity_safe, identity_length);
-	i += identity_length;
+	if (identity_length != 0)
+	{
+		memcpy(post_data + i, identity_safe, identity_length);
+		i += identity_length;
+	}
 
 	post_data[i] = '\0';
 	i ++;
