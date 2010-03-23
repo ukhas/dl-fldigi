@@ -19,8 +19,8 @@
 
 struct dl_fldigi_threadinfo
 {
-  CURL *curl;
-  char *post_data;
+	CURL *curl;
+	char *post_data;
 };
 
 void *dl_fldigi_thread(void *thread_argument);
@@ -172,7 +172,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	if (pthread_create(&thread, NULL, dl_fldigi_thread, (void *) t) != 0)
 	{
 		perror("pthread_create");
-        }
+	}
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: created a thread to finish the posting, returning now\n");
