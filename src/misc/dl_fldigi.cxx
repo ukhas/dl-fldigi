@@ -1,5 +1,4 @@
 #include "dl_fldigi.h"
-
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
