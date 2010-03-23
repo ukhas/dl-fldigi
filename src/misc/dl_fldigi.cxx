@@ -1,4 +1,6 @@
 #include "dl_fldigi.h"
+#include "configuration.h"
+
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
@@ -56,8 +58,12 @@ void dlServerCommunicator()
 					{
 						curl_easy_setopt(easyhandle_status, CURLOPT_POSTFIELDS, buffer);
 						curl_easy_setopt(easyhandle_status, CURLOPT_URL, "http://www.robertharrison.org/listen/listen.php");
-						result = curl_easy_perform(easyhandle_status); /* post away! */
-						std::cout << "result: " << result  << "\n";
+						if (progdefaults.dl_online) {
+							result = curl_easy_perform(easyhandle_status); /* post away! */
+							std::cout << "result: " << result  << "\n";
+						} else {
+							std::cout << "        DL post inhibited due to dl_online == false\n";
+						}
 						curl_easy_cleanup(easyhandle_status);
 					}
 
