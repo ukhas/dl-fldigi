@@ -12,6 +12,7 @@
 #include <pthread.h>
 
 #include "configuration.h"
+#include "dl_fldigi.h"
 
 #define DL_FLDIGI_DEBUG
 
@@ -111,7 +112,13 @@ void dl_fldigi_post(const char *data, const char *identity)
 	curl_free(data_safe);
 	curl_free(identity_safe);
 
-	if (0 /* offline */)
+	if (progdefaults.dl_online)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stdout, "dl_fldigi: preparing to post '%s'\n", post_data);
+		#endif
+	}
+	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stdout, "dl_fldigi: (offline mode) would have posted '%s'\n", post_data);
@@ -119,12 +126,6 @@ void dl_fldigi_post(const char *data, const char *identity)
 
 		curl_easy_cleanup(curl);
 		return;
-	}
-	else
-	{
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stdout, "dl_fldigi: preparing to post '%s'\n", post_data);
-		#endif
 	}
 
 	r1 = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
