@@ -15,5 +15,6 @@
 #include <curl/types.h>
 #include <curl/easy.h>
 
+void dl_fldigi_init();
 void dl_fldigi_post(const char *data, const char *identity);
 #endif

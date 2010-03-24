@@ -16,6 +16,8 @@
 
 #define DL_FLDIGI_DEBUG
 
+int dl_fldigi_initialised = 0;
+
 struct dl_fldigi_threadinfo
 {
 	CURL *curl;
@@ -23,6 +25,29 @@ struct dl_fldigi_threadinfo
 };
 
 void *dl_fldigi_thread(void *thread_argument);
+
+void dl_fldigi_init()
+{
+	CURLcode r;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_init() was executed in thread %li\n", pthread_self());
+	#endif
+
+	/* The only thread-unsafe step of dl_fldigi. Needs to be run once, at the start, when there are no other threads. */
+	r = curl_global_init(CURL_GLOBAL_ALL);
+
+	if (r != 0)
+	{
+		fprintf(stderr, "dl_fldigi: curl_global_init failed: (%i) %s\n", r, curl_easy_strerror(r));
+
+		/* The only scenario in which we exit. */
+		exit(EXIT_FAILURE);
+	}
+
+	dl_fldigi_initialised = 1;
+	full_memory_barrier();
+}
 
 void dl_fldigi_post(const char *data, const char *identity)
 {
@@ -33,8 +58,15 @@ void dl_fldigi_post(const char *data, const char *identity)
 	CURL *curl;
 	CURLcode r1, r2, r3;
 
+	/* The first of two globals accessed by this function */
+	if (!dl_fldigi_initialised)
+	{
+		fprintf(stderr, "dl_fldigi: a call to dl_fldigi_post was aborted; dl_fldigi has not been initialised\n");
+		return;
+	}
+
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: main/parent thread = %li\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: dl_fldigi_post() was executed in \"parent\" thread %li\n", pthread_self());
 		fprintf(stderr, "dl_fldigi: begin attempting to post string '%s' and identity '%s'\n", data, identity);
 	#endif
 
@@ -112,6 +144,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	curl_free(data_safe);
 	curl_free(identity_safe);
 
+	/* The second of two globals accessed by this function: progdefaults.dl_online */
 	if (progdefaults.dl_online)
 	{
 		#ifdef DL_FLDIGI_DEBUG

@@ -110,6 +110,8 @@
 
 #include "icons.h"
 
+#include "dl_fldigi.h"
+
 using namespace std;
 
 string scDevice[2];
@@ -192,6 +194,10 @@ int main(int argc, char ** argv)
 {
 	appname = argv[0];
 	debug_exec(argv);
+
+	/* Needs to be run once, at the start of the program (calls curl_global_init) when there are no threads,
+	 * since it is the only thread-unsafe/global-modifying function of the library */
+	dl_fldigi_init();
 
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
