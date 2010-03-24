@@ -177,7 +177,7 @@ void rx_extract_add(int c)
 			//min_number_fields = atoi(progdefaults.xmlFields.c_str());
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
-			if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) {
+			if (rx_buff.length() < total_string_length) {
 					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 					UpperCase (identity_callsign);
 

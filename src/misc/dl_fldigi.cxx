@@ -144,6 +144,8 @@ void dl_fldigi_post(const char *data, const char *identity)
 	curl_free(data_safe);
 	curl_free(identity_safe);
 
+	progdefaults.dl_online = 1;
+
 	/* The second of two globals accessed by this function: progdefaults.dl_online */
 	if (progdefaults.dl_online)
 	{
