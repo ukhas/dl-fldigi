@@ -272,6 +272,9 @@ Fl_Group			*MixerFrame;
 Fl_Value_Slider2		*valRcvMixer;
 Fl_Value_Slider2		*valXmtMixer;
 
+//jcoxon
+Fl_Group			*TopFrameHAB = (Fl_Group *)0;
+
 int pad = 1;
 int Hentry		= 24;
 int Wbtn		= Hentry;
@@ -4253,13 +4256,15 @@ void create_fl_digi_main_dl_fldigi() {
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
 	int minRxHeight = 100;
+	int TopFrameHABheight = 80;
+
 
 	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
 	Hwfall = progdefaults.wfheight;
 	Wwfall = progStatus.mainW - 2 * DEFAULT_SW - 2 * pad;
 //jcoxon
 //	HAB_height = Hmenu + Hwfall + Hstatus + 4 * pad;
-	HAB_height = Hmenu + Hwfall + minRxHeight + Hstatus + 4 * pad;
+	HAB_height = Hmenu + Hwfall + minRxHeight + TopFrameHABheight + Hstatus + 4 * pad;
 	cout << HAB_height << endl;
 
 	fl_digi_main = new Fl_Double_Window(progStatus.mainW, HAB_height);
@@ -4305,6 +4310,13 @@ void create_fl_digi_main_dl_fldigi() {
 
 		Y = Hmenu + pad;
 		
+		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
+
+		TopFrameHAB->resizable(TopFrameHAB);
+		TopFrameHAB->end();
+		
+		Y = Hmenu + pad + TopFrameHABheight;
+		
 		TiledGroup = new Fl_Tile_Check(0, Y, progStatus.mainW, Htext);
 			ReceiveText = new FTextRX(0, Y, progStatus.mainW, minRxHeight, "");
 			ReceiveText->color(
@@ -4322,7 +4334,7 @@ void create_fl_digi_main_dl_fldigi() {
 			
 //
 
-		Y = Hmenu + pad + minRxHeight;
+		Y = Hmenu + pad + TopFrameHABheight + minRxHeight;
 
 		Fl_Pack *wfpack = new Fl_Pack(0, Y, progStatus.mainW, Hwfall);
 			wfpack->type(1);
