@@ -1088,6 +1088,12 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 
 }
 
+void cb_toggle_dl_online(Fl_Widget *, void *) {
+	progdefaults.loadDefaults();
+	// dl_online is a bool
+	progdefaults.dl_online = !progdefaults.dl_online;
+}
+
 //jcoxon added 21/3/10
 
 void cb_mnuConfigDLClient(Fl_Menu_*, void*) {
@@ -3883,6 +3889,7 @@ Fl_Menu_Item alt_menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ "Online", 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},

@@ -11,9 +11,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "util.h"
-#include "fl_digi.h"
-#include "dl_fldigi.h"
+#include "configuration.h"
 
 #define DL_FLDIGI_DEBUG
 
