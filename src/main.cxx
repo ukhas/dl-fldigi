@@ -246,6 +246,7 @@ int main(int argc, char ** argv)
 	if (main_window_title.empty())
 		main_window_title = PACKAGE_TARNAME;
 
+	dl_xmlList();
 	checkdirectories();
 	try {
 		debug::start(string(HomeDir).append("status_log.txt").c_str());

@@ -394,4 +394,51 @@ void dl_selFlightXML(Fl_Choice* o, void*) {
 	delete xml;
 	progdefaults.changed = true;
 }
+ // This is the writer call back function used by curl  
+ static int writer(char *data, size_t size, size_t nmemb, std::string *buffer)  
+ {  
+   // What we will return  
+   int result = 0;  
+   
+   // Is there anything in the buffer?  
+   if (buffer != NULL)  
+   {  
+     // Append the data to the buffer  
+     buffer->append(data, size * nmemb);  
+   
+     // How much did we write?  
+     result = size * nmemb;  
+   }  
+   
+   return result;  
+ } 
 
+void dl_xmlList() {
+	CURL *curl;
+	CURLcode res;
+	string buffer;
+	int i=0;
+	curl = curl_easy_init();
+	if(curl) {
+		//Also in here we need to add a function to check that we have the most recent version
+		curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/payload.php");
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);  
+		curl_easy_setopt(curl , CURLOPT_WRITEDATA , &buffer );
+		res = curl_easy_perform(curl);
+		//
+		/* always cleanup */
+		curl_easy_cleanup(curl);
+	}
+	//Remove \n and add | (needed for GUI selection
+	for(i = buffer.find("\n", 0); i != string::npos; i = buffer.find("\n", i))
+	{
+    i++;  // Move past the last discovered instance to avoid finding same
+          // string
+	buffer.erase(i-1, 1);
+	buffer.insert(i-1, "|");
+	}
+	progdefaults.flightsAvaliable = buffer;
+	//cout << buffer << endl; // Print out flightsAvailable string
+
+	//bool have_config = progdefaults.readDefaultsXML();
+}

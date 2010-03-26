@@ -23,5 +23,6 @@ void dl_fldigi_init();
 void dl_fldigi_post(const char *data, const char *identity);
 
 void dl_selFlightXML(Fl_Choice* o, void*);
+void dl_xmlList();
 
 #endif

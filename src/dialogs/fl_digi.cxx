@@ -4326,8 +4326,8 @@ void create_fl_digi_main_dl_fldigi() {
 		Y = Hmenu + pad;
 		
 		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
-		//const char *flights = progdefaults.flightsAvaliable.c_str();
-		const char *flights = "ATLAS|ICARUS";
+		const char *flights = progdefaults.flightsAvaliable.c_str();
+		//const char *flights = "ATLAS|ICARUS";
 		{ Fl_Choice* o = habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, _("Flight"));
 		habFlightXML->tooltip(_("Select flight you are tracking"));
 		habFlightXML->down_box(FL_BORDER_BOX);
