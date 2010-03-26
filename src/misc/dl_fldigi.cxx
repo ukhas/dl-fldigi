@@ -18,13 +18,21 @@
 
 int dl_fldigi_initialised = 0;
 
-struct dl_fldigi_threadinfo
+struct dl_fldigi_post_threadinfo
 {
 	CURL *curl;
 	char *post_data;
 };
 
-void *dl_fldigi_thread(void *thread_argument);
+struct dl_fldigi_nonblocking_download_threadinfo
+{
+	CURL *curl;
+	dl_fldigi_data_callback data;
+	dl_fldigi_error_callback error;
+};
+
+void *dl_fldigi_post_thread(void *thread_argument);
+void *dl_fldigi_nonblocking_download_thread(void *thread_argument);
 
 void dl_fldigi_init()
 {
@@ -53,7 +61,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 {
 	char *data_safe, *identity_safe, *post_data;
 	size_t i, data_length, identity_length, post_data_length;
-	struct dl_fldigi_threadinfo *t;
+	struct dl_fldigi_post_threadinfo *t;
 	pthread_t thread;
 	CURL *curl;
 	CURLcode r1, r2, r3;
@@ -185,11 +193,11 @@ void dl_fldigi_post(const char *data, const char *identity)
 		return;
 	}
 
-	t = (struct dl_fldigi_threadinfo *) malloc(sizeof(struct dl_fldigi_threadinfo));
+	t = (struct dl_fldigi_post_threadinfo *) malloc(sizeof(struct dl_fldigi_post_threadinfo));
 
 	if (t == NULL)
 	{
-		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_threadinfo'\n", sizeof(struct dl_fldigi_threadinfo));
+		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_post_threadinfo'\n", sizeof(struct dl_fldigi_post_threadinfo));
 		curl_easy_cleanup(curl);
 		return;
 	}
@@ -201,9 +209,11 @@ void dl_fldigi_post(const char *data, const char *identity)
 	full_memory_barrier();
 
 	/* the 4th argument passes the thread the information it needs */
-	if (pthread_create(&thread, NULL, dl_fldigi_thread, (void *) t) != 0)
+	if (pthread_create(&thread, NULL, dl_fldigi_post_thread, (void *) t) != 0)
 	{
 		perror("pthread_create");
+		curl_easy_cleanup(curl);
+		return;
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
@@ -211,10 +221,10 @@ void dl_fldigi_post(const char *data, const char *identity)
 	#endif
 }
 
-void *dl_fldigi_thread(void *thread_argument)
+void *dl_fldigi_post_thread(void *thread_argument)
 {
-	struct dl_fldigi_threadinfo *t;
-	t = (struct dl_fldigi_threadinfo *) thread_argument;
+	struct dl_fldigi_post_threadinfo *t;
+	t = (struct dl_fldigi_post_threadinfo *) thread_argument;
 	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
@@ -233,6 +243,110 @@ void *dl_fldigi_thread(void *thread_argument)
 			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		}
 	#endif
+
+	curl_easy_cleanup(t->curl);
+	free(t->post_data);
+	free(t);
+
+	pthread_exit(0);
+}
+
+
+void dl_fldigi_nonblocking_download(const char *url, dl_fldigi_nonblocking_download_callback callback)
+{
+	pthread_t thread;
+	CURL *curl;
+	CURLcode r1;
+
+	if (!dl_fldigi_initialised)
+	{
+		fprintf(stderr, "dl_fldigi: a call to dl_fldigi_post was aborted; dl_fldigi has not been initialised\n");
+		callback(NULL);
+		return;
+	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_nonblocking_download() was executed in \"parent\" thread %li\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: begin attempting to download URL '%s'\n", url);
+	#endif
+
+	curl = curl_easy_init();
+
+	if (!curl)
+	{
+		fprintf(stderr, "dl_fldigi: curl_easy_init failed\n");
+		callback(NULL);
+		return;
+	}
+
+	/* respect progdefaults.dl_online ?? */
+
+	r1 = curl_easy_setopt(curl, CURLOPT_URL, url);
+	if (r1 != 0)
+	{
+		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_URL) failed: %s\n", curl_easy_strerror(r1));
+		curl_easy_cleanup(curl);
+		callback(NULL);
+		return;
+	}
+
+	t = (struct dl_fldigi_nonblocking_download_threadinfo *) malloc(sizeof(struct dl_fldigi_nonblocking_download_threadinfo));
+
+	if (t == NULL)
+	{
+		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_nonblocking_download_threadinfo'\n", sizeof(struct dl_fldigi_nonblocking_download_threadinfo));
+		curl_easy_cleanup(curl);
+		callback(NULL);
+		return;
+	}
+
+	t->curl = curl;
+	t->callback = callback;
+
+	/* !! */
+	full_memory_barrier();
+
+	/* the 4th argument passes the thread the information it needs */
+	if (pthread_create(&thread, NULL, dl_fldigi_nonblocking_download_thread, (void *) t) != 0)
+	{
+		perror("pthread_create");
+		callback(NULL);
+		return;
+	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: created a thread to perform the download, returning now\n");
+	#endif
+}
+
+void *dl_fldigi_nonblocking_download_thread(void *thread_argument)
+{
+	struct dl_fldigi_nonblocking_download_threadinfo *t;
+	t = (struct dl_fldigi_nonblocking_download_threadinfo *) thread_argument;
+	CURLcode result;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stdout, "dl_fldigi: (thread %li) performing download...\n");
+	#endif
+
+	result = curl_easy_perform(t->curl);
+
+	if (result == 0)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
+		#endif
+
+		t->callback(
+	}
+	else
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+		#endif
+
+		t->callback(NULL);
+	}
 
 	curl_easy_cleanup(t->curl);
 	free(t->post_data);
