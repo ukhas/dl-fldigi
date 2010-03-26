@@ -4721,7 +4721,9 @@ static void put_status_msg(Fl_Box* status, const char* msg, double timeout, stat
 
 void put_status(const char *msg, double timeout, status_timeout action)
 {
-	static char m[50];
+	static char m[50];		/* DanielRichman: It looks like this function is meant to be thread safe
+					 * (REQ is some form of queue in include/qrunner.h). However, is it really
+					 * safe if m is declared static? */
 	strncpy(m, msg, sizeof(m));
 	m[sizeof(m) - 1] = '\0';
 

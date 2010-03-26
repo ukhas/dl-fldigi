@@ -12,6 +12,8 @@
 #include <pthread.h>
 
 #include "configuration.h"
+#include "util.h"
+#include "fl_digi.h"
 #include "dl_fldigi.h"
 
 #define DL_FLDIGI_DEBUG
@@ -221,18 +223,27 @@ void *dl_fldigi_thread(void *thread_argument)
 		fprintf(stdout, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
 	#endif
 
+	put_status("dl_fldigi: sentence upload...", 10);
+
 	result = curl_easy_perform(t->curl);
 
-	#ifdef DL_FLDIGI_DEBUG
-		if (result == 0)
-		{
+	/* tests CURL-success only */
+	if (result == 0)
+	{
+		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
-		}
-		else
-		{
+		#endif
+
+		put_status("dl_fldigi: sentence uploaded!", 10);
+	}
+	else
+	{
+		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
-		}
-	#endif
+		#endif
+
+		put_status("dl_fldigi: sentence upload failed", 10);
+	}
 
 	curl_easy_cleanup(t->curl);
 	free(t->post_data);
