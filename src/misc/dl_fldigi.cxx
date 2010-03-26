@@ -169,7 +169,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 		return;
 	}
 
-	r2 = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data_length);
+	r2 = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data_length - 1);
 	if (r2 != 0)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_POSTFIELDSIZE) failed: %s\n", curl_easy_strerror(r2));
