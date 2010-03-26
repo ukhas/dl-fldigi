@@ -137,6 +137,7 @@ using namespace std;
 
 //jcoxon
 #include <iostream>
+#include "dl_fldigi.h"
 bool bHAB = false;
 //
 
@@ -4326,13 +4327,13 @@ void create_fl_digi_main_dl_fldigi() {
 		
 		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
 		//const char *flights = progdefaults.flightsAvaliable.c_str();
-		const char *flights = "TEST1|TEST2";
+		const char *flights = "ATLAS|ICARUS";
 		{ Fl_Choice* o = habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, _("Flight"));
 		habFlightXML->tooltip(_("Select flight you are tracking"));
 		habFlightXML->down_box(FL_BORDER_BOX);
 		habFlightXML->align(FL_ALIGN_TOP);
 		habFlightXML->when(FL_WHEN_CHANGED);
-		//habFlightXML->callback((Fl_Callback*)cb_selFlightXML);
+		habFlightXML->callback((Fl_Callback*)dl_selFlightXML);
 		o->add(flights);
 		} // Fl_Choice* selFlightXML
 		

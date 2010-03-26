@@ -140,7 +140,9 @@ string WRAP_auto_dir;
 string ICS_dir;
 string ICS_msg_dir;
 string ICS_tmp_dir;
-
+//jcoxon
+string FlightXMLDir; //added by jcoxon to store xml files
+//
 string PskMailFile;
 string ArqFilename;
 string xmlfname;
@@ -1097,6 +1099,7 @@ static void checkdirectories(void)
 		{ WrapDir, "wrap", 0 },
 		{ TalkDir, "talk", 0 },
 		{ TempDir, "temp", 0 },
+		{ FlightXMLDir, "flightxml", 0}
 	};
 
 	DIRS NBEMS_dirs[] = {
