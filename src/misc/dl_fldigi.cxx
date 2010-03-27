@@ -13,10 +13,15 @@
 
 #include "configuration.h"
 #include "dl_fldigi.h"
+#include "util.h"
+#include "fl_digi.h"
+#include "qrunner.h"
 
 #define DL_FLDIGI_DEBUG
+#define DL_FLDIGI_CACHE_FILE "/.dl_fldigi_cache.xml"
 
 int dl_fldigi_initialised = 0;
+const char *dl_fldigi_cache_file;
 
 struct dl_fldigi_post_threadinfo
 {
@@ -24,19 +29,20 @@ struct dl_fldigi_post_threadinfo
 	char *post_data;
 };
 
-struct dl_fldigi_nonblocking_download_threadinfo
+struct dl_fldigi_download_threadinfo
 {
 	CURL *curl;
-	dl_fldigi_data_callback data;
-	dl_fldigi_error_callback error;
+	FILE *file;
 };
 
-void *dl_fldigi_post_thread(void *thread_argument);
-void *dl_fldigi_nonblocking_download_thread(void *thread_argument);
+static void *dl_fldigi_post_thread(void *thread_argument);
+static void *dl_fldigi_download_thread(void *thread_argument);
 
 void dl_fldigi_init()
 {
 	CURLcode r;
+	char *home;
+	size_t i, fsz;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: dl_fldigi_init() was executed in thread %li\n", pthread_self());
@@ -49,9 +55,38 @@ void dl_fldigi_init()
 	{
 		fprintf(stderr, "dl_fldigi: curl_global_init failed: (%i) %s\n", r, curl_easy_strerror(r));
 
-		/* The only scenario in which we exit. */
 		exit(EXIT_FAILURE);
 	}
+
+	home = getenv("HOME");
+	if (home == NULL || strlen(home) == 0)
+	{
+		fprintf(stderr, "dl_fldigi: getenv(\"HOME\") failed.");
+		exit(EXIT_FAILURE);
+	}
+
+	fsz = strlen(home) + strlen(DL_FLDIGI_CACHE_FILE) + 1;
+	i = 0;
+
+	dl_fldigi_cache_file = malloc(fsz);
+
+	memcpy(dl_fldigi_cache_file + i, home, strlen(home));
+	i += strlen(home);
+
+	memcpy(dl_fldigi_cache_file + i, DL_FLDIGI_CACHE_FILE, strlen(DL_FLDIGI_CACHE_FILE));
+	i += strlen(DL_FLDIGI_CACHE_FILE);
+
+	dl_fldigi_cache_file[i] = '\0';
+	i++;
+
+	if (i != fsz)
+	{
+		fprintf(stderr, "dl_fldigi: assertion failed \"i == fsz\" (i = %zi, fsz = %zi) \n", i, fsz);
+	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: cache file is '%s'\n", dl_fldigi_cache_file);
+	#endif
 
 	dl_fldigi_initialised = 1;
 	full_memory_barrier();
@@ -156,15 +191,12 @@ void dl_fldigi_post(const char *data, const char *identity)
 	if (progdefaults.dl_online)
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stdout, "dl_fldigi: preparing to post '%s'\n", post_data);
+			fprintf(stderr, "dl_fldigi: preparing to post '%s'\n", post_data);
 		#endif
 	}
 	else
 	{
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stdout, "dl_fldigi: (offline mode) would have posted '%s'\n", post_data);
-		#endif
-
+		fprintf(stderr, "dl_fldigi: (offline mode) would have posted '%s'\n", post_data);
 		curl_easy_cleanup(curl);
 		return;
 	}
@@ -211,7 +243,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	/* the 4th argument passes the thread the information it needs */
 	if (pthread_create(&thread, NULL, dl_fldigi_post_thread, (void *) t) != 0)
 	{
-		perror("pthread_create");
+		perror("dl_fldigi: post pthread_create");
 		curl_easy_cleanup(curl);
 		return;
 	}
@@ -228,7 +260,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stdout, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
+		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
 	#endif
 
 	result = curl_easy_perform(t->curl);
@@ -236,11 +268,11 @@ void *dl_fldigi_post_thread(void *thread_argument)
 	#ifdef DL_FLDIGI_DEBUG
 		if (result == 0)
 		{
-			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		}
 		else
 		{
-			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		}
 	#endif
 
@@ -252,22 +284,30 @@ void *dl_fldigi_post_thread(void *thread_argument)
 }
 
 
-void dl_fldigi_nonblocking_download(const char *url, dl_fldigi_nonblocking_download_callback callback)
+void dl_fldigi_download()
 {
 	pthread_t thread;
 	CURL *curl;
-	CURLcode r1;
+	CURLcode r1, r3;
+	FILE *file;
+	int r2;
 
 	if (!dl_fldigi_initialised)
 	{
-		fprintf(stderr, "dl_fldigi: a call to dl_fldigi_post was aborted; dl_fldigi has not been initialised\n");
+		fprintf(stderr, "dl_fldigi: a call to dl_fldigi_download was aborted; dl_fldigi has not been initialised\n");
 		callback(NULL);
 		return;
 	}
 
+	if (!progdefaults.dl_online)
+	{
+		fprintf(stderr, "dl_fldigi: a call to dl_fldigi_download was aborted: refusing to download a file whist in offline mode.\n");
+		return;
+	}
+
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: dl_fldigi_nonblocking_download() was executed in \"parent\" thread %li\n", pthread_self());
-		fprintf(stderr, "dl_fldigi: begin attempting to download URL '%s'\n", url);
+		fprintf(stderr, "dl_fldigi: dl_fldigi_download() was executed in \"parent\" thread %li\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: begin download attempt...\n");
 	#endif
 
 	curl = curl_easy_init();
@@ -275,42 +315,74 @@ void dl_fldigi_nonblocking_download(const char *url, dl_fldigi_nonblocking_downl
 	if (!curl)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_init failed\n");
-		callback(NULL);
 		return;
 	}
 
-	/* respect progdefaults.dl_online ?? */
-
-	r1 = curl_easy_setopt(curl, CURLOPT_URL, url);
+	r1 = curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/allpayloads.php");
 	if (r1 != 0)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_URL) failed: %s\n", curl_easy_strerror(r1));
 		curl_easy_cleanup(curl);
-		callback(NULL);
 		return;
 	}
 
-	t = (struct dl_fldigi_nonblocking_download_threadinfo *) malloc(sizeof(struct dl_fldigi_nonblocking_download_threadinfo));
+	t = (struct dl_fldigi_download_threadinfo *) malloc(sizeof(struct dl_fldigi_download_threadinfo));
 
 	if (t == NULL)
 	{
-		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_nonblocking_download_threadinfo'\n", sizeof(struct dl_fldigi_nonblocking_download_threadinfo));
+		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_download_threadinfo'\n", sizeof(struct dl_fldigi_download_threadinfo));
 		curl_easy_cleanup(curl);
-		callback(NULL);
+		return;
+	}
+
+	file = fopen(dl_fldigi_cache_file, "w");
+
+	if (file == NULL)
+	{
+		perror("dl_fldigi: fopen cache file");
+		curl_easy_cleanup(curl);
+		return;
+	}
+
+	r2 = flock(fileno(file), LOCK_EX | LOG_NB);
+
+	if (r2 == EWOULDBLOCK)
+	{
+		fprintf(stderr, "dl_fldigi: cache file is locked; not downloading\n");
+		curl_easy_cleanup(curl);
+		fclose(file);
+		return;
+	}
+	else if (r2 != 0)
+	{
+		perror("dl_fldigi: flock cache file");
+		curl_easy_cleanup(curl);
+		fclose(file);
+		return;
+	}
+
+	r3 = curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+	if (r3 != 0)
+	{
+		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_WRITEDATA) failed: %s\n", curl_easy_strerror(r3));
+		curl_easy_cleanup(curl);
+		flock(fileno(file), LOCK_UN);
+		fclose(file);
 		return;
 	}
 
 	t->curl = curl;
-	t->callback = callback;
+	t->file = file;
 
 	/* !! */
 	full_memory_barrier();
 
 	/* the 4th argument passes the thread the information it needs */
-	if (pthread_create(&thread, NULL, dl_fldigi_nonblocking_download_thread, (void *) t) != 0)
+	if (pthread_create(&thread, NULL, dl_fldigi_download_thread, (void *) t) != 0)
 	{
-		perror("pthread_create");
-		callback(NULL);
+		perror("dl_fldigi: download pthread_create");
+		flock(fileno(file), LOCK_UN);
+		fclose(file);
 		return;
 	}
 
@@ -319,38 +391,80 @@ void dl_fldigi_nonblocking_download(const char *url, dl_fldigi_nonblocking_downl
 	#endif
 }
 
-void *dl_fldigi_nonblocking_download_thread(void *thread_argument)
+void *dl_fldigi_download_thread(void *thread_argument)
 {
-	struct dl_fldigi_nonblocking_download_threadinfo *t;
-	t = (struct dl_fldigi_nonblocking_download_threadinfo *) thread_argument;
+	struct dl_fldigi_download_threadinfo *t;
+	t = (struct dl_fldigi_download_threadinfo *) thread_argument;
 	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stdout, "dl_fldigi: (thread %li) performing download...\n");
+		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n");
 	#endif
 
 	result = curl_easy_perform(t->curl);
 
+	curl_easy_cleanup(t->curl);
+	flock(fileno(t->file), LOCK_UN);
+	fclose(t->file);
+	free(t);
+
 	if (result == 0)
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		t->callback(
+		/* ask qrunner to deal with this */
+		REQ(dl_fldigi_update_payloads);
 	}
 	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stdout, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
-
-		t->callback(NULL);
 	}
 
-	curl_easy_cleanup(t->curl);
-	free(t->post_data);
-	free(t);
-
 	pthread_exit(0);
+}
+
+void dl_fldigi_update_payloads()
+{
+	FILE *file;
+	int r1;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n");
+	#endif
+
+	file = fopen(dl_fldigi_cache_file, "r");
+
+	if (file == NULL)
+	{
+		perror("dl_fldigi: fopen cache file (read)");
+		return;
+	}
+
+	r1 = flock(fileno(file), LOCK_SH | LOG_NB);
+
+	if (r1 == EWOULDBLOCK)
+	{
+		fprintf(stderr, "dl_fldigi: cache file is locked; not updating UI\n");
+		fclose(file);
+		return;
+	}
+	else if (r1 != 0)
+	{
+		perror("dl_fldigi: flock cache file (read)");
+		fclose(file);
+		return;
+	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: updating UI...");
+	#endif
+
+	/* Do the stuff */
+
+	flock(fileno(file), LOCK_UN | LOG_NB);
+	fclose(file);
 }
