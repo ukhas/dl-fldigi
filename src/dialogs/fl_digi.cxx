@@ -275,13 +275,13 @@ Fl_Value_Slider2		*valXmtMixer;
 
 //jcoxon
 Fl_Group			*TopFrameHAB = (Fl_Group *)0;
-Fl_Box			*habTime;
-Fl_Box			*habLat;
-Fl_Box			*habLon;
-Fl_Box			*habAlt;
-Fl_Box			*habCustom;
+Fl_Input2			*habTime;
+Fl_Input2			*habLat;
+Fl_Input2			*habLon;
+Fl_Input2			*habAlt;
+Fl_Input2			*habCustom=(Fl_Input2 *)0;
 Fl_Choice			*habFlightXML;
-Fl_Box			*habChecksum;
+Fl_Input2			*habChecksum;
 int w_habTime = 90;
 int w_habLat = 90;
 int w_habLon = 90;
@@ -4271,7 +4271,7 @@ void create_fl_digi_main_dl_fldigi() {
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
 	int minRxHeight = 100;
-	int TopFrameHABheight = 80;
+	int TopFrameHABheight = 50;
 
 
 	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
@@ -4337,7 +4337,7 @@ void create_fl_digi_main_dl_fldigi() {
 		o->add(flights);
 		} // Fl_Choice* selFlightXML
 		
-		{ habTime = new Fl_Box((rightof(habFlightXML) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
+		{ habTime = new Fl_Input2((rightof(habFlightXML) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
 		habTime->tooltip(_("Time"));
 		habTime->box(FL_DOWN_BOX);
 		habTime->color(FL_BACKGROUND2_COLOR);
@@ -4348,7 +4348,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habTime->labelcolor(FL_FOREGROUND_COLOR);
 		habTime->align(FL_ALIGN_TOP); }
 
-		{ habLat = new Fl_Box((rightof(habTime) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLat, Hentry, "Latitude");
+		{ habLat = new Fl_Input2((rightof(habTime) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLat, Hentry, "Latitude");
 		habLat->tooltip(_("Latitude"));
 		habLat->box(FL_DOWN_BOX);
 		habLat->color(FL_BACKGROUND2_COLOR);
@@ -4359,7 +4359,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habLat->labelcolor(FL_FOREGROUND_COLOR);
 		habLat->align(FL_ALIGN_TOP); }
 
-		{ habLon = new Fl_Box((rightof(habLat) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLon, Hentry, "Longitude");
+		{ habLon = new Fl_Input2((rightof(habLat) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLon, Hentry, "Longitude");
 		habLon->tooltip(_("Longitude"));
 		habLon->box(FL_DOWN_BOX);
 		habLon->color(FL_BACKGROUND2_COLOR);
@@ -4370,7 +4370,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habLon->labelcolor(FL_FOREGROUND_COLOR);
 		habLon->align(FL_ALIGN_TOP); }
 
-		{ habAlt = new Fl_Box((rightof(habLon) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habAlt, Hentry, "Altitude");
+		{ habAlt = new Fl_Input2((rightof(habLon) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habAlt, Hentry, "Altitude");
 		habAlt->tooltip(_("Altitude"));
 		habAlt->box(FL_DOWN_BOX);
 		habAlt->color(FL_BACKGROUND2_COLOR);
@@ -4381,7 +4381,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habAlt->labelcolor(FL_FOREGROUND_COLOR);
 		habAlt->align(FL_ALIGN_TOP); }
 		
-		{ habCustom = new Fl_Box((rightof(habAlt) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habCustom, Hentry, "Custom");
+		{ habCustom = new Fl_Input2((rightof(habAlt) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habCustom, Hentry, "Custom");
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
 		habCustom->color(FL_BACKGROUND2_COLOR);
@@ -4390,9 +4390,10 @@ void create_fl_digi_main_dl_fldigi() {
 		habCustom->labelfont(0);
 		habCustom->labelsize(13);
 		habCustom->labelcolor(FL_FOREGROUND_COLOR);
-		habCustom->align(FL_ALIGN_TOP); }
+		habCustom->align(FL_ALIGN_TOP);
+		habCustom->when(FL_WHEN_RELEASE);}
 		
-		{ habChecksum = new Fl_Box((rightof(habCustom) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habChecksum, Hentry, "Checksum");
+		{ habChecksum = new Fl_Input2((rightof(habCustom) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habChecksum, Hentry, "Checksum");
 		habChecksum->tooltip(_("Checksum"));
 		habChecksum->box(FL_DOWN_BOX);
 		habChecksum->color(FL_BACKGROUND2_COLOR);
