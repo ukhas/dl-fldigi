@@ -213,6 +213,8 @@ void dl_fldigi_post(const char *data, const char *identity)
 	if (pthread_create(&thread, NULL, dl_fldigi_thread, (void *) t) != 0)
 	{
 		perror("pthread_create");
+		curl_easy_cleanup(curl);
+		return;
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
