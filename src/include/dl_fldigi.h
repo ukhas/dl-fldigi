@@ -17,4 +17,7 @@
 
 void dl_fldigi_init();
 void dl_fldigi_post(const char *data, const char *identity);
+void dl_fldigi_download();
+void dl_fldigi_update_payloads();
+
 #endif
