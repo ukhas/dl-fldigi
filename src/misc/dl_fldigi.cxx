@@ -15,9 +15,16 @@
 #include "configuration.h"
 #include "dl_fldigi.h"
 #include "util.h"
+#include "confdialog.h"
 #include "fl_digi.h"
 #include "main.h"
 #include "qrunner.h"
+
+#include "irrXML.h"
+
+using namespace std;
+using namespace irr; // irrXML is located 
+using namespace io;  // in the namespace irr::io
 
 #define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
@@ -288,7 +295,6 @@ void *dl_fldigi_post_thread(void *thread_argument)
 	pthread_exit(0);
 }
 
-
 void dl_fldigi_download()
 {
 	pthread_t thread;
@@ -477,3 +483,198 @@ void dl_fldigi_update_payloads()
 	flock(fileno(file), LOCK_UN);
 	fclose(file);
 }
+
+#if 0
+void dl_selFlightXML(Fl_Choice* o, void*) {
+	progdefaults.flight_sel = o->text();
+	progdefaults.flight_sel_num = o->value();
+#if !defined(__CYGWIN__)
+	cout << progdefaults.flight_sel.c_str() << endl;
+#endif
+	CURL *curl;
+	CURLcode res;
+	FILE * xmlFile;
+	string server_address = "http://www.robertharrison.org/listen/";
+	string xml_file, xml_file_dir;
+  	curl = curl_easy_init();
+	if(curl) {
+		//Also in here we need to add a function to check that we have the most recent version
+		xml_file = progdefaults.flight_sel;
+		xml_file.append(".xml");
+		//make string of directory and file
+		xml_file_dir = FlightXMLDir;
+		xml_file_dir.append(xml_file);
+#if !defined(__CYGWIN__)
+		cout << xml_file_dir << endl;
+#endif
+		//make string of server address and file
+		server_address.append(xml_file);
+#if !defined(__CYGWIN__)
+		cout << server_address << endl;
+#endif
+		xmlFile = fopen (xml_file_dir.c_str(),"w");
+		curl_easy_setopt(curl, CURLOPT_URL, server_address.c_str());
+		curl_easy_setopt(curl , CURLOPT_WRITEDATA , xmlFile );
+		res = curl_easy_perform(curl);
+		//always cleanup
+		fclose(xmlFile);
+		curl_easy_cleanup(curl);
+	}
+	IrrXMLReader* xml = createIrrXMLReader(xml_file_dir.c_str());
+	// strings for storing the data we want to get out of the file
+	string sentence_delimiter;
+	string field_delimiter;
+	string fields;
+	string callsign;
+	string xmldata;
+	string xmlfielddata;
+	string seqnumber;
+	
+	while(xml && xml->read())
+	{
+		if (!strcmp("sentence_delimiter", xml->getNodeName())) {
+			xml->read();
+			sentence_delimiter = xml->getNodeData();
+			progdefaults.xmlSentence_delimiter = sentence_delimiter;
+			//telemSentence_delimiter->value(progdefaults.xmlSentence_delimiter.c_str());
+			xml->read();
+		}
+		else if (!strcmp("field_delimiter", xml->getNodeName())) {
+			xml->read();
+			field_delimiter = xml->getNodeData();
+			progdefaults.xmlField_delimiter = field_delimiter;
+			//telemField_delimiter->value(progdefaults.xmlField_delimiter.c_str());
+			xml->read();
+		}
+		else if (!strcmp("fields", xml->getNodeName())) {
+			xml->read();
+			fields = xml->getNodeData();
+			progdefaults.xmlFields = fields;
+			//telemFields->value(progdefaults.xmlFields.c_str());
+			xml->read();
+		}
+		else if (!strcmp("callsign", xml->getNodeName())) {
+			xml->read();
+			callsign = xml->getNodeData();
+			if (callsign != "dbfield") {
+				progdefaults.xmlCallsign = callsign;
+			}
+			xml->read();
+		}
+		else if (!strcmp("shift", xml->getNodeName())) {
+			xml->read();
+			fields = xml->getNodeData();
+			 int shift_int= atoi(fields.c_str());
+			if (shift_int == 170) {
+				progdefaults.rtty_shift = 4;
+				}
+			else if (shift_int == 350) {
+				progdefaults.rtty_shift = 7;
+				}
+			else if (shift_int == 425) {
+				progdefaults.rtty_shift = 8;
+				}
+			selShift->value(progdefaults.rtty_shift);
+			resetRTTY();
+			xml->read();
+		}
+		else if (!strcmp("baud", xml->getNodeName())) {
+			xml->read();
+			fields = xml->getNodeData();
+			int baud_int = atoi(fields.c_str());
+			if (baud_int == 45) {
+				progdefaults.rtty_baud = 0;
+				}
+			else if (baud_int == 50) {
+				progdefaults.rtty_baud = 2;
+				}
+			else if (baud_int == 100) {
+				progdefaults.rtty_baud = 5;
+				}
+			else if (baud_int == 150) {
+				progdefaults.rtty_baud = 7;
+				}
+			else if (baud_int == 200) {
+				progdefaults.rtty_baud = 8;
+				}
+			else if (baud_int == 300) {
+				progdefaults.rtty_baud = 9;
+				}
+			selBaud->value(progdefaults.rtty_baud);
+			resetRTTY();
+			xml->read();
+		}
+		else if (!strcmp("coding", xml->getNodeName())) {
+			xml->read();
+			fields = xml->getNodeData();
+			// "5 (baudot)|7 (ascii)|8 (ascii)";
+			if (fields == "baudot") {
+				progdefaults.rtty_bits = 0;
+				}
+			else if (fields == "ascii-7") {
+				progdefaults.rtty_bits = 1;
+				}
+			else if (fields == "ascii-8") {
+				progdefaults.rtty_bits = 2;
+				}
+			selBits->value(progdefaults.rtty_bits);
+			resetRTTY();
+			xml->read();
+		}
+		}
+#if !defined(__CYGWIN__)
+	cout << "Done" << endl;
+#endif
+	// delete the xml parser after usage
+	delete xml;
+	progdefaults.changed = true;
+}
+ // This is the writer call back function used by curl  
+ static int writer(char *data, size_t size, size_t nmemb, std::string *buffer)  
+ {  
+   // What we will return  
+   int result = 0;  
+   
+   // Is there anything in the buffer?  
+   if (buffer != NULL)  
+   {  
+     // Append the data to the buffer  
+     buffer->append(data, size * nmemb);  
+   
+     // How much did we write?  
+     result = size * nmemb;  
+   }  
+   
+   return result;  
+ } 
+
+void dl_xmlList() {
+	CURL *curl;
+	CURLcode res;
+	string buffer;
+	int i=0;
+	curl = curl_easy_init();
+	if(curl) {
+		//Also in here we need to add a function to check that we have the most recent version
+		curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/payload.php");
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);  
+		curl_easy_setopt(curl , CURLOPT_WRITEDATA , &buffer );
+		res = curl_easy_perform(curl);
+		//
+		/* always cleanup */
+		curl_easy_cleanup(curl);
+	}
+	//Remove \n and add | (needed for GUI selection
+	for(i = buffer.find("\n", 0); i != string::npos; i = buffer.find("\n", i))
+	{
+    i++;  // Move past the last discovered instance to avoid finding same
+          // string
+	buffer.erase(i-1, 1);
+	buffer.insert(i-1, "|");
+	}
+	progdefaults.flightsAvaliable = buffer;
+	//cout << buffer << endl; // Print out flightsAvailable string
+
+	//bool have_config = progdefaults.readDefaultsXML();
+}
+#endif

@@ -140,7 +140,9 @@ string WRAP_auto_dir;
 string ICS_dir;
 string ICS_msg_dir;
 string ICS_tmp_dir;
-
+//jcoxon
+string FlightXMLDir; //added by jcoxon to store xml files
+//
 string PskMailFile;
 string ArqFilename;
 string xmlfname;
@@ -245,6 +247,7 @@ int main(int argc, char ** argv)
 	if (main_window_title.empty())
 		main_window_title = PACKAGE_TARNAME;
 
+	dl_xmlList();
 	checkdirectories();
 	try {
 		debug::start(string(HomeDir).append("status_log.txt").c_str());
@@ -1102,6 +1105,7 @@ static void checkdirectories(void)
 		{ WrapDir, "wrap", 0 },
 		{ TalkDir, "talk", 0 },
 		{ TempDir, "temp", 0 },
+		{ FlightXMLDir, "flightxml", 0}
 	};
 
 	DIRS NBEMS_dirs[] = {

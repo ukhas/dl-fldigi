@@ -1093,7 +1093,7 @@
 		ELEM_(std::string, gpsSpeed, "GPSSPEED", "", "4800")							\
 /* Config stuff */																		\
 		ELEM_(int, png_wfall, "PNG_WFALL", "", 0) \
-		ELEM_(bool, dl_online, "DL_ONLINE", "Toggle DL internet comms", false)
+        ELEM_(bool, dl_online, "", "", false)
 
 
 // declare the struct
