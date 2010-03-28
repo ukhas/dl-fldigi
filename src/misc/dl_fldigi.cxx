@@ -10,15 +10,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/file.h>
 
 #include "configuration.h"
 #include "dl_fldigi.h"
 #include "util.h"
 #include "fl_digi.h"
+#include "main.h"
 #include "qrunner.h"
 
 #define DL_FLDIGI_DEBUG
-#define DL_FLDIGI_CACHE_FILE "/.dl_fldigi_cache.xml"
+#define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
 
 int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
@@ -41,7 +43,8 @@ static void *dl_fldigi_download_thread(void *thread_argument);
 void dl_fldigi_init()
 {
 	CURLcode r;
-	char *home;
+	const char *home;
+	char *cache_file;
 	size_t i, fsz;
 
 	#ifdef DL_FLDIGI_DEBUG
@@ -54,35 +57,37 @@ void dl_fldigi_init()
 	if (r != 0)
 	{
 		fprintf(stderr, "dl_fldigi: curl_global_init failed: (%i) %s\n", r, curl_easy_strerror(r));
-
 		exit(EXIT_FAILURE);
 	}
 
-	home = getenv("HOME");
-	if (home == NULL || strlen(home) == 0)
-	{
-		fprintf(stderr, "dl_fldigi: getenv(\"HOME\") failed.");
-		exit(EXIT_FAILURE);
-	}
+	home = HomeDir.c_str();
 
 	fsz = strlen(home) + strlen(DL_FLDIGI_CACHE_FILE) + 1;
 	i = 0;
 
-	dl_fldigi_cache_file = malloc(fsz);
+	cache_file = (char *) malloc(fsz);
 
-	memcpy(dl_fldigi_cache_file + i, home, strlen(home));
+	if (cache_file == NULL)
+	{
+		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'cache_file'\n", fsz);
+		exit(EXIT_FAILURE);
+	}
+
+	memcpy(cache_file + i, home, strlen(home));
 	i += strlen(home);
 
-	memcpy(dl_fldigi_cache_file + i, DL_FLDIGI_CACHE_FILE, strlen(DL_FLDIGI_CACHE_FILE));
+	memcpy(cache_file + i, DL_FLDIGI_CACHE_FILE, strlen(DL_FLDIGI_CACHE_FILE));
 	i += strlen(DL_FLDIGI_CACHE_FILE);
 
-	dl_fldigi_cache_file[i] = '\0';
+	cache_file[i] = '\0';
 	i++;
 
 	if (i != fsz)
 	{
 		fprintf(stderr, "dl_fldigi: assertion failed \"i == fsz\" (i = %zi, fsz = %zi) \n", i, fsz);
 	}
+
+	dl_fldigi_cache_file = cache_file;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: cache file is '%s'\n", dl_fldigi_cache_file);
@@ -287,6 +292,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 void dl_fldigi_download()
 {
 	pthread_t thread;
+	struct dl_fldigi_download_threadinfo *t;
 	CURL *curl;
 	CURLcode r1, r3;
 	FILE *file;
@@ -295,7 +301,6 @@ void dl_fldigi_download()
 	if (!dl_fldigi_initialised)
 	{
 		fprintf(stderr, "dl_fldigi: a call to dl_fldigi_download was aborted; dl_fldigi has not been initialised\n");
-		callback(NULL);
 		return;
 	}
 
@@ -344,7 +349,7 @@ void dl_fldigi_download()
 		return;
 	}
 
-	r2 = flock(fileno(file), LOCK_EX | LOG_NB);
+	r2 = flock(fileno(file), LOCK_EX | LOCK_NB);
 
 	if (r2 == EWOULDBLOCK)
 	{
@@ -398,7 +403,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n");
+		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
 	#endif
 
 	result = curl_easy_perform(t->curl);
@@ -433,7 +438,7 @@ void dl_fldigi_update_payloads()
 	int r1;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n");
+		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
 	#endif
 
 	file = fopen(dl_fldigi_cache_file, "r");
@@ -444,7 +449,7 @@ void dl_fldigi_update_payloads()
 		return;
 	}
 
-	r1 = flock(fileno(file), LOCK_SH | LOG_NB);
+	r1 = flock(fileno(file), LOCK_SH | LOCK_NB);
 
 	if (r1 == EWOULDBLOCK)
 	{
@@ -460,11 +465,15 @@ void dl_fldigi_update_payloads()
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: updating UI...");
+		fprintf(stderr, "dl_fldigi: opened file, now updating UI...\n");
 	#endif
 
-	/* Do the stuff */
+	/* Do your stuff here. */
 
-	flock(fileno(file), LOCK_UN | LOG_NB);
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: UI updated.\n");
+	#endif
+
+	flock(fileno(file), LOCK_UN);
 	fclose(file);
 }
