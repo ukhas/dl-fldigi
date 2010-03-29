@@ -137,6 +137,7 @@ using namespace std;
 
 //jcoxon
 #include <iostream>
+#include "dl_fldigi.h"
 bool bHAB = false;
 //
 
@@ -271,6 +272,23 @@ Fl_Input2			*qso_inpAct = 0;
 Fl_Group			*MixerFrame;
 Fl_Value_Slider2		*valRcvMixer;
 Fl_Value_Slider2		*valXmtMixer;
+
+//jcoxon
+Fl_Group			*TopFrameHAB = (Fl_Group *)0;
+Fl_Input2			*habTime;
+Fl_Input2			*habLat;
+Fl_Input2			*habLon;
+Fl_Input2			*habAlt;
+Fl_Input2			*habCustom=(Fl_Input2 *)0;
+Fl_Choice			*habFlightXML;
+Fl_Input2			*habChecksum;
+int w_habTime = 90;
+int w_habLat = 90;
+int w_habLon = 90;
+int w_habAlt = 90;
+int w_habCustom = 300;
+int w_habFlightXML = 100;
+int w_habChecksum = 40;
 
 int pad = 1;
 int Hentry		= 24;
@@ -1090,8 +1108,14 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 
 void cb_toggle_dl_online(Fl_Widget *, void *) {
 	progdefaults.loadDefaults();
-	// dl_online is a bool
 	progdefaults.dl_online = !progdefaults.dl_online;
+
+	/* If this is the first time we've come online... */
+	if (progdefaults.dl_online && !dl_fldigi_downloaded_once)
+	{
+		dl_fldigi_download();
+		dl_fldigi_downloaded_once = 1;
+	}
 }
 
 //jcoxon added 21/3/10
@@ -2061,7 +2085,7 @@ bool clean_exit(void) {
 #define RIGCONTEST_MLABEL  _("Rig control and contest")
 #define DOCKEDSCOPE_MLABEL _("Docked scope")
 #define WF_MLABEL _("Minimal controls")
-
+#define DLFLDIGI_ONLINE_LABEL _("Online")
 
 bool restore_minimize = false;
 
@@ -2442,6 +2466,17 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(_("Event log"), dialog_information_icon), 0, cb_mnuDebug, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Check for updates..."), system_software_update_icon), 0, cb_mnuCheckUpdate, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("&About"), help_about_icon), 'a', cb_mnuAboutURL, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
+/* TODO: Remove this. As a debug/temporary measure, I'm adding in the DL Client menu to non --hab mode,
+ * since we don't yet have any other UI as complete as this to configure online/offline, etc. */
+/* When you remove this; also remove the toggles entry on line TODO: 3791 */
+{_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"  ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3754,6 +3789,8 @@ void create_fl_digi_main_primary() {
 	if (!dxcc_is_open())
 		getMenuItem(COUNTRIES_MLABEL)->hide();
 
+        /* TODO: REMOVE ME: SEE LINE 2471 */ if (progdefaults.dl_online) getMenuItem(DLFLDIGI_ONLINE_LABEL)->set();
+
 	UI_select();
 	wf->UI_select(progStatus.WF_UI);
 
@@ -3889,7 +3926,7 @@ Fl_Menu_Item alt_menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "Online", 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -4253,13 +4290,15 @@ void create_fl_digi_main_dl_fldigi() {
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
 	int minRxHeight = 100;
+	int TopFrameHABheight = 50;
+
 
 	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
 	Hwfall = progdefaults.wfheight;
 	Wwfall = progStatus.mainW - 2 * DEFAULT_SW - 2 * pad;
 //jcoxon
 //	HAB_height = Hmenu + Hwfall + Hstatus + 4 * pad;
-	HAB_height = Hmenu + Hwfall + minRxHeight + Hstatus + 4 * pad;
+	HAB_height = Hmenu + Hwfall + minRxHeight + TopFrameHABheight + Hstatus + 4 * pad;
 	cout << HAB_height << endl;
 
 	fl_digi_main = new Fl_Double_Window(progStatus.mainW, HAB_height);
@@ -4305,6 +4344,88 @@ void create_fl_digi_main_dl_fldigi() {
 
 		Y = Hmenu + pad;
 		
+		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
+
+		{ habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, _("Flight"));
+		habFlightXML->tooltip(_("Select flight you are tracking"));
+		habFlightXML->down_box(FL_BORDER_BOX);
+		habFlightXML->align(FL_ALIGN_TOP);
+		habFlightXML->when(FL_WHEN_CHANGED);
+		habFlightXML->callback((Fl_Callback *) dl_fldigi_select_payload);
+		}
+		
+		{ habTime = new Fl_Input2((rightof(habFlightXML) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
+		habTime->tooltip(_("Time"));
+		habTime->box(FL_DOWN_BOX);
+		habTime->color(FL_BACKGROUND2_COLOR);
+		habTime->selection_color(FL_SELECTION_COLOR);
+		habTime->labeltype(FL_NORMAL_LABEL);
+		habTime->labelfont(0);
+		habTime->labelsize(13);
+		habTime->labelcolor(FL_FOREGROUND_COLOR);
+		habTime->align(FL_ALIGN_TOP); }
+
+		{ habLat = new Fl_Input2((rightof(habTime) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLat, Hentry, "Latitude");
+		habLat->tooltip(_("Latitude"));
+		habLat->box(FL_DOWN_BOX);
+		habLat->color(FL_BACKGROUND2_COLOR);
+		habLat->selection_color(FL_SELECTION_COLOR);
+		habLat->labeltype(FL_NORMAL_LABEL);
+		habLat->labelfont(0);
+		habLat->labelsize(13);
+		habLat->labelcolor(FL_FOREGROUND_COLOR);
+		habLat->align(FL_ALIGN_TOP); }
+
+		{ habLon = new Fl_Input2((rightof(habLat) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLon, Hentry, "Longitude");
+		habLon->tooltip(_("Longitude"));
+		habLon->box(FL_DOWN_BOX);
+		habLon->color(FL_BACKGROUND2_COLOR);
+		habLon->selection_color(FL_SELECTION_COLOR);
+		habLon->labeltype(FL_NORMAL_LABEL);
+		habLon->labelfont(0);
+		habLon->labelsize(13);
+		habLon->labelcolor(FL_FOREGROUND_COLOR);
+		habLon->align(FL_ALIGN_TOP); }
+
+		{ habAlt = new Fl_Input2((rightof(habLon) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habAlt, Hentry, "Altitude");
+		habAlt->tooltip(_("Altitude"));
+		habAlt->box(FL_DOWN_BOX);
+		habAlt->color(FL_BACKGROUND2_COLOR);
+		habAlt->selection_color(FL_SELECTION_COLOR);
+		habAlt->labeltype(FL_NORMAL_LABEL);
+		habAlt->labelfont(0);
+		habAlt->labelsize(13);
+		habAlt->labelcolor(FL_FOREGROUND_COLOR);
+		habAlt->align(FL_ALIGN_TOP); }
+		
+		{ habCustom = new Fl_Input2((rightof(habAlt) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habCustom, Hentry, "Custom");
+		habCustom->tooltip(_("Custom"));
+		habCustom->box(FL_DOWN_BOX);
+		habCustom->color(FL_BACKGROUND2_COLOR);
+		habCustom->selection_color(FL_SELECTION_COLOR);
+		habCustom->labeltype(FL_NORMAL_LABEL);
+		habCustom->labelfont(0);
+		habCustom->labelsize(13);
+		habCustom->labelcolor(FL_FOREGROUND_COLOR);
+		habCustom->align(FL_ALIGN_TOP);
+		habCustom->when(FL_WHEN_RELEASE);}
+		
+		{ habChecksum = new Fl_Input2((rightof(habCustom) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habChecksum, Hentry, "Checksum");
+		habChecksum->tooltip(_("Checksum"));
+		habChecksum->box(FL_DOWN_BOX);
+		habChecksum->color(FL_BACKGROUND2_COLOR);
+		habChecksum->selection_color(FL_SELECTION_COLOR);
+		habChecksum->labeltype(FL_NORMAL_LABEL);
+		habChecksum->labelfont(0);
+		habChecksum->labelsize(13);
+		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
+		habChecksum->align(FL_ALIGN_TOP); }
+
+		TopFrameHAB->resizable(TopFrameHAB);
+		TopFrameHAB->end();
+		
+		Y = Hmenu + pad + TopFrameHABheight;
+		
 		TiledGroup = new Fl_Tile_Check(0, Y, progStatus.mainW, Htext);
 			ReceiveText = new FTextRX(0, Y, progStatus.mainW, minRxHeight, "");
 			ReceiveText->color(
@@ -4322,7 +4443,7 @@ void create_fl_digi_main_dl_fldigi() {
 			
 //
 
-		Y = Hmenu + pad + minRxHeight;
+		Y = Hmenu + pad + TopFrameHABheight + minRxHeight;
 
 		Fl_Pack *wfpack = new Fl_Pack(0, Y, progStatus.mainW, Hwfall);
 			wfpack->type(1);
@@ -4431,7 +4552,7 @@ void create_fl_digi_main_dl_fldigi() {
 	struct {
 		bool var; const char* label;
 	} toggles[] = {
-		{ progStatus.DOCKEDSCOPE, DOCKEDSCOPE_MLABEL }
+		{ progStatus.DOCKEDSCOPE, DOCKEDSCOPE_MLABEL },
 	};
 	Fl_Menu_Item* toggle;
 	for (size_t i = 0; i < sizeof(toggles)/sizeof(*toggles); i++) {
@@ -4443,6 +4564,9 @@ void create_fl_digi_main_dl_fldigi() {
 			}
 		}
 	}
+
+	if (progdefaults.dl_online)
+		getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_)->set();
 
 	make_scopeviewer();
 	noop_controls();

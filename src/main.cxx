@@ -140,7 +140,9 @@ string WRAP_auto_dir;
 string ICS_dir;
 string ICS_msg_dir;
 string ICS_tmp_dir;
-
+//jcoxon
+string FlightXMLDir; //added by jcoxon to store xml files
+//
 string PskMailFile;
 string ArqFilename;
 string xmlfname;
@@ -195,9 +197,7 @@ int main(int argc, char ** argv)
 	appname = argv[0];
 	debug_exec(argv);
 
-	/* Needs to be run once, at the start of the program (calls curl_global_init) when there are no threads,
-	 * since it is the only thread-unsafe/global-modifying function of the library */
-	dl_fldigi_init();
+	set_platform_ui();
 
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
@@ -234,7 +234,10 @@ int main(int argc, char ** argv)
 #endif
 	}
 
-	set_platform_ui();
+	/* Needs to be run once, at the start of the program (calls curl_global_init) when there are no threads,
+	 * since it is the only thread-unsafe/global-modifying function of the library 
+	 * dl_fldigi_init requires the "HomeDir" global above. */
+	dl_fldigi_init();
 
 	generate_option_help();
 	generate_version_text();
@@ -285,7 +288,22 @@ int main(int argc, char ** argv)
 		qsl_open(string(HomeDir).append("AGMemberList.txt").c_str(), QSL_EQSL);
 
 	progStatus.loadLastState();
+
+	/* if --hab was specified, default dl_online to true */
+	progdefaults.dl_online = bHAB;
+
 	create_fl_digi_main(argc, argv);
+
+	/* Attempt regardless to load the cache of payload information */
+	dl_fldigi_update_payloads();
+
+	/* Only if we're online, go ahead and automatically download new payload info. */
+	if (progdefaults.dl_online)
+	{
+		/* This must be called after the UI is created */
+		dl_fldigi_download();
+		dl_fldigi_downloaded_once = 1;
+	}
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
@@ -1097,6 +1115,7 @@ static void checkdirectories(void)
 		{ WrapDir, "wrap", 0 },
 		{ TalkDir, "talk", 0 },
 		{ TempDir, "temp", 0 },
+		{ FlightXMLDir, "flightxml", 0}
 	};
 
 	DIRS NBEMS_dirs[] = {

@@ -34,9 +34,13 @@
 //jcoxon
 #include "extra.h"
 #include <algorithm>
+
+#include "confdialog.h"
+#include "main.h"
 //
 
 #include "dl_fldigi.h"
+
 
 using namespace std;
 
@@ -174,7 +178,7 @@ void rx_extract_add(int c)
 			number_commas = count(rx_buff.begin(), rx_buff.end(), progdefaults.xmlField_delimiter.at(0));
 			
 			//Gets info for number of fields
-			//min_number_fields = atoi(progdefaults.xmlFields.c_str());
+			min_number_fields = progdefaults.xmlFields;
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
 			if (rx_buff.length() < total_string_length) {
@@ -193,6 +197,9 @@ void rx_extract_add(int c)
 						cout << "Need to enter a callsign, please go to 'Configure' then 'Operator' and add a callsign/nickname.\n";
 #endif
 					}
+					
+			
+					habCustom->value(rx_buff.c_str());
 			}
 //
 			rx_extract_reset();
