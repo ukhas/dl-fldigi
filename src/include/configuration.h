@@ -1083,7 +1083,7 @@
 /* Flight Data */																		\
 		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")							\
 		ELEM_(std::string, xmlField_delimiter, "", "", ",")								\
-		ELEM_(std::string, xmlFields, "", "", "7")										\
+		ELEM_(int, xmlFields, "", "", 7)										\
 		ELEM_(std::string, xmlCallsign, "", "", "")										\
 /* GPS Device Info */																	\
 		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")								\

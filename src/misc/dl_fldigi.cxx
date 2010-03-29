@@ -23,17 +23,12 @@
 #include "qrunner.h"
 
 #include "irrXML.h"
-
 using namespace std;
 using namespace irr; // irrXML is located 
 using namespace io;  // in the namespace irr::io
 
 #define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
-
-bool dl_fldigi_downloaded_once = false;
-int dl_fldigi_initialised = 0;
-const char *dl_fldigi_cache_file;
 
 struct dl_fldigi_post_threadinfo
 {
@@ -47,8 +42,27 @@ struct dl_fldigi_download_threadinfo
 	FILE *file;
 };
 
+struct payload
+{
+	char *name;
+	char *sentence_delimiter;
+	char *field_delimiter;
+	int fields;
+	char *callsign;
+	int  shift;
+	int  baud;
+	int  coding;
+	struct payload *next;
+};
+
+bool dl_fldigi_downloaded_once = false;
+int dl_fldigi_initialised = 0;
+const char *dl_fldigi_cache_file;
+struct payload *payload_list = NULL;
+
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
+void dl_fldigi_delete_payloads();
 
 void dl_fldigi_init()
 {
@@ -441,10 +455,40 @@ void *dl_fldigi_download_thread(void *thread_argument)
 	pthread_exit(0);
 }
 
+void dl_fldigi_delete_payloads()
+{
+	struct payload *d, *n;
+
+	if (bHAB)
+	{
+		habFlightXML->clear();
+	}
+
+	d = payload_list;
+	while (d != NULL)
+	{
+		#define auto_free(x)   do { void *a = (x); if (a != NULL) { free(a); } } while (0)
+
+		auto_free(d->name);
+		auto_free(d->sentence_delimiter);
+		auto_free(d->field_delimiter);
+		auto_free(d->callsign);
+
+		n = d->next;
+		free(d);
+		d = n;
+	}
+
+	payload_list = NULL;
+}
+
 void dl_fldigi_update_payloads()
 {
 	FILE *file;
-	int r1;
+	int r1, r_shift, r_baud;
+	const char *r_coding;
+	IrrXMLReader *xml;
+	struct payload *p, *n;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
@@ -477,212 +521,206 @@ void dl_fldigi_update_payloads()
 		fprintf(stderr, "dl_fldigi: opened file, now updating UI...\n");
 	#endif
 
-	/* Do your stuff here. */
+	dl_fldigi_delete_payloads();
+
+	xml = createIrrXMLReader(file);
+
+	if (!xml)
+	{
+		fprintf(stderr, "dl_fldigi: parsing payload info: createIrrXMLReader failed\n");
+		flock(fileno(file), LOCK_UN);
+		fclose(file);
+		return;
+	}
+
+	p = payload_list;
+
+	while (xml->read())
+	{
+		if (xml->getNodeType() == EXN_ELEMENT)
+		{
+			if (strcmp("name", xml->getNodeName()) == 0)
+			{
+				n = (struct payload *) malloc(sizeof(struct payload));
+
+				if (n == NULL)
+				{
+					fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct payload'\n", sizeof(struct payload));
+					dl_fldigi_delete_payloads();
+					delete xml;
+					flock(fileno(file), LOCK_UN);
+					fclose(file);
+					return;
+				}
+
+				/* Nulls all the char pointers, the next pointer, zeroes the ints */
+				memset(n, 0, sizeof(struct payload));
+
+				if (p == NULL)
+				{
+					payload_list = n;
+					p = n;
+				}
+				else
+				{
+					p->next = n;
+					p = p->next;
+				}
+
+				xml->read();
+				p->name = strdup(xml->getNodeData());
+				xml->read();
+
+				if (bHAB)
+				{
+					habFlightXML->add(p->name);
+				}
+
+				#ifdef DL_FLDIGI_DEBUG
+					fprintf(stderr, "dl_fldigi: adding payload '%s'\n", p->name);
+				#endif
+			}
+			else if (strcmp("sentence_delimiter", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				p->sentence_delimiter = strdup(xml->getNodeData());
+				xml->read();
+			}
+			else if (strcmp("field_delimiter", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				p->field_delimiter = strdup(xml->getNodeData());
+				xml->read();
+			}
+			else if (strcmp("fields", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				p->fields = atoi(xml->getNodeData());
+				xml->read();
+			}
+			else if (strcmp("callsign", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				p->callsign = strdup(xml->getNodeData());
+				xml->read();
+			}
+			else if (strcmp("shift", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				r_shift = atoi(xml->getNodeData());
+				xml->read();
+
+				if (r_shift == 170)
+				{
+					p->shift = 4;
+				}
+				else if (r_shift == 350)
+				{
+					p->shift = 7;
+				}
+				else if (r_shift == 425)
+				{
+					p->shift = 8;
+				}
+			}
+			else if (strcmp("baud", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				r_baud = atoi(xml->getNodeData());
+				xml->read();
+
+				if (r_baud == 45)
+				{
+					p->baud = 0;
+				}
+				else if (r_baud == 50)
+				{
+					p->baud = 2;
+				}
+				else if (r_baud == 100)
+				{
+					p->baud = 5;
+				}
+				else if (r_baud == 150)
+				{
+					p->baud = 7;
+				}
+				else if (r_baud == 200)
+				{
+					p->baud = 8;
+				}
+				else if (r_baud == 300)
+				{
+					p->baud = 9;
+				}
+			}
+			else if (strcmp("coding", xml->getNodeName()) == 0)
+			{
+				/* Why does this need to be commented? XXX */
+				// xml->read();
+				r_coding = xml->getNodeData();
+				xml->read();
+
+				if (strcmp("baudot", r_coding) == 0)
+				{
+					p->coding = 0;
+				}
+				else if (strcmp("ascii-7", r_coding) == 0)
+				{
+					p->coding = 1;
+				}
+				else if (strcmp("ascii-8", r_coding) == 0)
+				{
+					p->coding = 2;
+				}
+			}
+		}
+	}
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: UI updated.\n");
 	#endif
 
+	delete xml;
 	flock(fileno(file), LOCK_UN);
 	fclose(file);
 }
 
 void dl_fldigi_select_payload(Fl_Choice* o, void *a)
 {
+	struct payload *p;
 
-}
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: (thread %li) attempting to configure payload...\n", pthread_self());
+	#endif
 
-#if 0
-void dl_selFlightXML(Fl_Choice* o, void*) {
-	progdefaults.flight_sel = o->text();
-	progdefaults.flight_sel_num = o->value();
-#if !defined(__CYGWIN__)
-	cout << progdefaults.flight_sel.c_str() << endl;
-#endif
-	CURL *curl;
-	CURLcode res;
-	FILE * xmlFile;
-	string server_address = "http://www.robertharrison.org/listen/";
-	string xml_file, xml_file_dir;
-  	curl = curl_easy_init();
-	if(curl) {
-		//Also in here we need to add a function to check that we have the most recent version
-		xml_file = progdefaults.flight_sel;
-		xml_file.append(".xml");
-		//make string of directory and file
-		xml_file_dir = FlightXMLDir;
-		xml_file_dir.append(xml_file);
-#if !defined(__CYGWIN__)
-		cout << xml_file_dir << endl;
-#endif
-		//make string of server address and file
-		server_address.append(xml_file);
-#if !defined(__CYGWIN__)
-		cout << server_address << endl;
-#endif
-		xmlFile = fopen (xml_file_dir.c_str(),"w");
-		curl_easy_setopt(curl, CURLOPT_URL, server_address.c_str());
-		curl_easy_setopt(curl , CURLOPT_WRITEDATA , xmlFile );
-		res = curl_easy_perform(curl);
-		//always cleanup
-		fclose(xmlFile);
-		curl_easy_cleanup(curl);
-	}
-	IrrXMLReader* xml = createIrrXMLReader(xml_file_dir.c_str());
-	// strings for storing the data we want to get out of the file
-	string sentence_delimiter;
-	string field_delimiter;
-	string fields;
-	string callsign;
-	string xmldata;
-	string xmlfielddata;
-	string seqnumber;
-	
-	while(xml && xml->read())
+	p = payload_list;
+	while (p != NULL)
 	{
-		if (!strcmp("sentence_delimiter", xml->getNodeName())) {
-			xml->read();
-			sentence_delimiter = xml->getNodeData();
-			progdefaults.xmlSentence_delimiter = sentence_delimiter;
-			//telemSentence_delimiter->value(progdefaults.xmlSentence_delimiter.c_str());
-			xml->read();
-		}
-		else if (!strcmp("field_delimiter", xml->getNodeName())) {
-			xml->read();
-			field_delimiter = xml->getNodeData();
-			progdefaults.xmlField_delimiter = field_delimiter;
-			//telemField_delimiter->value(progdefaults.xmlField_delimiter.c_str());
-			xml->read();
-		}
-		else if (!strcmp("fields", xml->getNodeName())) {
-			xml->read();
-			fields = xml->getNodeData();
-			progdefaults.xmlFields = fields;
-			//telemFields->value(progdefaults.xmlFields.c_str());
-			xml->read();
-		}
-		else if (!strcmp("callsign", xml->getNodeName())) {
-			xml->read();
-			callsign = xml->getNodeData();
-			if (callsign != "dbfield") {
-				progdefaults.xmlCallsign = callsign;
-			}
-			xml->read();
-		}
-		else if (!strcmp("shift", xml->getNodeName())) {
-			xml->read();
-			fields = xml->getNodeData();
-			 int shift_int= atoi(fields.c_str());
-			if (shift_int == 170) {
-				progdefaults.rtty_shift = 4;
-				}
-			else if (shift_int == 350) {
-				progdefaults.rtty_shift = 7;
-				}
-			else if (shift_int == 425) {
-				progdefaults.rtty_shift = 8;
-				}
+		if (p->name != NULL && strcmp(p->name, o->text()) == 0)
+		{
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: configuring payload '%s'...\n", p->name);
+			#endif
+
+			progdefaults.xmlSentence_delimiter = p->sentence_delimiter;
+			progdefaults.xmlField_delimiter = p->field_delimiter;
+			progdefaults.xmlFields = p->fields;
+			progdefaults.xmlCallsign = p->callsign;
+			progdefaults.rtty_shift = p->shift;
+			progdefaults.rtty_baud = p->baud;
+			progdefaults.rtty_bits = p->coding;
+
 			selShift->value(progdefaults.rtty_shift);
-			resetRTTY();
-			xml->read();
-		}
-		else if (!strcmp("baud", xml->getNodeName())) {
-			xml->read();
-			fields = xml->getNodeData();
-			int baud_int = atoi(fields.c_str());
-			if (baud_int == 45) {
-				progdefaults.rtty_baud = 0;
-				}
-			else if (baud_int == 50) {
-				progdefaults.rtty_baud = 2;
-				}
-			else if (baud_int == 100) {
-				progdefaults.rtty_baud = 5;
-				}
-			else if (baud_int == 150) {
-				progdefaults.rtty_baud = 7;
-				}
-			else if (baud_int == 200) {
-				progdefaults.rtty_baud = 8;
-				}
-			else if (baud_int == 300) {
-				progdefaults.rtty_baud = 9;
-				}
 			selBaud->value(progdefaults.rtty_baud);
-			resetRTTY();
-			xml->read();
-		}
-		else if (!strcmp("coding", xml->getNodeName())) {
-			xml->read();
-			fields = xml->getNodeData();
-			// "5 (baudot)|7 (ascii)|8 (ascii)";
-			if (fields == "baudot") {
-				progdefaults.rtty_bits = 0;
-				}
-			else if (fields == "ascii-7") {
-				progdefaults.rtty_bits = 1;
-				}
-			else if (fields == "ascii-8") {
-				progdefaults.rtty_bits = 2;
-				}
 			selBits->value(progdefaults.rtty_bits);
 			resetRTTY();
-			xml->read();
-		}
-		}
-#if !defined(__CYGWIN__)
-	cout << "Done" << endl;
-#endif
-	// delete the xml parser after usage
-	delete xml;
-	progdefaults.changed = true;
-}
- // This is the writer call back function used by curl  
- static int writer(char *data, size_t size, size_t nmemb, std::string *buffer)  
- {  
-   // What we will return  
-   int result = 0;  
-   
-   // Is there anything in the buffer?  
-   if (buffer != NULL)  
-   {  
-     // Append the data to the buffer  
-     buffer->append(data, size * nmemb);  
-   
-     // How much did we write?  
-     result = size * nmemb;  
-   }  
-   
-   return result;  
- } 
 
-void dl_xmlList() {
-	CURL *curl;
-	CURLcode res;
-	string buffer;
-	int i=0;
-	curl = curl_easy_init();
-	if(curl) {
-		//Also in here we need to add a function to check that we have the most recent version
-		curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/payload.php");
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);  
-		curl_easy_setopt(curl , CURLOPT_WRITEDATA , &buffer );
-		res = curl_easy_perform(curl);
-		//
-		/* always cleanup */
-		curl_easy_cleanup(curl);
-	}
-	//Remove \n and add | (needed for GUI selection
-	for(i = buffer.find("\n", 0); i != string::npos; i = buffer.find("\n", i))
-	{
-    i++;  // Move past the last discovered instance to avoid finding same
-          // string
-	buffer.erase(i-1, 1);
-	buffer.insert(i-1, "|");
-	}
-	progdefaults.flightsAvaliable = buffer;
-	//cout << buffer << endl; // Print out flightsAvailable string
+			return;
+		}
 
-	//bool have_config = progdefaults.readDefaultsXML();
+		p = p->next;
+	}
+
+	fprintf(stderr, "dl_fldigi: (should never happen): unable to find payload to configure\n");
 }
-#endif
