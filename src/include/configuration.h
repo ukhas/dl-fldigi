@@ -1081,9 +1081,6 @@
               "Reception report server port",                                           \
               "4739")																	\
 /* Flight Data */																		\
-		ELEM_(std::string, flight_sel, "XMLSELECTED", "", "")							\
-		ELEM_(int, flight_sel_num, "XMLSELECTEDNUM", "", 0)								\
-		ELEM_(std::string, flightsAvaliable, "", "", "")								\
 		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")							\
 		ELEM_(std::string, xmlField_delimiter, "", "", ",")								\
 		ELEM_(std::string, xmlFields, "", "", "7")										\

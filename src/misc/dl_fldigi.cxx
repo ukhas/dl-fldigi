@@ -12,6 +12,8 @@
 #include <pthread.h>
 #include <sys/file.h>
 
+#include <FL/Fl_Choice.H>
+
 #include "configuration.h"
 #include "dl_fldigi.h"
 #include "util.h"
@@ -29,6 +31,7 @@ using namespace io;  // in the namespace irr::io
 #define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
 
+bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
 
@@ -482,6 +485,11 @@ void dl_fldigi_update_payloads()
 
 	flock(fileno(file), LOCK_UN);
 	fclose(file);
+}
+
+void dl_fldigi_select_payload(Fl_Choice* o, void *a)
+{
+
 }
 
 #if 0

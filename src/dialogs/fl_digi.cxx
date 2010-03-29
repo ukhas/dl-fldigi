@@ -1108,8 +1108,14 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 
 void cb_toggle_dl_online(Fl_Widget *, void *) {
 	progdefaults.loadDefaults();
-	// dl_online is a bool
 	progdefaults.dl_online = !progdefaults.dl_online;
+
+	/* If this is the first time we've come online... */
+	if (progdefaults.dl_online && !dl_fldigi_downloaded_once)
+	{
+		dl_fldigi_download();
+		dl_fldigi_downloaded_once = 1;
+	}
 }
 
 //jcoxon added 21/3/10
@@ -2079,7 +2085,7 @@ bool clean_exit(void) {
 #define RIGCONTEST_MLABEL  _("Rig control and contest")
 #define DOCKEDSCOPE_MLABEL _("Docked scope")
 #define WF_MLABEL _("Minimal controls")
-
+#define DLFLDIGI_ONLINE_LABEL _("Online")
 
 bool restore_minimize = false;
 
@@ -2460,6 +2466,17 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(_("Event log"), dialog_information_icon), 0, cb_mnuDebug, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Check for updates..."), system_software_update_icon), 0, cb_mnuCheckUpdate, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("&About"), help_about_icon), 'a', cb_mnuAboutURL, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
+/* TODO: Remove this. As a debug/temporary measure, I'm adding in the DL Client menu to non --hab mode,
+ * since we don't yet have any other UI as complete as this to configure online/offline, etc. */
+/* When you remove this; also remove the toggles entry on line TODO: 3791 */
+{_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"  ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3772,6 +3789,8 @@ void create_fl_digi_main_primary() {
 	if (!dxcc_is_open())
 		getMenuItem(COUNTRIES_MLABEL)->hide();
 
+        /* TODO: REMOVE ME: SEE LINE 2471 */ if (progdefaults.dl_online) getMenuItem(DLFLDIGI_ONLINE_LABEL)->set();
+
 	UI_select();
 	wf->UI_select(progStatus.WF_UI);
 
@@ -3907,7 +3926,7 @@ Fl_Menu_Item alt_menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "Online", 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -4326,16 +4345,14 @@ void create_fl_digi_main_dl_fldigi() {
 		Y = Hmenu + pad;
 		
 		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
-		const char *flights = progdefaults.flightsAvaliable.c_str();
-		//const char *flights = "ATLAS|ICARUS";
-		{ Fl_Choice* o = habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, _("Flight"));
+
+		{ habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, _("Flight"));
 		habFlightXML->tooltip(_("Select flight you are tracking"));
 		habFlightXML->down_box(FL_BORDER_BOX);
 		habFlightXML->align(FL_ALIGN_TOP);
 		habFlightXML->when(FL_WHEN_CHANGED);
-		habFlightXML->callback((Fl_Callback*)dl_selFlightXML);
-		o->add(flights);
-		} // Fl_Choice* selFlightXML
+		habFlightXML->callback((Fl_Callback *) dl_fldigi_select_payload);
+		}
 		
 		{ habTime = new Fl_Input2((rightof(habFlightXML) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
 		habTime->tooltip(_("Time"));
@@ -4535,7 +4552,7 @@ void create_fl_digi_main_dl_fldigi() {
 	struct {
 		bool var; const char* label;
 	} toggles[] = {
-		{ progStatus.DOCKEDSCOPE, DOCKEDSCOPE_MLABEL }
+		{ progStatus.DOCKEDSCOPE, DOCKEDSCOPE_MLABEL },
 	};
 	Fl_Menu_Item* toggle;
 	for (size_t i = 0; i < sizeof(toggles)/sizeof(*toggles); i++) {
@@ -4547,6 +4564,9 @@ void create_fl_digi_main_dl_fldigi() {
 			}
 		}
 	}
+
+	if (progdefaults.dl_online)
+		getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_)->set();
 
 	make_scopeviewer();
 	noop_controls();

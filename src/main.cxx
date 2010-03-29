@@ -247,7 +247,6 @@ int main(int argc, char ** argv)
 	if (main_window_title.empty())
 		main_window_title = PACKAGE_TARNAME;
 
-	dl_xmlList();
 	checkdirectories();
 	try {
 		debug::start(string(HomeDir).append("status_log.txt").c_str());
@@ -289,7 +288,22 @@ int main(int argc, char ** argv)
 		qsl_open(string(HomeDir).append("AGMemberList.txt").c_str(), QSL_EQSL);
 
 	progStatus.loadLastState();
+
+	/* if --hab was specified, default dl_online to true */
+	progdefaults.dl_online = bHAB;
+
 	create_fl_digi_main(argc, argv);
+
+	/* Attempt regardless to load the cache of payload information */
+	dl_fldigi_update_payloads();
+
+	/* Only if we're online, go ahead and automatically download new payload info. */
+	if (progdefaults.dl_online)
+	{
+		/* This must be called after the UI is created */
+		dl_fldigi_download();
+		dl_fldigi_downloaded_once = 1;
+	}
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
@@ -331,10 +345,6 @@ int main(int argc, char ** argv)
 #if BENCHMARK_MODE
 	return setup_benchmark();
 #endif
-
-	/* FIXME: Move this somewhere else? */
-	dl_fldigi_download();
-	/* dl_fldigi_download will refuse to download if we are currently set 'offline' */
 
 	FSEL::create();
 
