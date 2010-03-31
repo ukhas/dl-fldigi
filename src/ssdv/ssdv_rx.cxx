@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <stdint.h>
-#include <FL/Fl_Double_Window.h>
+#include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_RGB_Image.H>
 #include <FL/Fl_Progress.H>
