@@ -20,6 +20,7 @@
 #include "confdialog.h"
 #include "fl_digi.h"
 #include "main.h"
+#include "threads.h"
 #include "qrunner.h"
 
 #include "irrXML.h"
@@ -424,6 +425,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 	struct dl_fldigi_download_threadinfo *t;
 	t = (struct dl_fldigi_download_threadinfo *) thread_argument;
 	CURLcode result;
+	int r1;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
@@ -432,17 +434,31 @@ void *dl_fldigi_download_thread(void *thread_argument)
 	result = curl_easy_perform(t->curl);
 
 	curl_easy_cleanup(t->curl);
-	flock(fileno(t->file), LOCK_UN);
-	fclose(t->file);
-	free(t);
 
 	if (result == 0)
 	{
+		/* Swap our exclusive lock created in download() for a shared lock.
+		 * Relocking it shared means that update_payloads() can get its own shared lock on the
+		 * file without blocking, but download() cannot open its exclusive lock that might
+		 * start a new download thread. This effectivly reserves DL_FLDIGI_TID for our use. */
+
+		r1 = flock(fileno(t->file), LOCK_SH | LOCK_NB);
+
+		if (r1 != 0)
+		{
+			perror("dl_fldigi: f-re-lock cache file failed");
+			flock(fileno(t->file), LOCK_UN);
+			fclose(t->file);
+			free(t);
+			pthread_exit(0);
+		}
+
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
 		/* ask qrunner to deal with this */
+		SET_THREAD_ID(DL_FLDIGI_TID);
 		REQ(dl_fldigi_update_payloads);
 	}
 	else
@@ -451,6 +467,10 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 	}
+
+	flock(fileno(t->file), LOCK_UN);
+	fclose(t->file);
+	free(t);
 
 	pthread_exit(0);
 }
