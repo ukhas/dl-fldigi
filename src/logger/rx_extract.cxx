@@ -178,7 +178,7 @@ void rx_extract_add(int c)
 			number_commas = count(rx_buff.begin(), rx_buff.end(), progdefaults.xmlField_delimiter.at(0));
 			
 			//Gets info for number of fields
-			min_number_fields = atoi(progdefaults.xmlFields.c_str());
+			min_number_fields = progdefaults.xmlFields;
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
 			if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) {
