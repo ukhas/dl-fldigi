@@ -266,11 +266,6 @@ void ssdv_rx::put_byte(uint8_t byte)
 	{
 		uint8_t *b = &buffer[bc];
 		
-		/* Got one! ... append it to the test file */
-		FILE *f = fopen("/home/phil/packets.data", "ab");
-		fwrite(&b[6], 1, PAYLOAD_SIZE, f);
-		fclose(f);
-		
 		/* Get details of the packet */
 		pkt_blockno = b[3];
 		pkt_imageid = b[2];
