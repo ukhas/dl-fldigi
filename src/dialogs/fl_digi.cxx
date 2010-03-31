@@ -133,6 +133,8 @@
 #include "speak.h"
 #include "flmisc.h"
 
+#include "ssdv_rx.h"
+
 using namespace std;
 
 //jcoxon
@@ -147,6 +149,7 @@ bool withnoise = false;
 Fl_Double_Window	*fl_digi_main      = (Fl_Double_Window *)0;
 Fl_Help_Dialog 		*help_dialog       = (Fl_Help_Dialog *)0;
 Fl_Double_Window	*scopeview         = (Fl_Double_Window *)0;
+ssdv_rx			*ssdv              = (ssdv_rx *)0;
 
 MixerBase* mixer = 0;
 
@@ -1519,6 +1522,10 @@ void cb_mnuViewer(Fl_Menu_ *, void *) {
 	openViewer();
 }
 
+void cb_mnuShowSSDVRX(Fl_Menu_ *, void *) {
+	ssdv->show();
+}
+
 void cb_mnuShowCountries(Fl_Menu_ *, void *)
 {
 	notify_dxcc_show();
@@ -2427,6 +2434,7 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(MFSK_IMAGE_MLABEL, image_icon), 'm', (Fl_Callback*)cb_mnuPicViewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("PSK browser")), 'p', (Fl_Callback*)cb_mnuViewer, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Logbook")), 'l', (Fl_Callback*)cb_mnuShowLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("SSDV RX")), 's', (Fl_Callback*)cb_mnuShowSSDVRX, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(COUNTRIES_MLABEL), 'o', (Fl_Callback*)cb_mnuShowCountries, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 
 { make_icon_label(_("Controls")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
@@ -3740,6 +3748,10 @@ void create_fl_digi_main_primary() {
 	scopeview->end();
 	scopeview->hide();
 
+	ssdv = new ssdv_rx(320, 240 + 60, _("SSDV RX"));
+	ssdv->xclass(PACKAGE_NAME);
+	ssdv->hide();
+
 	if (!progdefaults.menuicons)
 		toggle_icon_labels();
 
@@ -4774,6 +4786,17 @@ void put_rx_char(unsigned int data)
 #else
 	REQ(put_rx_char_flmain, data);
 #endif
+}
+
+static void put_rx_ssdv_flmain(unsigned int data)
+{
+	ENSURE_THREAD(FLMAIN_TID);
+	ssdv->put_byte(data);
+}
+
+void put_rx_ssdv(unsigned int data)
+{
+	REQ(put_rx_ssdv_flmain, data);
 }
 
 static string strSecText = "";

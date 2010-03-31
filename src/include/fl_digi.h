@@ -164,6 +164,7 @@ extern void set_zdata(complex *, int);
 
 extern void set_CWwpm();
 extern void put_rx_char(unsigned int data);
+extern void put_rx_ssdv(unsigned int data);
 extern void put_sec_char( char chr );
 
 enum status_timeout {
