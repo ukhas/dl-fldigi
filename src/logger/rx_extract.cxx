@@ -81,7 +81,7 @@ Save tags and all enclosed text to date-time stamped file, ie:\n\n\
 const char *txtWrapInfo = "\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
 Save tags and all enclosed text to date-time stamped file, ie:\n\n\
-    ~/NBEMS.files/WRAP/recv/extract-20090127-092515.wrap";
+    ~/.nbems/WRAP/recv/extract-20090127-092515.wrap";
 #endif
 
 #define   bufsize  16
@@ -118,6 +118,7 @@ void rx_extract_reset()
 void rx_extract_add(int c)
 {
 	if (!c) return;
+	check_nbems_dirs();
 
 	if (!bInit) {
 		rx_extract_reset();

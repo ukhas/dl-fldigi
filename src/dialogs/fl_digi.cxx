@@ -40,6 +40,7 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <dirent.h>
 
 #include "gettext.h"
 #include "fl_digi.h"
@@ -103,8 +104,6 @@
 
 #include "icons.h"
 
-#include "status.h"
-
 #include "rigsupport.h"
 
 #include "qrunner.h"
@@ -150,6 +149,11 @@ Fl_Double_Window	*scopeview         = (Fl_Double_Window *)0;
 
 MixerBase* mixer = 0;
 
+int rightof(Fl_Widget* w);
+int leftof(Fl_Widget* w);
+int above(Fl_Widget* w);
+int below(Fl_Widget* w);
+
 //bool	useCheckButtons;
 
 Fl_Group			*mnuFrame;
@@ -169,6 +173,8 @@ Raster				*FHdisp;
 Fl_Box				*StatusBar = (Fl_Box *)0;
 Fl_Box				*Status2 = (Fl_Box *)0;
 Fl_Box				*Status1 = (Fl_Box *)0;
+Fl_Counter2			*cntCW_WPM=(Fl_Counter2 *)0;
+Fl_Button			*btnCW_Default=(Fl_Button *)0;
 Fl_Box				*WARNstatus = (Fl_Box *)0;
 Fl_Button			*MODEstatus = (Fl_Button *)0;
 Fl_Button 			*btnMacro[NUMMACKEYS];
@@ -258,7 +264,6 @@ Fl_Button			*qso_opPICK3;
 Fl_Button			*qsoClear3;
 Fl_Button			*qsoSave3;
 
-Fl_Box				*StatusSpace = (Fl_Box *)0;
 Fl_Input2			*inpCall4;
 
 Fl_Browser			*qso_opBrowser = (Fl_Browser *)0;
@@ -648,6 +653,17 @@ void startup_modem(modem* m, int f)
 	restoreFocus();
 
 	trx_mode id = m->get_mode();
+
+	if (id == MODE_CW) {
+		cntCW_WPM->show();
+		btnCW_Default->show();
+		Status1->hide();
+	} else {
+		cntCW_WPM->hide();
+		btnCW_Default->hide();
+		Status1->show();
+	}
+
 	if (id >= MODE_HELL_FIRST && id <= MODE_HELL_LAST) {
 		ReceiveText->hide();
 		FHdisp->show();
@@ -1472,6 +1488,14 @@ void cb_ShowConfig(Fl_Widget*, void*)
 
 void cb_ShowNBEMS(Fl_Widget*, void*)
 {
+	DIR *nbems_dir;
+	nbems_dir = opendir(NBEMS_dir.c_str());
+	if (!nbems_dir) {
+		int ans = fl_choice2(_("Do not exist, create?"), _("No"), _("Yes"), 0);
+		if (!ans) return;
+		check_nbems_dirs();
+	}
+	closedir(nbems_dir);
 	cb_mnuVisitURL(0, (void*)NBEMS_dir.c_str());
 }
 
@@ -1614,7 +1638,7 @@ if (bHAB) return;
 	Fl_Input* in[] = {
 		inpCall1, inpCall2, inpCall3, inpCall4,
 		inpName1, inpName2,
-		inpTimeOn1, inpTimeOn2,
+		inpTimeOn1, inpTimeOn2, inpTimeOn3,
 		inpRstIn1, inpRstIn2,
 		inpRstOut1, inpRstOut2,
 		inpQth, inpLoc, inpAZ, inpState, inpVEprov, inpCountry,
@@ -2125,9 +2149,7 @@ void UI_select()
 		TopFrame1->hide();
 		TopFrame2->hide();
 		TopFrame3->hide();
-		Status1->hide();
 		Status2->hide();
-		StatusSpace->show();
 		inpCall4->show();
 		inpCall = inpCall4;
 		fl_digi_main->init_sizes();
@@ -2206,9 +2228,7 @@ void UI_select()
 			qsoFreqDisp = qsoFreqDisp3;
 		}
 	}
-	StatusSpace->hide();
 	inpCall4->hide();
-	Status1->show();
 	Status2->show();
 	fl_digi_main->init_sizes();
 }
@@ -2878,6 +2898,32 @@ void setwfrange() {
 	wf->opmode();
 }
 
+void sync_cw_parameters()
+{
+	active_modem->sync_parameters();
+	active_modem->update_Status();
+}
+
+void cb_cntCW_WPM(Fl_Widget * w, void *v)
+{
+	Fl_Counter2 *cnt = (Fl_Counter2 *) w;
+	progdefaults.CWspeed = (int)cnt->value();
+	sldrCWxmtWPM->value(progdefaults.CWspeed);
+	if (sldrCWfarnsworth->value() > progdefaults.CWspeed)
+		sldrCWfarnsworth->value(progdefaults.CWspeed);
+	sldrCWfarnsworth->maximum(progdefaults.CWspeed);
+	progdefaults.changed = true;
+	sync_cw_parameters();
+	restoreFocus();
+}
+
+void cb_btnCW_Default(Fl_Widget *w, void *v)
+{
+	active_modem->toggleWPM();
+	restoreFocus();
+}
+
+
 void create_fl_digi_main_primary() {
 
 	int fnt = fl_font();
@@ -2892,8 +2938,7 @@ void create_fl_digi_main_primary() {
 
 	x_qsoframe += rig_control_width;
 
-	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
-//	if (progStatus.mainH < HNOM) progStatus.mainH = HNOM;
+	IMAGE_WIDTH = 4000;
 
 	Hwfall = progdefaults.wfheight;
 
@@ -3418,68 +3463,80 @@ void create_fl_digi_main_primary() {
 			qsoSave3->tooltip(_("Save"));
 
 			fl_font(FL_HELVETICA, FL_NORMAL_SIZE);
-
 			const char *label2a = _("On");
-			btnTimeOn3 = new Fl_Button(
+			const char *label3a = _("Off");
+			const char *label4a = _("Call");
+			const char *label5a = _("# S");
+			const char *label6a = _("# R");
+			const char *label7a = _("Ex");
+			const char *xData = "00000";
+			const char *xCall = "WW8WWW/WWWW";
+			int   wData = fl_width(xData);
+			int   wCall = fl_width(xCall);
+
+			Fl_Box *bx4a = new Fl_Box(
 				pad + rightof(qsoSave3), y,
+				fl_width(label4a), h, label4a);
+			inpCall3 = new Fl_Input2(
+				pad + bx4a->x() + bx4a->w(), y,
+				wCall, h, "");
+			inpCall3->align(FL_ALIGN_INSIDE);
+			inpCall3->tooltip(_("Other call"));
+
+			Fl_Box *bx7a = new Fl_Box(
+				rightof(inpCall3), y,
+				fl_width(label7a), h, label7a);
+			bx7a->align(FL_ALIGN_INSIDE);
+			inpXchgIn2 = new Fl_Input2(
+				rightof(bx7a), y,
+				progStatus.mainW 
+				- rightof(bx7a) - pad
+				- fl_width(label6a) - wData - pad
+				- fl_width(label5a) - wData - pad
+				- fl_width(label2a) - wData - pad
+				- fl_width(label3a) - wData - pad, 
+				h, "");
+			inpXchgIn2->tooltip(_("Contest exchange in"));
+
+			Fl_Box *bx6a = new Fl_Box(
+				rightof(inpXchgIn2), y,
+				fl_width(label6a), h, label6a);
+			bx6a->align(FL_ALIGN_INSIDE);
+			inpSerNo2 = new Fl_Input2(
+				rightof(bx6a) + pad, y,
+				wData, h, "");
+			inpSerNo2->tooltip(_("Received serial number"));
+
+			Fl_Box *bx5a = new Fl_Box(
+				rightof(inpSerNo2), y,
+				fl_width(label5a), h, label5a);
+			bx5a->align(FL_ALIGN_INSIDE);
+			outSerNo2 = new Fl_Input2(
+				rightof(bx5a) + pad, y,
+				wData, h, "");
+			outSerNo2->tooltip(_("Sent serial number (read only)"));
+			outSerNo2->type(FL_NORMAL_OUTPUT);
+
+			btnTimeOn3 = new Fl_Button(
+				rightof(outSerNo2), y,
 				fl_width(label2a), h, label2a);
 			btnTimeOn3->tooltip(_("Press to update"));
 			btnTimeOn3->box(FL_NO_BOX);
 			btnTimeOn3->callback(cb_btnTimeOn);
 			inpTimeOn3 = new Fl_Input2(
-				pad + btnTimeOn3->x() + btnTimeOn3->w(), y,
-				w_inpTime - 2, h, "");
+				btnTimeOn3->x() + btnTimeOn3->w() + pad, y,
+				wData - 2, h, "");
 			inpTimeOn3->tooltip(_("Time On"));
 			inpTimeOn3->type(FL_INT_INPUT);
 
-			const char *label3a = _("Off");
 			Fl_Box *bx3a = new Fl_Box(pad + rightof(inpTimeOn3), y,
 				fl_width(label3a), h, label3a);
 			inpTimeOff3 = new Fl_Input2(
-				pad + bx3a->x() + bx3a->w(), y,
-				w_inpTime - 2, h, "");
+				bx3a->x() + bx3a->w() + pad, y,
+				wData, h, "");
 			inpTimeOff3->tooltip(_("Time Off"));
 			inpTimeOff3->type(FL_NORMAL_OUTPUT);
 
-			const char *label4a = _("Call");
-			Fl_Box *bx4a = new Fl_Box(
-				pad + rightof(inpTimeOff3), y,
-				fl_width(label4a), h, label4a);
-			inpCall3 = new Fl_Input2(
-				pad + bx4a->x() + bx4a->w(), y,
-				w_inpCall - 10, h, "");
-			inpCall3->tooltip(_("Other call"));
-
-			const char *label5a = _("# S");
-			Fl_Box *bx5a = new Fl_Box(
-				pad + rightof(inpCall3), y,
-				fl_width(label5a), h, label5a);
-			bx5a->align(FL_ALIGN_INSIDE);
-			outSerNo2 = new Fl_Input2(
-				rightof(bx5a), y,
-				w_SerNo, h, "");
-			outSerNo2->tooltip(_("Sent serial number (read only)"));
-			outSerNo2->type(FL_NORMAL_OUTPUT);
-
-			const char *label6a = _("# R");
-			Fl_Box *bx6a = new Fl_Box(
-				rightof(outSerNo2), y,
-				fl_width(label6a), h, label6a);
-			bx6a->align(FL_ALIGN_INSIDE);
-			inpSerNo2 = new Fl_Input2(
-				rightof(bx6a), y,
-				w_SerNo, h, "");
-			inpSerNo2->tooltip(_("Received serial number"));
-
-			const char *label7a = _("Ex");
-			Fl_Box *bx7a = new Fl_Box(
-				rightof(inpSerNo2), y,
-				fl_width(label7a), h, label7a);
-			bx7a->align(FL_ALIGN_INSIDE);
-			inpXchgIn2 = new Fl_Input2(
-				rightof(bx7a), y,
-				progStatus.mainW - rightof(bx7a) - pad, h, "");
-			inpXchgIn2->tooltip(_("Contest exchange in"));
 			TopFrame3->end();
 		}
 		TopFrame3->resizable(inpXchgIn2);
@@ -3640,15 +3697,27 @@ void create_fl_digi_main_primary() {
 			MODEstatus->when(FL_WHEN_CHANGED);
 			MODEstatus->tooltip(_("Left click: change mode\nRight click: configure"));
 
+			cntCW_WPM = new Fl_Counter2(rightof(MODEstatus), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, 
+				Ws2n - Hstatus, Hstatus, "");
+			cntCW_WPM->callback(cb_cntCW_WPM);
+			cntCW_WPM->minimum(progdefaults.CWlowerlimit);
+			cntCW_WPM->maximum(progdefaults.CWupperlimit);
+			cntCW_WPM->value(progdefaults.CWspeed);
+			cntCW_WPM->type(1);
+			cntCW_WPM->step(1);
+			cntCW_WPM->tooltip(_("CW transmit WPM"));
+			cntCW_WPM->hide();
+
+			btnCW_Default = new Fl_Button(rightof(cntCW_WPM), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
+				Hstatus, Hstatus, "*");
+			btnCW_Default->callback(cb_btnCW_Default);
+			btnCW_Default->tooltip(_("Default WPM"));
+			btnCW_Default->hide();
+
 			Status1 = new Fl_Box(rightof(MODEstatus), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, Ws2n, Hstatus, "");
 			Status1->box(FL_DOWN_BOX);
 			Status1->color(FL_BACKGROUND2_COLOR);
 			Status1->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
-
-			StatusSpace = new Fl_Box(rightof(MODEstatus), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, Ws2n, Hstatus, "");
-			StatusSpace->box(FL_DOWN_BOX);
-			StatusSpace->color(FL_BACKGROUND2_COLOR);
-			StatusSpace->hide();
 
 			Status2 = new Fl_Box(rightof(Status1), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, Wimd, Hstatus, "");
 			Status2->box(FL_DOWN_BOX);
@@ -3657,7 +3726,7 @@ void create_fl_digi_main_primary() {
 
 			inpCall4 = new Fl_Input2(
 				rightof(Status1), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-				Wimd, Hstatus, "Callsign:");
+				Wimd, Hstatus, "");//"Callsign:");
 			inpCall4->align(FL_ALIGN_LEFT);
 			inpCall4->tooltip(_("Other call"));
 			inpCall4->hide();
@@ -4168,6 +4237,21 @@ void create_fl_digi_main_WF_only() {
 			MODEstatus->callback(status_cb, (void *)0);
 			MODEstatus->when(FL_WHEN_CHANGED);
 			MODEstatus->tooltip(_("Left click: change mode\nRight click: configure"));
+
+			cntCW_WPM = new Fl_Counter2(rightof(MODEstatus), Y, Ws2n - Hstatus, Hstatus, "");
+			cntCW_WPM->callback(cb_cntCW_WPM);
+			cntCW_WPM->minimum(progdefaults.CWlowerlimit);
+			cntCW_WPM->maximum(progdefaults.CWupperlimit);
+			cntCW_WPM->value(progdefaults.CWspeed);
+			cntCW_WPM->tooltip(_("CW transmit WPM"));
+			cntCW_WPM->type(1);
+			cntCW_WPM->step(1);
+			cntCW_WPM->hide();
+
+			btnCW_Default = new Fl_Button(rightof(cntCW_WPM), Y, Hstatus, Hstatus, "*");
+			btnCW_Default->callback(cb_btnCW_Default);
+			btnCW_Default->tooltip(_("Default WPM"));
+			btnCW_Default->hide();
 
 			Status1 = new Fl_Box(rightof(MODEstatus), Y, Ws2n, Hstatus, "");
 			Status1->box(FL_DOWN_BOX);
@@ -4895,6 +4979,7 @@ void set_CWwpm()
 {
 	FL_LOCK_D();
 	sldrCWxmtWPM->value(progdefaults.CWspeed);
+	cntCW_WPM->value(progdefaults.CWspeed);
 	FL_UNLOCK_D();
 }
 
@@ -5396,3 +5481,5 @@ void set_rtty_bits(int bits)
 		}
 	}
 }
+
+
