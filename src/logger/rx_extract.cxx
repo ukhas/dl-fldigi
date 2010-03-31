@@ -81,7 +81,7 @@ Save tags and all enclosed text to date-time stamped file, ie:\n\n\
 const char *txtWrapInfo = "\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
 Save tags and all enclosed text to date-time stamped file, ie:\n\n\
-    ~/NBEMS.files/WRAP/recv/extract-20090127-092515.wrap";
+    ~/.nbems/WRAP/recv/extract-20090127-092515.wrap";
 #endif
 
 #define   bufsize  16
@@ -118,6 +118,7 @@ void rx_extract_reset()
 void rx_extract_add(int c)
 {
 	if (!c) return;
+	check_nbems_dirs();
 
 	if (!bInit) {
 		rx_extract_reset();
@@ -178,7 +179,7 @@ void rx_extract_add(int c)
 			number_commas = count(rx_buff.begin(), rx_buff.end(), progdefaults.xmlField_delimiter.at(0));
 			
 			//Gets info for number of fields
-			min_number_fields = atoi(progdefaults.xmlFields.c_str());
+			min_number_fields = progdefaults.xmlFields;
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
 			if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) {

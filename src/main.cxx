@@ -197,9 +197,7 @@ int main(int argc, char ** argv)
 	appname = argv[0];
 	debug_exec(argv);
 
-	/* Needs to be run once, at the start of the program (calls curl_global_init) when there are no threads,
-	 * since it is the only thread-unsafe/global-modifying function of the library */
-	dl_fldigi_init();
+	set_platform_ui();
 
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
@@ -229,14 +227,17 @@ int main(int argc, char ** argv)
 #else
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/.fldigi/");
 		HomeDir = dirbuf;
-		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/NBEMS.files/");
+		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/.nbems/");
 		NBEMS_dir = dirbuf;
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/");
 		PskMailDir = dirbuf;
 #endif
 	}
 
-	set_platform_ui();
+	/* Needs to be run once, at the start of the program (calls curl_global_init) when there are no threads,
+	 * since it is the only thread-unsafe/global-modifying function of the library 
+	 * dl_fldigi_init requires the "HomeDir" global above. */
+	dl_fldigi_init();
 
 	generate_option_help();
 	generate_version_text();
@@ -246,7 +247,6 @@ int main(int argc, char ** argv)
 	if (main_window_title.empty())
 		main_window_title = PACKAGE_TARNAME;
 
-	dl_xmlList();
 	checkdirectories();
 	try {
 		debug::start(string(HomeDir).append("status_log.txt").c_str());
@@ -288,7 +288,22 @@ int main(int argc, char ** argv)
 		qsl_open(string(HomeDir).append("AGMemberList.txt").c_str(), QSL_EQSL);
 
 	progStatus.loadLastState();
+
+	/* if --hab was specified, default dl_online to true */
+	progdefaults.dl_online = bHAB;
+
 	create_fl_digi_main(argc, argv);
+
+	/* Attempt regardless to load the cache of payload information */
+	dl_fldigi_update_payloads();
+
+	/* Only if we're online, go ahead and automatically download new payload info. */
+	if (progdefaults.dl_online)
+	{
+		/* This must be called after the UI is created */
+		dl_fldigi_download();
+		dl_fldigi_downloaded_once = 1;
+	}
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
@@ -1103,6 +1118,33 @@ static void checkdirectories(void)
 		{ FlightXMLDir, "flightxml", 0}
 	};
 
+	int r;
+	for (size_t i = 0; i < sizeof(fldigi_dirs)/sizeof(*fldigi_dirs); i++) {
+		if (fldigi_dirs[i].suffix)
+			fldigi_dirs[i].dir.assign(HomeDir).append(fldigi_dirs[i].suffix).append(PATH_SEP);
+
+		if ((r = mkdir(fldigi_dirs[i].dir.c_str(), 0777)) == -1 && errno != EEXIST) {
+			cerr << _("Could not make directory") << ' ' << fldigi_dirs[i].dir
+			     << ": " << strerror(errno) << '\n';
+			exit(EXIT_FAILURE);
+		}
+		else if (r == 0 && fldigi_dirs[i].new_dir_func)
+			fldigi_dirs[i].new_dir_func();
+	}
+
+}
+
+bool nbems_dirs_checked = false;
+
+void check_nbems_dirs(void)
+{
+	if (nbems_dirs_checked) return;
+
+	struct DIRS {
+		string& dir;
+		const char* suffix;
+		void (*new_dir_func)(void);
+	};
 	DIRS NBEMS_dirs[] = {
 		{ NBEMS_dir,     0, 0 },
 		{ ARQ_dir,       "ARQ", 0 },
@@ -1119,19 +1161,6 @@ static void checkdirectories(void)
 	};
 
 	int r;
-	for (size_t i = 0; i < sizeof(fldigi_dirs)/sizeof(*fldigi_dirs); i++) {
-		if (fldigi_dirs[i].suffix)
-			fldigi_dirs[i].dir.assign(HomeDir).append(fldigi_dirs[i].suffix).append(PATH_SEP);
-
-		if ((r = mkdir(fldigi_dirs[i].dir.c_str(), 0777)) == -1 && errno != EEXIST) {
-			cerr << _("Could not make directory") << ' ' << fldigi_dirs[i].dir
-			     << ": " << strerror(errno) << '\n';
-			exit(EXIT_FAILURE);
-		}
-		else if (r == 0 && fldigi_dirs[i].new_dir_func)
-			fldigi_dirs[i].new_dir_func();
-	}
-
 	for (size_t i = 0; i < sizeof(NBEMS_dirs)/sizeof(*NBEMS_dirs); i++) {
 		if (NBEMS_dirs[i].suffix)
 			NBEMS_dirs[i].dir.assign(NBEMS_dir).append(NBEMS_dirs[i].suffix).append(PATH_SEP);
@@ -1144,6 +1173,7 @@ static void checkdirectories(void)
 		else if (r == 0 && NBEMS_dirs[i].new_dir_func)
 			NBEMS_dirs[i].new_dir_func();
 	}
+	nbems_dirs_checked = true;
 }
 
 // Print an error message and exit. If stderr is not a terminal
