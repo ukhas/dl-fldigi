@@ -736,6 +736,15 @@ void dl_fldigi_update_payloads()
 		fprintf(stderr, "dl_fldigi: UI updated: added %i payloads.\n", i);
 	#endif
 
+	if (bHAB && progdefaults.xmlPayloadname.length() != 0)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: post UI update: attempting to re-select (but not configure) payload '%s'\n", progdefaults.xmlPayloadname.c_str());
+		#endif
+
+		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
+	}
+
 	put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
@@ -743,23 +752,54 @@ void dl_fldigi_update_payloads()
 	fclose(file);
 }
 
-void dl_fldigi_select_payload(Fl_Choice* o, void *a)
+void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a)
+{
+	if (o == habFlightXML)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: select_payload callback started by habFlightXML\n");
+		#endif
+
+		progdefaults.xmlPayloadname = habFlightXML->text();
+		progdefaults.changed = true;
+	}
+	else if (o == habConfigureButton)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: select_payload callback started by habConfigureButton\n");
+		#endif
+	}
+	else
+	{
+		fprintf(stderr, "dl_fldigi: select_payload callback started by unknown source.\n");
+		return;
+	}
+
+	dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
+}
+
+void dl_fldigi_select_payload(const char *name)
 {
 	struct payload *p;
 	string s;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) attempting to configure payload...\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: (thread %li) attempting to find and configure payload '%s'...\n", pthread_self(), name);
 	#endif
 
 	p = payload_list;
 	while (p != NULL)
 	{
-		if (p->name != NULL && strcmp(p->name, o->text()) == 0)
+		if (p->name != NULL && strcmp(p->name, name) == 0)
 		{
 			#ifdef DL_FLDIGI_DEBUG
 				fprintf(stderr, "dl_fldigi: configuring payload '%s'...\n", p->name);
 			#endif
+
+			/* TODO: Currently, we don't set progdefaults.changed (I think it might become annoying?).
+			 * This might be a bad idea. */
+
+			init_modem_sync(MODE_RTTY);
 
 			progdefaults.xmlSentence_delimiter = p->sentence_delimiter;
 			progdefaults.xmlField_delimiter = p->field_delimiter;
@@ -778,8 +818,10 @@ void dl_fldigi_select_payload(Fl_Choice* o, void *a)
 				fprintf(stderr, "dl_fldigi: configured payload '%s'...\n", p->name);
 			#endif
 
-			s = "dl_fldigi: configured modem for payload " + p->name;
-			put_status(s, 10);
+			/* This way of doing concatenation is a bit ugly. */
+			s = "dl_fldigi: configured modem for payload ";
+			s += p->name;
+			put_status(s.c_str(), 10);
 
 			return;
 		}
@@ -787,5 +829,5 @@ void dl_fldigi_select_payload(Fl_Choice* o, void *a)
 		p = p->next;
 	}
 
-	fprintf(stderr, "dl_fldigi: (should never happen): unable to find payload to configure\n");
+	fprintf(stderr, "dl_fldigi: unable to find payload to configure\n");
 }

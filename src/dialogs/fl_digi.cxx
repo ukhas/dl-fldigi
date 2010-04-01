@@ -285,14 +285,16 @@ Fl_Input2			*habLat;
 Fl_Input2			*habLon;
 Fl_Input2			*habAlt;
 Fl_Input2			*habCustom=(Fl_Input2 *)0;
-Fl_Choice			*habFlightXML;
+Fl_Choice			*habFlightXML = 0;
 Fl_Input2			*habChecksum;
+Fl_Button			*habConfigureButton = 0;
 int w_habTime = 90;
 int w_habLat = 90;
 int w_habLon = 90;
 int w_habAlt = 90;
 int w_habCustom = 300;
 int w_habFlightXML = 100;
+int w_habConfigureButton = 170;
 int w_habChecksum = 40;
 
 int pad = 1;
@@ -1123,6 +1125,13 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 	rigCAT_restore_defaults();
 	dlgConfig->show();
 
+}
+
+void cb_dl_fldigi_refresh(Fl_Widget *, void *)
+{
+	/* Force refresh */
+	dl_fldigi_download();
+	dl_fldigi_downloaded_once = 1;
 }
 
 void cb_toggle_dl_online(Fl_Widget *, void *) {
@@ -2473,7 +2482,7 @@ Fl_Menu_Item menu_[] = {
 
 {0,0,0,0,0,0,0,0,0},
 
-{"     ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
+// {"     ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
 {_("&Help"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 #ifndef NDEBUG
 // settle the gmfsk vs fldigi argument once and for all
@@ -2496,6 +2505,7 @@ Fl_Menu_Item menu_[] = {
 /* When you remove this; also remove the toggles entry on line TODO: 3791 */
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -3999,6 +4009,7 @@ Fl_Menu_Item alt_menu_[] = {
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -4433,15 +4444,22 @@ void create_fl_digi_main_dl_fldigi() {
 		
 		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
 
-		{ habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, _("Flight"));
+		{ habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habFlightXML, Hentry, _("Flight"));
 		habFlightXML->tooltip(_("Select flight you are tracking"));
 		habFlightXML->down_box(FL_BORDER_BOX);
 		habFlightXML->align(FL_ALIGN_TOP);
 		habFlightXML->when(FL_WHEN_CHANGED);
-		habFlightXML->callback((Fl_Callback *) dl_fldigi_select_payload);
+		habFlightXML->callback(cb_dl_fldigi_select_payload);
 		}
-		
-		{ habTime = new Fl_Input2((rightof(habFlightXML) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
+
+		{ habConfigureButton = new Fl_Button(rightof(habFlightXML) + 2, Y + TopFrameHABheight - Hentry - 5, w_habConfigureButton, Hentry, "Autoreconfigure");
+		habConfigureButton->tooltip("Automatically set the fldigi modem settings for the chosen payload.");
+		habConfigureButton->when(FL_WHEN_RELEASE);
+		habConfigureButton->align(FL_ALIGN_INSIDE);
+		habConfigureButton->callback(cb_dl_fldigi_select_payload);
+		}
+
+		{ habTime = new Fl_Input2((rightof(habConfigureButton) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
 		habTime->tooltip(_("Time"));
 		habTime->box(FL_DOWN_BOX);
 		habTime->color(FL_BACKGROUND2_COLOR);
