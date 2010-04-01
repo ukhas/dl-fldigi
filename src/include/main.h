@@ -37,6 +37,7 @@ extern std::string		WRAP_auto_dir;
 extern std::string		ICS_dir;
 extern std::string		ICS_msg_dir;
 extern std::string		ICS_tmp_dir;
+extern std::string		FlightXMLDir;
 
 extern std::string		xmlfname;
 
@@ -80,5 +81,8 @@ extern RXMSGSTRUC rxmsgst;
 extern int rxmsgid;
 extern TXMSGSTRUC txmsgst;
 extern int txmsgid;
+
+void check_nbems_dirs(void);
+extern bool nbems_dirs_checked;
 
 #endif

@@ -51,6 +51,7 @@ extern Fl_Tile_Check	*TiledGroup;
 extern Fl_Box			*StatusBar;
 extern Fl_Box			*Status2;
 extern Fl_Box			*Status1;
+extern Fl_Counter2		*cntCW_WPM;
 extern Fl_Box			*WARNstatus;
 extern Fl_Button		*MODEstatus;
 extern Fl_Slider2		*sldrSquelch;
@@ -122,6 +123,12 @@ extern Fl_Button		*btnMacroTimer;
 extern bool			bWF_only;
 //jcoxon
 extern bool			bHAB;
+extern Fl_Input2			*habTime;
+extern Fl_Input2			*habLat;
+extern Fl_Input2			*habLon;
+extern Fl_Input2			*habAlt;
+extern Fl_Input2			*habCustom;
+extern Fl_Input2			*habChecksum;
 //
 extern bool			withnoise;
 extern bool			useCheckButtons;
@@ -248,4 +255,6 @@ void set_olivia_tones(int tones);
 void set_rtty_shift(int shift);
 void set_rtty_baud(float baud);
 void set_rtty_bits(int bits);
+
+void sync_cw_parameters();
 #endif

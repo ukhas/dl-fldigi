@@ -34,9 +34,13 @@
 //jcoxon
 #include "extra.h"
 #include <algorithm>
+
+#include "confdialog.h"
+#include "main.h"
 //
 
 #include "dl_fldigi.h"
+
 
 using namespace std;
 
@@ -77,7 +81,7 @@ Save tags and all enclosed text to date-time stamped file, ie:\n\n\
 const char *txtWrapInfo = "\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
 Save tags and all enclosed text to date-time stamped file, ie:\n\n\
-    ~/NBEMS.files/WRAP/recv/extract-20090127-092515.wrap";
+    ~/.nbems/WRAP/recv/extract-20090127-092515.wrap";
 #endif
 
 #define   bufsize  16
@@ -114,6 +118,7 @@ void rx_extract_reset()
 void rx_extract_add(int c)
 {
 	if (!c) return;
+	check_nbems_dirs();
 
 	if (!bInit) {
 		rx_extract_reset();
@@ -126,7 +131,8 @@ void rx_extract_add(int c)
 //jcoxon
 	//Reads the stentence delimter previously read from the xml file.
 	//const char* beg = (progdefaults.xmlSentence_delimiter.empty() ? "UNKNOWN" : progdefaults.xmlSentence_delimiter.c_str());
-	const char* beg = "$$";
+	string beg_s = "$$" + progdefaults.xmlCallsign;
+	const char* beg = beg_s.c_str();
 //
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
 		/* FIXME. This overrides the dl_fldigi_post statuses a split second after they pop up.
@@ -136,7 +142,7 @@ void rx_extract_add(int c)
 		 * eg.
 		 * 	const char* beg = "$$testing";
 		 */
-		// put_status("dl_fldigi: detected sentence start; extracting!", 10);
+		put_status("dl_fldigi: detected sentence start; extracting!", 10);
 
 		rx_buff = beg;
 		memset(rx_extract_buff, ' ', bufsize);
@@ -144,9 +150,6 @@ void rx_extract_add(int c)
 	} else if (extracting) {
 		rx_buff += ch;
 		if (strstr(rx_extract_buff, end) != NULL) {
-	/*
-			// Whatever this does, it's annoying.
-
 			struct tm tim;
 			time_t t;
 			time(&t);
@@ -165,7 +168,6 @@ void rx_extract_add(int c)
 			rx_extract_msg = "File saved in ";
 			rx_extract_msg.append(WRAP_recv_dir);
 			put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
-	*/
 
 //jcoxon
 			//Trim Spaces
@@ -183,15 +185,17 @@ void rx_extract_add(int c)
 			number_commas = count(rx_buff.begin(), rx_buff.end(), progdefaults.xmlField_delimiter.at(0));
 			
 			//Gets info for number of fields
-			//min_number_fields = atoi(progdefaults.xmlFields.c_str());
+			min_number_fields = progdefaults.xmlFields;
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
-			if ((rx_buff.length() < total_string_length)) {  /* not yet implemented: impedes debugging */ /* and (number_commas == min_number_fields - 1)) { */
+			if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) { 
 					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 					UpperCase (identity_callsign);
 
 					/* dl_fldigi_post will put_status as it does its stuff */
 					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
+			
+					habCustom->value(rx_buff.c_str());
 			}
 
 			rx_extract_reset();

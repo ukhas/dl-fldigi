@@ -40,6 +40,7 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <dirent.h>
 
 #include "gettext.h"
 #include "fl_digi.h"
@@ -103,8 +104,6 @@
 
 #include "icons.h"
 
-#include "status.h"
-
 #include "rigsupport.h"
 
 #include "qrunner.h"
@@ -137,6 +136,7 @@ using namespace std;
 
 //jcoxon
 #include <iostream>
+#include "dl_fldigi.h"
 bool bHAB = false;
 //
 
@@ -148,6 +148,11 @@ Fl_Help_Dialog 		*help_dialog       = (Fl_Help_Dialog *)0;
 Fl_Double_Window	*scopeview         = (Fl_Double_Window *)0;
 
 MixerBase* mixer = 0;
+
+int rightof(Fl_Widget* w);
+int leftof(Fl_Widget* w);
+int above(Fl_Widget* w);
+int below(Fl_Widget* w);
 
 //bool	useCheckButtons;
 
@@ -168,6 +173,8 @@ Raster				*FHdisp;
 Fl_Box				*StatusBar = (Fl_Box *)0;
 Fl_Box				*Status2 = (Fl_Box *)0;
 Fl_Box				*Status1 = (Fl_Box *)0;
+Fl_Counter2			*cntCW_WPM=(Fl_Counter2 *)0;
+Fl_Button			*btnCW_Default=(Fl_Button *)0;
 Fl_Box				*WARNstatus = (Fl_Box *)0;
 Fl_Button			*MODEstatus = (Fl_Button *)0;
 Fl_Button 			*btnMacro[NUMMACKEYS];
@@ -257,7 +264,6 @@ Fl_Button			*qso_opPICK3;
 Fl_Button			*qsoClear3;
 Fl_Button			*qsoSave3;
 
-Fl_Box				*StatusSpace = (Fl_Box *)0;
 Fl_Input2			*inpCall4;
 
 Fl_Browser			*qso_opBrowser = (Fl_Browser *)0;
@@ -271,6 +277,23 @@ Fl_Input2			*qso_inpAct = 0;
 Fl_Group			*MixerFrame;
 Fl_Value_Slider2		*valRcvMixer;
 Fl_Value_Slider2		*valXmtMixer;
+
+//jcoxon
+Fl_Group			*TopFrameHAB = (Fl_Group *)0;
+Fl_Input2			*habTime;
+Fl_Input2			*habLat;
+Fl_Input2			*habLon;
+Fl_Input2			*habAlt;
+Fl_Input2			*habCustom=(Fl_Input2 *)0;
+Fl_Choice			*habFlightXML;
+Fl_Input2			*habChecksum;
+int w_habTime = 90;
+int w_habLat = 90;
+int w_habLon = 90;
+int w_habAlt = 90;
+int w_habCustom = 300;
+int w_habFlightXML = 100;
+int w_habChecksum = 40;
 
 int pad = 1;
 int Hentry		= 24;
@@ -630,6 +653,20 @@ void startup_modem(modem* m, int f)
 	restoreFocus();
 
 	trx_mode id = m->get_mode();
+
+	if (!bHAB)
+	{
+		if (id == MODE_CW) {
+			cntCW_WPM->show();
+			btnCW_Default->show();
+			Status1->hide();
+		} else {
+			cntCW_WPM->hide();
+			btnCW_Default->hide();
+			Status1->show();
+		}
+	}
+
 	if (id >= MODE_HELL_FIRST && id <= MODE_HELL_LAST) {
 		ReceiveText->hide();
 		FHdisp->show();
@@ -1090,8 +1127,14 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 
 void cb_toggle_dl_online(Fl_Widget *, void *) {
 	progdefaults.loadDefaults();
-	// dl_online is a bool
 	progdefaults.dl_online = !progdefaults.dl_online;
+
+	/* If this is the first time we've come online... */
+	if (progdefaults.dl_online && !dl_fldigi_downloaded_once)
+	{
+		dl_fldigi_download();
+		dl_fldigi_downloaded_once = 1;
+	}
 }
 
 //jcoxon added 21/3/10
@@ -1448,6 +1491,14 @@ void cb_ShowConfig(Fl_Widget*, void*)
 
 void cb_ShowNBEMS(Fl_Widget*, void*)
 {
+	DIR *nbems_dir;
+	nbems_dir = opendir(NBEMS_dir.c_str());
+	if (!nbems_dir) {
+		int ans = fl_choice2(_("Do not exist, create?"), _("No"), _("Yes"), 0);
+		if (!ans) return;
+		check_nbems_dirs();
+	}
+	closedir(nbems_dir);
 	cb_mnuVisitURL(0, (void*)NBEMS_dir.c_str());
 }
 
@@ -1590,7 +1641,7 @@ if (bHAB) return;
 	Fl_Input* in[] = {
 		inpCall1, inpCall2, inpCall3, inpCall4,
 		inpName1, inpName2,
-		inpTimeOn1, inpTimeOn2,
+		inpTimeOn1, inpTimeOn2, inpTimeOn3,
 		inpRstIn1, inpRstIn2,
 		inpRstOut1, inpRstOut2,
 		inpQth, inpLoc, inpAZ, inpState, inpVEprov, inpCountry,
@@ -2061,7 +2112,7 @@ bool clean_exit(void) {
 #define RIGCONTEST_MLABEL  _("Rig control and contest")
 #define DOCKEDSCOPE_MLABEL _("Docked scope")
 #define WF_MLABEL _("Minimal controls")
-
+#define DLFLDIGI_ONLINE_LABEL _("Online")
 
 bool restore_minimize = false;
 
@@ -2101,9 +2152,7 @@ void UI_select()
 		TopFrame1->hide();
 		TopFrame2->hide();
 		TopFrame3->hide();
-		Status1->hide();
 		Status2->hide();
-		StatusSpace->show();
 		inpCall4->show();
 		inpCall = inpCall4;
 		fl_digi_main->init_sizes();
@@ -2182,9 +2231,7 @@ void UI_select()
 			qsoFreqDisp = qsoFreqDisp3;
 		}
 	}
-	StatusSpace->hide();
 	inpCall4->hide();
-	Status1->show();
 	Status2->show();
 	fl_digi_main->init_sizes();
 }
@@ -2442,6 +2489,17 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(_("Event log"), dialog_information_icon), 0, cb_mnuDebug, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Check for updates..."), system_software_update_icon), 0, cb_mnuCheckUpdate, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("&About"), help_about_icon), 'a', cb_mnuAboutURL, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
+/* TODO: Remove this. As a debug/temporary measure, I'm adding in the DL Client menu to non --hab mode,
+ * since we don't yet have any other UI as complete as this to configure online/offline, etc. */
+/* When you remove this; also remove the toggles entry on line TODO: 3791 */
+{_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"  ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
@@ -2843,6 +2901,32 @@ void setwfrange() {
 	wf->opmode();
 }
 
+void sync_cw_parameters()
+{
+	active_modem->sync_parameters();
+	active_modem->update_Status();
+}
+
+void cb_cntCW_WPM(Fl_Widget * w, void *v)
+{
+	Fl_Counter2 *cnt = (Fl_Counter2 *) w;
+	progdefaults.CWspeed = (int)cnt->value();
+	sldrCWxmtWPM->value(progdefaults.CWspeed);
+	if (sldrCWfarnsworth->value() > progdefaults.CWspeed)
+		sldrCWfarnsworth->value(progdefaults.CWspeed);
+	sldrCWfarnsworth->maximum(progdefaults.CWspeed);
+	progdefaults.changed = true;
+	sync_cw_parameters();
+	restoreFocus();
+}
+
+void cb_btnCW_Default(Fl_Widget *w, void *v)
+{
+	active_modem->toggleWPM();
+	restoreFocus();
+}
+
+
 void create_fl_digi_main_primary() {
 
 	int fnt = fl_font();
@@ -2857,8 +2941,7 @@ void create_fl_digi_main_primary() {
 
 	x_qsoframe += rig_control_width;
 
-	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
-//	if (progStatus.mainH < HNOM) progStatus.mainH = HNOM;
+	IMAGE_WIDTH = 4000;
 
 	Hwfall = progdefaults.wfheight;
 
@@ -3383,68 +3466,80 @@ void create_fl_digi_main_primary() {
 			qsoSave3->tooltip(_("Save"));
 
 			fl_font(FL_HELVETICA, FL_NORMAL_SIZE);
-
 			const char *label2a = _("On");
-			btnTimeOn3 = new Fl_Button(
+			const char *label3a = _("Off");
+			const char *label4a = _("Call");
+			const char *label5a = _("# S");
+			const char *label6a = _("# R");
+			const char *label7a = _("Ex");
+			const char *xData = "00000";
+			const char *xCall = "WW8WWW/WWWW";
+			int   wData = fl_width(xData);
+			int   wCall = fl_width(xCall);
+
+			Fl_Box *bx4a = new Fl_Box(
 				pad + rightof(qsoSave3), y,
+				fl_width(label4a), h, label4a);
+			inpCall3 = new Fl_Input2(
+				pad + bx4a->x() + bx4a->w(), y,
+				wCall, h, "");
+			inpCall3->align(FL_ALIGN_INSIDE);
+			inpCall3->tooltip(_("Other call"));
+
+			Fl_Box *bx7a = new Fl_Box(
+				rightof(inpCall3), y,
+				fl_width(label7a), h, label7a);
+			bx7a->align(FL_ALIGN_INSIDE);
+			inpXchgIn2 = new Fl_Input2(
+				rightof(bx7a), y,
+				progStatus.mainW 
+				- rightof(bx7a) - pad
+				- fl_width(label6a) - wData - pad
+				- fl_width(label5a) - wData - pad
+				- fl_width(label2a) - wData - pad
+				- fl_width(label3a) - wData - pad, 
+				h, "");
+			inpXchgIn2->tooltip(_("Contest exchange in"));
+
+			Fl_Box *bx6a = new Fl_Box(
+				rightof(inpXchgIn2), y,
+				fl_width(label6a), h, label6a);
+			bx6a->align(FL_ALIGN_INSIDE);
+			inpSerNo2 = new Fl_Input2(
+				rightof(bx6a) + pad, y,
+				wData, h, "");
+			inpSerNo2->tooltip(_("Received serial number"));
+
+			Fl_Box *bx5a = new Fl_Box(
+				rightof(inpSerNo2), y,
+				fl_width(label5a), h, label5a);
+			bx5a->align(FL_ALIGN_INSIDE);
+			outSerNo2 = new Fl_Input2(
+				rightof(bx5a) + pad, y,
+				wData, h, "");
+			outSerNo2->tooltip(_("Sent serial number (read only)"));
+			outSerNo2->type(FL_NORMAL_OUTPUT);
+
+			btnTimeOn3 = new Fl_Button(
+				rightof(outSerNo2), y,
 				fl_width(label2a), h, label2a);
 			btnTimeOn3->tooltip(_("Press to update"));
 			btnTimeOn3->box(FL_NO_BOX);
 			btnTimeOn3->callback(cb_btnTimeOn);
 			inpTimeOn3 = new Fl_Input2(
-				pad + btnTimeOn3->x() + btnTimeOn3->w(), y,
-				w_inpTime - 2, h, "");
+				btnTimeOn3->x() + btnTimeOn3->w() + pad, y,
+				wData - 2, h, "");
 			inpTimeOn3->tooltip(_("Time On"));
 			inpTimeOn3->type(FL_INT_INPUT);
 
-			const char *label3a = _("Off");
 			Fl_Box *bx3a = new Fl_Box(pad + rightof(inpTimeOn3), y,
 				fl_width(label3a), h, label3a);
 			inpTimeOff3 = new Fl_Input2(
-				pad + bx3a->x() + bx3a->w(), y,
-				w_inpTime - 2, h, "");
+				bx3a->x() + bx3a->w() + pad, y,
+				wData, h, "");
 			inpTimeOff3->tooltip(_("Time Off"));
 			inpTimeOff3->type(FL_NORMAL_OUTPUT);
 
-			const char *label4a = _("Call");
-			Fl_Box *bx4a = new Fl_Box(
-				pad + rightof(inpTimeOff3), y,
-				fl_width(label4a), h, label4a);
-			inpCall3 = new Fl_Input2(
-				pad + bx4a->x() + bx4a->w(), y,
-				w_inpCall - 10, h, "");
-			inpCall3->tooltip(_("Other call"));
-
-			const char *label5a = _("# S");
-			Fl_Box *bx5a = new Fl_Box(
-				pad + rightof(inpCall3), y,
-				fl_width(label5a), h, label5a);
-			bx5a->align(FL_ALIGN_INSIDE);
-			outSerNo2 = new Fl_Input2(
-				rightof(bx5a), y,
-				w_SerNo, h, "");
-			outSerNo2->tooltip(_("Sent serial number (read only)"));
-			outSerNo2->type(FL_NORMAL_OUTPUT);
-
-			const char *label6a = _("# R");
-			Fl_Box *bx6a = new Fl_Box(
-				rightof(outSerNo2), y,
-				fl_width(label6a), h, label6a);
-			bx6a->align(FL_ALIGN_INSIDE);
-			inpSerNo2 = new Fl_Input2(
-				rightof(bx6a), y,
-				w_SerNo, h, "");
-			inpSerNo2->tooltip(_("Received serial number"));
-
-			const char *label7a = _("Ex");
-			Fl_Box *bx7a = new Fl_Box(
-				rightof(inpSerNo2), y,
-				fl_width(label7a), h, label7a);
-			bx7a->align(FL_ALIGN_INSIDE);
-			inpXchgIn2 = new Fl_Input2(
-				rightof(bx7a), y,
-				progStatus.mainW - rightof(bx7a) - pad, h, "");
-			inpXchgIn2->tooltip(_("Contest exchange in"));
 			TopFrame3->end();
 		}
 		TopFrame3->resizable(inpXchgIn2);
@@ -3605,15 +3700,27 @@ void create_fl_digi_main_primary() {
 			MODEstatus->when(FL_WHEN_CHANGED);
 			MODEstatus->tooltip(_("Left click: change mode\nRight click: configure"));
 
+			cntCW_WPM = new Fl_Counter2(rightof(MODEstatus), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, 
+				Ws2n - Hstatus, Hstatus, "");
+			cntCW_WPM->callback(cb_cntCW_WPM);
+			cntCW_WPM->minimum(progdefaults.CWlowerlimit);
+			cntCW_WPM->maximum(progdefaults.CWupperlimit);
+			cntCW_WPM->value(progdefaults.CWspeed);
+			cntCW_WPM->type(1);
+			cntCW_WPM->step(1);
+			cntCW_WPM->tooltip(_("CW transmit WPM"));
+			cntCW_WPM->hide();
+
+			btnCW_Default = new Fl_Button(rightof(cntCW_WPM), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
+				Hstatus, Hstatus, "*");
+			btnCW_Default->callback(cb_btnCW_Default);
+			btnCW_Default->tooltip(_("Default WPM"));
+			btnCW_Default->hide();
+
 			Status1 = new Fl_Box(rightof(MODEstatus), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, Ws2n, Hstatus, "");
 			Status1->box(FL_DOWN_BOX);
 			Status1->color(FL_BACKGROUND2_COLOR);
 			Status1->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
-
-			StatusSpace = new Fl_Box(rightof(MODEstatus), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, Ws2n, Hstatus, "");
-			StatusSpace->box(FL_DOWN_BOX);
-			StatusSpace->color(FL_BACKGROUND2_COLOR);
-			StatusSpace->hide();
 
 			Status2 = new Fl_Box(rightof(Status1), Hmenu+Hrcvtxt+Hxmttxt+Hwfall, Wimd, Hstatus, "");
 			Status2->box(FL_DOWN_BOX);
@@ -3622,7 +3729,7 @@ void create_fl_digi_main_primary() {
 
 			inpCall4 = new Fl_Input2(
 				rightof(Status1), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-				Wimd, Hstatus, "Callsign:");
+				Wimd, Hstatus, "");//"Callsign:");
 			inpCall4->align(FL_ALIGN_LEFT);
 			inpCall4->tooltip(_("Other call"));
 			inpCall4->hide();
@@ -3753,6 +3860,8 @@ void create_fl_digi_main_primary() {
 	}
 	if (!dxcc_is_open())
 		getMenuItem(COUNTRIES_MLABEL)->hide();
+
+        /* TODO: REMOVE ME: SEE LINE 2471 */ if (progdefaults.dl_online) getMenuItem(DLFLDIGI_ONLINE_LABEL)->set();
 
 	UI_select();
 	wf->UI_select(progStatus.WF_UI);
@@ -3889,7 +3998,7 @@ Fl_Menu_Item alt_menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "Online", 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -4132,6 +4241,21 @@ void create_fl_digi_main_WF_only() {
 			MODEstatus->when(FL_WHEN_CHANGED);
 			MODEstatus->tooltip(_("Left click: change mode\nRight click: configure"));
 
+			cntCW_WPM = new Fl_Counter2(rightof(MODEstatus), Y, Ws2n - Hstatus, Hstatus, "");
+			cntCW_WPM->callback(cb_cntCW_WPM);
+			cntCW_WPM->minimum(progdefaults.CWlowerlimit);
+			cntCW_WPM->maximum(progdefaults.CWupperlimit);
+			cntCW_WPM->value(progdefaults.CWspeed);
+			cntCW_WPM->tooltip(_("CW transmit WPM"));
+			cntCW_WPM->type(1);
+			cntCW_WPM->step(1);
+			cntCW_WPM->hide();
+
+			btnCW_Default = new Fl_Button(rightof(cntCW_WPM), Y, Hstatus, Hstatus, "*");
+			btnCW_Default->callback(cb_btnCW_Default);
+			btnCW_Default->tooltip(_("Default WPM"));
+			btnCW_Default->hide();
+
 			Status1 = new Fl_Box(rightof(MODEstatus), Y, Ws2n, Hstatus, "");
 			Status1->box(FL_DOWN_BOX);
 			Status1->color(FL_BACKGROUND2_COLOR);
@@ -4253,13 +4377,15 @@ void create_fl_digi_main_dl_fldigi() {
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
 	int minRxHeight = 100;
+	int TopFrameHABheight = 50;
+
 
 	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
 	Hwfall = progdefaults.wfheight;
 	Wwfall = progStatus.mainW - 2 * DEFAULT_SW - 2 * pad;
 //jcoxon
 //	HAB_height = Hmenu + Hwfall + Hstatus + 4 * pad;
-	HAB_height = Hmenu + Hwfall + minRxHeight + Hstatus + 4 * pad;
+	HAB_height = Hmenu + Hwfall + minRxHeight + TopFrameHABheight + Hstatus + 4 * pad;
 	cout << HAB_height << endl;
 
 	fl_digi_main = new Fl_Double_Window(progStatus.mainW, HAB_height);
@@ -4305,6 +4431,88 @@ void create_fl_digi_main_dl_fldigi() {
 
 		Y = Hmenu + pad;
 		
+		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
+
+		{ habFlightXML = new Fl_Choice(10, (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, _("Flight"));
+		habFlightXML->tooltip(_("Select flight you are tracking"));
+		habFlightXML->down_box(FL_BORDER_BOX);
+		habFlightXML->align(FL_ALIGN_TOP);
+		habFlightXML->when(FL_WHEN_CHANGED);
+		habFlightXML->callback((Fl_Callback *) dl_fldigi_select_payload);
+		}
+		
+		{ habTime = new Fl_Input2((rightof(habFlightXML) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
+		habTime->tooltip(_("Time"));
+		habTime->box(FL_DOWN_BOX);
+		habTime->color(FL_BACKGROUND2_COLOR);
+		habTime->selection_color(FL_SELECTION_COLOR);
+		habTime->labeltype(FL_NORMAL_LABEL);
+		habTime->labelfont(0);
+		habTime->labelsize(13);
+		habTime->labelcolor(FL_FOREGROUND_COLOR);
+		habTime->align(FL_ALIGN_TOP); }
+
+		{ habLat = new Fl_Input2((rightof(habTime) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLat, Hentry, "Latitude");
+		habLat->tooltip(_("Latitude"));
+		habLat->box(FL_DOWN_BOX);
+		habLat->color(FL_BACKGROUND2_COLOR);
+		habLat->selection_color(FL_SELECTION_COLOR);
+		habLat->labeltype(FL_NORMAL_LABEL);
+		habLat->labelfont(0);
+		habLat->labelsize(13);
+		habLat->labelcolor(FL_FOREGROUND_COLOR);
+		habLat->align(FL_ALIGN_TOP); }
+
+		{ habLon = new Fl_Input2((rightof(habLat) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habLon, Hentry, "Longitude");
+		habLon->tooltip(_("Longitude"));
+		habLon->box(FL_DOWN_BOX);
+		habLon->color(FL_BACKGROUND2_COLOR);
+		habLon->selection_color(FL_SELECTION_COLOR);
+		habLon->labeltype(FL_NORMAL_LABEL);
+		habLon->labelfont(0);
+		habLon->labelsize(13);
+		habLon->labelcolor(FL_FOREGROUND_COLOR);
+		habLon->align(FL_ALIGN_TOP); }
+
+		{ habAlt = new Fl_Input2((rightof(habLon) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habAlt, Hentry, "Altitude");
+		habAlt->tooltip(_("Altitude"));
+		habAlt->box(FL_DOWN_BOX);
+		habAlt->color(FL_BACKGROUND2_COLOR);
+		habAlt->selection_color(FL_SELECTION_COLOR);
+		habAlt->labeltype(FL_NORMAL_LABEL);
+		habAlt->labelfont(0);
+		habAlt->labelsize(13);
+		habAlt->labelcolor(FL_FOREGROUND_COLOR);
+		habAlt->align(FL_ALIGN_TOP); }
+		
+		{ habCustom = new Fl_Input2((rightof(habAlt) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habCustom, Hentry, "Custom");
+		habCustom->tooltip(_("Custom"));
+		habCustom->box(FL_DOWN_BOX);
+		habCustom->color(FL_BACKGROUND2_COLOR);
+		habCustom->selection_color(FL_SELECTION_COLOR);
+		habCustom->labeltype(FL_NORMAL_LABEL);
+		habCustom->labelfont(0);
+		habCustom->labelsize(13);
+		habCustom->labelcolor(FL_FOREGROUND_COLOR);
+		habCustom->align(FL_ALIGN_TOP);
+		habCustom->when(FL_WHEN_RELEASE);}
+		
+		{ habChecksum = new Fl_Input2((rightof(habCustom) + 2), (Y + TopFrameHABheight - Hentry - 5) , w_habChecksum, Hentry, "Checksum");
+		habChecksum->tooltip(_("Checksum"));
+		habChecksum->box(FL_DOWN_BOX);
+		habChecksum->color(FL_BACKGROUND2_COLOR);
+		habChecksum->selection_color(FL_SELECTION_COLOR);
+		habChecksum->labeltype(FL_NORMAL_LABEL);
+		habChecksum->labelfont(0);
+		habChecksum->labelsize(13);
+		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
+		habChecksum->align(FL_ALIGN_TOP); }
+
+		TopFrameHAB->resizable(TopFrameHAB);
+		TopFrameHAB->end();
+		
+		Y = Hmenu + pad + TopFrameHABheight;
+		
 		TiledGroup = new Fl_Tile_Check(0, Y, progStatus.mainW, Htext);
 			ReceiveText = new FTextRX(0, Y, progStatus.mainW, minRxHeight, "");
 			ReceiveText->color(
@@ -4322,7 +4530,7 @@ void create_fl_digi_main_dl_fldigi() {
 			
 //
 
-		Y = Hmenu + pad + minRxHeight;
+		Y = Hmenu + pad + TopFrameHABheight + minRxHeight;
 
 		Fl_Pack *wfpack = new Fl_Pack(0, Y, progStatus.mainW, Hwfall);
 			wfpack->type(1);
@@ -4431,7 +4639,7 @@ void create_fl_digi_main_dl_fldigi() {
 	struct {
 		bool var; const char* label;
 	} toggles[] = {
-		{ progStatus.DOCKEDSCOPE, DOCKEDSCOPE_MLABEL }
+		{ progStatus.DOCKEDSCOPE, DOCKEDSCOPE_MLABEL },
 	};
 	Fl_Menu_Item* toggle;
 	for (size_t i = 0; i < sizeof(toggles)/sizeof(*toggles); i++) {
@@ -4443,6 +4651,9 @@ void create_fl_digi_main_dl_fldigi() {
 			}
 		}
 	}
+
+	if (progdefaults.dl_online)
+		getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_)->set();
 
 	make_scopeviewer();
 	noop_controls();
@@ -4773,6 +4984,7 @@ void set_CWwpm()
 {
 	FL_LOCK_D();
 	sldrCWxmtWPM->value(progdefaults.CWspeed);
+	cntCW_WPM->value(progdefaults.CWspeed);
 	FL_UNLOCK_D();
 }
 
@@ -5274,3 +5486,5 @@ void set_rtty_bits(int bits)
 		}
 	}
 }
+
+
