@@ -654,14 +654,17 @@ void startup_modem(modem* m, int f)
 
 	trx_mode id = m->get_mode();
 
-	if (id == MODE_CW) {
-		cntCW_WPM->show();
-		btnCW_Default->show();
-		Status1->hide();
-	} else {
-		cntCW_WPM->hide();
-		btnCW_Default->hide();
-		Status1->show();
+	if (!bHAB)
+	{
+		if (id == MODE_CW) {
+			cntCW_WPM->show();
+			btnCW_Default->show();
+			Status1->hide();
+		} else {
+			cntCW_WPM->hide();
+			btnCW_Default->hide();
+			Status1->show();
+		}
 	}
 
 	if (id >= MODE_HELL_FIRST && id <= MODE_HELL_LAST) {
