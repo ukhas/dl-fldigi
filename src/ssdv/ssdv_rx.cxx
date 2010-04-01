@@ -133,21 +133,24 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	image = new unsigned char[IMG_SIZE];
 	buffer = new uint8_t[BUFFER_SIZE];
 	jpeg = new uint8_t[JPEG_SIZE]; /* Maximum JPEG image size is < 64k */
+	
+	/* Empty buffer */
 	bc = 0;
 	bl = 0;
 	
+	/* Clear the image buffer, make it grey */
 	memset(image, 0x80, IMG_SIZE);
 	
-	img_imageid = -1; /* No image yet */
+	/* No image yet */
+	img_imageid = -1;
 	
 	begin();
+	
 	box = new Fl_Box(0, 0, IMG_WIDTH, IMG_HEIGHT);
 	flrgb = new Fl_RGB_Image(image, IMG_WIDTH, IMG_HEIGHT, 3);
-	
-	box->color(FL_BLACK);
 	box->image(flrgb);
 	
-	int y = 240;
+	int y = IMG_HEIGHT;
 	int x1 = 0;
 	int x2 = x1 + 95;
 	int x3 = x2 + 95;
@@ -219,6 +222,7 @@ ssdv_rx::~ssdv_rx()
 {
 	delete image;
 	delete buffer;
+	delete jpeg;
 }
 
 void ssdv_rx::feed_buffer(uint8_t byte)
@@ -243,7 +247,7 @@ int ssdv_rx::have_packet()
 	/* Headers present? TODO: Check for fuzzy headers */
 	if(b[0] != 0x55 || b[1] != 0x66) return(-1);
 	
-	/* Looks like packet headers, try the reed-solomon decoder */
+	/* Looks like a packet header, try the reed-solomon decoder */
 	i = decode_rs_8(&b[1], 0, 0, 0);
 	if(i < 0) return(-1);
 	if(i > 0)
@@ -266,7 +270,7 @@ void ssdv_rx::put_byte(uint8_t byte)
 	{
 		uint8_t *b = &buffer[bc];
 		
-		/* Get details of the packet */
+		/* Read the header */
 		pkt_blockno = b[3];
 		pkt_imageid = b[2];
 		pkt_filesize = b[4] + (b[5] << 8);
@@ -276,7 +280,10 @@ void ssdv_rx::put_byte(uint8_t byte)
 		   pkt_filesize != img_filesize) new_image();
 		
 		/* Have we missed a block? */
+		/* Assumes blocks are transmitted sequentially */
 		img_missing += pkt_blockno - (img_lastblock + 1);
+		
+		/* Increase counters */
 		img_lastblock = pkt_blockno;
 		img_received++;
 		
