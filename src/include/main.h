@@ -82,4 +82,7 @@ extern int rxmsgid;
 extern TXMSGSTRUC txmsgst;
 extern int txmsgid;
 
+void check_nbems_dirs(void);
+extern bool nbems_dirs_checked;
+
 #endif
