@@ -1565,7 +1565,10 @@ void cb_mnuViewer(Fl_Menu_ *, void *) {
 }
 
 void cb_mnuShowSSDVRX(Fl_Menu_ *, void *) {
-	ssdv->show();
+	if (ssdv)
+	{
+		ssdv->show();
+	}
 }
 
 void cb_mnuShowCountries(Fl_Menu_ *, void *)
@@ -4921,7 +4924,11 @@ void put_rx_char(unsigned int data)
 static void put_rx_ssdv_flmain(unsigned int data)
 {
 	ENSURE_THREAD(FLMAIN_TID);
-	ssdv->put_byte(data);
+
+	if (ssdv)
+	{
+		ssdv->put_byte(data);
+	}
 }
 
 void put_rx_ssdv(unsigned int data)
