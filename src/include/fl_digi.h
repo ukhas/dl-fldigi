@@ -127,6 +127,7 @@ extern Fl_Input2			*habTime;
 extern Fl_Input2			*habLat;
 extern Fl_Input2			*habLon;
 extern Fl_Input2			*habAlt;
+extern Fl_Input2			*habTimeSinceLastRx;
 extern Fl_Input2			*habCustom;
 extern Fl_Input2			*habChecksum;
 //
