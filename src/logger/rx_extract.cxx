@@ -147,6 +147,7 @@ void rx_extract_add(int c)
 		rx_buff = beg;
 		memset(rx_extract_buff, ' ', bufsize);
 		extracting = true;
+		rxTimer = 0;
 	} else if (extracting) {
 		rx_buff += ch;
 		if (strstr(rx_extract_buff, end) != NULL) {
@@ -202,6 +203,11 @@ void rx_extract_add(int c)
 					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
 			
 					habCustom->value(rx_buff.c_str());
+					
+					//Restart Rx timer
+					rxTimer = time (NULL);
+					habTimeSinceLastRx->value("0");
+					
 			}
 
 			rx_extract_reset();

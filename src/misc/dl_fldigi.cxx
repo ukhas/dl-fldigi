@@ -33,6 +33,13 @@ using namespace io;  // in the namespace irr::io
 #define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
 
+int rxTimer = 0;
+time_t rawtime;
+struct tm * timeinfo;
+  
+time_t seconds;
+
+
 struct dl_fldigi_post_threadinfo
 {
 	CURL *curl;

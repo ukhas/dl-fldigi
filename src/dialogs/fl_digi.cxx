@@ -4549,7 +4549,7 @@ void create_fl_digi_main_dl_fldigi() {
 		}
 		
 		{ habTimeSinceLastRx = new Fl_Input2(progStatus.mainW - w_habTimeSinceLastRx - 2, (Y + TopFrameHABheight - Hentry - 5) , w_habTimeSinceLastRx, Hentry, "Time since Rx");
-		habTimeSinceLastRx->tooltip(_("Elapsed time since last line of telemetry recevied"));
+		habTimeSinceLastRx->tooltip(_("Elapsed time since last line of telemetry received"));
 		habTimeSinceLastRx->box(FL_DOWN_BOX);
 		habTimeSinceLastRx->color(FL_BACKGROUND2_COLOR);
 		habTimeSinceLastRx->selection_color(FL_SELECTION_COLOR);
