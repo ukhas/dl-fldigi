@@ -630,7 +630,7 @@ void dl_fldigi_update_payloads()
 				}
 
 				#ifdef DL_FLDIGI_DEBUG
-					fprintf(stderr, "dl_fldigi: adding payload '%s'\n", p->name);
+					fprintf(stderr, "dl_fldigi: adding payload %i: '%s'\n", i, p->name);
 				#endif
 
 				i++;
@@ -758,6 +758,7 @@ void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a)
 	{
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: select_payload callback started by habFlightXML\n");
+			fprintf(stderr, "dl_fldigi: set current payload name to '%s' (have not configured)\n", habFlightXML->text());
 		#endif
 
 		progdefaults.xmlPayloadname = habFlightXML->text();
@@ -767,32 +768,37 @@ void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a)
 	{
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: select_payload callback started by habConfigureButton\n");
+			fprintf(stderr, "dl_fldigi: configuring current payload name '%s'\n", progdefaults.xmlPayloadname.c_str());
 		#endif
+
+		dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
 	}
 	else
 	{
 		fprintf(stderr, "dl_fldigi: select_payload callback started by unknown source.\n");
 		return;
 	}
-
-	dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
 }
 
 void dl_fldigi_select_payload(const char *name)
 {
 	struct payload *p;
 	string s;
+	int i;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to find and configure payload '%s'...\n", pthread_self(), name);
 	#endif
 
 	p = payload_list;
+	i = 0;
+
 	while (p != NULL)
 	{
 		if (p->name != NULL && strcmp(p->name, name) == 0)
 		{
 			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: found payload '%s' at link %i...\n", p->name, i);
 				fprintf(stderr, "dl_fldigi: configuring payload '%s'...\n", p->name);
 			#endif
 
@@ -827,7 +833,8 @@ void dl_fldigi_select_payload(const char *name)
 		}
 
 		p = p->next;
+		i++;
 	}
 
-	fprintf(stderr, "dl_fldigi: unable to find payload to configure\n");
+	fprintf(stderr, "dl_fldigi: searched %i payloads; unable to find '%s' for configuring\n", i, name);
 }
