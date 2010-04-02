@@ -4016,6 +4016,7 @@ Fl_Menu_Item alt_menu_[] = {
 //{ make_icon_label(_("Extern Scope"), utilities_system_monitor_icon), 'd', (Fl_Callback*)cb_mnuDigiscope, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(MFSK_IMAGE_MLABEL, image_icon), 'm', (Fl_Callback*)cb_mnuPicViewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("PSK Browser")), 'p', (Fl_Callback*)cb_mnuViewer, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("SSDV RX")), 's', (Fl_Callback*)cb_mnuShowSSDVRX, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { DOCKEDSCOPE_MLABEL, 0, (Fl_Callback*)cb_mnuAltDockedscope, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -4665,6 +4666,10 @@ void create_fl_digi_main_dl_fldigi() {
 	fl_digi_main->end();
 	fl_digi_main->callback(cb_wMain);
 	fl_digi_main->resizable(wf);
+
+	ssdv = new ssdv_rx(320, 240 + 60, _("SSDV RX"));
+	ssdv->xclass(PACKAGE_NAME);
+	ssdv->hide();
 
 	struct {
 		bool var; const char* label;
