@@ -1231,13 +1231,18 @@ void cb_mnuGenerate(Fl_Widget *w, void *d)
 
 void cb_mnuPlayback(Fl_Widget *w, void *d)
 {
-	if (!scard) return;
-	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
+	cout << "Playback Selected" << endl;
+	if (!scard) {
+	 return;
+	 }
+		Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
+
 	if (capval || genval) {
 		m->clear();
 		return;
 	}
 	playval = m->value();
+	cout << playval << endl;
 	if(!scard->Playback(playval)) {
 		m->clear();
 		playval = false;
@@ -3900,9 +3905,21 @@ void create_fl_digi_main_primary() {
 }
 
 void cb_mnuAltDockedscope(Fl_Menu_ *w, void *d);
+void cb_mnuCaptureHAB(Fl_Widget *w, void *d);
+void cb_mnuGenerateHAB(Fl_Widget *w, void *d);
+void cb_mnuPlaybackHAB(Fl_Widget *w, void *d);
 
 Fl_Menu_Item alt_menu_[] = {
 {_("&File"), 0,  0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+
+#if USE_SNDFILE
+{ make_icon_label(_("Audio")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
+{_("RX capture"),  0, (Fl_Callback*)cb_mnuCaptureHAB,  0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("TX generate"), 0, (Fl_Callback*)cb_mnuGenerateHAB, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("Playback"),    0, (Fl_Callback*)cb_mnuPlaybackHAB, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+#endif
+
 { make_icon_label(_("Exit"), log_out_icon), 'x',  (Fl_Callback*)cb_E, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -4043,6 +4060,59 @@ void cb_mnuAltDockedscope(Fl_Menu_ *w, void *d) {
 	progStatus.DOCKEDSCOPE = m->value();
 	wf->show_scope(progStatus.DOCKEDSCOPE);
 }
+#if USE_SNDFILE
+void cb_mnuCaptureHAB(Fl_Widget *w, void *d)
+{
+	if (!scard) return;
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label(), alt_menu_); //eek
+	if (playval || genval) {
+		m->clear();
+		return;
+	}
+	capval = m->value();
+	if(!scard->Capture(capval)) {
+		m->clear();
+		capval = false;
+	}
+}
+
+void cb_mnuGenerateHAB(Fl_Widget *w, void *d)
+{
+	if (!scard) return;
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label(), alt_menu_);
+	if (capval || playval) {
+		m->clear();
+		return;
+	}
+	genval = m->value();
+	if (!scard->Generate(genval)) {
+		m->clear();
+		genval = false;
+	}
+}
+void cb_mnuPlaybackHAB(Fl_Widget *w, void *d)
+{
+	if (!scard) {
+	 return;
+	 }
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label(), alt_menu_);
+	if (capval || genval) {
+		m->clear();
+		return;
+	}
+	playval = m->value();
+	cout << playval << endl;
+	if(!scard->Playback(playval)) {
+		m->clear();
+		playval = false;
+	}
+	else if (btnAutoSpot->value()) {
+		put_status(_("Spotting disabled"), 3.0);
+		btnAutoSpot->value(0);
+		btnAutoSpot->do_callback();
+	}
+}
+#endif // USE_SNDFILE
 
 
 #define defwidget 0, 0, 10, 10, ""
