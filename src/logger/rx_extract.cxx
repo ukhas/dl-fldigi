@@ -142,7 +142,7 @@ void rx_extract_add(int c)
 		 * eg.
 		 * 	const char* beg = "$$testing";
 		 */
-		put_status("dl_fldigi: detected sentence start; extracting!", 10);
+		//put_status("dl_fldigi: detected sentence start; extracting!", 10);
 
 		rx_buff = beg;
 		memset(rx_extract_buff, ' ', bufsize);
@@ -165,9 +165,9 @@ void rx_extract_add(int c)
 				extractstream << rx_buff;
 				extractstream.close();
 			}
-			rx_extract_msg = "File saved in ";
-			rx_extract_msg.append(WRAP_recv_dir);
-			put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
+			//rx_extract_msg = "File saved in ";
+			//rx_extract_msg.append(WRAP_recv_dir);
+			//put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 
 //jcoxon
 			//Trim Spaces
@@ -206,7 +206,7 @@ void rx_extract_add(int c)
 
 			rx_extract_reset();
 		} else if (rx_buff.length() > 16384) {
-			put_status("dl_fldigi: extract buffer exeeded 16384 bytes", 20, STATUS_CLEAR);
+			//put_status("dl_fldigi: extract buffer exeeded 16384 bytes", 20, STATUS_CLEAR);
 			rx_extract_reset();
 		}
 	}

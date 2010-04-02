@@ -295,7 +295,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
 	#endif
 
-	put_status("dl_fldigi: sentence uploading...", 10);
+	//put_status("dl_fldigi: sentence uploading...", 10);
 
 	result = curl_easy_perform(t->curl);
 
@@ -306,7 +306,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		put_status("dl_fldigi: sentence uploaded!", 10);
+		//put_status("dl_fldigi: sentence uploaded!", 10);
 	}
 	else
 	{
@@ -314,7 +314,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		put_status("dl_fldigi: sentence upload failed", 10);
+		//put_status("dl_fldigi: sentence upload failed", 10);
 	}
 
 	curl_easy_cleanup(t->curl);
@@ -442,7 +442,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
 	#endif
 
-	put_status("dl_fldigi: payload information: downloading...", 10);
+	//put_status("dl_fldigi: payload information: downloading...", 10);
 
 	result = curl_easy_perform(t->curl);
 
@@ -459,7 +459,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 
 		if (r1 != 0)
 		{
-			put_status("dl_fldigi: payload information: download failed", 10);
+			//put_status("dl_fldigi: payload information: download failed", 10);
 			perror("dl_fldigi: f-re-lock cache file failed");
 			flock(fileno(t->file), LOCK_UN);
 			fclose(t->file);
@@ -471,7 +471,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		put_status("dl_fldigi: payload information: downloaded!", 10);
+		//put_status("dl_fldigi: payload information: downloaded!", 10);
 
 		/* ask qrunner to deal with this */
 		SET_THREAD_ID(DL_FLDIGI_TID);
@@ -483,7 +483,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		put_status("dl_fldigi: payload information: download failed", 10);
+		//put_status("dl_fldigi: payload information: download failed", 10);
 	}
 
 	flock(fileno(t->file), LOCK_UN);
@@ -745,7 +745,7 @@ void dl_fldigi_update_payloads()
 		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
 	}
 
-	put_status("dl_fldigi: payload information loaded", 10);
+	//put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
 	flock(fileno(file), LOCK_UN);
@@ -825,9 +825,9 @@ void dl_fldigi_select_payload(const char *name)
 			#endif
 
 			/* This way of doing concatenation is a bit ugly. */
-			s = "dl_fldigi: configured modem for payload ";
-			s += p->name;
-			put_status(s.c_str(), 10);
+			//s = "dl_fldigi: configured modem for payload ";
+			//s += p->name;
+			//put_status(s.c_str(), 10);
 
 			return;
 		}
