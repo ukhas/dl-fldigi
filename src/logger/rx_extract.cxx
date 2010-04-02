@@ -165,9 +165,9 @@ void rx_extract_add(int c)
 				extractstream << rx_buff;
 				extractstream.close();
 			}
-			rx_extract_msg = "File saved in ";
-			rx_extract_msg.append(WRAP_recv_dir);
-			put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
+			//rx_extract_msg = "File saved in ";
+			//rx_extract_msg.append(WRAP_recv_dir);
+			//put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 
 //jcoxon
 			//Trim Spaces
