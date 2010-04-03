@@ -62,6 +62,10 @@ struct payload
 	int  shift;
 	int  baud;
 	int  coding;
+	int time;
+	int latitude;
+	int longitude;
+	int altitude;
 	struct payload *next;
 };
 
@@ -544,10 +548,10 @@ void dl_fldigi_update_payloads()
 {
 	FILE *file;
 	int r1, r_shift, r_baud;
-	const char *r_coding;
+	const char *r_coding, *r_dbfield;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
-	int i;
+	int i, x;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
@@ -602,7 +606,7 @@ void dl_fldigi_update_payloads()
 			if (strcmp("name", xml->getNodeName()) == 0)
 			{
 				n = (struct payload *) malloc(sizeof(struct payload));
-
+				
 				if (n == NULL)
 				{
 					fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct payload'\n", sizeof(struct payload));
@@ -634,6 +638,7 @@ void dl_fldigi_update_payloads()
 				if (bHAB)
 				{
 					habFlightXML->add(p->name);
+					x = 0; //x = 1 not 0 as the SEQ count in the xml files also starts at 1
 				}
 
 				#ifdef DL_FLDIGI_DEBUG
@@ -736,6 +741,32 @@ void dl_fldigi_update_payloads()
 					p->coding = 2;
 				}
 			}
+			else if (strcmp("dbfield", xml->getNodeName()) == 0)
+			{
+			xml->read();
+			r_dbfield = xml->getNodeData();
+			x++;
+			if (strcmp("time", r_dbfield) == 0)
+				{
+					cout << "time = " << x << endl;
+					p->time = x;
+				}
+			else if (strcmp("latitude", r_dbfield) == 0)
+				{
+					cout << "latitude = " << x << endl;
+					p->latitude = x;
+				}
+			else if (strcmp("longitude", r_dbfield) == 0)
+				{
+					cout << "longitude = " << x << endl;
+					p->longitude = x;
+				}
+			else if (strcmp("altitude", r_dbfield) == 0)
+				{
+					cout << "altitude = " << x << endl;
+					p->altitude = x;
+				}
+			}
 		}
 	}
 
@@ -821,6 +852,10 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.rtty_shift = p->shift;
 			progdefaults.rtty_baud = p->baud;
 			progdefaults.rtty_bits = p->coding;
+			progdefaults.xml_time = p->time;
+			progdefaults.xml_latitude = p->latitude;
+			progdefaults.xml_longitude = p->longitude;
+			progdefaults.xml_altitude = p->altitude;
 
 			selShift->value(progdefaults.rtty_shift);
 			selBaud->value(progdefaults.rtty_baud);
