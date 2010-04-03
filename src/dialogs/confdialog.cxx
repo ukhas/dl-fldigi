@@ -130,6 +130,27 @@ static void cb_inpMyAntenna(Fl_Input2* o, void*) {
 progdefaults.changed = true;
 }
 
+Fl_Input2 *inpMyRadio=(Fl_Input2 *)0;
+
+static void cb_inpMyRadio(Fl_Input2* o, void*) {
+  progdefaults.myRadio = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Input2 *inpMyLat=(Fl_Input2 *)0;
+
+static void cb_inpMyLat(Fl_Input2* o, void*) {
+  progdefaults.myLat = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Input2 *inpMyLon=(Fl_Input2 *)0;
+
+static void cb_inpMyLon(Fl_Input2* o, void*) {
+  progdefaults.myLon = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Group *grpNoise=(Fl_Group *)0;
 
 Fl_Check_Button *btnNoiseOn=(Fl_Check_Button *)0;
@@ -2521,7 +2542,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
         tabOperator->tooltip(_("Operator information"));
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
-        { Fl_Group* o = new Fl_Group(5, 35, 490, 165, _("Station"));
+        { Fl_Group* o = new Fl_Group(5, 35, 490, 240, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
           { inpMyCallsign = new Fl_Input2(110, 64, 110, 24, _("Callsign:"));
@@ -2596,6 +2617,45 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
           inpMyAntenna->when(FL_WHEN_RELEASE);
           inpMyAntenna->labelsize(FL_NORMAL_SIZE);
         } // Fl_Input2* inpMyAntenna
+		{ inpMyRadio = new Fl_Input2(110, 200, 320, 24, _("Radio:"));
+          inpMyRadio->tooltip(_("Radio make"));
+          inpMyRadio->box(FL_DOWN_BOX);
+          inpMyRadio->color(FL_BACKGROUND2_COLOR);
+          inpMyRadio->selection_color(FL_SELECTION_COLOR);
+          inpMyRadio->labeltype(FL_NORMAL_LABEL);
+          inpMyRadio->labelfont(0);
+          inpMyRadio->labelsize(13);
+          inpMyRadio->labelcolor(FL_FOREGROUND_COLOR);
+          inpMyRadio->callback((Fl_Callback*)cb_inpMyRadio);
+          inpMyRadio->align(FL_ALIGN_LEFT);
+          inpMyRadio->when(FL_WHEN_RELEASE);
+        } // Fl_Input2* inpMyRadio
+		{ inpMyLat = new Fl_Input2(110, 234, 80, 24, _("Lat:"));
+          inpMyLat->tooltip(_("Latitude"));
+          inpMyLat->box(FL_DOWN_BOX);
+          inpMyLat->color(FL_BACKGROUND2_COLOR);
+          inpMyLat->selection_color(FL_SELECTION_COLOR);
+          inpMyLat->labeltype(FL_NORMAL_LABEL);
+          inpMyLat->labelfont(0);
+          inpMyLat->labelsize(13);
+          inpMyLat->labelcolor(FL_FOREGROUND_COLOR);
+          inpMyLat->callback((Fl_Callback*)cb_inpMyLat);
+          inpMyLat->align(FL_ALIGN_LEFT);
+          inpMyLat->when(FL_WHEN_RELEASE);
+        } // Fl_Input2* inpMyLat
+		{ inpMyLon = new Fl_Input2(250, 234, 80, 24, _("Lon:"));
+          inpMyLon->tooltip(_("Longitude"));
+          inpMyLon->box(FL_DOWN_BOX);
+          inpMyLon->color(FL_BACKGROUND2_COLOR);
+          inpMyLon->selection_color(FL_SELECTION_COLOR);
+          inpMyLon->labeltype(FL_NORMAL_LABEL);
+          inpMyLon->labelfont(0);
+          inpMyLon->labelsize(13);
+          inpMyLon->labelcolor(FL_FOREGROUND_COLOR);
+          inpMyLon->callback((Fl_Callback*)cb_inpMyLon);
+          inpMyLon->align(FL_ALIGN_LEFT);
+          inpMyLon->when(FL_WHEN_RELEASE);
+        } // Fl_Input2* inpMyLon
         { grpNoise = new Fl_Group(5, 203, 490, 165, _("Test Signal - Do NOT use with transmitter"));
           grpNoise->box(FL_ENGRAVED_FRAME);
           grpNoise->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);

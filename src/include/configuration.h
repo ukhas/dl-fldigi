@@ -732,6 +732,15 @@
         ELEM_(std::string, myAntenna, "MYANTENNA",                                      \
               "Antenna description (keep short!)",                                      \
               "")                                                                       \
+        ELEM_(std::string, myRadio, "MYRADIO",											\
+              "Radio description (keep short!)",										\
+              "")                                                                       \
+        ELEM_(std::string, myLat, "MYLAT",												\
+              "Latitude",																\
+              "")                                                                       \
+        ELEM_(std::string, myLon, "MYLON",												\
+              "Longitude",																\
+              "")                                                                       \
         /* Sound card */                                                                \
         ELEM_(int, btnAudioIOis, "AUDIOIO",                                             \
               "Audio subsystem.  Values are as follows:\n"                              \

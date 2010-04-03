@@ -271,19 +271,15 @@ void trx_trx_receive_loop()
 				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 				UpperCase (identity_callsign);
 
-				//string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
-				string string_lat = "52.0";
+				string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
 				UpperCase (string_lat);
-				//string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());
-				string string_lon = "0.0";
+				string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());
 				UpperCase (string_lon);
-				//string string_radio = (progdefaults.myRadio.empty() ? "UNKNOWN" : progdefaults.myRadio.c_str());
-				string string_radio = "radio";
+				string string_radio = (progdefaults.myRadio.empty() ? "UNKNOWN" : progdefaults.myRadio.c_str());
 				UpperCase (string_radio);
 				string string_antenna = (progdefaults.myAntenna.empty() ? "UNKNOWN" : progdefaults.myAntenna.c_str());
 				UpperCase (string_antenna);
-				//string string_payload = (progdefaults.flight_sel.empty() ? "UNKNOWN" : progdefaults.flight_sel.c_str());
-				string string_payload = "Test";
+				string string_payload = (progdefaults.xmlPayloadname.empty() ? "UNKNOWN" : progdefaults.xmlPayloadname.c_str());
 				UpperCase (string_payload);
 
 				time ( &rawtime );
@@ -293,7 +289,7 @@ void trx_trx_receive_loop()
 				cout << date_time << "\n";
 #endif
 //--------------------------------------------------------
-				string dlfldigi_version = "r100"; //Please update with revision number
+				string dlfldigi_version = "r101"; //Please update with revision number
 //-------------------------------------------------------
 				
 				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign

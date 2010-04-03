@@ -23,6 +23,9 @@ extern Fl_Input2 *inpMyName;
 extern Fl_Input2 *inpMyQth;
 extern Fl_Input2 *inpMyLocator;
 extern Fl_Input2 *inpMyAntenna;
+extern Fl_Input2 *inpMyRadio;
+extern Fl_Input2 *inpMyLat;
+extern Fl_Input2 *inpMyLon;
 //jcoxon
 #include <FL/Fl_Check_Button.H>
 extern Fl_Group *tabDL;

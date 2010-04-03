@@ -233,7 +233,7 @@ void rx_extract_add(int c)
 							customData.append(",");
 							customData.append(extractedField);
 						}
-						cout << x << " : " << pos << " : " << extractedField << " : " << remainingString  << endl;
+						//cout << x << " : " << pos << " : " << extractedField << " : " << remainingString  << endl;
 					}
 					customData.append(",");
 					customData.append(remainingString);

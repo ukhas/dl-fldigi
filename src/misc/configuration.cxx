@@ -472,6 +472,9 @@ int configuration::setDefaults()
 	inpMyQth->value(myQth.c_str());
 	inpMyLocator->value(myLocator.c_str());
 	inpMyAntenna->value(myAntenna.c_str());
+	inpMyRadio->value(myRadio.c_str());
+	inpMyLat->value(myLat.c_str());
+	inpMyLon->value(myLon.c_str());
 	UseLeadingZeros = btnUseLeadingZeros->value();
 	ContestStart = (int)nbrContestStart->value();
 	ContestDigits = (int)nbrContestDigits->value();
