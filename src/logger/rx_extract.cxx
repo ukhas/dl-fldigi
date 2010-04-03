@@ -203,7 +203,7 @@ void rx_extract_add(int c)
 					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
 					
 					int pos, asterixPosition = 0;
-					string extractedField, remainingString = rx_buff, checksumData;
+					string extractedField, remainingString = rx_buff, checksumData, customData;
 					
 					asterixPosition = rx_buff.find("*");
 					if (asterixPosition > 0)
@@ -213,7 +213,7 @@ void rx_extract_add(int c)
 						habChecksum->value(checksumData.c_str());
 					}
 					
-					for ( int x = 1; x <= number_commas; x++ ) {
+					for ( int x = 1; x < (number_commas + 1); x++ ) {
 						pos = remainingString.find(progdefaults.xmlField_delimiter.at(0));
 						extractedField = remainingString.substr(0, pos);
 						remainingString.erase(0, (pos + 1));
@@ -230,12 +230,14 @@ void rx_extract_add(int c)
 							habAlt->value(extractedField.c_str());
 						}
 						else {
-							habCustom->value(extractedField.c_str());
+							customData.append(",");
+							customData.append(extractedField);
 						}
 						cout << x << " : " << pos << " : " << extractedField << " : " << remainingString  << endl;
 					}
-					
-					//habCustom->value(rx_buff.c_str());
+					customData.append(",");
+					customData.append(remainingString);
+					habCustom->value(customData.c_str());
 					
 					//Restart Rx timer
 					rxTimer = time (NULL);
