@@ -33,6 +33,13 @@ using namespace io;  // in the namespace irr::io
 #define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
 
+int rxTimer = 0;
+time_t rawtime;
+struct tm * timeinfo;
+  
+time_t seconds;
+
+
 struct dl_fldigi_post_threadinfo
 {
 	CURL *curl;
@@ -55,6 +62,10 @@ struct payload
 	int  shift;
 	int  baud;
 	int  coding;
+	int time;
+	int latitude;
+	int longitude;
+	int altitude;
 	struct payload *next;
 };
 
@@ -295,7 +306,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
 	#endif
 
-	put_status("dl_fldigi: sentence uploading...", 10);
+	//put_status("dl_fldigi: sentence uploading...", 10);
 
 	result = curl_easy_perform(t->curl);
 
@@ -306,7 +317,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		put_status("dl_fldigi: sentence uploaded!", 10);
+		//put_status("dl_fldigi: sentence uploaded!", 10);
 	}
 	else
 	{
@@ -314,7 +325,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		put_status("dl_fldigi: sentence upload failed", 10);
+		//put_status("dl_fldigi: sentence upload failed", 10);
 	}
 
 	curl_easy_cleanup(t->curl);
@@ -442,7 +453,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
 	#endif
 
-	put_status("dl_fldigi: payload information: downloading...", 10);
+	//put_status("dl_fldigi: payload information: downloading...", 10);
 
 	result = curl_easy_perform(t->curl);
 
@@ -459,7 +470,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 
 		if (r1 != 0)
 		{
-			put_status("dl_fldigi: payload information: download failed", 10);
+			//put_status("dl_fldigi: payload information: download failed", 10);
 			perror("dl_fldigi: f-re-lock cache file failed");
 			flock(fileno(t->file), LOCK_UN);
 			fclose(t->file);
@@ -471,7 +482,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		put_status("dl_fldigi: payload information: downloaded!", 10);
+		//put_status("dl_fldigi: payload information: downloaded!", 10);
 
 		/* ask qrunner to deal with this */
 		SET_THREAD_ID(DL_FLDIGI_TID);
@@ -483,7 +494,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		put_status("dl_fldigi: payload information: download failed", 10);
+		//put_status("dl_fldigi: payload information: download failed", 10);
 	}
 
 	flock(fileno(t->file), LOCK_UN);
@@ -537,10 +548,10 @@ void dl_fldigi_update_payloads()
 {
 	FILE *file;
 	int r1, r_shift, r_baud;
-	const char *r_coding;
+	const char *r_coding, *r_dbfield;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
-	int i;
+	int i, x;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
@@ -595,7 +606,7 @@ void dl_fldigi_update_payloads()
 			if (strcmp("name", xml->getNodeName()) == 0)
 			{
 				n = (struct payload *) malloc(sizeof(struct payload));
-
+				
 				if (n == NULL)
 				{
 					fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct payload'\n", sizeof(struct payload));
@@ -627,6 +638,7 @@ void dl_fldigi_update_payloads()
 				if (bHAB)
 				{
 					habFlightXML->add(p->name);
+					x = 0; //x = 1 not 0 as the SEQ count in the xml files also starts at 1
 				}
 
 				#ifdef DL_FLDIGI_DEBUG
@@ -729,6 +741,32 @@ void dl_fldigi_update_payloads()
 					p->coding = 2;
 				}
 			}
+			else if (strcmp("dbfield", xml->getNodeName()) == 0)
+			{
+			xml->read();
+			r_dbfield = xml->getNodeData();
+			x++;
+			if (strcmp("time", r_dbfield) == 0)
+				{
+					cout << "time = " << x << endl;
+					p->time = x;
+				}
+			else if (strcmp("latitude", r_dbfield) == 0)
+				{
+					cout << "latitude = " << x << endl;
+					p->latitude = x;
+				}
+			else if (strcmp("longitude", r_dbfield) == 0)
+				{
+					cout << "longitude = " << x << endl;
+					p->longitude = x;
+				}
+			else if (strcmp("altitude", r_dbfield) == 0)
+				{
+					cout << "altitude = " << x << endl;
+					p->altitude = x;
+				}
+			}
 		}
 	}
 
@@ -745,7 +783,7 @@ void dl_fldigi_update_payloads()
 		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
 	}
 
-	put_status("dl_fldigi: payload information loaded", 10);
+	//put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
 	flock(fileno(file), LOCK_UN);
@@ -814,6 +852,10 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.rtty_shift = p->shift;
 			progdefaults.rtty_baud = p->baud;
 			progdefaults.rtty_bits = p->coding;
+			progdefaults.xml_time = p->time;
+			progdefaults.xml_latitude = p->latitude;
+			progdefaults.xml_longitude = p->longitude;
+			progdefaults.xml_altitude = p->altitude;
 
 			selShift->value(progdefaults.rtty_shift);
 			selBaud->value(progdefaults.rtty_baud);
@@ -825,9 +867,9 @@ void dl_fldigi_select_payload(const char *name)
 			#endif
 
 			/* This way of doing concatenation is a bit ugly. */
-			s = "dl_fldigi: configured modem for payload ";
-			s += p->name;
-			put_status(s.c_str(), 10);
+			//s = "dl_fldigi: configured modem for payload ";
+			//s += p->name;
+			//put_status(s.c_str(), 10);
 
 			return;
 		}
