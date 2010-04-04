@@ -22,15 +22,6 @@
   #include "hamlib.h"
 #endif
 
-//Added by jcoxon
-#include <curl/curl.h>
-#include <curl/types.h>
-#include <curl/easy.h>
-#include "irrXML.h"
-using namespace irr; // irrXML is located 
-using namespace io;  // in the namespace irr::io
-//
-
 Fl_Double_Window *dlgConfig; 
 Mode_Browser* mode_browser; 
 
@@ -2542,7 +2533,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
         tabOperator->tooltip(_("Operator information"));
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
-        { Fl_Group* o = new Fl_Group(5, 35, 490, 240, _("Station"));
+        { Fl_Group* o = new Fl_Group(5, 35, 490, 275, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
           { inpMyCallsign = new Fl_Input2(110, 64, 110, 24, _("Callsign:"));
@@ -2630,7 +2621,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
           inpMyRadio->align(FL_ALIGN_LEFT);
           inpMyRadio->when(FL_WHEN_RELEASE);
         } // Fl_Input2* inpMyRadio
-		{ inpMyLat = new Fl_Input2(110, 234, 80, 24, _("Lat:"));
+		{ inpMyLat = new Fl_Input2(110, 234, 80, 24, _("Lat +/-DD.DDD :"));
           inpMyLat->tooltip(_("Latitude"));
           inpMyLat->box(FL_DOWN_BOX);
           inpMyLat->color(FL_BACKGROUND2_COLOR);
@@ -2643,7 +2634,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
           inpMyLat->align(FL_ALIGN_LEFT);
           inpMyLat->when(FL_WHEN_RELEASE);
         } // Fl_Input2* inpMyLat
-		{ inpMyLon = new Fl_Input2(250, 234, 80, 24, _("Lon:"));
+		{ inpMyLon = new Fl_Input2(110, 268, 80, 24, _("Lon +/-DD.DDD :"));
           inpMyLon->tooltip(_("Longitude"));
           inpMyLon->box(FL_DOWN_BOX);
           inpMyLon->color(FL_BACKGROUND2_COLOR);
