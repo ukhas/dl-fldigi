@@ -354,6 +354,7 @@ fldigi_SOURCES += \
 	include/rigsupport.h \
 	include/rigxml.h \
 	include/ringbuffer.h \
+	include/rs8.h \
 	include/rsid.h \
 	include/rtty.h \
 	include/rx_extract.h \
@@ -363,6 +364,7 @@ fldigi_SOURCES += \
 	include/sound.h \
 	include/soundconf.h \
 	include/spot.h \
+	include/ssdv_rx.h \
 	include/stacktrace.h \
 	include/status.h \
 	include/strutil.h \
@@ -462,6 +464,8 @@ fldigi_SOURCES += \
 	spot/notify.cxx \
 	spot/pskrep.cxx \
 	spot/spot.cxx \
+	ssdv/ssdv_rx.cxx \
+	ssdv/rs8decode.c \
 	throb/throb.cxx \
 	trx/modem.cxx \
 	trx/trx.cxx \

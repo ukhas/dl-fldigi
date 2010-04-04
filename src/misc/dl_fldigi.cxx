@@ -15,11 +15,14 @@
 #include <FL/Fl_Choice.H>
 
 #include "configuration.h"
+#include "util.h"
+#include "fl_digi.h"
 #include "dl_fldigi.h"
 #include "util.h"
 #include "confdialog.h"
 #include "fl_digi.h"
 #include "main.h"
+#include "threads.h"
 #include "qrunner.h"
 
 #include "irrXML.h"
@@ -216,8 +219,6 @@ void dl_fldigi_post(const char *data, const char *identity)
 	curl_free(data_safe);
 	curl_free(identity_safe);
 
-	progdefaults.dl_online = 1;
-
 	/* The second of two globals accessed by this function: progdefaults.dl_online */
 	if (progdefaults.dl_online)
 	{
@@ -294,18 +295,27 @@ void *dl_fldigi_post_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
 	#endif
 
+	put_status("dl_fldigi: sentence uploading...", 10);
+
 	result = curl_easy_perform(t->curl);
 
-	#ifdef DL_FLDIGI_DEBUG
-		if (result == 0)
-		{
+	/* tests CURL-success only */
+	if (result == 0)
+	{
+		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
-		}
-		else
-		{
+		#endif
+
+		put_status("dl_fldigi: sentence uploaded!", 10);
+	}
+	else
+	{
+		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
-		}
-	#endif
+		#endif
+
+		put_status("dl_fldigi: sentence upload failed", 10);
+	}
 
 	curl_easy_cleanup(t->curl);
 	free(t->post_data);
@@ -426,25 +436,45 @@ void *dl_fldigi_download_thread(void *thread_argument)
 	struct dl_fldigi_download_threadinfo *t;
 	t = (struct dl_fldigi_download_threadinfo *) thread_argument;
 	CURLcode result;
+	int r1;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
 	#endif
 
+	put_status("dl_fldigi: payload information: downloading...", 10);
+
 	result = curl_easy_perform(t->curl);
 
 	curl_easy_cleanup(t->curl);
-	flock(fileno(t->file), LOCK_UN);
-	fclose(t->file);
-	free(t);
 
 	if (result == 0)
 	{
+		/* Swap our exclusive lock created in download() for a shared lock.
+		 * Relocking it shared means that update_payloads() can get its own shared lock on the
+		 * file without blocking, but download() cannot open its exclusive lock that might
+		 * start a new download thread. This effectivly reserves DL_FLDIGI_TID for our use. */
+
+		r1 = flock(fileno(t->file), LOCK_SH | LOCK_NB);
+
+		if (r1 != 0)
+		{
+			put_status("dl_fldigi: payload information: download failed", 10);
+			perror("dl_fldigi: f-re-lock cache file failed");
+			flock(fileno(t->file), LOCK_UN);
+			fclose(t->file);
+			free(t);
+			pthread_exit(0);
+		}
+
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
+		put_status("dl_fldigi: payload information: downloaded!", 10);
+
 		/* ask qrunner to deal with this */
+		SET_THREAD_ID(DL_FLDIGI_TID);
 		REQ(dl_fldigi_update_payloads);
 	}
 	else
@@ -452,7 +482,13 @@ void *dl_fldigi_download_thread(void *thread_argument)
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
+
+		put_status("dl_fldigi: payload information: download failed", 10);
 	}
+
+	flock(fileno(t->file), LOCK_UN);
+	fclose(t->file);
+	free(t);
 
 	pthread_exit(0);
 }
@@ -460,6 +496,11 @@ void *dl_fldigi_download_thread(void *thread_argument)
 void dl_fldigi_delete_payloads()
 {
 	struct payload *d, *n;
+	int i;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: (thread %li) cleaning in-memory payload information (structs)...\n", pthread_self());
+	#endif
 
 	if (bHAB)
 	{
@@ -467,6 +508,8 @@ void dl_fldigi_delete_payloads()
 	}
 
 	d = payload_list;
+	i = 0;
+
 	while (d != NULL)
 	{
 		#define auto_free(x)   do { void *a = (x); if (a != NULL) { free(a); } } while (0)
@@ -479,9 +522,15 @@ void dl_fldigi_delete_payloads()
 		n = d->next;
 		free(d);
 		d = n;
+
+		i++;
 	}
 
 	payload_list = NULL;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: (thread %li) cleaned %i payload structs...\n", pthread_self(), i);
+	#endif
 }
 
 void dl_fldigi_update_payloads()
@@ -491,6 +540,7 @@ void dl_fldigi_update_payloads()
 	const char *r_coding;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
+	int i;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
@@ -536,6 +586,7 @@ void dl_fldigi_update_payloads()
 	}
 
 	p = payload_list;
+	i = 0;
 
 	while (xml->read())
 	{
@@ -579,8 +630,10 @@ void dl_fldigi_update_payloads()
 				}
 
 				#ifdef DL_FLDIGI_DEBUG
-					fprintf(stderr, "dl_fldigi: adding payload '%s'\n", p->name);
+					fprintf(stderr, "dl_fldigi: adding payload %i: '%s'\n", i, p->name);
 				#endif
+
+				i++;
 			}
 			else if (strcmp("sentence_delimiter", xml->getNodeName()) == 0)
 			{
@@ -680,30 +733,79 @@ void dl_fldigi_update_payloads()
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: UI updated.\n");
+		fprintf(stderr, "dl_fldigi: UI updated: added %i payloads.\n", i);
 	#endif
+
+	if (bHAB && progdefaults.xmlPayloadname.length() != 0)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: post UI update: attempting to re-select (but not configure) payload '%s'\n", progdefaults.xmlPayloadname.c_str());
+		#endif
+
+		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
+	}
+
+	put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
 	flock(fileno(file), LOCK_UN);
 	fclose(file);
 }
 
-void dl_fldigi_select_payload(Fl_Choice* o, void *a)
+void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a)
+{
+	if (o == habFlightXML)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: select_payload callback started by habFlightXML\n");
+			fprintf(stderr, "dl_fldigi: set current payload name to '%s' (have not configured)\n", habFlightXML->text());
+		#endif
+
+		progdefaults.xmlPayloadname = habFlightXML->text();
+		progdefaults.changed = true;
+	}
+	else if (o == habConfigureButton)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: select_payload callback started by habConfigureButton\n");
+			fprintf(stderr, "dl_fldigi: configuring current payload name '%s'\n", progdefaults.xmlPayloadname.c_str());
+		#endif
+
+		dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
+	}
+	else
+	{
+		fprintf(stderr, "dl_fldigi: select_payload callback started by unknown source.\n");
+		return;
+	}
+}
+
+void dl_fldigi_select_payload(const char *name)
 {
 	struct payload *p;
+	string s;
+	int i;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) attempting to configure payload...\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: (thread %li) attempting to find and configure payload '%s'...\n", pthread_self(), name);
 	#endif
 
 	p = payload_list;
+	i = 0;
+
 	while (p != NULL)
 	{
-		if (p->name != NULL && strcmp(p->name, o->text()) == 0)
+		if (p->name != NULL && strcmp(p->name, name) == 0)
 		{
 			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: found payload '%s' at link %i...\n", p->name, i);
 				fprintf(stderr, "dl_fldigi: configuring payload '%s'...\n", p->name);
 			#endif
+
+			/* TODO: Currently, we don't set progdefaults.changed (I think it might become annoying?).
+			 * This might be a bad idea. */
+
+			init_modem_sync(MODE_RTTY);
 
 			progdefaults.xmlSentence_delimiter = p->sentence_delimiter;
 			progdefaults.xmlField_delimiter = p->field_delimiter;
@@ -718,11 +820,21 @@ void dl_fldigi_select_payload(Fl_Choice* o, void *a)
 			selBits->value(progdefaults.rtty_bits);
 			resetRTTY();
 
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: configured payload '%s'...\n", p->name);
+			#endif
+
+			/* This way of doing concatenation is a bit ugly. */
+			s = "dl_fldigi: configured modem for payload ";
+			s += p->name;
+			put_status(s.c_str(), 10);
+
 			return;
 		}
 
 		p = p->next;
+		i++;
 	}
 
-	fprintf(stderr, "dl_fldigi: (should never happen): unable to find payload to configure\n");
+	fprintf(stderr, "dl_fldigi: searched %i payloads; unable to find '%s' for configuring\n", i, name);
 }

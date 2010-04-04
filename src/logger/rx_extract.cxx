@@ -81,7 +81,7 @@ Save tags and all enclosed text to date-time stamped file, ie:\n\n\
 const char *txtWrapInfo = "\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
 Save tags and all enclosed text to date-time stamped file, ie:\n\n\
-    ~/NBEMS.files/WRAP/recv/extract-20090127-092515.wrap";
+    ~/.nbems/WRAP/recv/extract-20090127-092515.wrap";
 #endif
 
 #define   bufsize  16
@@ -118,6 +118,7 @@ void rx_extract_reset()
 void rx_extract_add(int c)
 {
 	if (!c) return;
+	check_nbems_dirs();
 
 	if (!bInit) {
 		rx_extract_reset();
@@ -130,14 +131,20 @@ void rx_extract_add(int c)
 //jcoxon
 	//Reads the stentence delimter previously read from the xml file.
 	//const char* beg = (progdefaults.xmlSentence_delimiter.empty() ? "UNKNOWN" : progdefaults.xmlSentence_delimiter.c_str());
-	const char* beg = "$$";
+	string beg_s = "$$" + progdefaults.xmlCallsign;
+	const char* beg = beg_s.c_str();
 //
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
+		/* FIXME. This overrides the dl_fldigi_post statuses a split second after they pop up.
+		 * However, it is equally important. */
+		/* Perhaps if we are looking for a payload name as well as $$, eg, we're searching
+		 * for $$icarus, the delay will be enough to make the messages readable. 
+		 * eg.
+		 * 	const char* beg = "$$testing";
+		 */
+		put_status("dl_fldigi: detected sentence start; extracting!", 10);
+
 		rx_buff = beg;
-		rx_extract_msg = "Extracting";
-
-		put_status(rx_extract_msg.c_str(), 60, STATUS_CLEAR);
-
 		memset(rx_extract_buff, ' ', bufsize);
 		extracting = true;
 	} else if (extracting) {
@@ -181,31 +188,25 @@ void rx_extract_add(int c)
 			min_number_fields = progdefaults.xmlFields;
 			
 			//Check rules - telem string length and number of fields and whether each field has been validated
+
+			// Old copy:
+			// if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) { 
+
+			// FIXME: For the purposes of testing we won't check min_number_fields
+
 			if (rx_buff.length() < total_string_length) {
 					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 					UpperCase (identity_callsign);
 
-					//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
-					if (identity_callsign != "UNKNOWN") { 
-						dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
-
-						rx_extract_msg = "Data posted to server";
-						put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
-					}
-					else {
-#if !defined(__CYGWIN__)
-						cout << "Need to enter a callsign, please go to 'Configure' then 'Operator' and add a callsign/nickname.\n";
-#endif
-					}
-					
+					/* dl_fldigi_post will put_status as it does its stuff */
+					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
 			
 					habCustom->value(rx_buff.c_str());
 			}
-//
+
 			rx_extract_reset();
 		} else if (rx_buff.length() > 16384) {
-			rx_extract_msg = "Extract length exceeded 16384 bytes";
-			put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
+			put_status("dl_fldigi: extract buffer exeeded 16384 bytes", 20, STATUS_CLEAR);
 			rx_extract_reset();
 		}
 	}

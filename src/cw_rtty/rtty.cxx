@@ -382,6 +382,7 @@ bool rtty::rx(bool bit)
 			if (bit) {
 				if ((metric >= progStatus.sldrSquelchValue && progStatus.sqlonoff)|| !progStatus.sqlonoff) {
 					c = decode_char();
+					put_rx_ssdv(c);
 					if ( c != 0 )
 						put_rx_char(c);
 				}
