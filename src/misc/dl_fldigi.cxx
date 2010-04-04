@@ -442,7 +442,11 @@ void *dl_fldigi_download_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
 	#endif
 
-	//put_status("dl_fldigi: payload information: downloading...", 10);
+	/* We have a lock on the download file t->file so there is only going to be
+	 * one instance of this thread. It's safe to claim this ID. */
+	SET_THREAD_ID(DL_FLDIGI_TID);
+
+	put_status("dl_fldigi: payload information: downloading...", 10);
 
 	result = curl_easy_perform(t->curl);
 
@@ -450,31 +454,15 @@ void *dl_fldigi_download_thread(void *thread_argument)
 
 	if (result == 0)
 	{
-		/* Swap our exclusive lock created in download() for a shared lock.
-		 * Relocking it shared means that update_payloads() can get its own shared lock on the
-		 * file without blocking, but download() cannot open its exclusive lock that might
-		 * start a new download thread. This effectivly reserves DL_FLDIGI_TID for our use. */
-
-		r1 = flock(fileno(t->file), LOCK_SH | LOCK_NB);
-
-		if (r1 != 0)
-		{
-			//put_status("dl_fldigi: payload information: download failed", 10);
-			perror("dl_fldigi: f-re-lock cache file failed");
-			flock(fileno(t->file), LOCK_UN);
-			fclose(t->file);
-			free(t);
-			pthread_exit(0);
-		}
-
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		//put_status("dl_fldigi: payload information: downloaded!", 10);
+		put_status("dl_fldigi: payload information: downloaded!", 10);
+
+		flock(fileno(t->file), LOCK_UN);
 
 		/* ask qrunner to deal with this */
-		SET_THREAD_ID(DL_FLDIGI_TID);
 		REQ(dl_fldigi_update_payloads);
 	}
 	else
@@ -483,10 +471,10 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		//put_status("dl_fldigi: payload information: download failed", 10);
+		put_status("dl_fldigi: payload information: download failed", 10);
+		flock(fileno(t->file), LOCK_UN);
 	}
 
-	flock(fileno(t->file), LOCK_UN);
 	fclose(t->file);
 	free(t);
 
