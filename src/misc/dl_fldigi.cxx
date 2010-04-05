@@ -135,7 +135,7 @@ void dl_fldigi_init()
 void put_status_safe(const char *msg, double timeout, status_timeout action)
 {
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: safely setting status '%s'\n", str);
+		fprintf(stderr, "dl_fldigi: safely setting status '%s'\n", msg);
 	#endif
 
 	ENSURE_THREAD(DL_FLDIGI_TID);
