@@ -733,7 +733,7 @@ void dl_fldigi_update_payloads()
 		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
 	}
 
-	//put_status("dl_fldigi: payload information loaded", 10);
+	put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
 	flock(fileno(file), LOCK_UN);
@@ -813,9 +813,9 @@ void dl_fldigi_select_payload(const char *name)
 			#endif
 
 			/* This way of doing concatenation is a bit ugly. */
-			//s = "dl_fldigi: configured modem for payload ";
-			//s += p->name;
-			//put_status(s.c_str(), 10);
+			s = "dl_fldigi: configured modem for payload ";
+			s += p->name;
+			put_status(s.c_str(), 10);
 
 			return;
 		}
