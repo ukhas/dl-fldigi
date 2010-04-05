@@ -57,6 +57,10 @@ LOG_FILE_SOURCE(debug::LOG_MODEM);
 
 using namespace std;
 
+time_t rawtime;
+struct tm * timeinfo;
+time_t seconds;
+
 int status_count = 901; //Why 1001? well as it'll trigger the status update to be sent when fldigi starts
 int old_seconds = 0;
 int timerCount = 0;
