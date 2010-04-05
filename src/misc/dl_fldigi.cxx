@@ -68,9 +68,11 @@ int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
 time_t rxTimer = 0;
+pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
+static void put_status_safe(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
 void dl_fldigi_delete_payloads();
 
 void dl_fldigi_init()
@@ -128,6 +130,20 @@ void dl_fldigi_init()
 
 	dl_fldigi_initialised = 1;
 	full_memory_barrier();
+}
+
+void put_status_safe(const char *msg, double timeout, status_timeout action)
+{
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: safely setting status '%s'\n", str);
+	#endif
+
+	ENSURE_THREAD(DL_FLDIGI_TID);
+
+	pthread_mutex_lock(&dl_fldigi_tid_mutex);
+	put_status(msg, timeout, action);
+	full_memory_barrier();
+	pthread_mutex_unlock(&dl_fldigi_tid_mutex);
 }
 
 void dl_fldigi_post(const char *data, const char *identity)
@@ -301,7 +317,9 @@ void *dl_fldigi_post_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
 	#endif
 
-	//put_status("dl_fldigi: sentence uploading...", 10);
+	SET_THREAD_ID(DL_FLDIGI_TID);
+
+	put_status_safe("dl_fldigi: sentence uploading...", 10);
 
 	result = curl_easy_perform(t->curl);
 
@@ -312,7 +330,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		//put_status("dl_fldigi: sentence uploaded!", 10);
+		put_status_safe("dl_fldigi: sentence uploaded!", 10);
 	}
 	else
 	{
@@ -320,7 +338,7 @@ void *dl_fldigi_post_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		//put_status("dl_fldigi: sentence upload failed", 10);
+		put_status_safe("dl_fldigi: sentence upload failed", 10);
 	}
 
 	curl_easy_cleanup(t->curl);
@@ -448,14 +466,11 @@ void *dl_fldigi_download_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
 	#endif
 
-	/* We have a lock on the download file t->file so there is only going to be
-	 * one instance of this thread. It's safe to claim this ID. */
 	SET_THREAD_ID(DL_FLDIGI_TID);
 
-	put_status("dl_fldigi: payload information: downloading...", 10);
+	put_status_safe("dl_fldigi: payload information: downloading...", 10);
 
 	result = curl_easy_perform(t->curl);
-
 	curl_easy_cleanup(t->curl);
 
 	if (result == 0)
@@ -464,12 +479,11 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
+		pthread_mutex_lock(&dl_fldigi_tid_mutex);
 		put_status("dl_fldigi: payload information: downloaded!", 10);
-
-		flock(fileno(t->file), LOCK_UN);
-
-		/* ask qrunner to deal with this */
 		REQ(dl_fldigi_update_payloads);
+		full_memory_barrier();
+		pthread_mutex_unlock(&dl_fldigi_tid_mutex);
 	}
 	else
 	{
@@ -477,10 +491,10 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		put_status("dl_fldigi: payload information: download failed", 10);
-		flock(fileno(t->file), LOCK_UN);
+		put_status_safe("dl_fldigi: payload information: download failed", 10);
 	}
 
+	flock(fileno(t->file), LOCK_UN);
 	fclose(t->file);
 	free(t);
 
