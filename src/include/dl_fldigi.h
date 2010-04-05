@@ -35,12 +35,4 @@ void dl_fldigi_select_payload(const char *name);
 void dl_fldigi_reset_rxtimer();
 void dl_fldigi_update_rxtimer();
 
-#include <time.h>
-
-extern int rxTimer;
-extern time_t rawtime;
-extern struct tm * timeinfo;
-  
-extern time_t seconds;
-
 #endif
