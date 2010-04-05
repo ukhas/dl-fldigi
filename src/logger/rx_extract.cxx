@@ -108,7 +108,7 @@ string rx_buff_edit;
 string tmpfield;
 //
 
-static void rx_extract_update_ui();
+static void rx_extract_update_ui(string rx_buff);
 
 void rx_extract_reset()
 {
