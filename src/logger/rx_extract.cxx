@@ -108,6 +108,8 @@ string rx_buff_edit;
 string tmpfield;
 //
 
+static void rx_extract_update_ui();
+
 void rx_extract_reset()
 {
 	rx_buff.clear();
@@ -214,7 +216,7 @@ void rx_extract_add(int c)
 	}
 }
 
-void rx_extract_ui(string rx_buff)
+void rx_extract_update_ui(string rx_buff)
 {
 		int pos, asterixPosition = 0;
 		string extractedField, remainingString = rx_buff, checksumData, customData;
