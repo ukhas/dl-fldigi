@@ -147,6 +147,7 @@ void rx_extract_add(int c)
 		rx_buff = beg;
 		memset(rx_extract_buff, ' ', bufsize);
 		extracting = true;
+		rxTimer = 0;
 	} else if (extracting) {
 		rx_buff += ch;
 		if (strstr(rx_extract_buff, end) != NULL) {
@@ -200,8 +201,48 @@ void rx_extract_add(int c)
 
 					/* dl_fldigi_post will put_status as it does its stuff */
 					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
-			
-					habCustom->value(rx_buff.c_str());
+					
+					int pos, asterixPosition = 0;
+					string extractedField, remainingString = rx_buff, checksumData, customData;
+					
+					asterixPosition = rx_buff.find("*");
+					if (asterixPosition > 0)
+					{
+						checksumData = remainingString.substr(asterixPosition);
+						remainingString.erase(asterixPosition);
+						habChecksum->value(checksumData.c_str());
+					}
+					
+					for ( int x = 1; x < (number_commas + 1); x++ ) {
+						pos = remainingString.find(progdefaults.xmlField_delimiter.at(0));
+						extractedField = remainingString.substr(0, pos);
+						remainingString.erase(0, (pos + 1));
+						if (x == progdefaults.xml_time) {
+							habTime->value(extractedField.c_str());
+						}
+						else if (x == progdefaults.xml_latitude) {
+							habLat->value(extractedField.c_str());
+						}
+						else if (x == progdefaults.xml_longitude) {
+							habLon->value(extractedField.c_str());
+						}
+						else if (x == progdefaults.xml_altitude) {
+							habAlt->value(extractedField.c_str());
+						}
+						else {
+							customData.append(",");
+							customData.append(extractedField);
+						}
+						//cout << x << " : " << pos << " : " << extractedField << " : " << remainingString  << endl;
+					}
+					customData.append(",");
+					customData.append(remainingString);
+					habCustom->value(customData.c_str());
+					
+					//Restart Rx timer
+					rxTimer = time (NULL);
+					habTimeSinceLastRx->value("0");
+					
 			}
 
 			rx_extract_reset();

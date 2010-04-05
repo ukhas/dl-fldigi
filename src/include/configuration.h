@@ -732,6 +732,15 @@
         ELEM_(std::string, myAntenna, "MYANTENNA",                                      \
               "Antenna description (keep short!)",                                      \
               "")                                                                       \
+        ELEM_(std::string, myRadio, "MYRADIO",											\
+              "Radio description (keep short!)",										\
+              "")                                                                       \
+        ELEM_(std::string, myLat, "MYLAT",												\
+              "Latitude",																\
+              "")                                                                       \
+        ELEM_(std::string, myLon, "MYLON",												\
+              "Longitude",																\
+              "")                                                                       \
         /* Sound card */                                                                \
         ELEM_(int, btnAudioIOis, "AUDIOIO",                                             \
               "Audio subsystem.  Values are as follows:\n"                              \
@@ -1084,13 +1093,17 @@
 		ELEM_(std::string, xmlPayloadname, "PAYLOADNAME", "The last selected payload", "")							\
 		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")							\
 		ELEM_(std::string, xmlField_delimiter, "", "", ",")								\
-		ELEM_(int, xmlFields, "", "", 7)										\
+		ELEM_(int, xmlFields, "", "", 7)												\
 		ELEM_(std::string, xmlCallsign, "", "", "")										\
+		ELEM_(int, xml_time, "", "", 0)													\
+		ELEM_(int, xml_latitude, "", "", 0)												\
+		ELEM_(int, xml_longitude, "", "", 0)											\
+		ELEM_(int, xml_altitude, "", "", 0)												\
 /* GPS Device Info */																	\
 		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")								\
 		ELEM_(std::string, gpsSpeed, "GPSSPEED", "", "4800")							\
 /* Config stuff */																		\
-		ELEM_(int, png_wfall, "PNG_WFALL", "", 0) \
+		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)										\
         ELEM_(bool, dl_online, "", "", false)
 
 

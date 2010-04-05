@@ -129,6 +129,7 @@ if test "x$WANT_FLARQ" = "xyes"; then
     bundle
 fi
 
+cp /opt/local/lib/libcurl.4.dylib Frameworks/
 cd "$build"
 echo $ECHO_N "creating disk image"
 hdiutil create -ov -srcfolder "$bundle_dir" -format UDZO -tgtimagekey zlib-level=9 "${APPBUNDLE}-nolibs.dmg"

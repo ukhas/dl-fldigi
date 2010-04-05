@@ -25,3 +25,6 @@ src/stamp-h1
 
 # Runtime generated files
 dl-fldigi-waterfall.png
+
+# Sample capture files
+capture*.wav

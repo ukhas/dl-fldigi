@@ -291,14 +291,17 @@ Fl_Input2			*habCustom=(Fl_Input2 *)0;
 Fl_Choice			*habFlightXML = 0;
 Fl_Input2			*habChecksum;
 Fl_Button			*habConfigureButton = 0;
+Fl_Input2			*habTimeSinceLastRx;
+
 int w_habTime = 90;
 int w_habLat = 90;
 int w_habLon = 90;
 int w_habAlt = 90;
 int w_habCustom = 300;
 int w_habFlightXML = 100;
-int w_habConfigureButton = 170;
-int w_habChecksum = 40;
+int w_habConfigureButton = 100;
+int w_habChecksum = 70;
+int w_habTimeSinceLastRx = 90;
 
 int pad = 1;
 int Hentry		= 24;
@@ -1228,13 +1231,18 @@ void cb_mnuGenerate(Fl_Widget *w, void *d)
 
 void cb_mnuPlayback(Fl_Widget *w, void *d)
 {
-	if (!scard) return;
-	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
+	cout << "Playback Selected" << endl;
+	if (!scard) {
+	 return;
+	 }
+		Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
+
 	if (capval || genval) {
 		m->clear();
 		return;
 	}
 	playval = m->value();
+	cout << playval << endl;
 	if(!scard->Playback(playval)) {
 		m->clear();
 		playval = false;
@@ -3897,9 +3905,21 @@ void create_fl_digi_main_primary() {
 }
 
 void cb_mnuAltDockedscope(Fl_Menu_ *w, void *d);
+void cb_mnuCaptureHAB(Fl_Widget *w, void *d);
+void cb_mnuGenerateHAB(Fl_Widget *w, void *d);
+void cb_mnuPlaybackHAB(Fl_Widget *w, void *d);
 
 Fl_Menu_Item alt_menu_[] = {
 {_("&File"), 0,  0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+
+#if USE_SNDFILE
+{ make_icon_label(_("Audio")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
+{_("RX capture"),  0, (Fl_Callback*)cb_mnuCaptureHAB,  0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("TX generate"), 0, (Fl_Callback*)cb_mnuGenerateHAB, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("Playback"),    0, (Fl_Callback*)cb_mnuPlaybackHAB, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+#endif
+
 { make_icon_label(_("Exit"), log_out_icon), 'x',  (Fl_Callback*)cb_E, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -4040,6 +4060,59 @@ void cb_mnuAltDockedscope(Fl_Menu_ *w, void *d) {
 	progStatus.DOCKEDSCOPE = m->value();
 	wf->show_scope(progStatus.DOCKEDSCOPE);
 }
+#if USE_SNDFILE
+void cb_mnuCaptureHAB(Fl_Widget *w, void *d)
+{
+	if (!scard) return;
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label(), alt_menu_); //eek
+	if (playval || genval) {
+		m->clear();
+		return;
+	}
+	capval = m->value();
+	if(!scard->Capture(capval)) {
+		m->clear();
+		capval = false;
+	}
+}
+
+void cb_mnuGenerateHAB(Fl_Widget *w, void *d)
+{
+	if (!scard) return;
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label(), alt_menu_);
+	if (capval || playval) {
+		m->clear();
+		return;
+	}
+	genval = m->value();
+	if (!scard->Generate(genval)) {
+		m->clear();
+		genval = false;
+	}
+}
+void cb_mnuPlaybackHAB(Fl_Widget *w, void *d)
+{
+	if (!scard) {
+	 return;
+	 }
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label(), alt_menu_);
+	if (capval || genval) {
+		m->clear();
+		return;
+	}
+	playval = m->value();
+	cout << playval << endl;
+	if(!scard->Playback(playval)) {
+		m->clear();
+		playval = false;
+	}
+	else if (btnAutoSpot->value()) {
+		put_status(_("Spotting disabled"), 3.0);
+		btnAutoSpot->value(0);
+		btnAutoSpot->do_callback();
+	}
+}
+#endif // USE_SNDFILE
 
 
 #define defwidget 0, 0, 10, 10, ""
@@ -4468,14 +4541,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habFlightXML->callback(cb_dl_fldigi_select_payload);
 		}
 
-		{ habConfigureButton = new Fl_Button(rightof(habFlightXML) + 2, Y + TopFrameHABheight - Hentry - 5, w_habConfigureButton, Hentry, "Autoreconfigure");
-		habConfigureButton->tooltip("Automatically set the fldigi modem settings for the chosen payload.");
-		habConfigureButton->when(FL_WHEN_RELEASE);
-		habConfigureButton->align(FL_ALIGN_INSIDE);
-		habConfigureButton->callback(cb_dl_fldigi_select_payload);
-		}
-
-		{ habTime = new Fl_Input2((rightof(habConfigureButton) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
+		{ habTime = new Fl_Input2((rightof(habFlightXML) + 2), (Y + TopFrameHABheight - Hentry - 5), w_habTime, Hentry, "Time");
 		habTime->tooltip(_("Time"));
 		habTime->box(FL_DOWN_BOX);
 		habTime->color(FL_BACKGROUND2_COLOR);
@@ -4541,6 +4607,27 @@ void create_fl_digi_main_dl_fldigi() {
 		habChecksum->labelsize(13);
 		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
 		habChecksum->align(FL_ALIGN_TOP); }
+	
+		{ habConfigureButton = new Fl_Button((rightof(habChecksum) + 2), Y + TopFrameHABheight - Hentry - 5, w_habConfigureButton, Hentry, "Autoreconfigure");
+		habConfigureButton->tooltip("Automatically set the fldigi modem settings for the chosen payload.");
+		habConfigureButton->labeltype(FL_NORMAL_LABEL);
+		habConfigureButton->labelfont(0);
+		habConfigureButton->labelsize(13);
+		habConfigureButton->when(FL_WHEN_RELEASE);
+		habConfigureButton->align(FL_ALIGN_INSIDE);
+		habConfigureButton->callback(cb_dl_fldigi_select_payload);
+		}
+		
+		{ habTimeSinceLastRx = new Fl_Input2(progStatus.mainW - w_habTimeSinceLastRx - 2, (Y + TopFrameHABheight - Hentry - 5) , w_habTimeSinceLastRx, Hentry, "Time since Rx");
+		habTimeSinceLastRx->tooltip(_("Elapsed time since last line of telemetry received"));
+		habTimeSinceLastRx->box(FL_DOWN_BOX);
+		habTimeSinceLastRx->color(FL_BACKGROUND2_COLOR);
+		habTimeSinceLastRx->selection_color(FL_SELECTION_COLOR);
+		habTimeSinceLastRx->labeltype(FL_NORMAL_LABEL);
+		habTimeSinceLastRx->labelfont(0);
+		habTimeSinceLastRx->labelsize(13);
+		habTimeSinceLastRx->labelcolor(FL_FOREGROUND_COLOR);
+		habTimeSinceLastRx->align(FL_ALIGN_TOP); }
 
 		TopFrameHAB->resizable(TopFrameHAB);
 		TopFrameHAB->end();

@@ -48,7 +48,6 @@
 #endif
 
 //New stuff added by jcoxon
-#include <time.h>
 #include <iostream>
 #include "extra.h"
 
@@ -58,12 +57,9 @@ LOG_FILE_SOURCE(debug::LOG_MODEM);
 
 using namespace std;
 
-time_t rawtime;
-struct tm * timeinfo;
-  
-time_t seconds;
 int status_count = 901; //Why 1001? well as it'll trigger the status update to be sent when fldigi starts
 int old_seconds = 0;
+int timerCount = 0;
 
 char date_time [80];
 //
@@ -240,6 +236,27 @@ void trx_trx_receive_loop()
 
 	while (1) {
 		//New stuff added by jcoxon
+		if (rxTimer > 0)
+		{
+		if (timerCount >= 50 ) {
+				seconds = time (NULL);
+				char Str[16];
+				int timeSinceRx = int(seconds) - int(rxTimer);
+				if (timeSinceRx > 60) {
+					int minSinceRx = timeSinceRx / 60;
+					int secondsSinceRx = timeSinceRx - (minSinceRx * 60);
+					sprintf(Str, "%dm %ds", minSinceRx, secondsSinceRx);
+				}
+				else {
+				sprintf(Str, "%ds", timeSinceRx);
+				}
+				habTimeSinceLastRx->value(Str);
+				timerCount = 0;
+			}
+			else { 
+				timerCount++;
+			}
+		}
 		if (status_count >= 1000) {
 			seconds = time (NULL);
 #if !defined(__CYGWIN__)
@@ -254,19 +271,15 @@ void trx_trx_receive_loop()
 				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 				UpperCase (identity_callsign);
 
-				//string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
-				string string_lat = "52.0";
+				string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
 				UpperCase (string_lat);
-				//string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());
-				string string_lon = "0.0";
+				string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());
 				UpperCase (string_lon);
-				//string string_radio = (progdefaults.myRadio.empty() ? "UNKNOWN" : progdefaults.myRadio.c_str());
-				string string_radio = "radio";
+				string string_radio = (progdefaults.myRadio.empty() ? "UNKNOWN" : progdefaults.myRadio.c_str());
 				UpperCase (string_radio);
 				string string_antenna = (progdefaults.myAntenna.empty() ? "UNKNOWN" : progdefaults.myAntenna.c_str());
 				UpperCase (string_antenna);
-				//string string_payload = (progdefaults.flight_sel.empty() ? "UNKNOWN" : progdefaults.flight_sel.c_str());
-				string string_payload = "Test";
+				string string_payload = (progdefaults.xmlPayloadname.empty() ? "UNKNOWN" : progdefaults.xmlPayloadname.c_str());
 				UpperCase (string_payload);
 
 				time ( &rawtime );
@@ -276,7 +289,7 @@ void trx_trx_receive_loop()
 				cout << date_time << "\n";
 #endif
 //--------------------------------------------------------
-				string dlfldigi_version = "r100"; //Please update with revision number
+				string dlfldigi_version = "r101"; //Please update with revision number
 //-------------------------------------------------------
 				
 				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
