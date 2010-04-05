@@ -881,6 +881,12 @@ void dl_fldigi_select_payload(const char *name)
 void dl_fldigi_reset_rxtimer()
 {
 	rxTimer = time(NULL);
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: reset rxTimer to %i\n", rxTimer);
+	#endif
+
+
 	dl_fldigi_update_rxtimer();
 }
 
@@ -895,12 +901,26 @@ void dl_fldigi_update_rxtimer()
 	seconds = now % 60;
 	minutes = (now - seconds) / 60;
 
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: rxTimer update: rxtimer=%i, now=%i, delta=%i, minutes=%i, seconds=%i\n", 
+		                rxTimer, now, delta, minutes, seconds);
+	#endif
+
 	if (minutes > 60)
 	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: setting habTimeSinceLastRx to 'ages'\n");
+		#endif
+
 		habTimeSinceLastRx->value("ages");
 		return;
 	}
 
 	snprintf(buf, 16, "%dm %ds", minutes, seconds);
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: setting habTimeSinceLastRx to '%s'\n", buf);
+	#endif
+
 	habTimeSinceLastRx->value(buf);
 }
