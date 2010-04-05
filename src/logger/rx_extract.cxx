@@ -30,6 +30,7 @@
 #include "status.h"
 #include "fl_digi.h"
 #include "configuration.h"
+#include "qrunner.h"
 
 //jcoxon
 #include "extra.h"
