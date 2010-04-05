@@ -899,7 +899,7 @@ void dl_fldigi_update_rxtimer()
 	delta = now - rxTimer;
 
 	seconds = now % 60;
-	minutes = (now - seconds) / 60;
+	minutes = now / 60;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: rxTimer update: rxtimer=%i, now=%i, delta=%i, minutes=%i, seconds=%i\n", 
