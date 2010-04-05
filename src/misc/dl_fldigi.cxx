@@ -11,6 +11,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/file.h>
+#include <time.h>
 
 #include <FL/Fl_Choice.H>
 
@@ -32,13 +33,6 @@ using namespace io;  // in the namespace irr::io
 
 #define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
-
-int rxTimer = 0;
-time_t rawtime;
-struct tm * timeinfo;
-  
-time_t seconds;
-
 
 struct dl_fldigi_post_threadinfo
 {
@@ -73,6 +67,7 @@ bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
+time_t rxTimer = 0;
 
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
@@ -867,4 +862,31 @@ void dl_fldigi_select_payload(const char *name)
 	}
 
 	fprintf(stderr, "dl_fldigi: searched %i payloads; unable to find '%s' for configuring\n", i, name);
+}
+
+void dl_fldigi_reset_rxtimer()
+{
+	rxTimer = time(NULL);
+	dl_fldigi_update_rxtimer();
+}
+
+void dl_fldigi_update_rxtimer()
+{
+	time_t now, delta, seconds, minutes;
+	char buf[16];
+
+	now = time(NULL);
+	delta = now - rxTimer;
+
+	seconds = now % 60;
+	minutes = (now - seconds) / 60;
+
+	if (minutes > 60)
+	{
+		habTimeSinceLastRx->value("ages");
+		return;
+	}
+
+	snprintf(buf, 16, "%dm %ds", minutes, seconds);
+	habTimeSinceLastRx->value(buf);
 }
