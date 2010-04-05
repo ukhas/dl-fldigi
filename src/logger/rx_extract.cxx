@@ -30,6 +30,7 @@
 #include "status.h"
 #include "fl_digi.h"
 #include "configuration.h"
+#include "qrunner.h"
 
 //jcoxon
 #include "extra.h"
@@ -106,6 +107,8 @@ int old_i = 0, field_number = 0;
 string rx_buff_edit;
 string tmpfield;
 //
+
+static void rx_extract_update_ui();
 
 void rx_extract_reset()
 {
@@ -213,7 +216,7 @@ void rx_extract_add(int c)
 	}
 }
 
-void rx_extract_ui(string rx_buff)
+void rx_extract_update_ui(string rx_buff)
 {
 		int pos, asterixPosition = 0;
 		string extractedField, remainingString = rx_buff, checksumData, customData;
