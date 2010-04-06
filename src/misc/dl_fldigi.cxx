@@ -73,7 +73,8 @@ pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
 static void put_status_safe(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
-void dl_fldigi_delete_payloads();
+static void print_put_status(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
+static void dl_fldigi_delete_payloads();
 
 void dl_fldigi_init()
 {
@@ -132,18 +133,23 @@ void dl_fldigi_init()
 	full_memory_barrier();
 }
 
-void put_status_safe(const char *msg, double timeout, status_timeout action)
+static void put_status_safe(const char *msg, double timeout, status_timeout action)
 {
-	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: safely setting status '%s'\n", msg);
-	#endif
-
 	ENSURE_THREAD(DL_FLDIGI_TID);
 
 	pthread_mutex_lock(&dl_fldigi_tid_mutex);
-	put_status(msg, timeout, action);
+	print_put_status(msg, timeout, action);
 	full_memory_barrier();
 	pthread_mutex_unlock(&dl_fldigi_tid_mutex);
+}
+
+static void print_put_status(const char *msg, double timeout, status_timeout action)
+{
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: UI status: '%s'\n", msg);
+	#endif
+
+	put_status(msg, timeout, action);
 }
 
 void dl_fldigi_post(const char *data, const char *identity)
@@ -307,7 +313,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	#endif
 }
 
-void *dl_fldigi_post_thread(void *thread_argument)
+static void *dl_fldigi_post_thread(void *thread_argument)
 {
 	struct dl_fldigi_post_threadinfo *t;
 	t = (struct dl_fldigi_post_threadinfo *) thread_argument;
@@ -455,12 +461,11 @@ void dl_fldigi_download()
 	#endif
 }
 
-void *dl_fldigi_download_thread(void *thread_argument)
+static void *dl_fldigi_download_thread(void *thread_argument)
 {
 	struct dl_fldigi_download_threadinfo *t;
 	t = (struct dl_fldigi_download_threadinfo *) thread_argument;
 	CURLcode result;
-	int r1;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
@@ -501,7 +506,7 @@ void *dl_fldigi_download_thread(void *thread_argument)
 	pthread_exit(0);
 }
 
-void dl_fldigi_delete_payloads()
+static void dl_fldigi_delete_payloads()
 {
 	struct payload *d, *n;
 	int i;
@@ -548,7 +553,7 @@ void dl_fldigi_update_payloads()
 	const char *r_coding, *r_dbfield;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
-	int i, x;
+	int i, dbfield_no;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
@@ -595,6 +600,7 @@ void dl_fldigi_update_payloads()
 
 	p = payload_list;
 	i = 0;
+	dbfield_no = 1;
 
 	while (xml->read())
 	{
@@ -635,8 +641,9 @@ void dl_fldigi_update_payloads()
 				if (bHAB)
 				{
 					habFlightXML->add(p->name);
-					x = 0; //x = 1 not 0 as the SEQ count in the xml files also starts at 1
 				}
+
+				dbfield_no = 1;
 
 				#ifdef DL_FLDIGI_DEBUG
 					fprintf(stderr, "dl_fldigi: adding payload %i: '%s'\n", i, p->name);
@@ -740,29 +747,27 @@ void dl_fldigi_update_payloads()
 			}
 			else if (strcmp("dbfield", xml->getNodeName()) == 0)
 			{
-			xml->read();
-			r_dbfield = xml->getNodeData();
-			x++;
-			if (strcmp("time", r_dbfield) == 0)
+				xml->read();
+				r_dbfield = xml->getNodeData();
+
+				if (strcmp("time", r_dbfield) == 0)
 				{
-					cout << "time = " << x << endl;
-					p->time = x;
+					p->time = dbfield_no;
 				}
-			else if (strcmp("latitude", r_dbfield) == 0)
+				else if (strcmp("latitude", r_dbfield) == 0)
 				{
-					cout << "latitude = " << x << endl;
-					p->latitude = x;
+					p->latitude = dbfield_no;
 				}
-			else if (strcmp("longitude", r_dbfield) == 0)
+				else if (strcmp("longitude", r_dbfield) == 0)
 				{
-					cout << "longitude = " << x << endl;
-					p->longitude = x;
+					p->longitude = dbfield_no;
 				}
-			else if (strcmp("altitude", r_dbfield) == 0)
+				else if (strcmp("altitude", r_dbfield) == 0)
 				{
-					cout << "altitude = " << x << endl;
-					p->altitude = x;
+					p->altitude = dbfield_no;
 				}
+
+				dbfield_no++;
 			}
 		}
 	}
@@ -834,7 +839,37 @@ void dl_fldigi_select_payload(const char *name)
 		{
 			#ifdef DL_FLDIGI_DEBUG
 				fprintf(stderr, "dl_fldigi: found payload '%s' at link %i...\n", p->name, i);
-				fprintf(stderr, "dl_fldigi: configuring payload '%s'...\n", p->name);
+				fprintf(stderr, "dl_fldigi: configuring payload '%s':\n", p->name);
+				fprintf(stderr, "dl_fldigi: {\n");
+
+				#define print_i(n)  fprintf(stderr, "dl_fldigi:   " #n ": %i\n", p->n)
+				#define print_s(n)  do \
+				                    { \
+				                    	if (p->n != NULL) \
+				                        { \
+				                    		fprintf(stderr, "dl_fldigi:   " #n ": '%s'\n", p->n); \
+				                        } \
+				                    	else \
+				                        { \
+				                    		fprintf(stderr, "dl_fldigi:   " #n ": NULL\n"); \
+				                        } \
+				                    } \
+				                    while (0)
+
+				print_s(name);
+				print_s(sentence_delimiter);
+				print_s(field_delimiter);
+				print_i(fields);
+				print_s(callsign);
+				print_i(shift);
+				print_i(baud);
+				print_i(coding);
+				print_i(time);
+				print_i(latitude);
+				print_i(longitude);
+				print_i(altitude);
+
+				fprintf(stderr, "dl_fldigi: }\n");
 			#endif
 
 			/* TODO: Currently, we don't set progdefaults.changed (I think it might become annoying?).
@@ -883,9 +918,8 @@ void dl_fldigi_reset_rxtimer()
 	rxTimer = time(NULL);
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: reset rxTimer to %i\n", rxTimer);
+		fprintf(stderr, "dl_fldigi: reset rxTimer to %li\n", rxTimer);
 	#endif
-
 
 	dl_fldigi_update_rxtimer();
 }
@@ -902,25 +936,44 @@ void dl_fldigi_update_rxtimer()
 	minutes = delta / 60;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: rxTimer update: rxtimer=%i, now=%i, delta=%i, minutes=%i, seconds=%i\n", 
+		fprintf(stderr, "dl_fldigi: rxTimer update: rxtimer=%li, now=%li, delta=%li, minutes=%li, seconds=%li\n", 
 		                rxTimer, now, delta, minutes, seconds);
 	#endif
 
 	if (minutes > 60)
 	{
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: setting habTimeSinceLastRx to 'ages'\n");
-		#endif
+		if (bHAB)
+		{
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: setting habTimeSinceLastRx to 'ages'\n");
+			#endif
 
-		habTimeSinceLastRx->value("ages");
+			habTimeSinceLastRx->value("ages");
+		}
+		else
+		{
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: would have set habTimeSinceLastRx to 'ages'\n");
+			#endif
+		}
+		
 		return;
 	}
 
-	snprintf(buf, 16, "%dm %ds", minutes, seconds);
+	snprintf(buf, 16, "%ldm %lds", minutes, seconds);
 
-	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: setting habTimeSinceLastRx to '%s'\n", buf);
-	#endif
+	if (bHAB)
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: setting habTimeSinceLastRx to '%s'\n", buf);
+		#endif
 
-	habTimeSinceLastRx->value(buf);
+		habTimeSinceLastRx->value(buf);
+	}
+	else
+	{
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: would have set habTimeSinceLastRx to '%s'\n", buf);
+		#endif
+	}
 }
