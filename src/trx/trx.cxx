@@ -57,6 +57,10 @@ LOG_FILE_SOURCE(debug::LOG_MODEM);
 
 using namespace std;
 
+time_t rawtime;
+struct tm * timeinfo;
+time_t seconds;
+
 int status_count = 901; //Why 1001? well as it'll trigger the status update to be sent when fldigi starts
 int old_seconds = 0;
 int timerCount = 0;
@@ -236,27 +240,13 @@ void trx_trx_receive_loop()
 
 	while (1) {
 		//New stuff added by jcoxon
-		if (rxTimer > 0)
-		{
 		if (timerCount >= 50 ) {
-				seconds = time (NULL);
-				char Str[16];
-				int timeSinceRx = int(seconds) - int(rxTimer);
-				if (timeSinceRx > 60) {
-					int minSinceRx = timeSinceRx / 60;
-					int secondsSinceRx = timeSinceRx - (minSinceRx * 60);
-					sprintf(Str, "%dm %ds", minSinceRx, secondsSinceRx);
-				}
-				else {
-				sprintf(Str, "%ds", timeSinceRx);
-				}
-				habTimeSinceLastRx->value(Str);
+				REQ(dl_fldigi_update_rxtimer);
 				timerCount = 0;
 			}
 			else { 
 				timerCount++;
 			}
-		}
 		if (status_count >= 1000) {
 			seconds = time (NULL);
 #if !defined(__CYGWIN__)

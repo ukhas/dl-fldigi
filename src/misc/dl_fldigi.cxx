@@ -11,6 +11,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/file.h>
+#include <time.h>
 
 #include <FL/Fl_Choice.H>
 
@@ -32,13 +33,6 @@ using namespace io;  // in the namespace irr::io
 
 #define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
-
-int rxTimer = 0;
-time_t rawtime;
-struct tm * timeinfo;
-  
-time_t seconds;
-
 
 struct dl_fldigi_post_threadinfo
 {
@@ -73,6 +67,7 @@ bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
+time_t rxTimer = 0;
 
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
@@ -453,7 +448,11 @@ void *dl_fldigi_download_thread(void *thread_argument)
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
 	#endif
 
-	//put_status("dl_fldigi: payload information: downloading...", 10);
+	/* We have a lock on the download file t->file so there is only going to be
+	 * one instance of this thread. It's safe to claim this ID. */
+	SET_THREAD_ID(DL_FLDIGI_TID);
+
+	put_status("dl_fldigi: payload information: downloading...", 10);
 
 	result = curl_easy_perform(t->curl);
 
@@ -461,31 +460,15 @@ void *dl_fldigi_download_thread(void *thread_argument)
 
 	if (result == 0)
 	{
-		/* Swap our exclusive lock created in download() for a shared lock.
-		 * Relocking it shared means that update_payloads() can get its own shared lock on the
-		 * file without blocking, but download() cannot open its exclusive lock that might
-		 * start a new download thread. This effectivly reserves DL_FLDIGI_TID for our use. */
-
-		r1 = flock(fileno(t->file), LOCK_SH | LOCK_NB);
-
-		if (r1 != 0)
-		{
-			//put_status("dl_fldigi: payload information: download failed", 10);
-			perror("dl_fldigi: f-re-lock cache file failed");
-			flock(fileno(t->file), LOCK_UN);
-			fclose(t->file);
-			free(t);
-			pthread_exit(0);
-		}
-
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		//put_status("dl_fldigi: payload information: downloaded!", 10);
+		put_status("dl_fldigi: payload information: downloaded!", 10);
+
+		flock(fileno(t->file), LOCK_UN);
 
 		/* ask qrunner to deal with this */
-		SET_THREAD_ID(DL_FLDIGI_TID);
 		REQ(dl_fldigi_update_payloads);
 	}
 	else
@@ -494,10 +477,10 @@ void *dl_fldigi_download_thread(void *thread_argument)
 			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
-		//put_status("dl_fldigi: payload information: download failed", 10);
+		put_status("dl_fldigi: payload information: download failed", 10);
+		flock(fileno(t->file), LOCK_UN);
 	}
 
-	flock(fileno(t->file), LOCK_UN);
 	fclose(t->file);
 	free(t);
 
@@ -783,7 +766,7 @@ void dl_fldigi_update_payloads()
 		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
 	}
 
-	//put_status("dl_fldigi: payload information loaded", 10);
+	put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
 	flock(fileno(file), LOCK_UN);
@@ -867,9 +850,9 @@ void dl_fldigi_select_payload(const char *name)
 			#endif
 
 			/* This way of doing concatenation is a bit ugly. */
-			//s = "dl_fldigi: configured modem for payload ";
-			//s += p->name;
-			//put_status(s.c_str(), 10);
+			s = "dl_fldigi: configured modem for payload ";
+			s += p->name;
+			put_status(s.c_str(), 10);
 
 			return;
 		}
@@ -879,4 +862,31 @@ void dl_fldigi_select_payload(const char *name)
 	}
 
 	fprintf(stderr, "dl_fldigi: searched %i payloads; unable to find '%s' for configuring\n", i, name);
+}
+
+void dl_fldigi_reset_rxtimer()
+{
+	rxTimer = time(NULL);
+	dl_fldigi_update_rxtimer();
+}
+
+void dl_fldigi_update_rxtimer()
+{
+	time_t now, delta, seconds, minutes;
+	char buf[16];
+
+	now = time(NULL);
+	delta = now - rxTimer;
+
+	seconds = now % 60;
+	minutes = (now - seconds) / 60;
+
+	if (minutes > 60)
+	{
+		habTimeSinceLastRx->value("ages");
+		return;
+	}
+
+	snprintf(buf, 16, "%dm %ds", minutes, seconds);
+	habTimeSinceLastRx->value(buf);
 }

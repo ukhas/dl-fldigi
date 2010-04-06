@@ -32,13 +32,7 @@ void dl_fldigi_download();
 void dl_fldigi_update_payloads();
 void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a);
 void dl_fldigi_select_payload(const char *name);
-
-#include <time.h>
-
-extern int rxTimer;
-extern time_t rawtime;
-extern struct tm * timeinfo;
-  
-extern time_t seconds;
+void dl_fldigi_reset_rxtimer();
+void dl_fldigi_update_rxtimer();
 
 #endif
