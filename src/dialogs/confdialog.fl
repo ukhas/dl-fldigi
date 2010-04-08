@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0110 
+version 1.0109 
 i18n_type 1 
 i18n_include "gettext.h" 
 i18n_function _ 
@@ -91,19 +91,19 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
   code {} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {569 72 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
+    xywh {1128 209 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
   } {
     Fl_Tabs tabsConfigure {open
-      xywh {-3 0 520 372} color 50 selection_color 50
+      xywh {-3 0 503 372} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;} open selected
-        tooltip {Operator information} xywh {0 25 500 345} when 1
+        callback {progdefaults.changed = true;} open
+        tooltip {Operator information} xywh {0 25 500 345} labelsize 12 when 1 hide
       } {
         Fl_Group {} {
           label Station open
-          xywh {5 35 490 165} box ENGRAVED_FRAME align 21
+          xywh {5 35 490 235} box ENGRAVED_FRAME align 21
         } {
           Fl_Input inpMyCallsign {
             label {Callsign:}
@@ -176,13 +176,21 @@ progdefaults.changed = true;}
             class Fl_Counter2
           }
         }
+        Fl_Input {} {
+          label {Lat (DD)}
+          xywh {110 200 320 25}
+        }
+        Fl_Input {} {
+          label {Long (DD)}
+          xywh {110 235 320 25}
+        }
       }
       Fl_Group tabUI {
         label UI open
-        xywh {-3 25 508 345} hide
+        xywh {-3 25 503 345} labelsize 12 hide
       } {
         Fl_Tabs tabsUI {open
-          xywh {-3 25 508 345} selection_color 50
+          xywh {-3 25 503 345} selection_color 50
         } {
           Fl_Group tabUserInterface {
             label General open
@@ -596,7 +604,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabWaterfall {
         label Waterfall open
-        xywh {0 25 500 347} hide
+        xywh {0 25 500 347} labelsize 12 hide
       } {
         Fl_Tabs tabsWaterfall {open
           xywh {0 25 500 347} color 50 selection_color 50
@@ -908,14 +916,14 @@ behaves inside the waterfall} xywh {15 196 150 22} down_box BORDER_BOX align 8
       }
       Fl_Group tabModems {
         label Modems open
-        xywh {0 25 517 345} hide
+        xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Tabs tabsModems {open
-          xywh {0 25 517 345} selection_color 50 align 9
+          xywh {0 25 500 345} selection_color 50 align 9
         } {
           Fl_Group tabCW {
             label CW open
-            xywh {0 50 500 320}
+            xywh {0 50 500 320} hide
           } {
             Fl_Tabs tabsCW {open
               xywh {0 50 500 320} selection_color 50
@@ -1227,7 +1235,7 @@ progdefaults.changed = true;}
                 label {Transmit width}
                 callback {progdefaults.HellXmtWidth=(int)o->value();
 progdefaults.changed = true;}
-                tooltip {\# of multiple scans / character line} xywh {15 100 40 20} align 8 maximum 3
+                tooltip {\# of multiple scans / character line} xywh {15 100 40 20} align 8 maximum 3 value 1
                 code0 {o->value(progdefaults.HellXmtWidth);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Spinner2
@@ -1343,7 +1351,7 @@ progdefaults.changed = true;}
           }
           Fl_Group tabOlivia {
             label Olivia open
-            xywh {0 50 500 320} hide
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {open
               xywh {5 60 490 200} box ENGRAVED_FRAME
@@ -1401,10 +1409,10 @@ progdefaults.changed = true;}
           }
           Fl_Group tabPSK {
             label PSK open
-            xywh {0 50 517 320} hide
+            xywh {0 50 500 320} hide
           } {
             Fl_Tabs tabsPSK {open
-              xywh {0 50 517 320} selection_color 50
+              xywh {0 50 500 320} selection_color 50
             } {
               Fl_Group {} {
                 label General open
@@ -1477,7 +1485,7 @@ OFF - Clear & restart} xywh {212 125 165 20} down_box DOWN_BOX
                     label Channels
                     callback {progdefaults.VIEWERchannels = (int)(o->value());
 initViewer();}
-                    tooltip {Change \# of psk viewer channels} xywh {15 95 50 20} align 8
+                    tooltip {Change \# of psk viewer channels} xywh {15 95 50 20} align 8 value 1
                     code0 {o->minimum(5); o->maximum(30); o->step(1);}
                     code1 {o->value(progdefaults.VIEWERchannels);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -1488,7 +1496,7 @@ initViewer();}
                     callback {progdefaults.VIEWERstart = (int)(o->value());
 progdefaults.changed = true;
 initViewer();}
-                    tooltip {Start decoding at this frequency} xywh {15 125 50 20} align 8
+                    tooltip {Start decoding at this frequency} xywh {15 125 50 20} align 8 value 1
                     code0 {o->minimum(200); o->maximum(1000); o->step(100);}
                     code1 {o->value(progdefaults.VIEWERstart);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -1499,7 +1507,7 @@ initViewer();}
                     callback {progdefaults.VIEWERtimeout = (int)(o->value());
 progdefaults.changed = true;}
                     tooltip {Clear channel text after
-\# seconds of inactivity} xywh {212 95 50 20} align 8
+\# seconds of inactivity} xywh {212 95 50 20} align 8 value 1
                     code0 {o->minimum(1); o->maximum(180); o->step(1);}
                     code1 {o->value(progdefaults.VIEWERtimeout);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -1745,7 +1753,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabRig {
         label Rig open
-        tooltip {Transceiver control} xywh {0 25 500 345} hide
+        tooltip {Transceiver control} xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Tabs tabsRig {open
           xywh {0 25 500 345} selection_color 50
@@ -2324,7 +2332,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabSoundCard {
         label Audio open
-        tooltip {Audio devices} xywh {0 25 500 345} hide
+        tooltip {Audio devices} xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Tabs tabsSoundCard {open
           xywh {0 25 500 345} selection_color 50
@@ -2463,7 +2471,7 @@ o->tooltip(src_get_description(sample_rate_converters[o->value()]));} open
                 label {RX ppm}
                 callback {progdefaults.RX_corr = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {RX sound card correction} xywh {15 180 85 20} align 8
+                tooltip {RX sound card correction} xywh {15 180 85 20} align 8 value 1
                 code0 {o->step(1);}
                 code1 {o->minimum(-50000);}
                 code2 {o->maximum(50000);}
@@ -2474,7 +2482,7 @@ progdefaults.changed = true;}
                 label {TX ppm}
                 callback {progdefaults.TX_corr = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {TX sound card correction} xywh {176 180 85 20} align 8
+                tooltip {TX sound card correction} xywh {176 180 85 20} align 8 value 1
                 code0 {o->step(1);}
                 code1 {o->minimum(-50000);}
                 code2 {o->maximum(50000);}
@@ -2485,7 +2493,7 @@ progdefaults.changed = true;}
                 label {TX offset}
                 callback {progdefaults.TxOffset = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {Difference between Rx & Tx freq (rig offset)} xywh {338 180 85 20} align 8
+                tooltip {Difference between Rx & Tx freq (rig offset)} xywh {338 180 85 20} align 8 value 1
                 code0 {o->value(progdefaults.TxOffset);}
                 code1 {o->step(1);}
                 code2 {o->minimum(-50); o->maximum(50);}
@@ -2574,7 +2582,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabID {
         label ID open
-        xywh {0 25 500 345} hide
+        xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Group {} {
           label {Video Preamble ID} open
@@ -2739,7 +2747,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabMisc {
         label Misc open
-        xywh {0 25 500 345} hide
+        xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Tabs tabsMisc {open
           xywh {0 25 500 345} selection_color 50
@@ -3036,7 +3044,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabQRZ {
         label {Callsign DB} open
-        tooltip {Callsign database} xywh {0 25 500 345} hide
+        tooltip {Callsign database} xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Group {} {
           label CDROM open
@@ -3137,6 +3145,109 @@ progdefaults.QRZ = HAMCALLHTML;
 progdefaults.changed = true;}
             tooltip {Vist Hamcall web site} xywh {25 105 300 20} down_box DOWN_BOX
             code0 {o->value(progdefaults.QRZ == HAMCALLHTML);}
+          }
+        }
+      }
+      Fl_Group tabDL {
+        label {DL Client} open
+        xywh {0 25 500 345} labelsize 12
+      } {
+        Fl_Tabs tabsDL {open
+          xywh {0 25 500 345}
+        } {
+          Fl_Group tabDLEnable {
+            label Enable open
+            xywh {0 50 500 320} hide
+          } {
+            Fl_Group {} {
+              label Enable open
+              xywh {5 55 490 290} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Check_Button {} {
+                label Online
+                xywh {35 75 200 25} down_box DOWN_BOX
+              }
+              Fl_Check_Button {} {
+                label {Detection and Extraction}
+                xywh {35 100 200 25} down_box DOWN_BOX
+              }
+              Fl_Check_Button {} {
+                label {Waterfall PNG Export}
+                xywh {35 125 200 25} down_box DOWN_BOX
+              }
+            }
+          }
+          Fl_Group tabDLPayload {
+            label Payload open
+            xywh {0 50 500 320} hide
+          } {
+            Fl_Group {} {
+              label {Payload Autoconfig} open
+              xywh {5 54 490 88} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Choice {} {open
+                xywh {125 110 120 25} down_box BORDER_BOX labeltype NO_LABEL align 20
+              } {}
+              Fl_Button {} {
+                label Autoconfigure
+                xywh {250 110 120 25}
+              }
+              Fl_Button {} {
+                label {Redownload data from server}
+                xywh {125 80 245 25}
+              }
+            }
+            Fl_Group {} {
+              label {Payload Settings} open
+              xywh {5 146 490 189} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Input {} {
+                label {Sentence Delimiter}
+                xywh {195 169 35 25}
+              }
+              Fl_Input {} {
+                label {Field Delimiter}
+                xywh {390 169 25 25}
+              }
+              Fl_Input {} {
+                label Callsign
+                xywh {195 194 105 25}
+              }
+              Fl_Group {} {
+                label Fields open
+                xywh {10 224 480 105} box ENGRAVED_FRAME align 21
+              } {
+                Fl_Input {} {
+                  label {Field Count}
+                  xywh {175 249 25 25}
+                }
+                Fl_Input {} {
+                  label {Time Field ID}
+                  xywh {175 274 25 25}
+                }
+                Fl_Input {} {
+                  label {Latitude Field ID}
+                  xywh {175 299 25 25}
+                }
+                Fl_Input {} {
+                  label {Longitude Field ID}
+                  xywh {395 299 25 25}
+                }
+                Fl_Input {} {
+                  label {Altitude Field ID}
+                  xywh {395 274 25 25}
+                }
+              }
+            }
+          }
+          Fl_Group {} {
+            label GPS open
+            xywh {0 50 500 320}
+          } {
+            Fl_Group {} {
+              label {GPS Upload Configuration} open selected
+              xywh {5 55 490 155} box ENGRAVED_FRAME align 21
+            } {}
           }
         }
       }

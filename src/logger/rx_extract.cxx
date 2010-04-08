@@ -138,13 +138,6 @@ void rx_extract_add(int c)
 	const char* beg = beg_s.c_str();
 //
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
-		/* FIXME. This overrides the dl_fldigi_post statuses a split second after they pop up.
-		 * However, it is equally important. */
-		/* Perhaps if we are looking for a payload name as well as $$, eg, we're searching
-		 * for $$icarus, the delay will be enough to make the messages readable. 
-		 * eg.
-		 * 	const char* beg = "$$testing";
-		 */
 		put_status("dl_fldigi: detected sentence start; extracting!", 10);
 
 		rx_buff = beg;
@@ -220,7 +213,9 @@ void rx_extract_update_ui(string rx_buff)
 {
 		int pos, asterixPosition = 0;
 		string extractedField, remainingString = rx_buff, checksumData, customData;
-					
+		
+		habCustom->value(rx_buff.c_str());
+		
 		asterixPosition = rx_buff.find("*");
 		if (asterixPosition > 0)
 		{
@@ -242,16 +237,10 @@ void rx_extract_update_ui(string rx_buff)
 		else if (x == progdefaults.xml_longitude) {
 			habLon->value(extractedField.c_str());
 		}
-			else if (x == progdefaults.xml_altitude) {
+		else if (x == progdefaults.xml_altitude) {
 			habAlt->value(extractedField.c_str());
 		}
-		else {
-			customData.append(",");
-			customData.append(extractedField);
-		}
+
 		//cout << x << " : " << pos << " : " << extractedField << " : " << remainingString  << endl;
 	}
-	customData.append(",");
-	customData.append(remainingString);
-	habCustom->value(customData.c_str());
 }
