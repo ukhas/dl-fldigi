@@ -138,13 +138,6 @@ void rx_extract_add(int c)
 	const char* beg = beg_s.c_str();
 //
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
-		/* FIXME. This overrides the dl_fldigi_post statuses a split second after they pop up.
-		 * However, it is equally important. */
-		/* Perhaps if we are looking for a payload name as well as $$, eg, we're searching
-		 * for $$icarus, the delay will be enough to make the messages readable. 
-		 * eg.
-		 * 	const char* beg = "$$testing";
-		 */
 		put_status("dl_fldigi: detected sentence start; extracting!", 10);
 
 		rx_buff = beg;
