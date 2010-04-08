@@ -220,7 +220,9 @@ void rx_extract_update_ui(string rx_buff)
 {
 		int pos, asterixPosition = 0;
 		string extractedField, remainingString = rx_buff, checksumData, customData;
-					
+		
+		habCustom->value(rx_buff.c_str());
+		
 		asterixPosition = rx_buff.find("*");
 		if (asterixPosition > 0)
 		{
@@ -242,16 +244,10 @@ void rx_extract_update_ui(string rx_buff)
 		else if (x == progdefaults.xml_longitude) {
 			habLon->value(extractedField.c_str());
 		}
-			else if (x == progdefaults.xml_altitude) {
+		else if (x == progdefaults.xml_altitude) {
 			habAlt->value(extractedField.c_str());
 		}
-		else {
-			customData.append(",");
-			customData.append(extractedField);
-		}
+
 		//cout << x << " : " << pos << " : " << extractedField << " : " << remainingString  << endl;
 	}
-	customData.append(",");
-	customData.append(remainingString);
-	habCustom->value(customData.c_str());
 }
