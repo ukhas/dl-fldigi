@@ -133,6 +133,22 @@ void dl_fldigi_init()
 	full_memory_barrier();
 }
 
+void cb_dl_fldigi_toggle_dl_online()
+{
+	progdefaults.dl_online = !progdefaults.dl_online;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: set dl_online to %s\n", progdefaults.dl_online ? "true" : "false");
+	#endif
+
+	/* If this is the first time we've come online... */
+	if (progdefaults.dl_online && !dl_fldigi_downloaded_once)
+	{
+		dl_fldigi_download();
+		dl_fldigi_downloaded_once = 1;
+	}
+}
+
 static void put_status_safe(const char *msg, double timeout, status_timeout action)
 {
 	ENSURE_THREAD(DL_FLDIGI_TID);
@@ -520,6 +536,8 @@ static void dl_fldigi_delete_payloads()
 		habFlightXML->clear();
 	}
 
+	habFlightXML_conf->clear();
+
 	d = payload_list;
 	i = 0;
 
@@ -642,6 +660,8 @@ void dl_fldigi_update_payloads()
 				{
 					habFlightXML->add(p->name);
 				}
+
+				habFlightXML_conf->add(p->name);
 
 				dbfield_no = 1;
 
@@ -785,6 +805,8 @@ void dl_fldigi_update_payloads()
 		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
 	}
 
+	habFlightXML_conf->value(habFlightXML_conf->find_item(progdefaults.xmlPayloadname.c_str()));
+
 	put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
@@ -794,30 +816,31 @@ void dl_fldigi_update_payloads()
 
 void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a)
 {
-	if (o == habFlightXML)
-	{
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: select_payload callback started by habFlightXML\n");
-			fprintf(stderr, "dl_fldigi: set current payload name to '%s' (have not configured)\n", habFlightXML->text());
-		#endif
+	progdefaults.xmlPayloadname = ((Fl_Choice *) o)->text();
+	progdefaults.changed = true;
 
-		progdefaults.xmlPayloadname = habFlightXML->text();
-		progdefaults.changed = true;
-	}
-	else if (o == habConfigureButton)
+	if (bHAB && o == habFlightXML_conf)
 	{
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: select_payload callback started by habConfigureButton\n");
-			fprintf(stderr, "dl_fldigi: configuring current payload name '%s'\n", progdefaults.xmlPayloadname.c_str());
-		#endif
+		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
+	}
 
-		dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
-	}
-	else
+	if (bHAB && o == habFlightXML)
 	{
-		fprintf(stderr, "dl_fldigi: select_payload callback started by unknown source.\n");
-		return;
+		habFlightXML_conf->value(habFlightXML_conf->find_item(progdefaults.xmlPayloadname.c_str()));
 	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: set current payload name to '%s' (have not configured)\n", progdefaults.xmlPayloadname.c_str());
+	#endif
+}
+
+void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a)
+{
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: configuring current payload name '%s'\n", progdefaults.xmlPayloadname.c_str());
+	#endif
+
+	dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
 }
 
 void dl_fldigi_select_payload(const char *name)
@@ -888,6 +911,17 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.xml_latitude = p->latitude;
 			progdefaults.xml_longitude = p->longitude;
 			progdefaults.xml_altitude = p->altitude;
+
+			#define update_conf_ui_s(n)  cd_ ## n->value(progdefaults.n.c_str());
+			#define update_conf_ui_i(n)  cd_ ## n->value(progdefaults.n);
+			update_conf_ui_s(xmlSentence_delimiter);
+			update_conf_ui_s(xmlField_delimiter);
+			update_conf_ui_i(xmlFields);
+			update_conf_ui_s(xmlCallsign);
+			update_conf_ui_i(xml_time);
+			update_conf_ui_i(xml_latitude);
+			update_conf_ui_i(xml_longitude);
+			update_conf_ui_i(xml_altitude);
 
 			selShift->value(progdefaults.rtty_shift);
 			selBaud->value(progdefaults.rtty_baud);

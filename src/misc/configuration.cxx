@@ -472,9 +472,6 @@ int configuration::setDefaults()
 	inpMyQth->value(myQth.c_str());
 	inpMyLocator->value(myLocator.c_str());
 	inpMyAntenna->value(myAntenna.c_str());
-	inpMyRadio->value(myRadio.c_str());
-	inpMyLat->value(myLat.c_str());
-	inpMyLon->value(myLon.c_str());
 	UseLeadingZeros = btnUseLeadingZeros->value();
 	ContestStart = (int)nbrContestStart->value();
 	ContestDigits = (int)nbrContestDigits->value();
@@ -601,11 +598,6 @@ int configuration::setDefaults()
 	btnRSID->value(rsid);
 	chkRSidWideSearch->value(rsidWideSearch);
 	chkSlowCpu->value(slowcpu);
-	
-	//New tab - jcoxon
-	inpgpsDevice->value(gpsDevice.c_str());
-	inpgpsSpeed->value(gpsSpeed.c_str());
-//
 	
 	Fl_Button* qrzb = btnQRZnotavailable;
 	switch (QRZ) {

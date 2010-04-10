@@ -1140,16 +1140,11 @@ void cb_dl_fldigi_refresh(Fl_Widget *, void *)
 	dl_fldigi_downloaded_once = 1;
 }
 
-void cb_toggle_dl_online(Fl_Widget *, void *) {
+void cb_toggle_dl_online(Fl_Widget *, void *)
+{
 	progdefaults.loadDefaults();
-	progdefaults.dl_online = !progdefaults.dl_online;
-
-	/* If this is the first time we've come online... */
-	if (progdefaults.dl_online && !dl_fldigi_downloaded_once)
-	{
-		dl_fldigi_download();
-		dl_fldigi_downloaded_once = 1;
-	}
+	cb_dl_fldigi_toggle_dl_online();
+	confdialog_dl_online->value(progdefaults.dl_online);
 }
 
 //jcoxon added 21/3/10
@@ -2139,7 +2134,8 @@ bool clean_exit(void) {
 #define RIGCONTEST_MLABEL  _("Rig control and contest")
 #define DOCKEDSCOPE_MLABEL _("Docked scope")
 #define WF_MLABEL _("Minimal controls")
-#define DLFLDIGI_ONLINE_LABEL _("Online")
+// #define DLFLDIGI_ONLINE_LABEL _("Online")
+const char *DLFLDIGI_ONLINE_LABEL = _("Online");
 
 bool restore_minimize = false;
 
@@ -3894,7 +3890,9 @@ void create_fl_digi_main_primary() {
 	if (!dxcc_is_open())
 		getMenuItem(COUNTRIES_MLABEL)->hide();
 
-        /* TODO: REMOVE ME: SEE LINE 2471 */ if (progdefaults.dl_online) getMenuItem(DLFLDIGI_ONLINE_LABEL)->set();
+        /* TODO: REMOVE ME: SEE LINE 2471 */ 
+	  set_menu_dl_online();
+	/* TODO */
 
 	UI_select();
 	wf->UI_select(progStatus.WF_UI);
@@ -4614,7 +4612,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->labelsize(13);
 		habConfigureButton->when(FL_WHEN_RELEASE);
 		habConfigureButton->align(FL_ALIGN_INSIDE);
-		habConfigureButton->callback(cb_dl_fldigi_select_payload);
+		habConfigureButton->callback(cb_dl_fldigi_configure_payload);
 		}
 		
 		{ habCustom = new Fl_Input2(10, below(habFlightXML) + 4, w_habCustom, Hentry);
@@ -4772,8 +4770,7 @@ void create_fl_digi_main_dl_fldigi() {
 		}
 	}
 
-	if (progdefaults.dl_online)
-		getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_)->set();
+	set_menu_dl_online();
 
 	make_scopeviewer();
 	noop_controls();
@@ -4800,6 +4797,28 @@ void create_fl_digi_main_dl_fldigi() {
 }
 //
 
+void set_menu_dl_online()
+{
+	Fl_Menu_Item *i;
+
+	if (bHAB)
+	{
+		i = getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_);
+	}
+	else
+	{
+		i = getMenuItem(DLFLDIGI_ONLINE_LABEL);
+	}
+
+	if (progdefaults.dl_online)
+	{
+		i->set();
+	}
+	else
+	{
+		i->clear();
+	}
+}
 
 void create_fl_digi_main(int argc, char** argv)
 {
