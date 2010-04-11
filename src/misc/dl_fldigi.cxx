@@ -2,6 +2,7 @@
 
 #ifdef __MINGW32__
 #  include "compat.h"
+#  include "compat_mingw_flock.c"
 #endif
 
 #include <iostream>
