@@ -25,6 +25,8 @@
 #include <config.h>
 #include <sys/file.h>
 
+#include "flock.h"
+
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
 
 /* _get_osfhandle */
