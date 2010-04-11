@@ -259,4 +259,6 @@ void set_rtty_baud(float baud);
 void set_rtty_bits(int bits);
 
 void sync_cw_parameters();
+
+void set_menu_dl_online();
 #endif
