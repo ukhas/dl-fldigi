@@ -23,6 +23,12 @@ flarq_CFLAGS = $(flarq_CXXFLAGS)
 flarq_LDFLAGS = @FLARQ_BUILD_LDFLAGS@
 flarq_LDADD = @FLARQ_BUILD_LDADD@
 
+# UGLY HACK! libjpeg doesn't have a pkg-configure (.pc) file and I can't be bothered doing this properly
+# FLTK requires libjpeg so it's *fair to assume* (and I'm going to hell for that) that it will be around somewhere
+# It's up whoever's doing the MINGW32 build to direct us to the local static copy, typically by using the LPATH
+# environment variable. This is also required since a MINGW32 builder needs to tell FLTK where to find it by similar
+# means because of the nasty way their configure script behaves (it _just tries_ -ljpeg to "see if we have it installed")
+fldigi_LDFLAGS += -ljpeg
 
 HAMLIB_SRC = include/hamlib.h rigcontrol/hamlib.cxx include/rigclass.h rigcontrol/rigclass.cxx
 XMLRPC_SRC = include/xmlrpc.h misc/xmlrpc.cxx
