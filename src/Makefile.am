@@ -33,7 +33,7 @@ LOCATOR_SRC = misc/locator.c
 BENCHMARK_SRC = include/benchmark.h misc/benchmark.cxx
 REGEX_SRC = compat/regex.h compat/regex.c
 STACK_SRC = include/stack.h misc/stack.cxx
-MINGW32_SRC = include/compat.h compat/getsysinfo.c compat/mingw.c compat/mingw.h
+MINGW32_SRC = include/compat.h compat/getsysinfo.c compat/mingw.c compat/mingw.h compat/flock.c compat/flock.h
 NLS_SRC = misc/nls.cxx
 
 # We distribute these but do not always compile them
@@ -72,6 +72,7 @@ endif
 if MINGW32
   fldigi_SOURCES += $(MINGW32_SRC)
   flarq_SOURCES += $(MINGW32_SRC)
+  fldigi_CPPFLAGS += -DCURL_STATICLIB
 endif
 
 if USE_NLS

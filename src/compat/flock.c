@@ -27,20 +27,6 @@
 
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
 
-#ifndef LOCK_SH
-/* Operations for the 'flock' call (same as Linux kernel constants).  */
-# define LOCK_SH 1       /* Shared lock.  */
-# define LOCK_EX 2       /* Exclusive lock.  */
-# define LOCK_UN 8       /* Unlock.  */
-
-/* Can be OR'd in to one of the above.  */
-# define LOCK_NB 4       /* Don't block when locking.  */
-#endif
-
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK EAGAIN
-#endif
-
 /* _get_osfhandle */
 #include <io.h>
 
