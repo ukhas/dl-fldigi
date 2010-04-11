@@ -24,6 +24,7 @@
 
 #include <config.h>
 #include <sys/file.h>
+#include <stdio.h>
 
 #include "flock.h"
 
