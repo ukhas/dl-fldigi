@@ -432,7 +432,7 @@ void dl_fldigi_download()
 
 	r2 = flock(fileno(file), LOCK_EX | LOCK_NB);
 
-	if (r2 == EWOULDBLOCK)
+	if (r2 == EWOULDBLOCK || r2 == EAGAIN)
 	{
 		fprintf(stderr, "dl_fldigi: cache file is locked; not downloading\n");
 		curl_easy_cleanup(curl);
@@ -587,7 +587,7 @@ void dl_fldigi_update_payloads()
 
 	r1 = flock(fileno(file), LOCK_SH | LOCK_NB);
 
-	if (r1 == EWOULDBLOCK)
+	if (r1 == EWOULDBLOCK || r1 == EAGAIN)
 	{
 		fprintf(stderr, "dl_fldigi: cache file is locked; not updating UI\n");
 		fclose(file);

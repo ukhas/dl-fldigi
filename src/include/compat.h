@@ -32,5 +32,6 @@
 #include <assert.h>
 
 #include "compat/mingw.h"
+#include "compat/flock.h"
 
 #endif // MINGW32_H
