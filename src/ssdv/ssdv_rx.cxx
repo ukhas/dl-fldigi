@@ -337,12 +337,10 @@ void ssdv_rx::new_image()
 	/* Clear the image buffer */
 	memset(image, 0x80, IMG_SIZE);
 	
-	/* Fill the JPEG buffer with EOI records */
-	for(int i = 0; i < JPEG_SIZE; i += 2)
-	{
-		jpeg[i + 0] = 0xFF;
-		jpeg[i + 1] = JPEG_EOI;
-	}
+	/* Fill the JPEG buffer with 0xFF */
+	/* 0xFF bytes are used for padding purposes in the JPEG format */
+	/* (see JPEG specification section F.1.2.3 for details). */
+	memset(jpeg, 0xFF, JPEG_SIZE);
 }
 
 void ssdv_rx::render_image()
