@@ -195,6 +195,8 @@ void rtty::restart()
 	poscnt = negcnt = 0;
 	posfreq = negfreq = 0.0;
 
+	bytelen = (1 + nbits + stl) * symbollen;
+
 	metric = 0.0;
 
 	snprintf(msg1, sizeof(msg1), "%-4.1f / %-4.0f", rtty_baud, rtty_shift);
@@ -389,7 +391,8 @@ bool rtty::rx(bool bit)
 					c = decode_char();
 					if ( c != 0 ) put_rx_char(c);
 					
-					lb = lost / symbollen / (1 + nbits + (rtty_parity != RTTY_PARITY_NONE ? 0 : 1)) - 1;
+					/* lb = estimated bytes lost */
+					lb = (lost - bytelen / 2) / bytelen;
 					put_rx_ssdv(c, lb);
 				}
 				flag = true;

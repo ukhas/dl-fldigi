@@ -72,6 +72,7 @@ private:
 
 	double shift;
 	int symbollen;
+	int bytelen;
 	int nbits;
 //	RTTY_PARITY parity;
 	int stoplen;
