@@ -134,9 +134,8 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	buffer = new uint8_t[BUFFER_SIZE];
 	jpeg = new uint8_t[JPEG_SIZE]; /* Maximum JPEG image size is < 64k */
 	
-	/* Empty buffer */
-	bc = 0;
-	bl = 0;
+	/* Empty receive buffer */
+	clear_buffer();
 	
 	/* Clear the image buffer, make it grey */
 	memset(image, 0x80, IMG_SIZE);
@@ -236,6 +235,12 @@ void ssdv_rx::feed_buffer(uint8_t byte)
 	else if(++bc == PACKET_SIZE) bc = 0;
 }
 
+void ssdv_rx::clear_buffer()
+{
+	bc = 0;
+	bl = 0;
+}
+
 int ssdv_rx::have_packet()
 {
 	int i;
@@ -260,8 +265,15 @@ int ssdv_rx::have_packet()
 	return(0);
 }
 
-void ssdv_rx::put_byte(uint8_t byte)
+void ssdv_rx::put_byte(uint8_t byte, int lost)
 {
+	/* If more than 16 bytes where lost clear the buffer */
+	if(lost > 16) clear_buffer();
+	
+	/* Fill in the lost bytes */
+	for(int i = 0; i < lost; i++)
+		feed_buffer(0x00);
+	
 	/* Feed the byte into the buffer */
 	feed_buffer(byte);
 	
@@ -322,7 +334,10 @@ void ssdv_rx::put_byte(uint8_t byte)
 
 void ssdv_rx::new_image()
 {
-	/* TODO: Save image, trigger upload */
+	if(img_imageid != -1)
+	{
+		/* TODO: Save previous image, trigger upload */
+	}
 	
 	/* Set details for new image */
 	img_imageid   = pkt_imageid;

@@ -111,6 +111,7 @@ void rtty::rx_init()
 	}
 	bitfilt->reset();
 	poserr = negerr = 0.0;
+	lost = 0;
 }
 
 void rtty::init()
@@ -330,6 +331,9 @@ bool rtty::rx(bool bit)
 {
 	bool flag = false;
 	unsigned char c;
+	int lb;
+
+	lost++;
 
 	switch (rxstate) {
 	case RTTY_RX_STATE_IDLE:
@@ -380,13 +384,16 @@ bool rtty::rx(bool bit)
 	case RTTY_RX_STATE_STOP:
 		if (--counter == 0) {
 			if (bit) {
+				c = decode_char();
 				if ((metric >= progStatus.sldrSquelchValue && progStatus.sqlonoff)|| !progStatus.sqlonoff) {
 					c = decode_char();
-					put_rx_ssdv(c);
-					if ( c != 0 )
-						put_rx_char(c);
+					if ( c != 0 ) put_rx_char(c);
+					
+					lb = lost / symbollen / (1 + nbits + (rtty_parity != RTTY_PARITY_NONE ? 0 : 1)) - 1;
+					put_rx_ssdv(c, lb);
 				}
 				flag = true;
+				lost = 0;
 			}
 			rxstate = RTTY_RX_STATE_STOP2;
 			counter = symbollen / 2;
