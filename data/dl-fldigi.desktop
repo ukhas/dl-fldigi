@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=dl-fldigi
+GenericName=Amateur Radio Digital Modem
+Comment=Amateur Radio Sound Card Communications
+Exec=dl-fldigi
+Icon=fldigi
+Terminal=false
+Type=Application
+Categories=Network;HamRadio;
