@@ -136,9 +136,13 @@ if WANT_FLDIGI
 	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/pixmaps; \
 	    $(INSTALL_DATA) $(srcdir)/../data/fldigi.xpm $(DESTDIR)/$(datadir)/pixmaps; \
 	fi
-	if test -f $(srcdir)/../data/fldigi.desktop; then \
+	if test -f $(srcdir)/../data/dl-fldigi.desktop; then \
 	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/applications; \
-	    $(INSTALL_DATA) $(srcdir)/../data/fldigi.desktop $(DESTDIR)/$(datadir)/applications; \
+	    $(INSTALL_DATA) $(srcdir)/../data/dl-fldigi.desktop $(DESTDIR)/$(datadir)/applications; \
+	fi
+	if test -f $(srcdir)/../data/dl-fldigi-hab.desktop; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/applications; \
+	    $(INSTALL_DATA) $(srcdir)/../data/dl-fldigi-hab.desktop $(DESTDIR)/$(datadir)/applications; \
 	fi
 endif
 if WANT_FLARQ
@@ -156,7 +160,8 @@ uninstall-local:
 if WANT_FLDIGI
 	rm -f $(DESTDIR)$(bindir)/fldigi-shell
 	rm -f $(DESTDIR)/$(datadir)/pixmaps/fldigi.xpm
-	rm -f $(DESTDIR)/$(datadir)/applications/fldigi.desktop
+	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi.desktop
+	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi-hab.desktop
 endif
 if WANT_FLARQ
 	rm -f $(DESTDIR)/$(datadir)/pixmaps/flarq.xpm
@@ -592,6 +597,8 @@ EXTRA_DIST = \
 	$(srcdir)/../data/fldigi-rtty.png \
 	$(srcdir)/../data/fldigi.xpm \
 	$(srcdir)/../data/fldigi.desktop \
+	$(srcdir)/../data/dl-fldigi.desktop \
+	$(srcdir)/../data/dl-fldigi-hab.desktop \
 	$(srcdir)/../data/mac/Info.plist.in \
 	$(srcdir)/../data/mac/fldigi.icns \
 	$(srcdir)/../data/win32/fldigi.ico \

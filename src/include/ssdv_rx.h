@@ -48,6 +48,7 @@ private:
 	
 	/* Private functions */
 	void feed_buffer(uint8_t byte);
+	void clear_buffer();
 	int have_packet();
 	void render_image();
 	void new_image();
@@ -56,7 +57,7 @@ public:
 	ssdv_rx(int w, int h, const char *title);
 	~ssdv_rx();
 	
-	void put_byte(uint8_t byte);
+	void put_byte(uint8_t byte, int lost);
 };
 
 #endif

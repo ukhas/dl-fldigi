@@ -72,6 +72,7 @@ private:
 
 	double shift;
 	int symbollen;
+	int bytelen;
 	int nbits;
 //	RTTY_PARITY parity;
 	int stoplen;
@@ -114,6 +115,7 @@ private:
 	double freqerrhi, freqerrlo;
 	double poserr, negerr;
 	int poscnt, negcnt;
+	int lost;
 
 	double prevsymbol;
 	complex prevsmpl;

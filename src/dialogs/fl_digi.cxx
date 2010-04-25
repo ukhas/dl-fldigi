@@ -5022,19 +5022,19 @@ void put_rx_char(unsigned int data)
 #endif
 }
 
-static void put_rx_ssdv_flmain(unsigned int data)
+static void put_rx_ssdv_flmain(unsigned int data, int lost)
 {
 	ENSURE_THREAD(FLMAIN_TID);
 
 	if (ssdv)
 	{
-		ssdv->put_byte(data);
+		ssdv->put_byte(data, lost);
 	}
 }
 
-void put_rx_ssdv(unsigned int data)
+void put_rx_ssdv(unsigned int data, int lost)
 {
-	REQ(put_rx_ssdv_flmain, data);
+	REQ(put_rx_ssdv_flmain, data, lost);
 }
 
 static string strSecText = "";

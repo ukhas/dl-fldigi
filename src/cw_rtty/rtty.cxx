@@ -111,6 +111,7 @@ void rtty::rx_init()
 	}
 	bitfilt->reset();
 	poserr = negerr = 0.0;
+	lost = 0;
 }
 
 void rtty::init()
@@ -193,6 +194,9 @@ void rtty::restart()
 	pipeptr = 0;
 	poscnt = negcnt = 0;
 	posfreq = negfreq = 0.0;
+
+	/* The length of a byte (including start, stop and parity bits */
+	bytelen = (1 + nbits + stl + (rtty_parity == RTTY_PARITY_NONE ? 0 : 1)) * symbollen;
 
 	metric = 0.0;
 
@@ -330,6 +334,9 @@ bool rtty::rx(bool bit)
 {
 	bool flag = false;
 	unsigned char c;
+	int lb;
+
+	lost++;
 
 	switch (rxstate) {
 	case RTTY_RX_STATE_IDLE:
@@ -380,13 +387,17 @@ bool rtty::rx(bool bit)
 	case RTTY_RX_STATE_STOP:
 		if (--counter == 0) {
 			if (bit) {
+				c = decode_char();
 				if ((metric >= progStatus.sldrSquelchValue && progStatus.sqlonoff)|| !progStatus.sqlonoff) {
 					c = decode_char();
-					put_rx_ssdv(c);
-					if ( c != 0 )
-						put_rx_char(c);
+					if ( c != 0 ) put_rx_char(c);
+					
+					/* lb = estimated bytes lost */
+					lb = (lost - bytelen / 2) / bytelen;
+					put_rx_ssdv(c, lb);
 				}
 				flag = true;
+				lost = 0;
 			}
 			rxstate = RTTY_RX_STATE_STOP2;
 			counter = symbollen / 2;
