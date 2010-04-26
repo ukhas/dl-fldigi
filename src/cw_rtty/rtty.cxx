@@ -387,7 +387,6 @@ bool rtty::rx(bool bit)
 	case RTTY_RX_STATE_STOP:
 		if (--counter == 0) {
 			if (bit) {
-				c = decode_char();
 				if ((metric >= progStatus.sldrSquelchValue && progStatus.sqlonoff)|| !progStatus.sqlonoff) {
 					c = decode_char();
 					if ( c != 0 ) put_rx_char(c);
