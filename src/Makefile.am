@@ -28,7 +28,7 @@ flarq_LDADD = @FLARQ_BUILD_LDADD@
 # It's up whoever's doing the MINGW32 build to direct us to the local static copy, typically by using the LPATH
 # environment variable. This is also required since a MINGW32 builder needs to tell FLTK where to find it by similar
 # means because of the nasty way their configure script behaves (it _just tries_ -ljpeg to "see if we have it installed")
-fldigi_LDFLAGS += -ljpeg
+fldigi_LDFLAGS += -ljpeg $(LIBJPEG_LOCATOR_FLAGS)
 
 HAMLIB_SRC = include/hamlib.h rigcontrol/hamlib.cxx include/rigclass.h rigcontrol/rigclass.cxx
 XMLRPC_SRC = include/xmlrpc.h misc/xmlrpc.cxx
