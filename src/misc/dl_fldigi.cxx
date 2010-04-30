@@ -68,9 +68,7 @@ int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
 time_t rxTimer = 0;
-pthread_mutex_t dl_fldigi_tid_mutex;
-pthread_mutex_t dl_fldigi_cache_mutex;
-struct flock fl_w, fl_r, fl_u;
+pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
@@ -80,46 +78,21 @@ static void dl_fldigi_delete_payloads();
 
 void dl_fldigi_init()
 {
-	CURLcode r3;
+	CURLcode r;
 	const char *home;
 	char *cache_file;
 	size_t i, fsz;
-	int r1, r2;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: dl_fldigi_init() was executed in thread %li\n", pthread_self());
 	#endif
 
-	/* Initialise our flock structs */
-	fl_w.l_whence = SEEK_SET;
-	fl_w.l_start = 0;
-	fl_w.l_len = 0;
-	fl_w.l_pid = getpid();
-	fl_r = fl_w;
-	fl_u = fl_w;
+	/* The only thread-unsafe step of dl_fldigi. Needs to be run once, at the start, when there are no other threads. */
+	r = curl_global_init(CURL_GLOBAL_ALL);
 
-	fl_w.l_type = F_WRLCK;
-	fl_r.l_type = F_RDLCK;
-	fl_u.l_type = F_UNLCK;
-
-	r1 = pthread_mutex_init(&dl_fldigi_tid_mutex, NULL);
-	if (r1 != 0)
+	if (r != 0)
 	{
-		fprintf(stderr, "dl_fldigi: tid mutex: pthread_mutex_init failed: (%i) %s\n", r1, strerror(r1));
-		exit(EXIT_FAILURE);
-	}
-
-	r2 = pthread_mutex_init(&dl_fldigi_cache_mutex, NULL);
-	if (r2 != 0)
-	{
-		fprintf(stderr, "dl_fldigi: cache mutex: pthread_mutex_init failed: (%i) %s\n", r2, strerror(r2));
-		exit(EXIT_FAILURE);
-	}
-
-	r3 = curl_global_init(CURL_GLOBAL_ALL);
-	if (r3 != 0)
-	{
-		fprintf(stderr, "dl_fldigi: curl_global_init failed: (%i) %s\n", r3, curl_easy_strerror(r3));
+		fprintf(stderr, "dl_fldigi: curl_global_init failed: (%i) %s\n", r, curl_easy_strerror(r));
 		exit(EXIT_FAILURE);
 	}
 
@@ -178,17 +151,9 @@ void cb_dl_fldigi_toggle_dl_online()
 
 static void put_status_safe(const char *msg, double timeout, status_timeout action)
 {
-	int r1;
-
 	ENSURE_THREAD(DL_FLDIGI_TID);
 
-	r1 = pthread_mutex_lock(&dl_fldigi_tid_mutex);
-	if (r1 != 0)
-	{
-		fprintf(stderr, "dl_fldigi: tid mutex pthread_mutex_lock failed: (%i) %s\n", r1, strerror(r1));
-		return;
-	}
-
+	pthread_mutex_lock(&dl_fldigi_tid_mutex);
 	print_put_status(msg, timeout, action);
 	full_memory_barrier();
 	pthread_mutex_unlock(&dl_fldigi_tid_mutex);
@@ -211,7 +176,6 @@ void dl_fldigi_post(const char *data, const char *identity)
 	pthread_t thread;
 	CURL *curl;
 	CURLcode r1, r2, r3;
-	int r4;
 
 	/* The first of two globals accessed by this function */
 	if (!dl_fldigi_initialised)
@@ -353,10 +317,9 @@ void dl_fldigi_post(const char *data, const char *identity)
 	full_memory_barrier();
 
 	/* the 4th argument passes the thread the information it needs */
-	r4 = pthread_create(&thread, NULL, dl_fldigi_post_thread, (void *) t);
-	if (r4 != 0)
+	if (pthread_create(&thread, NULL, dl_fldigi_post_thread, (void *) t) != 0)
 	{
-		fprintf(stderr, "dl_fldigi: post pthread_create failed: (%i) %s\n", r4, strerror(r4));
+		perror("dl_fldigi: post pthread_create");
 		curl_easy_cleanup(curl);
 		return;
 	}
@@ -370,7 +333,7 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 {
 	struct dl_fldigi_post_threadinfo *t;
 	t = (struct dl_fldigi_post_threadinfo *) thread_argument;
-	CURLcode r1;
+	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
@@ -380,13 +343,13 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 
 	put_status_safe("dl_fldigi: sentence uploading...", 10);
 
-	r1 = curl_easy_perform(t->curl);
+	result = curl_easy_perform(t->curl);
 
 	/* tests CURL-success only */
-	if (r1 == 0)
+	if (result == 0)
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (0) Success!\n", pthread_self());
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
 		put_status_safe("dl_fldigi: sentence uploaded!", 10);
@@ -394,7 +357,7 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), r1, curl_easy_strerror(r1));	
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
 		put_status_safe("dl_fldigi: sentence upload failed", 10);
@@ -414,8 +377,7 @@ void dl_fldigi_download()
 	CURL *curl;
 	CURLcode r1, r3;
 	FILE *file;
-	struct flock fl_wc, fl_uc;
-	int r2, r4;
+	int r2;
 
 	if (!dl_fldigi_initialised)
 	{
@@ -459,7 +421,7 @@ void dl_fldigi_download()
 		return;
 	}
 
-	file = fopen(dl_fldigi_cache_file, "w+");
+	file = fopen(dl_fldigi_cache_file, "w");
 
 	if (file == NULL)
 	{
@@ -468,10 +430,9 @@ void dl_fldigi_download()
 		return;
 	}
 
-	fl_wc = fl_w;
-	r2 = fcntl(fileno(file), F_SETLK, &fl_wc);
+	r2 = flock(fileno(file), LOCK_EX | LOCK_NB);
 
-	if (r2 == -1 && (errno == EACCES || errno == EAGAIN))
+	if (r2 == EWOULDBLOCK || r2 == EAGAIN)
 	{
 		fprintf(stderr, "dl_fldigi: cache file is locked; not downloading\n");
 		curl_easy_cleanup(curl);
@@ -480,7 +441,7 @@ void dl_fldigi_download()
 	}
 	else if (r2 != 0)
 	{
-		perror("dl_fldigi: fcntl cache file F_SETLK fl_w");
+		perror("dl_fldigi: flock cache file");
 		curl_easy_cleanup(curl);
 		fclose(file);
 		return;
@@ -491,8 +452,7 @@ void dl_fldigi_download()
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_WRITEDATA) failed: %s\n", curl_easy_strerror(r3));
 		curl_easy_cleanup(curl);
-		fl_uc = fl_u;
-		fcntl(fileno(file), F_SETLK, &fl_uc);
+		flock(fileno(file), LOCK_UN);
 		fclose(file);
 		return;
 	}
@@ -504,12 +464,10 @@ void dl_fldigi_download()
 	full_memory_barrier();
 
 	/* the 4th argument passes the thread the information it needs */
-	r4 = pthread_create(&thread, NULL, dl_fldigi_download_thread, (void *) t);
-	if (r4 != 0)
+	if (pthread_create(&thread, NULL, dl_fldigi_download_thread, (void *) t) != 0)
 	{
-		fprintf(stderr, "dl_fldigi: post pthread_create failed: (%i) %s\n", r4, strerror(r4));
-		fl_uc = fl_u;
-		fcntl(fileno(file), F_SETLK, &fl_uc);
+		perror("dl_fldigi: download pthread_create");
+		flock(fileno(file), LOCK_UN);
 		fclose(file);
 		return;
 	}
@@ -523,9 +481,7 @@ static void *dl_fldigi_download_thread(void *thread_argument)
 {
 	struct dl_fldigi_download_threadinfo *t;
 	t = (struct dl_fldigi_download_threadinfo *) thread_argument;
-	CURLcode r1;
-	struct flock fl_rc, fl_uc;
-	int r2, r3;
+	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
@@ -535,52 +491,31 @@ static void *dl_fldigi_download_thread(void *thread_argument)
 
 	put_status_safe("dl_fldigi: payload information: downloading...", 10);
 
-	r1 = curl_easy_perform(t->curl);
+	result = curl_easy_perform(t->curl);
 	curl_easy_cleanup(t->curl);
 
-	if (r1 == 0)
+	if (result == 0)
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (0) Success!\n", pthread_self());
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
 		#endif
 
-		/* Swap our exclusive lock for a shared lock */
-		fl_rc = fl_r;
-		r2 = fcntl(fileno(t->file), F_SETLK, &fl_rc);
-
-		if (r2 == -1)
-		{
-			perror("dl_fldigi: failed to swap exclusive t->file lock for a shared one");
-			/* Really we should die fully here, because this should not happen. */
-		}
-		else
-		{
-			r3 = pthread_mutex_lock(&dl_fldigi_tid_mutex);
-
-			if (r3 != 0)
-			{
-				fprintf(stderr, "dl_fldigi: tid mutex pthread_mutex_lock failed: (%i) %s\n", r3, strerror(r3));
-			}
-			else
-			{
-				put_status("dl_fldigi: payload information: downloaded!", 10);
-				REQ(dl_fldigi_update_payloads);
-				full_memory_barrier();
-				pthread_mutex_unlock(&dl_fldigi_tid_mutex);
-			}
-		}
+		pthread_mutex_lock(&dl_fldigi_tid_mutex);
+		put_status("dl_fldigi: payload information: downloaded!", 10);
+		REQ(dl_fldigi_update_payloads);
+		full_memory_barrier();
+		pthread_mutex_unlock(&dl_fldigi_tid_mutex);
 	}
 	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), r1, curl_easy_strerror(r1));
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
 		put_status_safe("dl_fldigi: payload information: download failed", 10);
 	}
 
-	fl_uc = fl_u;
-	fcntl(fileno(t->file), F_SETLK, &fl_uc);
+	flock(fileno(t->file), LOCK_UN);
 	fclose(t->file);
 	free(t);
 
@@ -632,11 +567,11 @@ static void dl_fldigi_delete_payloads()
 void dl_fldigi_update_payloads()
 {
 	FILE *file;
-	int r1, r_shift, r_baud, i, dbfield_no;
+	int r1, r_shift, r_baud;
 	const char *r_coding, *r_dbfield;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
-	struct flock fl_rc, fl_uc;
+	int i, dbfield_no;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
@@ -650,9 +585,9 @@ void dl_fldigi_update_payloads()
 		return;
 	}
 
-	fl_rc = fl_r;
-	r1 = fcntl(fileno(file), F_SETLK, &fl_rc);
-	if (r1 == -1 && (errno == EACCES || errno == EAGAIN))
+	r1 = flock(fileno(file), LOCK_SH | LOCK_NB);
+
+	if (r1 == EWOULDBLOCK || r1 == EAGAIN)
 	{
 		fprintf(stderr, "dl_fldigi: cache file is locked; not updating UI\n");
 		fclose(file);
@@ -660,7 +595,7 @@ void dl_fldigi_update_payloads()
 	}
 	else if (r1 != 0)
 	{
-		perror("dl_fldigi: fcntl cache file F_SETLK fl_r");
+		perror("dl_fldigi: flock cache file (read)");
 		fclose(file);
 		return;
 	}
@@ -676,8 +611,7 @@ void dl_fldigi_update_payloads()
 	if (!xml)
 	{
 		fprintf(stderr, "dl_fldigi: parsing payload info: createIrrXMLReader failed\n");
-		fl_uc = fl_u;
-		fcntl(fileno(file), F_SETLK, &fl_uc);
+		flock(fileno(file), LOCK_UN);
 		fclose(file);
 		return;
 	}
@@ -699,8 +633,7 @@ void dl_fldigi_update_payloads()
 					fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct payload'\n", sizeof(struct payload));
 					dl_fldigi_delete_payloads();
 					delete xml;
-					fl_uc = fl_u;
-					fcntl(fileno(file), F_SETLK, &fl_uc);
+					flock(fileno(file), LOCK_UN);
 					fclose(file);
 					return;
 				}
@@ -877,8 +810,7 @@ void dl_fldigi_update_payloads()
 	put_status("dl_fldigi: payload information loaded", 10);
 
 	delete xml;
-	fl_uc = fl_u;
-	fcntl(fileno(file), F_SETLK, &fl_uc);
+	flock(fileno(file), LOCK_UN);
 	fclose(file);
 }
 
