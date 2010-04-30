@@ -22,6 +22,10 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
 
 #ifndef LOCK_SH
@@ -41,3 +45,7 @@
 int flock (int fd, int operation);
 
 #endif /* Windows */
+
+#ifdef __cplusplus
+}
+#endif
