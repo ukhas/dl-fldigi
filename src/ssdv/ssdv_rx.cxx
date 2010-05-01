@@ -6,8 +6,6 @@
 #include <FL/Fl_Box.H>
 #include <FL/Fl_RGB_Image.H>
 #include <FL/Fl_Progress.H>
-#include <jpeglib.h>
-#include <jerror.h>
 #include <setjmp.h>
 #include "ssdv_rx.h"
 #include "rs8.h"
@@ -17,6 +15,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <jpeglib.h>
+#include <jerror.h>
 
 /* JPEG MEMORY SOURCE */
 
