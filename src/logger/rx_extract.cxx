@@ -197,8 +197,11 @@ void rx_extract_add(int c)
 					/* dl_fldigi_post will put_status as it does its stuff */
 					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
 
-					REQ(rx_extract_update_ui, rx_buff);
-					REQ(dl_fldigi_reset_rxtimer);
+					if(bHAB)
+					{
+						REQ(rx_extract_update_ui, rx_buff);
+						REQ(dl_fldigi_reset_rxtimer);
+					}
 			}
 
 			rx_extract_reset();
