@@ -4866,27 +4866,17 @@ void create_fl_digi_main_dl_fldigi() {
 #ifdef __APPLE__
 			sql_width -= 15; // leave room for resize handle
 #endif
-			if (progdefaults.useCheckButtons) {
-				btnAFC = new Fl_Check_Button(
-					progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
-					Y,
-					bwAfcOnOff, Hstatus, "AFC");
-				btnSQL = new Fl_Check_Button(
-					progStatus.mainW - bwSqlOnOff,
-					Y,
-					sql_width, Hstatus, "SQL");
-			} else {
-				btnAFC = new Fl_Light_Button(
-					progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
-					Y,
-					bwAfcOnOff, Hstatus, "AFC");
-				btnAFC->selection_color(progdefaults.AfcColor);
-				btnSQL = new Fl_Light_Button(
-					progStatus.mainW - bwSqlOnOff,
-					Y,
-					sql_width, Hstatus, "SQL");
-				btnSQL->selection_color(progdefaults.Sql1Color);
-			}
+			btnAFC = new Fl_Light_Button(
+				progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
+				Y,
+				bwAfcOnOff, Hstatus, "AFC");
+			btnAFC->selection_color(progdefaults.AfcColor);
+			btnSQL = new Fl_Light_Button(
+				progStatus.mainW - bwSqlOnOff,
+				Y,
+				sql_width, Hstatus, "SQL");
+			btnSQL->selection_color(progdefaults.Sql1Color);
+			
 			btnAFC->callback(cbAFC, 0);
 			btnAFC->value(1);
 			btnAFC->tooltip(_("Automatic Frequency Control"));
