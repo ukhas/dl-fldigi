@@ -30,8 +30,8 @@ fi
 
 set -e
 
-fldigi_name=Fldigi
-fldigi_bin=fldigi.exe
+fldigi_name=Dl-Fldigi
+fldigi_bin=dl-fldigi.exe
 flarq_name=Flarq
 flarq_bin=flarq.exe
 
