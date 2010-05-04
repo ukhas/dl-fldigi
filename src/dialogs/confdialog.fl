@@ -89,6 +89,8 @@ static const char szParity[]  = "none|even|odd|zero|one";
 static const char szStopBits[] = "1|1.5|2";
 static const char szOliviaTones[] = "2|4|8|16|32|64|128|256";
 static const char szOliviaBandwidth[] = "125|250|500|1000|2000";
+static const char szContestiaTones[] = "2|4|8|16|32|64|128|256";
+static const char szContestiaBandwidth[] = "125|250|500|1000|2000";
 static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600|115200|230400|460800";} {}
   code {} {}
   Fl_Window {} {
@@ -96,12 +98,12 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
     xywh {832 622 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
   } {
     Fl_Tabs tabsConfigure {open
-      xywh {-3 0 503 375} color 50 selection_color 50
+      xywh {-3 0 500 372} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;} open
-        tooltip {Operator information} xywh {0 25 500 345} labelsize 12 when 1 hide
+        callback {progdefaults.changed = true;} selected
+        tooltip {Operator information} xywh {0 25 500 345} when 1
       } {
         Fl_Group {} {
           label Station open
@@ -202,14 +204,14 @@ progdefaults.changed = true;}
       }
       Fl_Group tabUI {
         label UI open
-        xywh {-3 25 503 345} labelsize 12 hide
+        xywh {0 25 500 345} hide
       } {
         Fl_Tabs tabsUI {open
           xywh {-3 25 503 345} selection_color 50
         } {
           Fl_Group tabUserInterface {
-            label General open
-            xywh {0 50 500 320} hide
+            label General
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {open
               xywh {5 60 490 301} box ENGRAVED_FRAME
@@ -324,7 +326,7 @@ progdefaults.changed = true;}
             }
           }
           Fl_Group tabContest {
-            label Contest open
+            label Contest
             xywh {0 50 500 320} hide
           } {
             Fl_Group {} {
@@ -464,8 +466,8 @@ progdefaults.changed = true;}
             }
           }
           Fl_Group tabWF_UI {
-            label {Oper' Controls} open
-            xywh {0 50 500 320}
+            label {Operator Controls}
+            xywh {0 50 500 320} hide
           } {
             Fl_Box {} {
               label {Enable check box to show each respective operator control}
@@ -598,35 +600,30 @@ WF_UI();}
               xywh {301 321 88 20}
             }
           }
-          Fl_Group tabWfallRestart {
-            label Restart open
+          Fl_Group {} {
+            label {Rx Text} open
             xywh {0 50 500 320} hide
           } {
-            Fl_Group {} {
-              label {Changes take effect on next program startup} open
-              tooltip {Show me more or less waterfall} xywh {5 63 490 70} box ENGRAVED_FRAME align 17
-            } {
-              Fl_Check_Button btnCheckButtons {
-                label {Use check buttons for AFC and SQL}
-                callback {progdefaults.useCheckButtons = o->value();
+            Fl_Check_Button btn_rx_lowercase {
+              label {print CW / RTTY / THROB / CONTESTIA in lowercase}
+              callback {progdefaults.rx_lowercase = o->value();
 progdefaults.changed = true;}
-                tooltip {Check buttons or default lighted switch} xywh {52 93 275 20} down_box DOWN_BOX
-                code0 {o->value(progdefaults.useCheckButtons);}
-              }
+              xywh {25 75 389 15} down_box DOWN_BOX
+              code0 {o->value(progdefaults.rx_lowercase);}
             }
           }
         }
       }
       Fl_Group tabWaterfall {
-        label Waterfall open
-        xywh {0 25 500 347} labelsize 12 hide
+        label Waterfall
+        xywh {0 25 500 347} hide
       } {
         Fl_Tabs tabsWaterfall {open
           xywh {0 25 500 347} color 50 selection_color 50
         } {
           Fl_Group {} {
             label Display open
-            xywh {0 50 500 320}
+            xywh {0 50 500 320} hide
           } {
             Fl_Group {} {
               label {Colors and cursors} open
@@ -637,6 +634,7 @@ progdefaults.changed = true;}
                 xywh {15 98 260 24} box DOWN_BOX color 0 labelsize 12 align 5
                 code0 {\#include "colorbox.h"}
                 code1 {o->label(progdefaults.PaletteName.c_str());}
+                code2 {o->labelsize(FL_NORMAL_SIZE);}
                 class colorbox
               }
               Fl_Button {btnColor[0]} {
@@ -803,7 +801,7 @@ progdefaults.changed = true;}
 progdefaults.changed = true;}
                 tooltip {Set level for good viewing} xywh {270 315 200 20} type Horizontal align 1 step 0.05 value 0.5 textsize 14
                 code0 {o->value(progdefaults.TxMonitorLevel);}
-                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
               }
             }
@@ -880,7 +878,7 @@ progdefaults.changed = true;}
           }
           Fl_Group {} {
             label Mouse open
-            xywh {0 50 500 320} hide
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {open
               xywh {5 62 490 170} box ENGRAVED_FRAME
@@ -930,11 +928,11 @@ behaves inside the waterfall} xywh {15 196 150 22} down_box BORDER_BOX align 8
         }
       }
       Fl_Group tabModems {
-        label Modems open
-        xywh {0 25 500 345} labelsize 12 hide
+        label Modems
+        xywh {0 25 500 345} hide
       } {
         Fl_Tabs tabsModems {open
-          xywh {0 25 500 345} selection_color 50 align 9
+          xywh {0 25 501 345} selection_color 50 align 9
         } {
           Fl_Group tabCW {
             label CW open
@@ -957,7 +955,7 @@ behaves inside the waterfall} xywh {15 196 150 22} down_box BORDER_BOX align 8
 progdefaults.changed = true;}
                     tooltip {CW dsp filter bandwidth} xywh {40 115 290 20} type Horizontal align 8 minimum 10 maximum 500 step 10 value 150 textsize 14
                     code0 {o->value(progdefaults.CWbandwidth);}
-                    code1 {o->labelsize(FL_NORMAL_SIZE);}
+                    code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                     class Fl_Value_Slider2
                   }
                   Fl_Check_Button btnCWrcvTrack {
@@ -1003,7 +1001,7 @@ progdefaults.changed = true;
 sync_cw_parameters();}
                     tooltip {My transmit CW WPM} xywh {20 240 400 20} type Horizontal align 8 minimum 5 maximum 100 step 1 value 20 textsize 14
                     code0 {o->value(progdefaults.CWspeed);}
-                    code1 {o->labelsize(FL_NORMAL_SIZE);}
+                    code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                     class Fl_Value_Slider2
                   }
                   Fl_Counter cntCWdefWPM {
@@ -1047,7 +1045,7 @@ cntCW_WPM->maximum(progdefaults.CWupperlimit);}
 progdefaults.changed = true;}
                     tooltip {My transmit CW WPM} xywh {20 335 400 20} type Horizontal align 8 minimum 5 maximum 100 step 1 value 20 textsize 14
                     code0 {o->value(progdefaults.CWfarnsworth);}
-                    code1 {o->labelsize(FL_NORMAL_SIZE);}
+                    code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                     class Fl_Value_Slider2
                   }
                   Fl_Check_Button btnCWusefarnsworth {
@@ -1163,7 +1161,7 @@ progdefaults.changed = true;}
             }
           }
           Fl_Group tabDomEX {
-            label DominoEX open
+            label DomEX open
             xywh {0 50 500 320} hide
           } {
             Fl_Group {} {open
@@ -1208,7 +1206,7 @@ progdefaults.changed = true;}
 progdefaults.changed = true;}
                 tooltip {CWI detection and suppression} xywh {15 207 260 20} type Horizontal align 1 textsize 14
                 code0 {o->value(progdefaults.DomCWI);}
-                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
               }
               Fl_Counter valDominoEX_PATHS {
@@ -1276,7 +1274,7 @@ progdefaults.changed = true;} open
                 callback {progdefaults.HELL_BW = sldrHellBW->value();}
                 tooltip {Adjust the DSP bandwidth} xywh {206 147 246 20} type Horizontal align 5 minimum 10 maximum 2400 step 5 value 400 textsize 14
                 code0 {o->value(progdefaults.HELL_BW);}
-                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
               }
               Fl_Check_Button btnFeldHellIdle {
@@ -1419,6 +1417,64 @@ progdefaults.changed = true;}
                 callback {progdefaults.olivia8bit = o->value();
 progdefaults.changed = true;}
                 tooltip {Enable this for Latin-1 accented characters} xywh {60 229 200 20} down_box DOWN_BOX
+              }
+            }
+          }
+          Fl_Group tabContestia {
+            label Contestia open
+            xywh {0 50 500 320} hide
+          } {
+            Fl_Group {} {open
+              xywh {5 60 490 200} box ENGRAVED_FRAME
+            } {
+              Fl_Choice mnuContestia_Bandwidth {
+                label Bandwidth
+                callback {progdefaults.contestiabw = o->value();
+set_contestia_default_integ();
+resetOLIVIA();
+progdefaults.changed = true;} open
+                tooltip {Select bandwidth} xywh {60 80 85 20} down_box BORDER_BOX align 8
+                code0 {o->add(szContestiaBandwidth);}
+                code1 {o->value(2);}
+              } {}
+              Fl_Choice mnuContestia_Tones {
+                label Tones
+                callback {progdefaults.contestiatones = o->value();
+set_contestia_default_integ();
+resetCONTESTIA();
+progdefaults.changed = true;} open
+                tooltip {Select number of tones} xywh {321 80 70 20} down_box BORDER_BOX align 8
+                code0 {o->add(szContestiaTones);}
+                code1 {o->value(2);}
+              } {}
+              Fl_Group {} {
+                label {Receive synchronizer} open
+                xywh {60 119 379 100} box ENGRAVED_FRAME align 21
+              } {
+                Fl_Counter cntContestia_smargin {
+                  label {Tune margin (tone frequency spacing)}
+                  callback {progdefaults.contestiasmargin = (int)(o->value());
+resetCONTESTIA();
+progdefaults.changed = true;}
+                  tooltip {Change ONLY to experiment} xywh {80 150 70 20} type Simple align 8 minimum 2 maximum 128 step 1 value 8
+                  code0 {o->labelsize(FL_NORMAL_SIZE);}
+                  class Fl_Counter2
+                }
+                Fl_Counter cntContestia_sinteg {
+                  label {Integration period (FEC blocks)}
+                  callback {progdefaults.contestiasinteg = (int)(o->value());
+resetCONTESTIA();
+progdefaults.changed = true;}
+                  tooltip {Change ONLY to experiment} xywh {80 180 70 20} type Simple align 8 minimum 2 maximum 128 step 1 value 4
+                  code0 {o->labelsize(FL_NORMAL_SIZE);}
+                  class Fl_Counter2
+                }
+              }
+              Fl_Check_Button btnContestia_8bit {
+                label {8-bit extended characters}
+                callback {progdefaults.contestia8bit = o->value();
+progdefaults.changed = true;}
+                tooltip {Enable this for Latin-1 accented characters} xywh {60 229 200 20} down_box DOWN_BOX hide
               }
             }
           }
@@ -1630,6 +1686,7 @@ progdefaults.changed = true;}
                   callback {progdefaults.rtty_autocount = (int)o->value();
 progdefaults.changed = true;}
                   tooltip {Set page width} xywh {335 118 65 20} type Simple align 8 minimum 68 maximum 80 step 1 value 72
+                  code0 {o->labelsize(FL_NORMAL_SIZE);}
                   class Fl_Counter2
                 }
                 Fl_Box {} {
@@ -1695,7 +1752,7 @@ progdefaults.changed = true;}
                 callback {progdefaults.RTTY_BW = o->value();}
                 tooltip {Adjust the DSP bandwidth} xywh {100 325 300 20} type Horizontal align 5 minimum 5 maximum 200 step 1 value 25 textsize 14
                 code0 {o->value(progdefaults.RTTY_BW);}
-                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
               }
               Fl_Counter selCustomShift {
@@ -1749,7 +1806,7 @@ progdefaults.changed = true;}
 progdefaults.changed = true;}
                 tooltip {CWI detection and suppression} xywh {15 194 260 20} type Horizontal align 1 textsize 14
                 code0 {o->value(progdefaults.ThorCWI);}
-                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
               }
               Fl_Counter valTHOR_PATHS {
@@ -1767,8 +1824,8 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabRig {
-        label Rig open
-        tooltip {Transceiver control} xywh {0 25 500 345} labelsize 12 hide
+        label Rig
+        tooltip {Transceiver control} xywh {0 25 500 345} hide
       } {
         Fl_Tabs tabsRig {open
           xywh {0 25 500 345} selection_color 50
@@ -2346,8 +2403,8 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabSoundCard {
-        label Audio open
-        tooltip {Audio devices} xywh {0 25 500 345} labelsize 12 hide
+        label Audio
+        tooltip {Audio devices} xywh {0 25 500 345} hide
       } {
         Fl_Tabs tabsSoundCard {open
           xywh {0 25 500 345} selection_color 50
@@ -2588,7 +2645,7 @@ progdefaults.changed = true;}
 progdefaults.changed = true;}
                 tooltip {Set the sound card PCM level} xywh {15 167 340 20} type Horizontal selection_color 15 align 8 value 0.8 textsize 14
                 code0 {extern void setPCMvolume(double);}
-                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
               }
             }
@@ -2596,8 +2653,8 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabID {
-        label ID open
-        xywh {0 25 500 345} labelsize 12 hide
+        label ID
+        xywh {0 25 500 345} hide
       } {
         Fl_Group {} {
           label {Video Preamble ID} open
@@ -2645,7 +2702,7 @@ progdefaults.changed = true;}
             tooltip {Set the number of characters per row} xywh {365 127 120 20} type Horizontal align 4 minimum 1 maximum 4 step 1 value 1 textsize 14
             code0 {o->value(progdefaults.videowidth);}
             code1 {if (progdefaults.ID_SMALL) o->deactivate();}
-            code2 {o->labelsize(FL_NORMAL_SIZE);}
+            code2 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
             class Fl_Value_Slider2
           }
           Fl_Button bVideoIDModes {
@@ -2674,7 +2731,7 @@ progdefaults.changed = true;}
 progdefaults.changed = true;}
             tooltip {Send at this WPM} xywh {165 185 180 20} type Horizontal align 1 minimum 15 maximum 40 step 1 value 18 textsize 14
             code0 {o->value(progdefaults.CWIDwpm);}
-            code1 {o->labelsize(FL_NORMAL_SIZE);}
+            code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
             class Fl_Value_Slider2
           }
           Fl_Button bCWIDModes {
@@ -2761,8 +2818,8 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabMisc {
-        label Misc open
-        xywh {0 25 500 345} labelsize 12 hide
+        label Misc
+        xywh {0 25 500 345} hide
       } {
         Fl_Tabs tabsMisc {open
           xywh {0 25 500 345} selection_color 50
@@ -3058,8 +3115,8 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabQRZ {
-        label {Callsign DB} open
-        tooltip {Callsign database} xywh {0 25 500 345} labelsize 12 hide
+        label {Callsign DB}
+        tooltip {Callsign database} xywh {0 25 500 345} hide
       } {
         Fl_Group {} {
           label CDROM open

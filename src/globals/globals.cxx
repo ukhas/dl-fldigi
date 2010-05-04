@@ -42,6 +42,8 @@ using namespace std;
 const struct mode_info_t mode_info[NUM_MODES] = {
     { MODE_CW, &cw_modem, "CW", "CW", "CW", "CW" },
 
+	{ MODE_CONTESTIA, &contestia_modem, "CTSTIA", "Contestia", "", "CONTESTIA" },
+
 	{ MODE_DOMINOEX4, &dominoex4_modem, "DomEX4", "DominoEX 4", "DOMINOEX4", "DOMINO" },
 	{ MODE_DOMINOEX5, &dominoex5_modem, "DomEX5", "DominoEX 5", "DOMINOEX5", "DOMINO" },
 	{ MODE_DOMINOEX8, &dominoex8_modem, "DomEX8", "DominoEX 8", "DOMINOEX8", "DOMINO" },
@@ -106,8 +108,8 @@ const struct mode_info_t mode_info[NUM_MODES] = {
 	{ MODE_THROBX2, &throbx2_modem, "THRBX2", "ThrobX 2", "", "THRBX" },
 	{ MODE_THROBX4, &throbx4_modem, "THRBX4", "ThrobX 4", "", "THRBX" },
 
+	{ MODE_SSB, &ssb_modem, "SSB", "SSB", "", "SSB" },
 	{ MODE_WWV, &wwv_modem, "WWV", "WWV", "", "" },
-
 	{ MODE_ANALYSIS, &anal_modem, "ANALYSIS", "Freq Analysis", "", "" }
 };
 

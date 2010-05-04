@@ -392,7 +392,9 @@ void qso_selectFreq()
 	}
 // transceiver frequency
 	if (freqlist[n].rfcarrier > 0) {
-		qsoFreqDisp->value(freqlist[n].rfcarrier);
+		qsoFreqDisp1->value(freqlist[n].rfcarrier);
+		qsoFreqDisp2->value(freqlist[n].rfcarrier);
+		qsoFreqDisp3->value(freqlist[n].rfcarrier);
 		sendFreq(freqlist[n].rfcarrier);
 	}
 // modem type & audio sub carrier
@@ -479,7 +481,7 @@ bool init_NoRig_RigDialog()
 	clearList();
 	buildlist();
 
-	windowTitle = _("Rig Not Specified");
+	windowTitle = _("Enter Xcvr Freq");
 	setTitle();
 
 	return true;

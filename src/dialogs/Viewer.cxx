@@ -293,6 +293,7 @@ Fl_Double_Window* createViewer(void)
 	cols[0] = labelwidth[progdefaults.VIEWERlabeltype];
 
 	int viewerwidth = (progStatus.VIEWERnchars * cwidth) + cols[0] + sbarwidth + border;
+	int minwidth = (30 * cwidth) + cols[0] + sbarwidth + border;
 	int viewerheight = 40 + cheight * progdefaults.VIEWERchannels;
 	int pad = border/2;
 
@@ -305,7 +306,7 @@ Fl_Double_Window* createViewer(void)
 	// search field
 	const char* label = _("Find: ");
 	fl_font(FL_HELVETICA, FL_NORMAL_SIZE);
-	inpSeek = new Fl_Input2(2 * border + fl_width(label), border, 200, g->h(), label);
+	inpSeek = new Fl_Input2(static_cast<int>(2 * border + fl_width(label)), border, 200, g->h(), label);
 	inpSeek->callback((Fl_Callback*)cb_Seek);
 	inpSeek->when(FL_WHEN_CHANGED);
 	inpSeek->textfont(FL_COURIER);
@@ -356,7 +357,7 @@ Fl_Double_Window* createViewer(void)
 	w->end();
 	w->callback((Fl_Callback*)cb_btnCloseViewer);
 	w->resizable(brwsViewer);
-	w->size_range(w->w(), w->h() - brwsViewer->h() + 20);
+	w->size_range(minwidth, w->h() - brwsViewer->h() + 20);
 	w->xclass(PACKAGE_NAME);
 
 	return w;
@@ -384,12 +385,12 @@ void viewer_redraw()
 	brwsViewer->column_widths(cols);
 }
 
-void viewaddchr(int ch, int freq, char c)
+void viewaddchr(int ch, int freq, char c, int md)
 {
 	if (!dlgViewer) return;
 
 	if (progStatus.spot_recv)
-		spot_recv(c, ch, freq);
+		spot_recv(c, ch, freq, md);
 
 	if (rfc != wf->rfcarrier() || usb != wf->USB()) viewer_redraw();
 		

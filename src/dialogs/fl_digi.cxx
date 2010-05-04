@@ -38,6 +38,7 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <string>
+#include <fstream>
 #include <algorithm>
 #include <map>
 #include <dirent.h>
@@ -77,12 +78,14 @@
 #include "mt63.h"
 #include "rtty.h"
 #include "olivia.h"
+#include "contestia.h"
 #include "thor.h"
 #include "dominoex.h"
 #include "feld.h"
 #include "throb.h"
 #include "wwv.h"
 #include "analysis.h"
+#include "ssb.h"
 
 #include "ascii.h"
 #include "globals.h"
@@ -156,8 +159,6 @@ int rightof(Fl_Widget* w);
 int leftof(Fl_Widget* w);
 int above(Fl_Widget* w);
 int below(Fl_Widget* w);
-
-//bool	useCheckButtons;
 
 Fl_Group			*mnuFrame;
 Fl_Menu_Bar 		*mnu;
@@ -387,6 +388,16 @@ void cb_oliviaD(Fl_Widget *w, void *arg);
 void cb_oliviaE(Fl_Widget *w, void *arg);
 void cb_oliviaCustom(Fl_Widget *w, void *arg);
 
+void cb_contestiaA(Fl_Widget *w, void *arg);
+void cb_contestiaB(Fl_Widget *w, void *arg);
+void cb_contestiaC(Fl_Widget *w, void *arg);
+void cb_contestiaD(Fl_Widget *w, void *arg);
+void cb_contestiaE(Fl_Widget *w, void *arg);
+void cb_contestiaF(Fl_Widget *w, void *arg);
+void cb_contestiaG(Fl_Widget *w, void *arg);
+void cb_contestiaH(Fl_Widget *w, void *arg);
+void cb_contestiaCustom(Fl_Widget *w, void *arg);
+
 void cb_rtty45(Fl_Widget *w, void *arg);
 void cb_rtty50(Fl_Widget *w, void *arg);
 void cb_rttyHAB50(Fl_Widget *w, void *arg);
@@ -492,6 +503,19 @@ Fl_Menu_Item quick_change_olivia[] = {
 	{ 0 }
 };
 
+Fl_Menu_Item quick_change_contestia[] = {
+	{ "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA },
+	{ "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA },
+	{ "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA },
+	{ "8/500", 0, cb_contestiaD, (void *)MODE_CONTESTIA },
+	{ "16/500", 0, cb_contestiaE, (void *)MODE_CONTESTIA },
+	{ "8/1000", 0, cb_contestiaF, (void *)MODE_CONTESTIA },
+	{ "16/1000", 0, cb_contestiaG, (void *)MODE_CONTESTIA },
+	{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA },
+	{ _("Custom..."), 0, cb_contestiaCustom, (void *)MODE_CONTESTIA },
+	{ 0 }
+};
+
 Fl_Menu_Item quick_change_rtty[] = {
 	{ "RTTY-45", 0, cb_rtty45, (void *)MODE_RTTY },
 	{ "RTTY-50", 0, cb_rtty50, (void *)MODE_RTTY },
@@ -506,6 +530,7 @@ inline int minmax(int val, int min, int max)
 	return val > min ? val : min;
 }
 
+// Olivia
 void set_olivia_default_integ()
 {
 	int tones = progdefaults.oliviatones;
@@ -577,6 +602,105 @@ void cb_oliviaCustom(Fl_Widget *w, void *arg)
 	dlgConfig->show();
 	cb_init_mode(w, arg);
 }
+
+// Contestia
+void set_contestia_default_integ()
+{
+	int tones = progdefaults.contestiatones;
+	int bw = progdefaults.contestiabw;
+
+	if (tones < 1) tones = 1;
+	int depth = minmax( (8 * (1 << bw)) / (1 << tones), 4, 4 * (1 << bw));
+
+	progdefaults.contestiasinteg = depth;
+	cntContestia_sinteg->value(depth);
+}
+
+void set_contestia_tab_widgets()
+{
+	mnuContestia_Bandwidth->value(progdefaults.contestiabw);
+	mnuContestia_Tones->value(progdefaults.contestiatones);
+	set_contestia_default_integ();
+}
+
+void cb_contestiaA(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 1;
+	progdefaults.contestiabw = 1;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaB(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 2;
+	progdefaults.contestiabw = 1;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaC(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 1;
+	progdefaults.contestiabw = 2;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaD(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 2;
+	progdefaults.contestiabw = 2;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaE(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 3;
+	progdefaults.contestiabw = 2;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaF(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 2;
+	progdefaults.contestiabw = 3;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaG(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 3;
+	progdefaults.contestiabw = 3;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaH(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 4;
+	progdefaults.contestiabw = 3;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaCustom(Fl_Widget *w, void *arg)
+{
+	modem_config_tab = tabContestia;
+	tabsConfigure->value(tabModems);
+	tabsModems->value(modem_config_tab);
+#if USE_HAMLIB
+	hamlib_restore_defaults();
+#endif
+	rigCAT_restore_defaults();;
+	dlgConfig->show();
+	cb_init_mode(w, arg);
+}
+
+//
 
 void set_rtty_tab_widgets()
 {
@@ -857,6 +981,13 @@ void init_modem(trx_mode mode, int freq)
 		quick_change = quick_change_olivia;
 		break;
 
+	case MODE_CONTESTIA:
+		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
+			      *mode_info[mode].modem = new contestia, freq);
+		modem_config_tab = tabContestia;
+		quick_change = quick_change_contestia;
+		break;
+
 	case MODE_RTTY:
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new rtty(mode), freq);
@@ -879,6 +1010,11 @@ void init_modem(trx_mode mode, int freq)
 	case MODE_ANALYSIS:
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new anal, freq);
+		break;
+
+	case MODE_SSB:
+		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
+			      *mode_info[mode].modem = new ssb, freq);
 		break;
 
 	default:
@@ -1519,7 +1655,7 @@ void cb_ShowNBEMS(Fl_Widget*, void*)
 
 void cbTune(Fl_Widget *w, void *) {
 	Fl_Button *b = (Fl_Button *)w;
-	if (active_modem == wwv_modem || active_modem == anal_modem) {
+	if (!(active_modem->get_cap() & modem::CAP_TX)) {
 		b->value(0);
 		return;
 	}
@@ -1869,6 +2005,7 @@ void qsoClear_cb(Fl_Widget *b, void *)
 	if (clearlog) {
 		clearQSO();
 	}
+	clear_Lookup();
 	restoreFocus();
 }
 
@@ -2121,6 +2258,7 @@ bool clean_exit(void) {
 #define OPMODES_FEWER _("Show fewer modes")
 #define OPMODES_ALL _("Show all modes")
 #define OLIVIA_MLABEL "Olivia"
+#define CONTESTIA_MLABEL "Contestia"
 #define RTTY_MLABEL "RTTY"
 #define VIEW_MLABEL _("&View")
 #define MFSK_IMAGE_MLABEL _("&MFSK image")
@@ -2349,6 +2487,18 @@ Fl_Menu_Item menu_[] = {
 
 { mode_info[MODE_CW].name, 0, cb_init_mode, (void *)MODE_CW, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
+{ CONTESTIA_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "8/500", 0, cb_contestiaD, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "16/500", 0, cb_contestiaE, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "8/1000", 0, cb_contestiaF, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "16/1000", 0, cb_contestiaG, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ _("Custom..."), 0, cb_contestiaCustom, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
 {"DominoEX", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX4].name, 0, cb_init_mode, (void *)MODE_DOMINOEX4, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX5].name, 0, cb_init_mode, (void *)MODE_DOMINOEX5, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -2442,7 +2592,7 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_THROBX4].name, 0, cb_init_mode, (void *)MODE_THROBX4, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"NBEMS modes", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{"NBEMS modes", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK16].name, 0,  cb_init_mode, (void *)MODE_MFSK16, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -2450,6 +2600,8 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_PSK125].name, 0, cb_init_mode, (void *)MODE_PSK125, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
+
+{ mode_info[MODE_SSB].name, 0, cb_init_mode, (void *)MODE_SSB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 { mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
@@ -2588,6 +2740,10 @@ static void cb_opmode_show(Fl_Widget* w, void*)
 			getMenuItem("Olivia")->show();
 		else
 			getMenuItem("Olivia")->hide();
+		if (progdefaults.visible_modes.test(MODE_CONTESTIA))
+			getMenuItem("Contestia")->show();
+		else
+			getMenuItem("Contestia")->hide();
 		if (progdefaults.visible_modes.test(MODE_RTTY))
 			getMenuItem("RTTY")->show();
 		else
@@ -3043,7 +3199,7 @@ void create_fl_digi_main_primary() {
 			qsoFreqDisp1->color(FL_BACKGROUND_COLOR);
 			qsoFreqDisp1->selection_color(FL_BACKGROUND_COLOR);
 			qsoFreqDisp1->labeltype(FL_NORMAL_LABEL);
-			qsoFreqDisp1->labelfont(0);
+			qsoFreqDisp1->font(progdefaults.FreqControlFontnbr);
 			qsoFreqDisp1->labelsize(12);
 			qsoFreqDisp1->labelcolor(FL_FOREGROUND_COLOR);
 			qsoFreqDisp1->align(FL_ALIGN_CENTER);
@@ -3056,7 +3212,7 @@ void create_fl_digi_main_primary() {
 				fl_rgb_color(	progdefaults.FDbackground.R,
 								progdefaults.FDbackground.G,
 								progdefaults.FDbackground.B));
-			qsoFreqDisp1->value(145580000);
+			qsoFreqDisp1->value(0);
 
 			Y = Hmenu + 2 * (Hentry + pad);
 
@@ -3349,6 +3505,7 @@ void create_fl_digi_main_primary() {
 			qsoFreqDisp2->align(FL_ALIGN_CENTER);
 			qsoFreqDisp2->when(FL_WHEN_RELEASE);
 			qsoFreqDisp2->callback(qso_movFreq);
+			qsoFreqDisp2->font(progdefaults.FreqControlFontnbr);
 			qsoFreqDisp2->SetONOFFCOLOR(
 				fl_rgb_color(	progdefaults.FDforeground.R,
 								progdefaults.FDforeground.G,
@@ -3356,7 +3513,7 @@ void create_fl_digi_main_primary() {
 				fl_rgb_color(	progdefaults.FDbackground.R,
 								progdefaults.FDbackground.G,
 								progdefaults.FDbackground.B));
-			qsoFreqDisp2->value(145580000);
+			qsoFreqDisp2->value(0);
 
 			qso_opPICK2 = new Fl_Button(
 				rightof(qsoFreqDisp2), y,
@@ -3389,7 +3546,7 @@ void create_fl_digi_main_primary() {
 			const char *label2 = _("On");
 			btnTimeOn2 = new Fl_Button(
 				pad + rightof(qsoSave2), y,
-				fl_width(label2), h, label2);
+				static_cast<int>(fl_width(label2)), h, label2);
 			btnTimeOn2->tooltip(_("Press to update"));
 			btnTimeOn2->box(FL_NO_BOX);
 			btnTimeOn2->callback(cb_btnTimeOn);
@@ -3401,7 +3558,7 @@ void create_fl_digi_main_primary() {
 
 			const char *label3 = _("Off");
 			Fl_Box *bx3 = new Fl_Box(pad + rightof(inpTimeOn2), y,
-				fl_width(label3), h, label3);
+				static_cast<int>(fl_width(label3)), h, label3);
 			inpTimeOff2 = new Fl_Input2(
 				pad + bx3->x() + bx3->w(), y,
 				w_inpTime2, h, "");
@@ -3410,7 +3567,7 @@ void create_fl_digi_main_primary() {
 
 			const char *label4 = _("Call");
 			Fl_Box *bx4 = new Fl_Box(pad + rightof(inpTimeOff2), y,
-				fl_width(label4), h, label4);
+				static_cast<int>(fl_width(label4)), h, label4);
 			inpCall2 = new Fl_Input2(
 				pad + bx4->x() + bx4->w(), y,
 				w_inpCall2, h, "");
@@ -3418,7 +3575,7 @@ void create_fl_digi_main_primary() {
 
 			const char *label6 = _("In");
 			Fl_Box *bx6 = new Fl_Box(pad + rightof(inpCall2), y,
-				fl_width(label6), h, label6);
+				static_cast<int>(fl_width(label6)), h, label6);
 			inpRstIn2 = new Fl_Input2(
 				pad + bx6->x() + bx6->w(), y,
 				w_inpRstIn2, h, "");
@@ -3426,7 +3583,7 @@ void create_fl_digi_main_primary() {
 
 			const char *label7 = _("Out");
 			Fl_Box *bx7 = new Fl_Box(pad + rightof(inpRstIn2), y,
-				fl_width(label7), h, label7);
+				static_cast<int>(fl_width(label7)), h, label7);
 			inpRstOut2 = new Fl_Input2(
 				pad + bx7->x() + bx7->w(), y,
 				w_inpRstOut2, h, "");
@@ -3434,7 +3591,7 @@ void create_fl_digi_main_primary() {
 
 			const char *label5 = _("Nm");//_("Name");
 			Fl_Box *bx5 = new Fl_Box(pad + rightof(inpRstOut2), y,
-				fl_width(label5), h, label5);
+				static_cast<int>(fl_width(label5)), h, label5);
 			int xn = pad + bx5->x() + bx5->w();
 			inpName2 = new Fl_Input2(
 				xn, y,
@@ -3460,6 +3617,7 @@ void create_fl_digi_main_primary() {
 			qsoFreqDisp3->align(FL_ALIGN_CENTER);
 			qsoFreqDisp3->when(FL_WHEN_RELEASE);
 			qsoFreqDisp3->callback(qso_movFreq);
+			qsoFreqDisp3->font(progdefaults.FreqControlFontnbr);
 			qsoFreqDisp3->SetONOFFCOLOR(
 				fl_rgb_color(	progdefaults.FDforeground.R,
 								progdefaults.FDforeground.G,
@@ -3467,7 +3625,7 @@ void create_fl_digi_main_primary() {
 				fl_rgb_color(	progdefaults.FDbackground.R,
 								progdefaults.FDbackground.G,
 								progdefaults.FDbackground.B));
-			qsoFreqDisp3->value(145580000);
+			qsoFreqDisp3->value(0);
 
 			qso_opPICK3 = new Fl_Button(
 				rightof(qsoFreqDisp3), y,
@@ -3499,12 +3657,12 @@ void create_fl_digi_main_primary() {
 			const char *label7a = _("Ex");
 			const char *xData = "00000";
 			const char *xCall = "WW8WWW/WWWW";
-			int   wData = fl_width(xData);
-			int   wCall = fl_width(xCall);
+			int   wData = static_cast<int>(fl_width(xData));
+			int   wCall = static_cast<int>(fl_width(xCall));
 
 			Fl_Box *bx4a = new Fl_Box(
 				pad + rightof(qsoSave3), y,
-				fl_width(label4a), h, label4a);
+				static_cast<int>(fl_width(label4a)), h, label4a);
 			inpCall3 = new Fl_Input2(
 				pad + bx4a->x() + bx4a->w(), y,
 				wCall, h, "");
@@ -3513,22 +3671,22 @@ void create_fl_digi_main_primary() {
 
 			Fl_Box *bx7a = new Fl_Box(
 				rightof(inpCall3), y,
-				fl_width(label7a), h, label7a);
+				static_cast<int>(fl_width(label7a)), h, label7a);
 			bx7a->align(FL_ALIGN_INSIDE);
 			inpXchgIn2 = new Fl_Input2(
 				rightof(bx7a), y,
-				progStatus.mainW 
+				static_cast<int>(progStatus.mainW 
 				- rightof(bx7a) - pad
 				- fl_width(label6a) - wData - pad
 				- fl_width(label5a) - wData - pad
 				- fl_width(label2a) - wData - pad
-				- fl_width(label3a) - wData - pad, 
+				- fl_width(label3a) - wData - pad), 
 				h, "");
 			inpXchgIn2->tooltip(_("Contest exchange in"));
 
 			Fl_Box *bx6a = new Fl_Box(
 				rightof(inpXchgIn2), y,
-				fl_width(label6a), h, label6a);
+				static_cast<int>(fl_width(label6a)), h, label6a);
 			bx6a->align(FL_ALIGN_INSIDE);
 			inpSerNo2 = new Fl_Input2(
 				rightof(bx6a) + pad, y,
@@ -3537,7 +3695,7 @@ void create_fl_digi_main_primary() {
 
 			Fl_Box *bx5a = new Fl_Box(
 				rightof(inpSerNo2), y,
-				fl_width(label5a), h, label5a);
+				static_cast<int>(fl_width(label5a)), h, label5a);
 			bx5a->align(FL_ALIGN_INSIDE);
 			outSerNo2 = new Fl_Input2(
 				rightof(bx5a) + pad, y,
@@ -3547,7 +3705,7 @@ void create_fl_digi_main_primary() {
 
 			btnTimeOn3 = new Fl_Button(
 				rightof(outSerNo2), y,
-				fl_width(label2a), h, label2a);
+				static_cast<int>(fl_width(label2a)), h, label2a);
 			btnTimeOn3->tooltip(_("Press to update"));
 			btnTimeOn3->box(FL_NO_BOX);
 			btnTimeOn3->callback(cb_btnTimeOn);
@@ -3558,7 +3716,7 @@ void create_fl_digi_main_primary() {
 			inpTimeOn3->type(FL_INT_INPUT);
 
 			Fl_Box *bx3a = new Fl_Box(pad + rightof(inpTimeOn3), y,
-				fl_width(label3a), h, label3a);
+				static_cast<int>(fl_width(label3a)), h, label3a);
 			inpTimeOff3 = new Fl_Input2(
 				bx3a->x() + bx3a->w() + pad, y,
 				wData, h, "");
@@ -3648,7 +3806,7 @@ void create_fl_digi_main_primary() {
 			TransmitText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
 			TransmitText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
 
-			Fl_Box *minbox = new Fl_Box(sw,Y + 66, progStatus.mainW-sw, Htext - 66 - 32);
+			Fl_Box *minbox = new Fl_Box(sw,Y + 66, progStatus.mainW-sw, Htext - 66 - 66);
 			minbox->hide();
 
 			TiledGroup->resizable(minbox);
@@ -3779,27 +3937,17 @@ void create_fl_digi_main_primary() {
 #ifdef __APPLE__
 			sql_width -= 15; // leave room for resize handle
 #endif
-			if (progdefaults.useCheckButtons) {
-				btnAFC = new Fl_Check_Button(
-								progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
-								Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-								bwAfcOnOff, Hstatus, "AFC");
-				btnSQL = new Fl_Check_Button(
-								progStatus.mainW - bwSqlOnOff,
-								Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-								sql_width, Hstatus, "SQL");
-			} else {
-				btnAFC = new Fl_Light_Button(
-								progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
-								Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-								bwAfcOnOff, Hstatus, "AFC");
-				btnAFC->selection_color(progdefaults.AfcColor);
-				btnSQL = new Fl_Light_Button(
-								progStatus.mainW - bwSqlOnOff,
-								Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-								sql_width, Hstatus, "SQL");
-				btnSQL->selection_color(progdefaults.Sql1Color);
-			}
+			btnAFC = new Fl_Light_Button(
+							progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
+							Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
+							bwAfcOnOff, Hstatus, "AFC");
+			btnAFC->selection_color(progdefaults.AfcColor);
+			btnSQL = new Fl_Light_Button(
+							progStatus.mainW - bwSqlOnOff,
+							Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
+							sql_width, Hstatus, "SQL");
+			btnSQL->selection_color(progdefaults.Sql1Color);
+
 			btnAFC->callback(cbAFC, 0);
 			btnAFC->value(1);
 			btnAFC->tooltip(_("Automatic Frequency Control"));
@@ -3925,6 +4073,18 @@ Fl_Menu_Item alt_menu_[] = {
 
 { mode_info[MODE_CW].name, 0, cb_init_mode, (void *)MODE_CW, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
+{"Contestia", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "8/500", 0, cb_contestiaD, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "16/500", 0, cb_contestiaE, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "8/1000", 0, cb_contestiaF, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "16/1000", 0, cb_contestiaG, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ _("Custom..."), 0, cb_contestiaCustom, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
 {"DominoEX", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX4].name, 0, cb_init_mode, (void *)MODE_DOMINOEX4, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX5].name, 0, cb_init_mode, (void *)MODE_DOMINOEX5, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -4009,7 +4169,7 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_THROBX4].name, 0, cb_init_mode, (void *)MODE_THROBX4, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"NBEMS modes", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{"NBEMS modes", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK16].name, 0,  cb_init_mode, (void *)MODE_MFSK16, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -4017,6 +4177,8 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_PSK125].name, 0, cb_init_mode, (void *)MODE_PSK125, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
+
+{ mode_info[MODE_SSB].name, 0, cb_init_mode, (void *)MODE_SSB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 { mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
@@ -4384,27 +4546,16 @@ void create_fl_digi_main_WF_only() {
 #ifdef __APPLE__
 			sql_width -= 15; // leave room for resize handle
 #endif
-			if (progdefaults.useCheckButtons) {
-				btnAFC = new Fl_Check_Button(
-					progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
-					Y,
-					bwAfcOnOff, Hstatus, "AFC");
-				btnSQL = new Fl_Check_Button(
-					progStatus.mainW - bwSqlOnOff,
-					Y,
-					sql_width, Hstatus, "SQL");
-			} else {
-				btnAFC = new Fl_Light_Button(
-					progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
-					Y,
-					bwAfcOnOff, Hstatus, "AFC");
-				btnAFC->selection_color(progdefaults.AfcColor);
-				btnSQL = new Fl_Light_Button(
-					progStatus.mainW - bwSqlOnOff,
-					Y,
-					sql_width, Hstatus, "SQL");
-				btnSQL->selection_color(progdefaults.Sql1Color);
-			}
+			btnAFC = new Fl_Light_Button(
+				progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
+				Y,
+				bwAfcOnOff, Hstatus, "AFC");
+			btnAFC->selection_color(progdefaults.AfcColor);
+			btnSQL = new Fl_Light_Button(
+				progStatus.mainW - bwSqlOnOff,
+				Y,
+				sql_width, Hstatus, "SQL");
+			btnSQL->selection_color(progdefaults.Sql1Color);
 			btnAFC->callback(cbAFC, 0);
 			btnAFC->value(1);
 			btnAFC->tooltip(_("Automatic Frequency Control"));
@@ -5282,6 +5433,11 @@ void resetOLIVIA() {
 		trx_start_modem(active_modem);
 }
 
+void resetCONTESTIA() {
+	if (active_modem->get_mode() == MODE_CONTESTIA)
+		trx_start_modem(active_modem);
+}
+
 void resetTHOR() {
 	trx_mode md = active_modem->get_mode();
 	if (md == MODE_THOR4 || md == MODE_THOR5 || md == MODE_THOR8 ||
@@ -5423,6 +5579,8 @@ void setReverse(int rev) {
 
 void start_tx()
 {
+	if (!(active_modem->get_cap() & modem::CAP_TX))
+		return;
 	trx_transmit();
 	REQ(&waterfall::set_XmtRcvBtn, wf, true);
 }
@@ -5566,6 +5724,7 @@ void spot_selection_color()
 	btnAutoSpot->redraw();
 }
 
+// Olivia
 void set_olivia_bw(int bw)
 {
 	int i;
@@ -5595,6 +5754,38 @@ void set_olivia_tones(int tones)
 	mnuOlivia_Tones->do_callback();
 	progdefaults.changed = changed;
 }
+
+//Contestia
+void set_contestia_bw(int bw)
+{
+	int i;
+	if (bw == 125)
+		i = 0;
+	else if (bw == 250)
+		i = 1;
+	else if (bw == 500)
+		i = 2;
+	else if (bw == 1000)
+		i = 3;
+	else
+		i = 4;
+	bool changed = progdefaults.changed;
+	mnuContestia_Bandwidth->value(i);
+	mnuContestia_Bandwidth->do_callback();
+	progdefaults.changed = changed;
+}
+
+void set_contestia_tones(int tones)
+{
+	unsigned i = 0;
+	while (tones >>= 1)
+		i++;
+	bool changed = progdefaults.changed;
+	mnuContestia_Tones->value(i - 1);
+	mnuContestia_Tones->do_callback();
+	progdefaults.changed = changed;
+}
+
 
 void set_rtty_shift(int shift)
 {

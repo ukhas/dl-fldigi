@@ -85,6 +85,7 @@ modem *psk250r_modem = 0;
 modem *psk500r_modem = 0;
 
 modem *olivia_modem = 0;
+modem *contestia_modem = 0;
 
 modem *rtty_modem = 0;
 
@@ -112,6 +113,7 @@ modem *throbx4_modem = 0;
 
 modem *wwv_modem = 0;
 modem *anal_modem = 0;
+modem *ssb_modem = 0;
 
 trx_mode modem::get_mode()
 {
@@ -127,13 +129,14 @@ modem::modem()
 	bool wfsb = wf->USB();
 	reverse = wfrev ^ !wfsb;
 	historyON = false;
-	cap = 0;
+	cap = CAP_RX | CAP_TX;
 	PTTphaseacc = 0.0;
 	frequency = 1000.0;
 	s2n_ncount = s2n_sum = s2n_sum2 = s2n_metric = 0.0;
 	s2n_valid = false;
 }
 
+// modem types CW and RTTY do not use the base init()
 void modem::init()
 {
 	bool wfrev = wf->Reverse();
@@ -141,14 +144,7 @@ void modem::init()
 	reverse = wfrev ^ !wfsb;
 
 	if (progdefaults.StartAtSweetSpot) {
-//		if (active_modem == cw_modem)
-		if (this == cw_modem)
-			set_freq(progdefaults.CWsweetspot);
-//		else if (active_modem == rtty_modem)
-		else if (this == rtty_modem)
-			set_freq(progdefaults.RTTYsweetspot);
-		else
-			set_freq(progdefaults.PSKsweetspot);
+		set_freq(progdefaults.PSKsweetspot);
 	} else if (progStatus.carrier != 0) {
 		set_freq(progStatus.carrier);
 #if !BENCHMARK_MODE
@@ -183,7 +179,9 @@ bool modem::freqlocked()
 
 double modem::get_txfreq(void)
 {
-	if (mailserver && progdefaults.PSKmailSweetSpot)
+	if (unlikely(!(cap & CAP_TX)))
+		return 0;
+	else if (mailserver && progdefaults.PSKmailSweetSpot)
 		return progdefaults.PSKsweetspot;
 	return tx_frequency;
 }

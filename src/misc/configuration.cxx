@@ -81,7 +81,7 @@ const char *szBands[] = {
 	"1830", "3580", "7030", "7070", "10138",
 	"14070", "18100", "21070", "21080", "24920", "28070", "28120", 0};
 
-
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 1
 // Define stream I/O operators for non-builtin types.
 // Right now we have: Fl_Color, Fl_Font, RGB, and RGBI
 ostream& operator<<(ostream& out, const Fl_Color& c)
@@ -106,6 +106,7 @@ istream& operator>>(istream& in, Fl_Font& f)
 	f = static_cast<Fl_Font>(i);
 	return in;
 }
+#endif
 ostream& operator<<(ostream& out, const RGB& rgb)
 {
 	return out << (int)rgb.R << ' ' << (int)rgb.G << ' ' << (int)rgb.B;
@@ -416,6 +417,13 @@ void configuration::loadDefaults()
 	cntOlivia_sinteg->value(oliviasinteg);
 	btnOlivia_8bit->value(olivia8bit);
 
+// CONTESTIA
+	mnuContestia_Tones->value(contestiatones);
+	mnuContestia_Bandwidth->value(contestiabw);
+	cntContestia_smargin->value(contestiasmargin);
+	cntContestia_sinteg->value(contestiasinteg);
+	btnContestia_8bit->value(contestia8bit);
+
 	chkDominoEX_FEC->value(DOMINOEX_FEC);
 
 	btnmt63_interleave->value(mt63_interleave == 64);
@@ -441,6 +449,7 @@ void configuration::saveDefaults()
 	TxFontName = Fl::get_font_name(TxFontnbr);
 	WaterfallFontName = Fl::get_font_name(WaterfallFontnbr);
 	ViewerFontName = Fl::get_font_name(ViewerFontnbr);
+	FreqControlFontName = Fl::get_font_name(FreqControlFontnbr);
 
 	writeDefaultsXML();
 	changed = false;
@@ -975,5 +984,7 @@ void configuration::initFonts(void)
 		WaterfallFontnbr = font_number(WaterfallFontName.c_str());
 	if (!ViewerFontName.empty())
 		ViewerFontnbr = font_number(ViewerFontName.c_str());
+	if (!FreqControlFontName.empty())
+		FreqControlFontnbr = font_number(FreqControlFontName.c_str());
 
 }

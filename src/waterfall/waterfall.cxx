@@ -71,6 +71,7 @@
 #include "gettext.h"
 #include "rtty.h"
 #include "flslider2.h"
+#include "debug.h"
 
 using namespace std;
 
@@ -206,7 +207,7 @@ inline void WFdisp::makeMarker_(int width, const RGB* color, int freq, const RGB
 	if (active_modem->get_mode() == MODE_RTTY) {
 	// rtty has two bandwidth indicators on the waterfall
 	// upper and lower frequency
-		int shift = (progdefaults.rtty_shift >= 0 ?
+		int shift = static_cast<int>(progdefaults.rtty_shift >= 0 ?
 			     _SHIFT[progdefaults.rtty_shift] : progdefaults.rtty_custom_shift);
 		int bw_limit_hi = (int)(shift / 2 + progdefaults.RTTY_BW / 2.0);
 		int bw_limit_lo = (int)(shift / 2 - progdefaults.RTTY_BW / 2.0);
@@ -285,10 +286,11 @@ void WFdisp::makeMarker()
 	makeMarker_(marker_width, &RGBmarker, carrierfreq, clrMin, clrM, clrMax);
 
 	if (unlikely(active_modem->freqlocked())) {
-		int txfreq = active_modem->get_txfreq();
+		int txfreq = static_cast<int>(active_modem->get_txfreq());
 		adjust_color_inv(RGBmarker.R, RGBmarker.G, RGBmarker.B, FL_BLACK, FL_RED);
-		makeMarker_(bandwidth / 2.0 + 1, &RGBmarker, txfreq,
-			    clrMin, clrMin + (int)((double)txfreq + 0.5), clrMax);
+		makeMarker_( static_cast<int>(bandwidth / 2.0 + 1),
+					 &RGBmarker, txfreq,
+					 clrMin, clrMin + (int)((double)txfreq + 0.5), clrMax);
 	}
 
 	if (!wantcursor) return;
@@ -545,26 +547,28 @@ void WFdisp::redrawCursor()
 //	cursormoved = true;
 }
 
-void WFdisp::sig_data( double *sig, int len, int sr ) {
+void WFdisp::sig_data( double *sig, int len, int sr )
+{
 	if (wfspeed == PAUSE)
-		return;
+		goto update_freq;
 
-//if sound card sampling rate changed reset the waterfall buffer
+	// if sound card sampling rate changed reset the waterfall buffer
 	if (srate != sr) {
 		srate = sr;
 		memset (circbuff, 0, FFT_LEN * 2 * sizeof(double));
 		ptrCB = 0;
 	}
 
-	overload = false;
-    double overval, peak = 0.0;
-	for (int i = 0; i < len; i++) {
-		overval = fabs(circbuff[ptrCB] = sig[i]);
-		ptrCB = (ptrCB + 1) % (FFT_LEN *2);
-		if (overval > peak) peak = overval;
+	{
+		overload = false;
+		double overval, peak = 0.0;
+		for (int i = 0; i < len; i++) {
+			overval = fabs(circbuff[ptrCB] = sig[i]);
+			ptrCB = (ptrCB + 1) % (FFT_LEN *2);
+			if (overval > peak) peak = overval;
+		}
+		peakaudio = 0.1 * peak + 0.9 * peakaudio;
 	}
-
-    peakaudio = 0.1 * peak + 0.9 * peakaudio;
 
 	if (mode == SCOPE)
 		process_analog(circbuff, FFT_LEN * 2);
@@ -573,10 +577,8 @@ void WFdisp::sig_data( double *sig, int len, int sr ) {
 
 	put_WARNstatus(peakaudio);
 
+update_freq:
 	static char szFrequency[14];
-
-//	if (usebands)
-//		rfc = (long long)(atof(cboBand->value()) * 1000.0);
 	if (rfc != 0) { // use a boolean for the waterfall
 		if (usb)
 			dfreq = rfc + active_modem->get_txfreq();
@@ -587,11 +589,7 @@ void WFdisp::sig_data( double *sig, int len, int sr ) {
 		dfreq = active_modem->get_txfreq();
 		snprintf(szFrequency, sizeof(szFrequency), "%-.0f", dfreq);
 	}
-	FL_LOCK_D();
 	inpFreq->value(szFrequency);
-	FL_UNLOCK_D();
-
-	return;
 }
 
 
@@ -694,7 +692,7 @@ int WFdisp::wfmag() {
 
 
 void WFdisp::drawScale() {
-	int fw = 60, xchar;
+	int fw = 60, xoff;
 	static char szFreq[20];
 	double fr;
 	uchar *pixmap;
@@ -729,16 +727,16 @@ void WFdisp::drawScale() {
 			snprintf(szFreq, sizeof(szFreq), "%7.1f", fr);
 		fw = (int)fl_width(szFreq);
 		if (progdefaults.wf_audioscale)
-			xchar = (int) (( (1000.0/step) * i - fw) / 2.0 - offset /step );
+			xoff = (int) (( (1000.0/step) * i - fw) / 2.0 - offset /step );
 		else if (usb)
-			xchar = (int) ( ( (1000.0/step) * i - fw) / 2.0 -
+			xoff = (int) ( ( (1000.0/step) * i - fw) / 2.0 -
 							(offset + rfc % 500) /step );
 		else
-			xchar = (int) ( ( (1000.0/step) * i - fw) / 2.0 -
+			xoff = (int) ( ( (1000.0/step) * i - fw) / 2.0 -
 							(offset + 500 - rfc % 500) /step );
-		if (xchar > 0 && xchar < w() - fw)
-			fl_draw(szFreq, x() + xchar, y() + 10 );
-		if (xchar > w() - fw) break;
+		if (xoff > 0 && xoff < w() - fw)
+			fl_draw(szFreq, x() + xoff, y() + 10 );
+		if (xoff > w() - fw) break;
 	}
 }
 
@@ -1107,6 +1105,9 @@ void qsy_cb(Fl_Widget *w, void *v)
 	static vector<qrg_mode_t> qsy_stack;
 	qrg_mode_t m;
 
+	wf->xmtlock->value(0);
+	wf->xmtlock->do_callback();
+
 	if (Fl::event_button() != FL_RIGHT_MOUSE) {
 // store
 		m.rfcarrier = wf->rfcarrier();
@@ -1171,6 +1172,11 @@ void xmtrcv_cb(Fl_Widget *w, void *vi)
 	Fl_Light_Button *b = (Fl_Light_Button *)w;
 	int v = b->value();
 	FL_UNLOCK_D();
+	if (!(active_modem->get_cap() & modem::CAP_TX)) {
+		b->value(0);
+		restoreFocus();
+		return;
+	}
 	if (v == 1) {
 		stopMacroTimer();
 		active_modem->set_stopflag(false);

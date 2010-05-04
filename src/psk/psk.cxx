@@ -113,6 +113,7 @@ void psk::rx_init()
 	afcmetric = 0.0;
 	// interleaver, split incoming bit stream into two, one late by one bit
 	rxbitstate = 0;
+	fecmet = fecmet2 = 0;
 
 }
 
@@ -125,8 +126,8 @@ void psk::restart()
 
 void psk::init()
 {
-	modem::init();
 	restart();
+	modem::init();
 	set_scope_mode(Digiscope::PHASE);
 	initSN_IMD();
 	snratio = 1.0;
@@ -160,7 +161,7 @@ psk::~psk()
 
 psk::psk(trx_mode pskmode) : modem()
 {
-	cap = CAP_AFC | CAP_AFC_SR;
+	cap |= CAP_AFC | CAP_AFC_SR;
 
 	mode = pskmode;
 
@@ -1018,20 +1019,20 @@ void psk::tx_char(unsigned char c)
 
 void psk::tx_flush()
 {
+	if (_pskr) {
+		for (int i = 0; i < dcdbits; i++)
+		tx_bit(0);
+	}
 	// QPSK - flush the encoder
 	if (_qpsk) {
 		for (int i = 0; i < dcdbits; i++)
 		tx_bit(0);
 	// FEC : replace unmodulated carrier by an encoded sequence of zeros
-	} else if (_pskr) {
-		for (int i = 0; i < dcdbits; i++)
-		tx_bit(0);
-	} else {
-		// Standard BPSK postamble
-		// DCD off sequence (unmodulated carrier)
-		for (int i = 0; i < dcdbits; i++)
-			tx_symbol(2);
 	}
+	// Standard BPSK postamble
+	// DCD off sequence (unmodulated carrier)
+	for (int i = 0; i < dcdbits; i++)
+		tx_symbol(2);
 }
 
 // Necessary to clear the interleaver before we start sending

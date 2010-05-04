@@ -9,10 +9,10 @@ dnl major and minor must be integers; patch may
 dnl contain other characters or be empty
 m4_define(FLDIGI_MAJOR, [3])
 m4_define(FLDIGI_MINOR, [20])
-m4_define(FLDIGI_PATCH, [.0b9])
+m4_define(FLDIGI_PATCH, [.1])
 m4_define(FLARQ_MAJOR,  [4])
 m4_define(FLARQ_MINOR,  [3])
-m4_define(FLARQ_PATCH,  [.0b1])
+m4_define(FLARQ_PATCH,  [.1])
 
 AC_INIT([dl-fldigi], FLDIGI_MAJOR.FLDIGI_MINOR[]FLDIGI_PATCH, [fldigi-devel@lists.berlios.de])
 
