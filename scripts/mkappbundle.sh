@@ -96,7 +96,7 @@ function bundle()
     echo "creating ${build}/$static_bundle_dir/$appname"
     cd ..
     $mkinstalldirs "$static_bundle_dir"
-	cp "${data}/mac/dl-fldigi.app" "$static_bundle_dir"
+	cp -r "${data}/mac/dl-fldigiHAB.app" "$static_bundle_dir"
     cp -pR "$bundle_dir/$appname" "$static_bundle_dir"
     $mkinstalldirs "$static_bundle_dir/$appname/Contents/Frameworks"
     cd "$static_bundle_dir/$appname/Contents"
