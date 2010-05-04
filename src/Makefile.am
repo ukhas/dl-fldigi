@@ -4,25 +4,24 @@
 
 bin_PROGRAMS =
 if WANT_FLDIGI
-    bin_PROGRAMS += fldigi
+    bin_PROGRAMS += dl-fldigi
 endif
 if WANT_FLARQ
     bin_PROGRAMS += flarq
 endif
 
 # The BUILD_* variables are defined in build.m4
-fldigi_CPPFLAGS = -DBUILD_FLDIGI -DLOCALEDIR=\"$(localedir)\" @FLDIGI_BUILD_CPPFLAGS@
-fldigi_CXXFLAGS = @FLDIGI_BUILD_CXXFLAGS@
-fldigi_CFLAGS = $(fldigi_CXXFLAGS)
-fldigi_LDFLAGS = @FLDIGI_BUILD_LDFLAGS@
-fldigi_LDADD = @FLDIGI_BUILD_LDADD@
+dl_fldigi_CPPFLAGS = -DBUILD_FLDIGI -DLOCALEDIR=\"$(localedir)\" @FLDIGI_BUILD_CPPFLAGS@
+dl_fldigi_CXXFLAGS = @FLDIGI_BUILD_CXXFLAGS@
+dl_fldigi_CFLAGS = $(dl_fldigi_CXXFLAGS)
+dl_fldigi_LDFLAGS = @FLDIGI_BUILD_LDFLAGS@
+dl_fldigi_LDADD = @FLDIGI_BUILD_LDADD@
 
 flarq_CPPFLAGS = -DBUILD_FLARQ -DLOCALEDIR=\"$(localedir)\" @FLARQ_BUILD_CPPFLAGS@
 flarq_CXXFLAGS = @FLARQ_BUILD_CXXFLAGS@
 flarq_CFLAGS = $(flarq_CXXFLAGS)
 flarq_LDFLAGS = @FLARQ_BUILD_LDFLAGS@
 flarq_LDADD = @FLARQ_BUILD_LDADD@
-
 
 HAMLIB_SRC = include/hamlib.h rigcontrol/hamlib.cxx include/rigclass.h rigcontrol/rigclass.cxx
 XMLRPC_SRC = include/xmlrpc.h misc/xmlrpc.cxx
@@ -37,46 +36,46 @@ MINGW32_SRC = include/compat.h compat/getsysinfo.c compat/mingw.c compat/mingw.h
 NLS_SRC = misc/nls.cxx
 
 # We distribute these but do not always compile them
-EXTRA_fldigi_SOURCES = $(HAMLIB_SRC) $(XMLRPC_SRC) $(FLDIGI_WIN32_RES_SRC) $(COMMON_WIN32_RES_SRC) \
+EXTRA_dl_fldigi_SOURCES = $(HAMLIB_SRC) $(XMLRPC_SRC) $(FLDIGI_WIN32_RES_SRC) $(COMMON_WIN32_RES_SRC) \
 	$(LOCATOR_SRC) $(BENCHMARK_SRC) $(REGEX_SRC) $(STACK_SRC) $(MINGW32_SRC) $(NLS_SRC)
 EXTRA_flarq_SOURCES = $(FLARQ_WIN32_RES_SRC) $(COMMON_WIN32_RES_SRC)
 
-fldigi_SOURCES =
+dl_fldigi_SOURCES =
 flarq_SOURCES =
 
 if ENABLE_HAMLIB
-  fldigi_SOURCES += $(HAMLIB_SRC)
+  dl_fldigi_SOURCES += $(HAMLIB_SRC)
 endif
 if NEED_HAMLIB_LOCATOR
-  fldigi_SOURCES += $(LOCATOR_SRC)
+  dl_fldigi_SOURCES += $(LOCATOR_SRC)
 endif
 
 if ENABLE_XMLRPC
-  fldigi_SOURCES += $(XMLRPC_SRC)
+  dl_fldigi_SOURCES += $(XMLRPC_SRC)
 endif
 
 if ENABLE_BENCHMARK
-  fldigi_SOURCES += $(BENCHMARK_SRC)
+  dl_fldigi_SOURCES += $(BENCHMARK_SRC)
 endif
 
 if COMPAT_REGEX
-  fldigi_SOURCES += $(REGEX_SRC)
+  dl_fldigi_SOURCES += $(REGEX_SRC)
   flarq_SOURCES += $(REGEX_SRC)
 endif
 
 if COMPAT_STACK
-  fldigi_SOURCES += $(STACK_SRC)
+  dl_fldigi_SOURCES += $(STACK_SRC)
   flarq_SOURCES += $(STACK_SRC)
 endif
 
 if MINGW32
-  fldigi_SOURCES += $(MINGW32_SRC)
+  dl_fldigi_SOURCES += $(MINGW32_SRC)
   flarq_SOURCES += $(MINGW32_SRC)
-  fldigi_CPPFLAGS += -DCURL_STATICLIB
+  dl_fldigi_CPPFLAGS += -DCURL_STATICLIB
 endif
 
 if USE_NLS
-  fldigi_SOURCES += $(NLS_SRC)
+  dl_fldigi_SOURCES += $(NLS_SRC)
   flarq_SOURCES += $(NLS_SRC)
 endif
 
@@ -100,7 +99,7 @@ FLARQ_VERSION = @FLARQ_VERSION@
 # Sources that are generated,
 BUILT_SOURCES =
 # not distributed,
-nodist_fldigi_SOURCES = $(BUILT_SOURCES)
+nodist_dl_fldigi_SOURCES = $(BUILT_SOURCES)
 # and deleted by the clean targets
 CLEANFILES = $(BUILT_SOURCES)
 CLEAN_LOCAL =
@@ -109,7 +108,7 @@ if WIN32
 if HAVE_WINDRES
 .rc.o:
 	$(call silent,WRES  ,$@)$(WINDRES) -DRC_BUILD_TIME=\\\"$(shell date +%s)\\\" -I$(srcdir) -I$(srcdir)/include -I$(srcdir)/../data/win32 $< -O coff $@
-fldigi_SOURCES += $(FLDIGI_WIN32_RES_SRC)
+dl_fldigi_SOURCES += $(FLDIGI_WIN32_RES_SRC)
 flarq_SOURCES += $(FLARQ_WIN32_RES_SRC)
 endif
 endif
@@ -214,7 +213,7 @@ endif
 
 if WANT_FLDIGI
 if ENABLE_HAMLIB
-hamlib-static: $(fldigi_OBJECTS)
+hamlib-static: $(dl_fldigi_OBJECTS)
 	$(call silent,HLS   ,fldigi$(EXEEXT))sh $(srcdir)/../scripts/mkhamlibstatic.sh fldigi
 endif
 endif
@@ -240,7 +239,7 @@ clean-local:
 	-rm -rf $(CLEAN_LOCAL)
 
 # Sources that we build. It is OK to have headers here.
-fldigi_SOURCES += \
+dl_fldigi_SOURCES += \
 	combo/combo.cxx \
 	cw_rtty/cw.cxx \
 	cw_rtty/morse.cxx \
@@ -493,7 +492,7 @@ fldigi_SOURCES += \
 	wwv/wwv.cxx
 
 # Sources that are part of the distribution but are not compiled directly
-EXTRA_fldigi_SOURCES += \
+EXTRA_dl_fldigi_SOURCES += \
 	blank/blank.cxx \
 	blank/blank.h \
 	fileselector/FL/Fl_Native_File_Chooser_FLTK.H \
