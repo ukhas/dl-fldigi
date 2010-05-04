@@ -214,7 +214,7 @@ endif
 if WANT_FLDIGI
 if ENABLE_HAMLIB
 hamlib-static: $(dl_fldigi_OBJECTS)
-	$(call silent,HLS   ,fldigi$(EXEEXT))sh $(srcdir)/../scripts/mkhamlibstatic.sh fldigi
+	$(call silent,HLS   ,fldigi$(EXEEXT))sh $(srcdir)/../scripts/mkhamlibstatic.sh dl-fldigi
 endif
 endif
 

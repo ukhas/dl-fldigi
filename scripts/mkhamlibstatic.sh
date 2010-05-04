@@ -42,4 +42,4 @@ case "$target_os" in
 	;;
 esac
 
-$CXX -o ${1}${EXEEXT} $AM_CXXFLAGS $fldigi_CXXFLAGS $CXXFLAGS $AM_LDFLAGS $fldigi_LDFLAGS $LDFLAGS $fldigi_OBJECTS $fldigi_LDADD
+$CXX -o ${1}${EXEEXT} $AM_CXXFLAGS $dl_fldigi_CXXFLAGS $CXXFLAGS $AM_LDFLAGS $dl_fldigi_LDFLAGS $LDFLAGS $dl_fldigi_OBJECTS $dl_fldigi_LDADD
