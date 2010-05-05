@@ -20,6 +20,8 @@
 // along with fldigi.  If not, see <http://www.gnu.org/licenses/>.
 //
 // Please report all bugs and problems to fldigi-devel@lists.berlios.de.
+// 
+// Modified by UKHAS
 // ----------------------------------------------------------------------------
 
 #include <config.h>
