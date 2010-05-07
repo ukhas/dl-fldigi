@@ -794,14 +794,11 @@ void dl_fldigi_update_payloads()
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: UI updated: added %i payloads.\n", i);
+		fprintf(stderr, "dl_fldigi: post UI update: attempting to re-select (but not configure) payload '%s'\n", progdefaults.xmlPayloadname.c_str());
 	#endif
 
 	if (bHAB && progdefaults.xmlPayloadname.length() != 0)
 	{
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: post UI update: attempting to re-select (but not configure) payload '%s'\n", progdefaults.xmlPayloadname.c_str());
-		#endif
-
 		habFlightXML->value(habFlightXML->find_item(progdefaults.xmlPayloadname.c_str()));
 	}
 
