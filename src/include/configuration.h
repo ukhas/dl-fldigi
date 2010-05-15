@@ -1125,7 +1125,7 @@
 		ELEM_(int, xml_altitude, "", "", 0)												\
 /* GPS Device Info */																	\
 		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")								\
-		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)							\
+		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)										\
 /* Config stuff */																		\
 		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)										\
         ELEM_(bool, dl_online, "", "", false)
