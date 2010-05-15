@@ -56,7 +56,7 @@ Fl_Button	*btnMacroEditCancel = (Fl_Button *)0;
 Fl_Button	*btnInsertMacro = (Fl_Button *)0;
 Fl_Input2	*macrotext = (Fl_Input2 *)0;
 Fl_Input2	*labeltext = (Fl_Input2 *)0;
-static int widths[] = {110, 0};
+static int widths[] = {130, 0};
 
 Fl_Hold_Browser *macroDefs=(Fl_Hold_Browser *)0;
 
@@ -86,7 +86,9 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<NAME>\tother name"));
 	w->add(_("<QTH>\tother QTH"));
 	w->add(_("<RST>\tother RST"));
-
+	w->add(_("<MAPIT>\tmap on google"));
+	w->add(_("<MAPIT:adr/lat/loc>\tmap by value"));
+ 
 	w->add(LINE_SEP);
 	w->add(_("<CLRRX>\tclear RX pane"));
 
@@ -149,12 +151,23 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<MACROS:>\tchange macro defs file"));
 
 	w->add(LINE_SEP);
-	assert(MODE_OLIVIA < MODE_RTTY);
+	assert(MODE_CONTESTIA < MODE_OLIVIA);
 	char s[256];
-	for (trx_mode i = 0; i <= MODE_OLIVIA; i++) {
+	for (trx_mode i = 0; i <= MODE_CONTESTIA; i++) {
 		snprintf(s, sizeof(s), "<MODEM:%s>", mode_info[i].sname);
 		w->add(s);
 	}
+	// add some Contestia macros
+	const char* contestia[] = { "250:8", "500:8", "500:16", "1000:8", "1000:16" };
+	for (size_t i = 0; i < sizeof(contestia)/sizeof(*contestia); i++) {
+		snprintf(s, sizeof(s), "<MODEM:%s:%s>", mode_info[MODE_CONTESTIA].sname, contestia[i]);
+		w->add(s);
+	}
+	for (trx_mode i = MODE_CONTESTIA + 1; i <= MODE_OLIVIA; i++) {
+		snprintf(s, sizeof(s), "<MODEM:%s>", mode_info[i].sname);
+		w->add(s);
+	}
+	assert(MODE_OLIVIA < MODE_RTTY);
 	// add some Olivia macros
 	const char* olivia[] = { "250:8", "500:8", "500:16", "1000:8", "1000:32" };
 	for (size_t i = 0; i < sizeof(olivia)/sizeof(*olivia); i++) {

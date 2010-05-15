@@ -181,6 +181,9 @@
               "  2: signal search; 3: change squelch level; 4: change modem carrier;\n" \
               "  5: change modem; 6: scroll visible area.  The default is 4.",          \
               waterfall::WF_CARRIER)                                                    \
+        ELEM_(bool, rx_lowercase, "RX_LOWERCASE",                                       \
+              "Print Rx in lowercase for CW, RTTY, CONTESTIA and THROB",                \
+              false)                                                                    \
         /* PSK, filter can be 0, 1, 2, 3 or 4 */                                        \
         ELEM_(int, PSK_filter, "PSKFILTER",                                             \
               "Not configurable; must always be 0",                                     \
@@ -399,6 +402,24 @@
         ELEM_(bool, olivia8bit, "OLIVIA8BIT",                                           \
               "8-bit extended characters",                                              \
               false)                                                                    \
+        /* CONTESTIA */                                                                 \
+        ELEM_(int, contestiatones, "CONTESTIATONES",                                    \
+              "Number of tones. Values are as follows:\n"                               \
+              "  0: 2; 1: 4; 2: 8; 3: 16; 4: 32; 5: 64; 6: 128; 7: 256",                \
+              2)   /* 8 */                                                              \
+        ELEM_(int, contestiabw, "CONTESTIABW",                                          \
+              "Bandwidth (Hz). Values are as follows:\n"                                \
+              "  0: 125; 1: 250; 2: 500; 3: 1000; 4: 2000.",                            \
+              2)   /* 500 */                                                            \
+        ELEM_(int, contestiasmargin, "CONTESTIASMARGIN",                                \
+              "Tune margin (tone frequency spacing)",                                   \
+              8)                                                                        \
+        ELEM_(int, contestiasinteg, "CONTESTIASINTEG",                                  \
+              "Integration period (FEC blocks)",                                        \
+              4)                                                                        \
+        ELEM_(bool, contestia8bit, "CONTESTIA8BIT",                                     \
+              "8-bit extended characters",                                              \
+              false)                                                                    \
         /* THOR */                                                                      \
         ELEM_(double, THOR_BW, "THORBW",                                                \
               "Filter bandwidth factor (bandwidth relative to signal width)",           \
@@ -525,9 +546,6 @@
         ELEM_(bool, tooltips, "TOOLTIPS",                                               \
               "Show tooltips",                                                          \
               true)                                                                     \
-        ELEM_(bool, useCheckButtons, "USECHECKBUTTONS",                                 \
-              "Use check buttons for AFC and SQL",                                      \
-              false)                                                                    \
         ELEM_(bool, NagMe, "NAGME",                                                     \
               "Prompt to save log",                                                     \
               false)                                                                    \
@@ -983,6 +1001,12 @@
         ELEM_(int, WaterfallFontsize, "WATERFALLFONTSIZE",                              \
               "Waterfall font size",                                                    \
               12)                                                                       \
+        ELEM_(std::string, FreqControlFontName, "FREQCONTROLFONTNAME",                  \
+              "Frequency Control font name",                                            \
+              "")                                                                       \
+        ELEM_(Fl_Font, FreqControlFontnbr, "FREQCONTROLFONTNBR",                        \
+              "Frequency Control font number",                                          \
+              FL_COURIER)                                                               \
         ELEM_(std::string, ui_scheme, "UISCHEME",                                       \
               "FLTK UI scheme (none or base, gtk+, plastic)",                           \
               "gtk+")                                                                   \

@@ -116,7 +116,20 @@ void rtty::rx_init()
 
 void rtty::init()
 {
-	modem::init();
+	bool wfrev = wf->Reverse();
+	bool wfsb = wf->USB();
+	reverse = wfrev ^ !wfsb;
+
+	if (progdefaults.StartAtSweetSpot)
+		set_freq(progdefaults.RTTYsweetspot);
+	else if (progStatus.carrier != 0) {
+		set_freq(progStatus.carrier);
+#if !BENCHMARK_MODE
+		progStatus.carrier = 0;
+#endif
+	} else
+		set_freq(wf->Carrier());
+
 	rx_init();
 	put_MODEstatus(mode);
 	snprintf(msg1, sizeof(msg1), "%-4.1f / %-4.0f", rtty_baud, rtty_shift);
@@ -215,7 +228,7 @@ void rtty::restart()
 
 rtty::rtty(trx_mode tty_mode)
 {
-	cap = CAP_AFC | CAP_REV;
+	cap |= CAP_AFC | CAP_REV;
 
 	mode = tty_mode;
 
@@ -389,11 +402,13 @@ bool rtty::rx(bool bit)
 			if (bit) {
 				if ((metric >= progStatus.sldrSquelchValue && progStatus.sqlonoff)|| !progStatus.sqlonoff) {
 					c = decode_char();
-					if ( c != 0 ) put_rx_char(c);
 					
 					/* lb = estimated bytes lost */
 					lb = (lost - bytelen / 2) / bytelen;
 					put_rx_ssdv(c, lb);
+					
+					if ( c != 0 )
+						put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c);
 				}
 				flag = true;
 				lost = 0;
@@ -711,7 +726,7 @@ void rtty::send_char(int c)
 		else
 			c = figures[c];
 		if (c)
-			put_echo_char(c);
+			put_echo_char(progdefaults.rx_lowercase ? tolower(c) : c);
 	}
 }
 

@@ -159,10 +159,11 @@ int olivia::tx_process()
 // to read any more. If stopflag is set, we will always read 
 // whatever there is.
 	if (stopflag || (Tx->GetReadReady() < Tx->BitsPerSymbol)) {
-		if ((c = get_tx_char()) == 0x03 || stopflag ) {
+		if (!stopflag && (c = get_tx_char()) == 0x03)
 			stopflag = true;
+		if (stopflag)
 			Tx->Stop();
-		} else {
+		else {
 			/* Replace un-representable characters with a dot */
 			if (c == -1)
                 c = 0;
@@ -190,6 +191,7 @@ int olivia::tx_process()
 
 	if (!Tx->Running()) {
 		cwid();
+		stopflag = false;
 		return -1;
 	}
  
@@ -232,7 +234,7 @@ int olivia::rx_process(const double *buf, int len)
 	for (int i = frequency - Rx->Bandwidth/2; i < frequency - 1 + Rx->Bandwidth/2; i++)
 		if (wf->Pwr(i) > sp)
 			sp = wf->Pwr(i);
-	np = wf->Pwr(frequency + Rx->Bandwidth/2 + 2*Rx->Bandwidth/Rx->Tones);
+	np = wf->Pwr(static_cast<int>(frequency + Rx->Bandwidth/2 + 2*Rx->Bandwidth/Rx->Tones));
 	if (np == 0) np = sp + 1e-8;
 	sigpwr = decayavg( sigpwr, sp, 10);
 	noisepwr = decayavg( noisepwr, np, 50);
@@ -266,9 +268,10 @@ void olivia::restart()
 	sinteg	= progdefaults.oliviasinteg;
 	
 	samplerate = 8000;
-	
+	bandwidth = 125 * (1 << bw);
+
 	Tx->Tones = 2 * (1 << tones);
-	Tx->Bandwidth = 125 * (1 << bw);
+	Tx->Bandwidth = bandwidth;
 	Tx->SampleRate = samplerate;
 	Tx->OutputSampleRate = samplerate;
     txbasefreq = get_txfreq_woffset();
@@ -292,7 +295,7 @@ void olivia::restart()
 	txfbuffer = new double[txbufferlen];
 
 	Rx->Tones = Tx->Tones;
-	Rx->Bandwidth = Tx->Bandwidth;
+	Rx->Bandwidth = bandwidth;
 	Rx->SyncMargin = smargin;
 	Rx->SyncIntegLen = sinteg;
 	Rx->SyncThreshold = progStatus.sqlonoff ? 
@@ -320,19 +323,19 @@ void olivia::restart()
 	metric = 0;
 
 	sigpwr = 1e-10; noisepwr = 1e-8;
-//	Rx->PrintParameters();
+	LOG_INFO("\nOlivia Rx parameters:\n%s", Rx->PrintParameters());
 }
 
 void olivia::init()
 {
-	modem::init();
 	restart();
+	modem::init();
 	set_scope_mode(Digiscope::BLANK);
 }
 
 olivia::olivia()
 {
-	cap = CAP_REV;
+	cap |= CAP_REV;
 
 	txfbuffer = 0;
 	samplerate = 8000;

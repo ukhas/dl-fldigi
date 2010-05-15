@@ -466,12 +466,10 @@ progdefaults.changed = true;
 WF_UI();
 }
 
-Fl_Group *tabWfallRestart=(Fl_Group *)0;
+Fl_Check_Button *btn_rx_lowercase=(Fl_Check_Button *)0;
 
-Fl_Check_Button *btnCheckButtons=(Fl_Check_Button *)0;
-
-static void cb_btnCheckButtons(Fl_Check_Button* o, void*) {
-  progdefaults.useCheckButtons = o->value();
+static void cb_btn_rx_lowercase(Fl_Check_Button* o, void*) {
+  progdefaults.rx_lowercase = o->value();
 progdefaults.changed = true;
 }
 
@@ -1088,6 +1086,49 @@ Fl_Check_Button *btnOlivia_8bit=(Fl_Check_Button *)0;
 
 static void cb_btnOlivia_8bit(Fl_Check_Button* o, void*) {
   progdefaults.olivia8bit = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Group *tabContestia=(Fl_Group *)0;
+
+Fl_Choice *mnuContestia_Bandwidth=(Fl_Choice *)0;
+
+static void cb_mnuContestia_Bandwidth(Fl_Choice* o, void*) {
+  progdefaults.contestiabw = o->value();
+set_contestia_default_integ();
+resetOLIVIA();
+progdefaults.changed = true;
+}
+
+Fl_Choice *mnuContestia_Tones=(Fl_Choice *)0;
+
+static void cb_mnuContestia_Tones(Fl_Choice* o, void*) {
+  progdefaults.contestiatones = o->value();
+set_contestia_default_integ();
+resetCONTESTIA();
+progdefaults.changed = true;
+}
+
+Fl_Counter2 *cntContestia_smargin=(Fl_Counter2 *)0;
+
+static void cb_cntContestia_smargin(Fl_Counter2* o, void*) {
+  progdefaults.contestiasmargin = (int)(o->value());
+resetCONTESTIA();
+progdefaults.changed = true;
+}
+
+Fl_Counter2 *cntContestia_sinteg=(Fl_Counter2 *)0;
+
+static void cb_cntContestia_sinteg(Fl_Counter2* o, void*) {
+  progdefaults.contestiasinteg = (int)(o->value());
+resetCONTESTIA();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btnContestia_8bit=(Fl_Check_Button *)0;
+
+static void cb_btnContestia_8bit(Fl_Check_Button* o, void*) {
+  progdefaults.contestia8bit = o->value();
 progdefaults.changed = true;
 }
 
@@ -2583,6 +2624,8 @@ static const char szParity[]  = "none|even|odd|zero|one";
 static const char szStopBits[] = "1|1.5|2";
 static const char szOliviaTones[] = "2|4|8|16|32|64|128|256";
 static const char szOliviaBandwidth[] = "125|250|500|1000|2000";
+static const char szContestiaTones[] = "2|4|8|16|32|64|128|256";
+static const char szContestiaBandwidth[] = "125|250|500|1000|2000";
 static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600|115200|230400|460800";
   { Fl_Double_Window* o = new Fl_Double_Window(500, 400, _("Fldigi configuration"));
     w = o;
@@ -2590,9 +2633,9 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE);
-    { tabsConfigure = new Fl_Tabs(-3, 0, 503, 375);
-      tabsConfigure->color(FL_LIGHT1);
-      tabsConfigure->selection_color(FL_LIGHT1);
+    { tabsConfigure = new Fl_Tabs(-3, 0, 500, 372);
+      tabsConfigure->color((Fl_Color)FL_LIGHT1);
+      tabsConfigure->selection_color((Fl_Color)FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
         tabOperator->tooltip(_("Operator information"));
         tabOperator->labelsize(12);
@@ -2717,13 +2760,11 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
         } // Fl_Input* MyRadio
         tabOperator->end();
       } // Fl_Group* tabOperator
-      { tabUI = new Fl_Group(-3, 25, 503, 345, _("UI"));
-        tabUI->labelsize(12);
+      { tabUI = new Fl_Group(0, 25, 500, 345, _("UI"));
         tabUI->hide();
         { tabsUI = new Fl_Tabs(-3, 25, 503, 345);
           tabsUI->selection_color(FL_LIGHT1);
           { tabUserInterface = new Fl_Group(0, 50, 500, 320, _("General"));
-            tabUserInterface->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 301);
               o->box(FL_ENGRAVED_FRAME);
               { Fl_Check_Button* o = btnShowTooltips = new Fl_Check_Button(15, 70, 120, 20, _("Show tooltips"));
@@ -2986,7 +3027,8 @@ ab and newline are automatically included."));
             } // Fl_Group* o
             tabContest->end();
           } // Fl_Group* tabContest
-          { tabWF_UI = new Fl_Group(0, 50, 500, 320, _("Oper\' Controls"));
+          { tabWF_UI = new Fl_Group(0, 50, 500, 320, _("Operator Controls"));
+            tabWF_UI->hide();
             { Fl_Box* o = new Fl_Box(31, 65, 446, 25, _("Enable check box to show each respective operator control"));
               o->box(FL_FLAT_BOX);
               o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
@@ -3065,22 +3107,15 @@ ab and newline are automatically included."));
             } // Fl_Button* btn_wf_disable_all
             tabWF_UI->end();
           } // Fl_Group* tabWF_UI
-          { tabWfallRestart = new Fl_Group(0, 50, 500, 320, _("Restart"));
-            tabWfallRestart->hide();
-            { Fl_Group* o = new Fl_Group(5, 63, 490, 70, _("Changes take effect on next program startup"));
-              o->tooltip(_("Show me more or less waterfall"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = btnCheckButtons = new Fl_Check_Button(52, 93, 275, 20, _("Use check buttons for AFC and SQL"));
-                btnCheckButtons->tooltip(_("Check buttons or default lighted switch"));
-                btnCheckButtons->down_box(FL_DOWN_BOX);
-                btnCheckButtons->callback((Fl_Callback*)cb_btnCheckButtons);
-                o->value(progdefaults.useCheckButtons);
-              } // Fl_Check_Button* btnCheckButtons
-              o->end();
-            } // Fl_Group* o
-            tabWfallRestart->end();
-          } // Fl_Group* tabWfallRestart
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Rx Text"));
+            o->hide();
+            { Fl_Check_Button* o = btn_rx_lowercase = new Fl_Check_Button(25, 75, 389, 15, _("print CW / RTTY / THROB / CONTESTIA in lowercase"));
+              btn_rx_lowercase->down_box(FL_DOWN_BOX);
+              btn_rx_lowercase->callback((Fl_Callback*)cb_btn_rx_lowercase);
+              o->value(progdefaults.rx_lowercase);
+            } // Fl_Check_Button* btn_rx_lowercase
+            o->end();
+          } // Fl_Group* o
           tabsUI->end();
         } // Fl_Tabs* tabsUI
         tabUI->end();
@@ -3092,6 +3127,7 @@ ab and newline are automatically included."));
           tabsWaterfall->color(FL_LIGHT1);
           tabsWaterfall->selection_color(FL_LIGHT1);
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Display"));
+            o->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 162, _("Colors and cursors"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -3107,6 +3143,7 @@ ab and newline are automatically included."));
                 WF_Palette->align(FL_ALIGN_TOP_LEFT);
                 WF_Palette->when(FL_WHEN_RELEASE);
                 o->label(progdefaults.PaletteName.c_str());
+                o->labelsize(FL_NORMAL_SIZE);
               } // colorbox* WF_Palette
               { btnColor[0] = new Fl_Button(15, 128, 20, 24);
                 btnColor[0]->tooltip(_("Change color"));
@@ -3234,7 +3271,7 @@ ab and newline are automatically included."));
                 valTxMonitorLevel->align(FL_ALIGN_TOP);
                 valTxMonitorLevel->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.TxMonitorLevel);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* valTxMonitorLevel
               o->end();
             } // Fl_Group* o
@@ -3352,7 +3389,6 @@ an merging"));
             o->end();
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Mouse"));
-            o->hide();
             { Fl_Group* o = new Fl_Group(5, 62, 490, 170);
               o->box(FL_ENGRAVED_FRAME);
               { Fl_Check_Button* o = btnWaterfallHistoryDefault = new Fl_Check_Button(15, 76, 340, 20, _("Left or right click always replays audio history"));
@@ -3401,10 +3437,9 @@ an merging"));
         tabWaterfall->end();
       } // Fl_Group* tabWaterfall
       { tabModems = new Fl_Group(0, 25, 500, 345, _("Modems"));
-        tabModems->labelsize(12);
         tabModems->hide();
-        { tabsModems = new Fl_Tabs(0, 25, 500, 345);
-          tabsModems->selection_color(FL_LIGHT1);
+        { tabsModems = new Fl_Tabs(0, 25, 501, 345);
+          tabsModems->selection_color((Fl_Color)FL_LIGHT1);
           tabsModems->align(FL_ALIGN_TOP_RIGHT);
           { tabCW = new Fl_Group(0, 50, 500, 320, _("CW"));
             tabCW->hide();
@@ -3434,7 +3469,7 @@ an merging"));
                 sldrCWbandwidth->align(FL_ALIGN_RIGHT);
                 sldrCWbandwidth->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.CWbandwidth);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
                 } // Fl_Value_Slider2* sldrCWbandwidth
                 { Fl_Check_Button* o = btnCWrcvTrack = new Fl_Check_Button(40, 150, 80, 20, _("Tracking"));
                 btnCWrcvTrack->tooltip(_("Automatic Rx speed tracking"));
@@ -3500,7 +3535,7 @@ an merging"));
                 sldrCWxmtWPM->align(FL_ALIGN_RIGHT);
                 sldrCWxmtWPM->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.CWspeed);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
                 } // Fl_Value_Slider2* sldrCWxmtWPM
                 { Fl_Counter2* o = cntCWdefWPM = new Fl_Counter2(40, 281, 64, 20, _("Default"));
                 cntCWdefWPM->tooltip(_("The default CW speed"));
@@ -3565,7 +3600,7 @@ an merging"));
                 sldrCWfarnsworth->align(FL_ALIGN_RIGHT);
                 sldrCWfarnsworth->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.CWfarnsworth);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
                 } // Fl_Value_Slider2* sldrCWfarnsworth
                 { Fl_Check_Button* o = btnCWusefarnsworth = new Fl_Check_Button(40, 312, 180, 15, _("Use Farnsworth timing"));
                 btnCWusefarnsworth->down_box(FL_DOWN_BOX);
@@ -3726,7 +3761,7 @@ an merging"));
             } // Fl_Tabs* tabsCW
             tabCW->end();
           } // Fl_Group* tabCW
-          { tabDomEX = new Fl_Group(0, 50, 500, 320, _("DominoEX"));
+          { tabDomEX = new Fl_Group(0, 50, 500, 320, _("DomEX"));
             tabDomEX->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 180);
               o->box(FL_ENGRAVED_FRAME);
@@ -3792,7 +3827,7 @@ an merging"));
                 valDomCWI->align(FL_ALIGN_TOP);
                 valDomCWI->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.DomCWI);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* valDomCWI
               { Fl_Counter2* o = valDominoEX_PATHS = new Fl_Counter2(339, 194, 63, 20, _("Paths (hidden)"));
                 valDominoEX_PATHS->type(1);
@@ -3887,7 +3922,7 @@ an merging"));
                 sldrHellBW->align(FL_ALIGN_TOP_LEFT);
                 sldrHellBW->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.HELL_BW);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* sldrHellBW
               { Fl_Check_Button* o = btnFeldHellIdle = new Fl_Check_Button(15, 177, 230, 20, _("Transmit periods (.) when idle"));
                 btnFeldHellIdle->tooltip(_("Transmits a diddle dot when no keyboard activity"));
@@ -4035,7 +4070,80 @@ an merging"));
             } // Fl_Group* o
             tabOlivia->end();
           } // Fl_Group* tabOlivia
-          { tabPSK = new Fl_Group(0, 50, 500, 320, _("PSK"));
+          { tabContestia = new Fl_Group(0, 50, 500, 320, _("Contestia"));
+            tabContestia->hide();
+            { Fl_Group* o = new Fl_Group(5, 60, 490, 200);
+              o->box(FL_ENGRAVED_FRAME);
+              { Fl_Choice* o = mnuContestia_Bandwidth = new Fl_Choice(60, 80, 85, 20, _("Bandwidth"));
+                mnuContestia_Bandwidth->tooltip(_("Select bandwidth"));
+                mnuContestia_Bandwidth->down_box(FL_BORDER_BOX);
+                mnuContestia_Bandwidth->callback((Fl_Callback*)cb_mnuContestia_Bandwidth);
+                mnuContestia_Bandwidth->align(FL_ALIGN_RIGHT);
+                o->add(szContestiaBandwidth);
+                o->value(2);
+              } // Fl_Choice* mnuContestia_Bandwidth
+              { Fl_Choice* o = mnuContestia_Tones = new Fl_Choice(321, 80, 70, 20, _("Tones"));
+                mnuContestia_Tones->tooltip(_("Select number of tones"));
+                mnuContestia_Tones->down_box(FL_BORDER_BOX);
+                mnuContestia_Tones->callback((Fl_Callback*)cb_mnuContestia_Tones);
+                mnuContestia_Tones->align(FL_ALIGN_RIGHT);
+                o->add(szContestiaTones);
+                o->value(2);
+              } // Fl_Choice* mnuContestia_Tones
+              { Fl_Group* o = new Fl_Group(60, 119, 379, 100, _("Receive synchronizer"));
+                o->box(FL_ENGRAVED_FRAME);
+                o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+                { Fl_Counter2* o = cntContestia_smargin = new Fl_Counter2(80, 150, 70, 20, _("Tune margin (tone frequency spacing)"));
+                cntContestia_smargin->tooltip(_("Change ONLY to experiment"));
+                cntContestia_smargin->type(1);
+                cntContestia_smargin->box(FL_UP_BOX);
+                cntContestia_smargin->color((Fl_Color)FL_BACKGROUND_COLOR);
+                cntContestia_smargin->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntContestia_smargin->labeltype(FL_NORMAL_LABEL);
+                cntContestia_smargin->labelfont(0);
+                cntContestia_smargin->labelsize(14);
+                cntContestia_smargin->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntContestia_smargin->minimum(2);
+                cntContestia_smargin->maximum(128);
+                cntContestia_smargin->step(1);
+                cntContestia_smargin->value(8);
+                cntContestia_smargin->callback((Fl_Callback*)cb_cntContestia_smargin);
+                cntContestia_smargin->align(FL_ALIGN_RIGHT);
+                cntContestia_smargin->when(FL_WHEN_CHANGED);
+                o->labelsize(FL_NORMAL_SIZE);
+                } // Fl_Counter2* cntContestia_smargin
+                { Fl_Counter2* o = cntContestia_sinteg = new Fl_Counter2(80, 180, 70, 20, _("Integration period (FEC blocks)"));
+                cntContestia_sinteg->tooltip(_("Change ONLY to experiment"));
+                cntContestia_sinteg->type(1);
+                cntContestia_sinteg->box(FL_UP_BOX);
+                cntContestia_sinteg->color((Fl_Color)FL_BACKGROUND_COLOR);
+                cntContestia_sinteg->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntContestia_sinteg->labeltype(FL_NORMAL_LABEL);
+                cntContestia_sinteg->labelfont(0);
+                cntContestia_sinteg->labelsize(14);
+                cntContestia_sinteg->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntContestia_sinteg->minimum(2);
+                cntContestia_sinteg->maximum(128);
+                cntContestia_sinteg->step(1);
+                cntContestia_sinteg->value(4);
+                cntContestia_sinteg->callback((Fl_Callback*)cb_cntContestia_sinteg);
+                cntContestia_sinteg->align(FL_ALIGN_RIGHT);
+                cntContestia_sinteg->when(FL_WHEN_CHANGED);
+                o->labelsize(FL_NORMAL_SIZE);
+                } // Fl_Counter2* cntContestia_sinteg
+                o->end();
+              } // Fl_Group* o
+              { btnContestia_8bit = new Fl_Check_Button(60, 229, 200, 20, _("8-bit extended characters"));
+                btnContestia_8bit->tooltip(_("Enable this for Latin-1 accented characters"));
+                btnContestia_8bit->down_box(FL_DOWN_BOX);
+                btnContestia_8bit->callback((Fl_Callback*)cb_btnContestia_8bit);
+                btnContestia_8bit->hide();
+              } // Fl_Check_Button* btnContestia_8bit
+              o->end();
+            } // Fl_Group* o
+            tabContestia->end();
+          } // Fl_Group* tabContestia
+          { tabPSK = new Fl_Group(0, 50, 517, 320, _("PSK"));
             tabPSK->hide();
             { tabsPSK = new Fl_Tabs(0, 50, 500, 320);
               tabsPSK->selection_color(FL_LIGHT1);
@@ -4262,7 +4370,7 @@ an merging"));
                 btnCRCRLF->when(FL_WHEN_RELEASE_ALWAYS);
                 o->value(progdefaults.rtty_crcrlf);
                 } // Fl_Check_Button* btnCRCRLF
-                { cntrAUTOCRLF = new Fl_Counter2(335, 118, 65, 20, _("characters"));
+                { Fl_Counter2* o = cntrAUTOCRLF = new Fl_Counter2(335, 118, 65, 20, _("characters"));
                 cntrAUTOCRLF->tooltip(_("Set page width"));
                 cntrAUTOCRLF->type(1);
                 cntrAUTOCRLF->box(FL_UP_BOX);
@@ -4279,6 +4387,7 @@ an merging"));
                 cntrAUTOCRLF->callback((Fl_Callback*)cb_cntrAUTOCRLF);
                 cntrAUTOCRLF->align(FL_ALIGN_RIGHT);
                 cntrAUTOCRLF->when(FL_WHEN_CHANGED);
+                o->labelsize(FL_NORMAL_SIZE);
                 } // Fl_Counter2* cntrAUTOCRLF
                 { Fl_Box* o = new Fl_Box(265, 118, 60, 20, _("after:"));
                 o->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
@@ -4347,7 +4456,7 @@ an merging"));
                 sldrRTTYbandwidth->align(FL_ALIGN_TOP_LEFT);
                 sldrRTTYbandwidth->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.RTTY_BW);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* sldrRTTYbandwidth
               { Fl_Counter2* o = selCustomShift = new Fl_Counter2(15, 100, 100, 20, _("Custom shift"));
                 selCustomShift->tooltip(_("Input carrier shift"));
@@ -4432,7 +4541,7 @@ an merging"));
                 valThorCWI->align(FL_ALIGN_TOP);
                 valThorCWI->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.ThorCWI);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* valThorCWI
               { Fl_Counter2* o = valTHOR_PATHS = new Fl_Counter2(353, 193, 75, 21, _("Paths (hidden)"));
                 valTHOR_PATHS->type(1);
@@ -5167,7 +5276,7 @@ ll with your audio device."));
                 valPCMvolume->callback((Fl_Callback*)cb_valPCMvolume);
                 valPCMvolume->align(FL_ALIGN_RIGHT);
                 valPCMvolume->when(FL_WHEN_CHANGED);
-                o->labelsize(FL_NORMAL_SIZE);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* valPCMvolume
               o->end();
             } // Fl_Group* o
@@ -5236,7 +5345,7 @@ ll with your audio device."));
             sldrVideowidth->when(FL_WHEN_CHANGED);
             o->value(progdefaults.videowidth);
             if (progdefaults.ID_SMALL) o->deactivate();
-            o->labelsize(FL_NORMAL_SIZE);
+            o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
           } // Fl_Value_Slider2* sldrVideowidth
           { bVideoIDModes = new Fl_Button(365, 67, 120, 20, _("Video ID modes"));
             bVideoIDModes->callback((Fl_Callback*)cb_bVideoIDModes);
@@ -5271,7 +5380,7 @@ ll with your audio device."));
             sldrCWIDwpm->align(FL_ALIGN_TOP);
             sldrCWIDwpm->when(FL_WHEN_CHANGED);
             o->value(progdefaults.CWIDwpm);
-            o->labelsize(FL_NORMAL_SIZE);
+            o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
           } // Fl_Value_Slider2* sldrCWIDwpm
           { bCWIDModes = new Fl_Button(365, 185, 120, 20, _("CW ID modes"));
             bCWIDModes->callback((Fl_Callback*)cb_bCWIDModes);

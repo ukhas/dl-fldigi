@@ -119,7 +119,7 @@ void throb::reset_syms() //call when switching from TX to RX or vice versa
 
 throb::throb(trx_mode throb_mode) : modem()
 {
-	cap = CAP_AFC | CAP_REV;
+	cap |= CAP_AFC | CAP_REV;
 
 	double bw;
 	double *fp = 0;
@@ -342,7 +342,7 @@ int throb::findtones(complex *word, int &tone1, int &tone2)
 
 void throb::show_char(int c) {
 	if (metric > progStatus.sldrSquelchValue || progStatus.sqlonoff == false)
-		put_rx_char(c);
+		put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c);
 }
 
 void throb::decodechar(int tone1, int tone2)
@@ -706,7 +706,7 @@ int throb::tx_process()
 	}
 
 	send(sym);
-	put_echo_char(c);
+	put_echo_char(progdefaults.rx_lowercase ? tolower(c) : c);
 
 	return 0;
 }
