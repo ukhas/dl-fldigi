@@ -128,6 +128,7 @@ void pSRCHUP(string&, size_t&);
 void pSRCHDN(string&, size_t&);
 void pGOHOME(string&, size_t&);
 void pGOFREQ(string&, size_t&);
+void pMAPIT(string&, size_t&);
 
 //void pMACROS(string &, size_t &);
 
@@ -191,6 +192,8 @@ MTAGS mtags[] = {
 {"<SRCHDN>",	pSRCHDN},
 {"<GOHOME>",	pGOHOME},
 {"<GOFREQ:",	pGOFREQ},
+{"<MAPIT:",		pMAPIT},
+{"<MAPIT>",		pMAPIT},
 {0, 0}
 };
 
@@ -673,6 +676,12 @@ void pMODEM(string &s, size_t &i)
 			if (args.at(2) != DBL_MIN)
 				set_rtty_bits((int)args[2]);
 			break;
+		case MODE_CONTESTIA: // bandwidth, tones
+			if (args.at(0) != DBL_MIN)
+				set_contestia_bw((int)args[0]);
+			if (args.at(1) != DBL_MIN)
+				set_contestia_tones((int)args[1]);
+			break;
 		case MODE_OLIVIA: // bandwidth, tones
 			if (args.at(0) != DBL_MIN)
 				set_olivia_bw((int)args[0]);
@@ -723,6 +732,7 @@ void pLOCK(string &s, size_t &i)
       wf->xmtlock->value(!wf->xmtlock->value());
 
     wf->xmtlock->damage();
+    wf->xmtlock->do_callback();
   }
   s.replace(i, endbracket - i + 1, "");
 }
@@ -985,6 +995,71 @@ void pEXEC(string& s, size_t& i)
 	LOG_WARN("Ignoring unimplemented EXEC macro");
 }
 #endif // !__MINGW32__
+
+void MAPIT(int how)
+{
+	float lat = 0, lon = 0;
+	string sCALL = inpCall->value();
+	string sLOC = inpLoc->value();
+
+	string url = "http://maps.google.com/maps?q=";
+
+//	if (lookup_addr1.empty() && lookup_addr2.empty() &&
+//		lookup_state.empty() && lookup_country.empty()) {
+	if (how > 1 && !lookup_country.empty()) {
+		url.append(lookup_addr1).append(",").append(lookup_addr2).append(",");
+		url.append(lookup_state).append(",").append(lookup_country);
+	} else {
+		if (how > 0 && (!lookup_latd.empty() && !lookup_lond.empty())) {
+			url.append(lookup_latd).append(",");
+			url.append(lookup_lond);
+		} else {
+			if (sLOC.empty()) return;
+			if (sLOC.length() < 4) return;
+			if (sLOC.length() < 6) sLOC.append("aa");
+			for (size_t i = 0; i < 6; i++) sLOC[i] = toupper(sLOC[i]);
+			if (sLOC[0] -'A' > 17 || sLOC[4] - 'A' > 23 ||
+				sLOC[1] -'A' > 17 || sLOC[5] - 'A' > 23 ||
+				!isdigit(sLOC[2]) || !isdigit(sLOC[3])) return;
+			lon =	-180.0 + 
+					(sLOC[0] - 'A') * 20 +
+					(sLOC[2] - '0') * 2 +
+					(sLOC[4] - 'A' + 0.5) / 12;
+			lat = -90.0 + 
+					(sLOC[1] - 'A') * 10 +
+					(sLOC[3] - '0') +
+					(sLOC[5] - 'A' + 0.5) / 24;
+			char sdata[20];
+			snprintf(sdata, sizeof(sdata),"%10.6f", lat);
+			url.append(sdata).append(",");
+			snprintf(sdata, sizeof(sdata),"%10.6f", lon);
+			url.append(sdata);
+		}
+	}
+	if (!sCALL.empty()) url.append("(").append(sCALL).append(")");
+	else url.append("(nocall)");
+	url.append("&t=p&z=10");
+	cb_mnuVisitURL(NULL, (void*)url.c_str());
+}
+
+void pMAPIT(string &s, size_t &i)
+{
+	size_t endbracket = s.find('>',i);
+	string sVal = s.substr(i + 7, endbracket - i - 7);
+	if (sVal.length() > 0) {
+		if (sVal.compare(0,3,"adr") == 0)
+			REQ(MAPIT,2);
+		else if (sVal.compare(0,6,"latlon") == 0)
+			REQ(MAPIT,1);
+		else if (sVal.compare(0,3,"loc") == 0)
+			REQ(MAPIT,0);
+		else
+			REQ(MAPIT,2);
+	} else
+		REQ(MAPIT,2);
+	s.erase(i, s.find('>', i) + 1 - i);
+	expand = false;
+}
 
 void pSTOP(string &s, size_t &i)
 {

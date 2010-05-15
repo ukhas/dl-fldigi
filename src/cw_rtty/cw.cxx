@@ -66,7 +66,20 @@ void cw::rx_init()
 
 void cw::init()
 {
-	modem::init();
+	bool wfrev = wf->Reverse();
+	bool wfsb = wf->USB();
+	reverse = wfrev ^ !wfsb;
+
+	if (progdefaults.StartAtSweetSpot)
+		set_freq(progdefaults.CWsweetspot);
+	else if (progStatus.carrier != 0) {
+		set_freq(progStatus.carrier);
+#if !BENCHMARK_MODE
+		progStatus.carrier = 0;
+#endif
+	} else
+		set_freq(wf->Carrier());
+
 	trackingfilter->reset();
 	cw_adaptive_receive_threshold = (long int)trackingfilter->run(2 * cw_send_dot_length);
 	put_cwRcvWPM(cw_send_speed);
@@ -347,7 +360,7 @@ int cw::rx_process(const double *buf, int len)
 			}
 			if (handle_event(CW_QUERY_EVENT, &c) == CW_SUCCESS) {
 				while (*c)
-					put_rx_char(*c++);
+					put_rx_char(progdefaults.rx_lowercase ? tolower(*c++) : *c++);
 				update_syncscope();
 //				display_metric(metric);
 			}
@@ -782,7 +795,7 @@ void cw::send_ch(int ch)
 		    flen -= symbollen;
         }
         if (flen) send_symbol(0, flen);
-		put_echo_char(ch);
+		put_echo_char(progdefaults.rx_lowercase ? tolower(ch) : ch);
 		return;
 	}
 

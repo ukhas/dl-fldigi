@@ -21,6 +21,7 @@ src/config.h
 src/config.h.in*
 src/flarq
 src/fldigi
+src/dl-fldigi
 src/stamp-h1
 
 # Runtime generated files

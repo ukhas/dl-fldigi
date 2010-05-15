@@ -123,7 +123,9 @@ public:
 
 	unsigned	get_cap(void) { return cap; }
 	enum { CAP_AFC = 1 << 0, CAP_AFC_SR = 1 << 1, CAP_REV = 1 << 2,
-	       CAP_IMG = 1 << 3, CAP_BW = 1 << 4 };
+	       CAP_IMG = 1 << 3, CAP_BW = 1 << 4, CAP_RX = 1 << 5,
+	       CAP_TX = 1 << 6
+	};
 
 // for CW modem use only
 	bool		get_cwTrack();
@@ -231,6 +233,7 @@ extern modem *psk500r_modem;
 extern modem *rtty_modem;
 
 extern modem *olivia_modem;
+extern modem *contestia_modem;
 
 extern modem *thor4_modem;
 extern modem *thor5_modem;
@@ -256,6 +259,7 @@ extern modem *throbx4_modem;
 
 extern modem *wwv_modem;
 extern modem *anal_modem;
+extern modem *ssb_modem;
 
 
 #endif
