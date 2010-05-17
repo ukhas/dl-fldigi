@@ -291,6 +291,8 @@ Fl_Input2			*habAlt;
 Fl_Input2			*habCustom=(Fl_Input2 *)0;
 Fl_Choice			*habFlightXML = 0;
 Fl_Input2			*habChecksum;
+Fl_Input2			*habBearing;
+Fl_Input2			*habDistance;
 Fl_Button			*habConfigureButton = 0;
 Fl_Input2			*habTimeSinceLastRx;
 
@@ -302,6 +304,8 @@ int w_habCustom = 500;
 int w_habFlightXML = 100;
 int w_habConfigureButton = 120;
 int w_habChecksum = 70;
+int w_habBearing = 70;
+int w_habDistance = 70;
 int w_habTimeSinceLastRx = 100;
 
 int pad = 1;
@@ -4744,6 +4748,28 @@ void create_fl_digi_main_dl_fldigi() {
 		habChecksum->labelsize(13);
 		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
 		habChecksum->align(FL_ALIGN_TOP); }
+
+		{ habBearing = new Fl_Input2((rightof(habChecksum) + 2), (Y + Hentry) , w_habBearing, Hentry, "Bearing");
+		habBearing->tooltip(_("Bearing from Rx Station to Payload"));
+		habBearing->box(FL_DOWN_BOX);
+		habBearing->color(FL_BACKGROUND2_COLOR);
+		habBearing->selection_color(FL_SELECTION_COLOR);
+		habBearing->labeltype(FL_NORMAL_LABEL);
+		habBearing->labelfont(0);
+		habBearing->labelsize(13);
+		habBearing->labelcolor(FL_FOREGROUND_COLOR);
+		habBearing->align(FL_ALIGN_TOP); }
+		
+		{ habDistance = new Fl_Input2((rightof(habBearing) + 2), (Y + Hentry) , w_habDistance, Hentry, "Distance");
+		habDistance->tooltip(_("Distance from Rx Station to Payload"));
+		habDistance->box(FL_DOWN_BOX);
+		habDistance->color(FL_BACKGROUND2_COLOR);
+		habDistance->selection_color(FL_SELECTION_COLOR);
+		habDistance->labeltype(FL_NORMAL_LABEL);
+		habDistance->labelfont(0);
+		habDistance->labelsize(13);
+		habDistance->labelcolor(FL_FOREGROUND_COLOR);
+		habDistance->align(FL_ALIGN_TOP); }
 	
 		{ habTimeSinceLastRx = new Fl_Input2(progStatus.mainW - w_habTimeSinceLastRx - 2 * DEFAULT_SW, (Y + Hentry) , w_habTimeSinceLastRx, Hentry, "Time since Rx");
 		habTimeSinceLastRx->tooltip(_("Elapsed time since last line of telemetry received"));

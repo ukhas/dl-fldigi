@@ -130,6 +130,10 @@ extern Fl_Input2			*habAlt;
 extern Fl_Input2			*habTimeSinceLastRx;
 extern Fl_Input2			*habCustom;
 extern Fl_Input2			*habChecksum;
+extern Fl_Input2			*habBearing;
+extern Fl_Input2			*habDistance;
+
+
 //
 extern bool			withnoise;
 extern int			altMacros;

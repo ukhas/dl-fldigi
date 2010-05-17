@@ -42,9 +42,65 @@
 
 #include "dl_fldigi.h"
 
+#include <stdio.h>   /* Standard input/output definitions */
+#include <stdlib.h>  /* Standard stuff like exit */
+#include <math.h>
+#include <time.h>
+ 
+#include <fcntl.h>   /* File control definitions */
+#include <errno.h>   /* Error number definitions */
+ 
+#include <termios.h> /* POSIX terminal control definitions */
+#include <unistd.h>  /* UNIX standard function definitions */
 
 using namespace std;
 
+//****************************************
+//Taken from Steve Randall's Navsoft code.
+
+ 
+typedef struct {
+	float lat;
+	float lon;
+} coordinate;
+
+typedef struct {
+	float bearing;
+	float distance;
+} balloonvector;
+ 
+#define DEG2KM(a)	(a * (float)111.226306)	// Degrees (of latitude) to Kilometers multiplier
+#define DEG2RAD(a)	(a * (float)0.0174532925)	// Degrees to Radian multiplier
+#define RAD2DEG(a) 	(a * (float)57.2957795)	// Radian to Degrees multiplier
+
+float targetLat;
+float targetLon;
+float presentLat;
+float presentLon;
+
+balloonvector Coords_to_bearing_and_distance(coordinate posn, coordinate dest)
+{
+ 
+	float delta_lat, delta_lon;
+	balloonvector result;
+ 
+	delta_lat = dest.lat - posn.lat;
+	delta_lon = (dest.lon - posn.lon) * (float)cos(DEG2RAD((dest.lat + posn.lat)/2));
+ 
+	result.distance = DEG2KM((float)sqrt(((delta_lat) * (delta_lat)) + ((delta_lon) * (delta_lon)))); // pythagerious
+ 
+	// calcualte compass bearing degrees clockwise from north (0 - 360)
+	// atan2(y,x) produces the euclidean angle (+ve = counter-clockwise from x axis in radians)
+	// atan2(d_lon,d_lat) produces the compass angle (+ve = clockwise from N /-ve counter-clockwise)
+ 
+	result.bearing = RAD2DEG((float)atan2(delta_lon,delta_lat)); // atan2 argument inversion to get compass N based co-ordinates
+ 
+	if (result.bearing < 0.0)
+		result.bearing += 360; // convert to 0-360
+ 
+	return(result);
+}
+//****************************************
 //jcoxon
 void UpperCase(string& str)
 {
@@ -217,6 +273,10 @@ void rx_extract_update_ui(string rx_buff)
 		int pos, asterixPosition = 0;
 		string extractedField, remainingString = rx_buff, checksumData, customData;
 		
+		balloonvector target_vector;
+		coordinate presentCoords;
+		coordinate targetCoords;
+		
 		habCustom->value(rx_buff.c_str());
 		
 		asterixPosition = rx_buff.find("*");
@@ -236,14 +296,28 @@ void rx_extract_update_ui(string rx_buff)
 		}
 		else if (x == progdefaults.xml_latitude) {
 			habLat->value(extractedField.c_str());
+			targetCoords.lat = atof(extractedField.c_str());
 		}
 		else if (x == progdefaults.xml_longitude) {
 			habLon->value(extractedField.c_str());
+			targetCoords.lon = atof(extractedField.c_str());
 		}
 		else if (x == progdefaults.xml_altitude) {
 			habAlt->value(extractedField.c_str());
 		}
 
-		//cout << x << " : " << pos << " : " << extractedField << " : " << remainingString  << endl;
+	}
+	if(progdefaults.myLat.length() > 0 && progdefaults.myLon.length() > 0) {
+		presentCoords.lat = atof(progdefaults.myLat.c_str());
+		presentCoords.lon = atof(progdefaults.myLon.c_str());
+		target_vector = Coords_to_bearing_and_distance(presentCoords, targetCoords);
+
+		printf("Target bearing = %fdeg, distance %fKm\n",target_vector.bearing,target_vector.distance);
+		char target_vector_bearing[10];
+		char target_vector_distance[10];
+		sprintf(target_vector_bearing, "%8.1f",target_vector.bearing);
+		habBearing->value(target_vector_bearing);
+		sprintf(target_vector_distance, "%8.1f",target_vector.distance);
+		habDistance->value(target_vector_distance);
 	}
 }
