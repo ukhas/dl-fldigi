@@ -268,6 +268,71 @@ void rx_extract_add(int c)
 	}
 }
 
+/* CRC and checksum calculators -- these should really be separated out into
+ * their own file. */
+uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
+{
+	int i;
+	
+	crc = crc ^ ((uint16_t) data << 8);
+	for(i = 0; i < 8; i++)
+	{
+		if(crc & 0x8000) crc = (crc << 1) ^ 0x1021;
+		else crc <<= 1;
+	}
+	
+	return(crc);
+}
+
+uint8_t gps_xor_checksum(char *s)
+{
+	uint8_t x;
+	
+	/* Calculate checksum ignoring the first two $s */
+	for(x = 0; *s; s++)
+		x ^= (uint8_t) *s;
+	
+	return(x);
+}
+
+uint16_t gps_CRC16_checksum(char *s)
+{
+	uint16_t x;
+	
+	/* Calculate checksum ignoring the first two $s */
+	for(x = 0xFFFF; *s; s++)
+		x = crc_xmodem_update(x, (uint16_t) *s);
+	
+	return(x);
+}
+
+int test_checksum(string s)
+{
+	size_t i;
+	uint16_t checksum, x;
+	string checkstr;
+	
+	/* Test both the ukhas checksum formats */
+	/* See: http://ukhas.org.uk/communication:protocol */
+	
+	i = s.find("*");
+	if(i == string::npos) return(false);
+	
+	checkstr = s.substr(i + 1);
+	checksum = strtol(checkstr.c_str(), NULL, 16);
+	
+	/* Remove the checksum from the string to be tested */
+	s.resize(i);
+	
+	if(checkstr.length() == 4) x = gps_CRC16_checksum((char *) s.c_str());
+	else if(checkstr.length() == 2) x = gps_xor_checksum((char *) s.c_str());
+	else return(false);
+	
+	if(x != checksum) return(false);
+	
+	return(true);
+}
+
 void rx_extract_update_ui(string rx_buff)
 {
 		int pos, asterixPosition = 0;
@@ -278,6 +343,13 @@ void rx_extract_update_ui(string rx_buff)
 		coordinate targetCoords;
 		
 		habCustom->value(rx_buff.c_str());
+		
+		/* Don't display bad data */
+		if(test_checksum(rx_buff) == false)
+		{
+			printf("Checksum failed, not displaying\n");
+			return;
+		}
 		
 		asterixPosition = rx_buff.find("*");
 		if (asterixPosition > 0)
