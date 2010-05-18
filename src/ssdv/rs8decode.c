@@ -1,7 +1,7 @@
 /* General purpose Reed-Solomon decoder for 8-bit symbols or less
- *  * Copyright 2003 Phil Karn, KA9Q
- *   * May be used under the terms of the GNU Lesser General Public License (LGPL)
- *    */
+ * Copyright 2003 Phil Karn, KA9Q
+ * May be used under the terms of the GNU Lesser General Public License (LGPL)
+*/
 
 #include <string.h>
 #include "rs8.h"
@@ -84,7 +84,7 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 		{
 			if((lambda[i] != 0) && (s[r - i - 1] != A0))
 			{
-				discr_r ^= ALPHA_TO[MODNN(INDEX_OF[lambda[i]] + s[r-i-1])];
+				discr_r ^= ALPHA_TO[MODNN(INDEX_OF[lambda[i]] + s[r - i - 1])];
 			}
 		}
 		discr_r = INDEX_OF[discr_r]; /* Index form */
@@ -101,9 +101,9 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 			for(i = 0; i < NROOTS; i++)
 			{
 				if(b[i] != A0)
-					t[i+1] = lambda[i+1] ^ ALPHA_TO[MODNN(discr_r + b[i])];
+					t[i + 1] = lambda[i + 1] ^ ALPHA_TO[MODNN(discr_r + b[i])];
 				else
-					t[i+1] = lambda[i+1];
+					t[i + 1] = lambda[i + 1];
 			}
 			
 			if(2 * el <= r + no_eras - 1)
@@ -196,7 +196,7 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 		num1 = 0;
 		for(i = deg_omega; i >= 0; i--)
 		{
-			if(omega[i] != A0) num1  ^= ALPHA_TO[MODNN(omega[i] + i * root[j])];
+			if(omega[i] != A0) num1 ^= ALPHA_TO[MODNN(omega[i] + i * root[j])];
 		}
 		num2 = ALPHA_TO[MODNN(root[j] * (FCR - 1) + NN)];
 		den = 0;
