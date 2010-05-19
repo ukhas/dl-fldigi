@@ -221,14 +221,14 @@ int main(int argc, char ** argv)
 	{
 		char dirbuf[FL_PATH_MAX + 1];
 #ifdef __WOE32__
-		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$USERPROFILE/fldigi.files/");
+		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$USERPROFILE/dl-fldigi.files/");
 		HomeDir = dirbuf;
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$USERPROFILE/NBEMS.files/");
 		NBEMS_dir = dirbuf;
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$USERPROFILE/");
 		PskMailDir = dirbuf;
 #else
-		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/.fldigi/");
+		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/.dl-fldigi/");
 		HomeDir = dirbuf;
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/.nbems/");
 		NBEMS_dir = dirbuf;
@@ -340,7 +340,7 @@ int main(int argc, char ** argv)
 	if (progStatus.LOGenabled == true) {
     	Date tdy;
 	    string lfname = HomeDir;
-	    lfname.append("fldigi");
+	    lfname.append("dl-fldigi");
 	    lfname.append(tdy.szDate(2));
 	    lfname.append(".log");
 	    logfile = new cLogfile(lfname);
