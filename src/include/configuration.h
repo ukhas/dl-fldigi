@@ -1128,7 +1128,12 @@
 		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)										\
 /* Config stuff */																		\
 		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)										\
-        ELEM_(bool, dl_online, "", "", false)
+        ELEM_(bool, dl_online, "", "", false) \
+		ELEM_(bool, ssdv_block_upload, "", "", false) \
+		ELEM_(bool, ssdv_block_download, "", "", false) \
+		ELEM_(std::string, ssdv_block_url, "", "", "http:\/\/www.sanslogic.co.uk/hadie/query.php") \
+		ELEM_(std::string, ssdv_block_user, "", "", "") \
+		ELEM_(std::string, ssdv_block_pass, "", "", "")
 
 
 // declare the struct

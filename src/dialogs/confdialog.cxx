@@ -2521,6 +2521,8 @@ progdefaults.changed = true;
 
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
+Fl_Group *tabDLImage = (Fl_Group *)0;
+
 Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
 
 static void cb_habFlightXML_conf(Fl_Choice* o, void*) {
@@ -6040,6 +6042,33 @@ d frequency"));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gpsSpeed);
               } // Fl_Value_Input2* o
+              o->end();
+            } // Fl_Group* o
+            o->end();
+          } // Fl_Group* o
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Image"));
+            o->hide();
+            { Fl_Group* o = new Fl_Group(5, 55, 490, 150, _("Block Upload Configuration"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              int y = 45;
+              { Fl_Check_Button* o = new Fl_Check_Button(100, y += 35, 200, 25, _("Enable"));
+                o->down_box(FL_DOWN_BOX);
+                o->value(progdefaults.ssdv_block_upload);
+              } // Fl_Check_Button* confdialog_dl_online
+              { Fl_Check_Button* o = new Fl_Check_Button(100, y += 20, 200, 25, _("Query server for lost blocks"));
+                o->down_box(FL_DOWN_BOX);
+                o->value(progdefaults.ssdv_block_upload);
+              } // Fl_Check_Button* confdialog_dl_online
+              { Fl_Input* o = new Fl_Input(100, y += 35, 325, 25, _("URL:"));
+                o->value(progdefaults.ssdv_block_url.c_str());
+              } // Fl_Input* o
+              { Fl_Input* o = new Fl_Input(100, y += 35, 125, 25, _("Username:"));
+                o->value(progdefaults.ssdv_block_user.c_str());
+              } // Fl_Input* o
+              { Fl_Input* o = new Fl_Input(100 + 200, y, 125, 25, _("Password:"));
+                o->value(progdefaults.ssdv_block_pass.c_str());
+              } // Fl_Input* o
               o->end();
             } // Fl_Group* o
             o->end();
