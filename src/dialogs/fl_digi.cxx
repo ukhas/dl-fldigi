@@ -4799,7 +4799,8 @@ void create_fl_digi_main_dl_fldigi() {
 		habCustom->selection_color(FL_SELECTION_COLOR);
 		habCustom->when(FL_WHEN_RELEASE);}
 
-		TopFrameHAB->resizable(TopFrameHAB);
+		Fl_Group::current()->resizable(TopFrameHAB);
+		//TopFrameHAB->resizable(TopFrameHAB);
 		TopFrameHAB->end();
 		
 		Y = Hmenu + pad + TopFrameHABheight;
@@ -4818,7 +4819,16 @@ void create_fl_digi_main_dl_fldigi() {
 			ReceiveText->setFontColor(progdefaults.CTRLcolor, FTextBase::CTRL);
 			ReceiveText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
 			ReceiveText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
+			int sw = DEFAULT_SW;
+
+			Fl_Box *minbox = new Fl_Box(0,Y + minRxHeight + 1, progStatus.mainW, minRxHeight);
+			//Fl_Box *minbox = new Fl_Box(sw,Y + 66, progStatus.mainW-sw, Htext - 66 - 66);
+			minbox->hide();
+
+			TiledGroup->resizable(minbox);
 			
+		TiledGroup->end();
+		Fl_Group::current()->resizable(TiledGroup);
 //
 
 		Y = Hmenu + pad + TopFrameHABheight + minRxHeight;
