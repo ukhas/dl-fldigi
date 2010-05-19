@@ -347,9 +347,11 @@ void rx_extract_update_ui(string rx_buff)
 		/* Don't display bad data */
 		if(test_checksum(rx_buff) == false)
 		{
+			habCustom->color(FL_RED);
 			printf("Checksum failed, not displaying\n");
 			return;
 		}
+		habCustom->color(FL_GREEN);
 		
 		asterixPosition = rx_buff.find("*");
 		if (asterixPosition > 0)
