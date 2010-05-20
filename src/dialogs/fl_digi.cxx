@@ -307,6 +307,7 @@ int w_habChecksum = 70;
 int w_habBearing = 70;
 int w_habDistance = 70;
 int w_habTimeSinceLastRx = 100;
+int HAB_height = 0;
 
 int pad = 1;
 int Hentry		= 24;
@@ -4614,8 +4615,6 @@ void create_fl_digi_main_WF_only() {
 }
 
 //jcoxon
-
-int HAB_height = 0;
 
 void create_fl_digi_main_dl_fldigi() {
 	
