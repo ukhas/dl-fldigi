@@ -2598,6 +2598,31 @@ progdefaults.changed = true;
 /* TODO: start/update/reset gps? */;
 }
 
+static void cb_ssdv_block_upload(Fl_Check_Button* o, void*) {
+  progdefaults.ssdv_block_upload = o->value();
+  progdefaults.changed = true;
+}
+
+static void cb_ssdv_block_download(Fl_Check_Button* o, void*) {
+  progdefaults.ssdv_block_download = o->value();
+  progdefaults.changed = true;
+}
+
+static void cb_ssdv_block_url(Fl_Input2* o, void*) {
+  progdefaults.ssdv_block_url = o->value();
+  progdefaults.changed = true;
+}
+
+static void cb_ssdv_block_user(Fl_Input2* o, void*) {
+  progdefaults.ssdv_block_user = o->value();
+  progdefaults.changed = true;
+}
+
+static void cb_ssdv_block_pass(Fl_Input2* o, void*) {
+  progdefaults.ssdv_block_pass = o->value();
+  progdefaults.changed = true;
+}
+
 Fl_Button *btnSaveConfig=(Fl_Button *)0;
 
 static void cb_btnSaveConfig(Fl_Button*, void*) {
@@ -6053,20 +6078,25 @@ d frequency"));
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
               int y = 45;
               { Fl_Check_Button* o = new Fl_Check_Button(100, y += 35, 200, 25, _("Enable"));
+                o->callback((Fl_Callback*)cb_ssdv_block_upload);
                 o->down_box(FL_DOWN_BOX);
                 o->value(progdefaults.ssdv_block_upload);
               } // Fl_Check_Button* confdialog_dl_online
               { Fl_Check_Button* o = new Fl_Check_Button(100, y += 20, 200, 25, _("Query server for lost blocks"));
+                o->callback((Fl_Callback*)cb_ssdv_block_download);
                 o->down_box(FL_DOWN_BOX);
-                o->value(progdefaults.ssdv_block_upload);
+                o->value(progdefaults.ssdv_block_download);
               } // Fl_Check_Button* confdialog_dl_online
               { Fl_Input* o = new Fl_Input(100, y += 35, 325, 25, _("URL:"));
+                o->callback((Fl_Callback*)cb_ssdv_block_url);
                 o->value(progdefaults.ssdv_block_url.c_str());
               } // Fl_Input* o
               { Fl_Input* o = new Fl_Input(100, y += 35, 125, 25, _("Username:"));
+                o->callback((Fl_Callback*)cb_ssdv_block_user);
                 o->value(progdefaults.ssdv_block_user.c_str());
               } // Fl_Input* o
               { Fl_Input* o = new Fl_Input(100 + 200, y, 125, 25, _("Password:"));
+                o->callback((Fl_Callback*)cb_ssdv_block_pass);
                 o->value(progdefaults.ssdv_block_pass.c_str());
               } // Fl_Input* o
               o->end();
