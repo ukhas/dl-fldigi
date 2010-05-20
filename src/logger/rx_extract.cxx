@@ -50,7 +50,6 @@
 #include <fcntl.h>   /* File control definitions */
 #include <errno.h>   /* Error number definitions */
  
-#include <termios.h> /* POSIX terminal control definitions */
 #include <unistd.h>  /* UNIX standard function definitions */
 
 using namespace std;

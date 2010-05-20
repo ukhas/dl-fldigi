@@ -572,7 +572,7 @@
               true)                                                                     \
         ELEM_(bool, autoextract, "AUTOEXTRACT",                                         \
               "Enable detection and extraction of \"wrapped\" text",                    \
-              false)                                                                    \
+              true)                                                                    \
         ELEM_(bool, speak, "SPEAK",                                                     \
               "Capture text to file 'talk/textout.txt'",                                \
               false)                                                                    \

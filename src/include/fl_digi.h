@@ -139,6 +139,8 @@ extern Fl_Output			*habDistance;
 extern bool			withnoise;
 extern int			altMacros;
 
+extern int			HAB_height;
+
 extern waterfall		*wf;
 extern Digiscope		*digiscope;
 
