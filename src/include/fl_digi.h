@@ -26,6 +26,7 @@
 
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Browser.H>
+#include <FL/Fl_Output.H>
 
 #include "combo.h"
 #include "Fl_Tile_Check.h"
@@ -123,15 +124,15 @@ extern Fl_Button		*btnMacroTimer;
 extern bool			bWF_only;
 //jcoxon
 extern bool			bHAB;
-extern Fl_Input2			*habTime;
-extern Fl_Input2			*habLat;
-extern Fl_Input2			*habLon;
-extern Fl_Input2			*habAlt;
-extern Fl_Input2			*habTimeSinceLastRx;
-extern Fl_Input2			*habCustom;
-extern Fl_Input2			*habChecksum;
-extern Fl_Input2			*habBearing;
-extern Fl_Input2			*habDistance;
+extern Fl_Output			*habTime;
+extern Fl_Output			*habLat;
+extern Fl_Output			*habLon;
+extern Fl_Output			*habAlt;
+extern Fl_Output			*habTimeSinceLastRx;
+extern Fl_Output			*habCustom;
+extern Fl_Output			*habChecksum;
+extern Fl_Output			*habBearing;
+extern Fl_Output			*habDistance;
 
 
 //

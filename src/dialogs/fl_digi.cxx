@@ -284,17 +284,17 @@ Fl_Value_Slider2		*valXmtMixer;
 
 //jcoxon
 Fl_Group			*TopFrameHAB = (Fl_Group *)0;
-Fl_Input2			*habTime;
-Fl_Input2			*habLat;
-Fl_Input2			*habLon;
-Fl_Input2			*habAlt;
-Fl_Input2			*habCustom=(Fl_Input2 *)0;
+Fl_Output			*habTime;
+Fl_Output			*habLat;
+Fl_Output			*habLon;
+Fl_Output			*habAlt;
+Fl_Output			*habCustom=(Fl_Output *)0;
 Fl_Choice			*habFlightXML = 0;
-Fl_Input2			*habChecksum;
-Fl_Input2			*habBearing;
-Fl_Input2			*habDistance;
+Fl_Output			*habChecksum;
+Fl_Output			*habBearing;
+Fl_Output			*habDistance;
 Fl_Button			*habConfigureButton = 0;
-Fl_Input2			*habTimeSinceLastRx;
+Fl_Output			*habTimeSinceLastRx;
 
 int w_habTime = 90;
 int w_habLat = 90;
@@ -4694,7 +4694,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habFlightXML->callback(cb_dl_fldigi_select_payload);
 		}
 
-		{ habTime = new Fl_Input2((rightof(habFlightXML) + 2), (Y + Hentry), w_habTime, Hentry, "Time");
+		{ habTime = new Fl_Output((rightof(habFlightXML) + 2), (Y + Hentry), w_habTime, Hentry, "Time");
 		habTime->tooltip(_("Time"));
 		habTime->box(FL_DOWN_BOX);
 		habTime->color(FL_BACKGROUND2_COLOR);
@@ -4705,7 +4705,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habTime->labelcolor(FL_FOREGROUND_COLOR);
 		habTime->align(FL_ALIGN_TOP); }
 
-		{ habLat = new Fl_Input2((rightof(habTime) + 2), (Y + Hentry) , w_habLat, Hentry, "Latitude");
+		{ habLat = new Fl_Output((rightof(habTime) + 2), (Y + Hentry) , w_habLat, Hentry, "Latitude");
 		habLat->tooltip(_("Latitude"));
 		habLat->box(FL_DOWN_BOX);
 		habLat->color(FL_BACKGROUND2_COLOR);
@@ -4716,7 +4716,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habLat->labelcolor(FL_FOREGROUND_COLOR);
 		habLat->align(FL_ALIGN_TOP); }
 
-		{ habLon = new Fl_Input2((rightof(habLat) + 2), (Y + Hentry) , w_habLon, Hentry, "Longitude");
+		{ habLon = new Fl_Output((rightof(habLat) + 2), (Y + Hentry) , w_habLon, Hentry, "Longitude");
 		habLon->tooltip(_("Longitude"));
 		habLon->box(FL_DOWN_BOX);
 		habLon->color(FL_BACKGROUND2_COLOR);
@@ -4727,7 +4727,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habLon->labelcolor(FL_FOREGROUND_COLOR);
 		habLon->align(FL_ALIGN_TOP); }
 
-		{ habAlt = new Fl_Input2((rightof(habLon) + 2), (Y + Hentry) , w_habAlt, Hentry, "Altitude");
+		{ habAlt = new Fl_Output((rightof(habLon) + 2), (Y + Hentry) , w_habAlt, Hentry, "Altitude");
 		habAlt->tooltip(_("Altitude"));
 		habAlt->box(FL_DOWN_BOX);
 		habAlt->color(FL_BACKGROUND2_COLOR);
@@ -4738,7 +4738,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habAlt->labelcolor(FL_FOREGROUND_COLOR);
 		habAlt->align(FL_ALIGN_TOP); }
 		
-		{ habChecksum = new Fl_Input2((rightof(habAlt) + 2), (Y + Hentry) , w_habChecksum, Hentry, "Checksum");
+		{ habChecksum = new Fl_Output((rightof(habAlt) + 2), (Y + Hentry) , w_habChecksum, Hentry, "Checksum");
 		habChecksum->tooltip(_("Checksum"));
 		habChecksum->box(FL_DOWN_BOX);
 		habChecksum->color(FL_BACKGROUND2_COLOR);
@@ -4749,7 +4749,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
 		habChecksum->align(FL_ALIGN_TOP); }
 
-		{ habBearing = new Fl_Input2((rightof(habChecksum) + 2), (Y + Hentry) , w_habBearing, Hentry, "Bearing");
+		{ habBearing = new Fl_Output((rightof(habChecksum) + 2), (Y + Hentry) , w_habBearing, Hentry, "Bearing");
 		habBearing->tooltip(_("Bearing from Rx Station to Payload"));
 		habBearing->box(FL_DOWN_BOX);
 		habBearing->color(FL_BACKGROUND2_COLOR);
@@ -4760,7 +4760,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habBearing->labelcolor(FL_FOREGROUND_COLOR);
 		habBearing->align(FL_ALIGN_TOP); }
 		
-		{ habDistance = new Fl_Input2((rightof(habBearing) + 2), (Y + Hentry) , w_habDistance, Hentry, "Distance");
+		{ habDistance = new Fl_Output((rightof(habBearing) + 2), (Y + Hentry) , w_habDistance, Hentry, "Distance");
 		habDistance->tooltip(_("Distance from Rx Station to Payload"));
 		habDistance->box(FL_DOWN_BOX);
 		habDistance->color(FL_BACKGROUND2_COLOR);
@@ -4771,7 +4771,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habDistance->labelcolor(FL_FOREGROUND_COLOR);
 		habDistance->align(FL_ALIGN_TOP); }
 	
-		{ habTimeSinceLastRx = new Fl_Input2(progStatus.mainW - w_habTimeSinceLastRx - 2 * DEFAULT_SW, (Y + Hentry) , w_habTimeSinceLastRx, Hentry, "Time since Rx");
+		{ habTimeSinceLastRx = new Fl_Output(progStatus.mainW - w_habTimeSinceLastRx - 2 * DEFAULT_SW, (Y + Hentry) , w_habTimeSinceLastRx, Hentry, "Time since Rx");
 		habTimeSinceLastRx->tooltip(_("Elapsed time since last line of telemetry received"));
 		habTimeSinceLastRx->box(FL_DOWN_BOX);
 		habTimeSinceLastRx->color(FL_BACKGROUND2_COLOR);
@@ -4792,7 +4792,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->callback(cb_dl_fldigi_configure_payload);
 		}
 		
-		{ habCustom = new Fl_Input2(10, below(habFlightXML) + 4, w_habCustom, Hentry);
+		{ habCustom = new Fl_Output(10, below(habFlightXML) + 4, w_habCustom, Hentry);
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
 		habCustom->color(FL_BACKGROUND2_COLOR);
