@@ -311,6 +311,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	{
 		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_post_threadinfo'\n", sizeof(struct dl_fldigi_post_threadinfo));
 		curl_easy_cleanup(curl);
+		free(post_data);
 		return;
 	}
 
@@ -325,6 +326,8 @@ void dl_fldigi_post(const char *data, const char *identity)
 	{
 		perror("dl_fldigi: post pthread_create");
 		curl_easy_cleanup(curl);
+		free(post_data);
+		free(t);
 		return;
 	}
 
@@ -431,6 +434,7 @@ void dl_fldigi_download()
 	{
 		perror("dl_fldigi: fopen cache file");
 		curl_easy_cleanup(curl);
+		free(t);
 		return;
 	}
 
@@ -441,6 +445,7 @@ void dl_fldigi_download()
 		fprintf(stderr, "dl_fldigi: cache file is locked; not downloading\n");
 		curl_easy_cleanup(curl);
 		fclose(file);
+		free(t);
 		return;
 	}
 	else if (r2 != 0)
@@ -448,6 +453,7 @@ void dl_fldigi_download()
 		perror("dl_fldigi: flock cache file");
 		curl_easy_cleanup(curl);
 		fclose(file);
+		free(t);
 		return;
 	}
 
@@ -458,6 +464,7 @@ void dl_fldigi_download()
 		curl_easy_cleanup(curl);
 		flock(fileno(file), LOCK_UN);
 		fclose(file);
+		free(t);
 		return;
 	}
 
@@ -471,8 +478,10 @@ void dl_fldigi_download()
 	if (pthread_create(&thread, NULL, dl_fldigi_download_thread, (void *) t) != 0)
 	{
 		perror("dl_fldigi: download pthread_create");
+		curl_easy_cleanup(curl);
 		flock(fileno(file), LOCK_UN);
 		fclose(file);
+		free(t);
 		return;
 	}
 
