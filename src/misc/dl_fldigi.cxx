@@ -274,6 +274,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	{
 		fprintf(stderr, "dl_fldigi: (offline mode) would have posted '%s'\n", post_data);
 		curl_easy_cleanup(curl);
+		free(post_data);
 		return;
 	}
 
@@ -282,6 +283,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_POSTFIELDS) failed: %s\n", curl_easy_strerror(r1));
 		curl_easy_cleanup(curl);
+		free(post_data);
 		return;
 	}
 
@@ -290,6 +292,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_POSTFIELDSIZE) failed: %s\n", curl_easy_strerror(r2));
 		curl_easy_cleanup(curl);
+		free(post_data);
 		return;
 	}
 
@@ -298,6 +301,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_URL) failed: %s\n", curl_easy_strerror(r3));
 		curl_easy_cleanup(curl);
+		free(post_data);
 		return;
 	}
 
