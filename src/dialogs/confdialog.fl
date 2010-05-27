@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0109 
+version 1.0110 
 i18n_type 1 
 i18n_include "gettext.h" 
 i18n_function _ 
@@ -95,15 +95,15 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
   code {} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {832 622 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
+    xywh {402 270 705 400} type Double color 45 selection_color 51 labelsize 18 align 80 hide
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-3 0 500 372} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;} selected
-        tooltip {Operator information} xywh {0 25 500 345} when 1
+        callback {progdefaults.changed = true;} open
+        tooltip {Operator information} xywh {0 25 500 345} when 1 hide
       } {
         Fl_Group {} {
           label Station open
@@ -1248,7 +1248,7 @@ progdefaults.changed = true;}
                 label {Transmit width}
                 callback {progdefaults.HellXmtWidth=(int)o->value();
 progdefaults.changed = true;}
-                tooltip {\# of multiple scans / character line} xywh {15 100 40 20} align 8 maximum 3 value 1
+                tooltip {\# of multiple scans / character line} xywh {15 100 40 20} align 8 maximum 3
                 code0 {o->value(progdefaults.HellXmtWidth);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Spinner2
@@ -1556,7 +1556,7 @@ OFF - Clear & restart} xywh {212 125 165 20} down_box DOWN_BOX
                     label Channels
                     callback {progdefaults.VIEWERchannels = (int)(o->value());
 initViewer();}
-                    tooltip {Change \# of psk viewer channels} xywh {15 95 50 20} align 8 value 1
+                    tooltip {Change \# of psk viewer channels} xywh {15 95 50 20} align 8
                     code0 {o->minimum(5); o->maximum(30); o->step(1);}
                     code1 {o->value(progdefaults.VIEWERchannels);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -1567,7 +1567,7 @@ initViewer();}
                     callback {progdefaults.VIEWERstart = (int)(o->value());
 progdefaults.changed = true;
 initViewer();}
-                    tooltip {Start decoding at this frequency} xywh {15 125 50 20} align 8 value 1
+                    tooltip {Start decoding at this frequency} xywh {15 125 50 20} align 8
                     code0 {o->minimum(200); o->maximum(1000); o->step(100);}
                     code1 {o->value(progdefaults.VIEWERstart);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -1578,7 +1578,7 @@ initViewer();}
                     callback {progdefaults.VIEWERtimeout = (int)(o->value());
 progdefaults.changed = true;}
                     tooltip {Clear channel text after
-\# seconds of inactivity} xywh {212 95 50 20} align 8 value 1
+\# seconds of inactivity} xywh {212 95 50 20} align 8
                     code0 {o->minimum(1); o->maximum(180); o->step(1);}
                     code1 {o->value(progdefaults.VIEWERtimeout);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -2543,7 +2543,7 @@ o->tooltip(src_get_description(sample_rate_converters[o->value()]));} open
                 label {RX ppm}
                 callback {progdefaults.RX_corr = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {RX sound card correction} xywh {15 180 85 20} align 8 value 1
+                tooltip {RX sound card correction} xywh {15 180 85 20} align 8
                 code0 {o->step(1);}
                 code1 {o->minimum(-50000);}
                 code2 {o->maximum(50000);}
@@ -2554,7 +2554,7 @@ progdefaults.changed = true;}
                 label {TX ppm}
                 callback {progdefaults.TX_corr = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {TX sound card correction} xywh {176 180 85 20} align 8 value 1
+                tooltip {TX sound card correction} xywh {176 180 85 20} align 8
                 code0 {o->step(1);}
                 code1 {o->minimum(-50000);}
                 code2 {o->maximum(50000);}
@@ -2565,7 +2565,7 @@ progdefaults.changed = true;}
                 label {TX offset}
                 callback {progdefaults.TxOffset = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {Difference between Rx & Tx freq (rig offset)} xywh {338 180 85 20} align 8 value 1
+                tooltip {Difference between Rx & Tx freq (rig offset)} xywh {338 180 85 20} align 8
                 code0 {o->value(progdefaults.TxOffset);}
                 code1 {o->step(1);}
                 code2 {o->minimum(-50); o->maximum(50);}
@@ -3229,7 +3229,7 @@ progdefaults.changed = true;}
         } {
           Fl_Group tabDLEnable {
             label Enable open
-            xywh {0 50 500 320}
+            xywh {0 50 500 320} hide
           } {
             Fl_Group {} {
               label Enable open
@@ -3238,13 +3238,14 @@ progdefaults.changed = true;}
               Fl_Check_Button confdialog_dl_online {
                 label Online
                 callback {cb_dl_fldigi_toggle_dl_online();
-set_menu_dl_online();} selected
+set_menu_dl_online();}
                 xywh {35 75 200 25} down_box DOWN_BOX
                 code0 {o->value(progdefaults.dl_online);}
               }
               Fl_Check_Button {} {
                 label {Detection and Extraction}
-                callback {fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box\n");}
+                callback {fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box
+");}
                 xywh {35 100 200 25} down_box DOWN_BOX
               }
               Fl_Check_Button {} {
@@ -3346,7 +3347,7 @@ dl_fldigi_downloaded_once = 1;}
           }
           Fl_Group {} {
             label GPS open
-            xywh {0 50 500 320} hide
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {
               label {GPS Upload Configuration} open
@@ -3356,7 +3357,7 @@ dl_fldigi_downloaded_once = 1;}
                 label Device
                 callback {progdefaults.gpsDevice = o->value();
 progdefaults.changed = true;
-/* TODO: start/update/reset gps? */}
+/* TODO: start/update/reset gps? */} selected
                 xywh {100 80 325 25}
                 code0 {o->value(progdefaults.gpsDevice.c_str());}
               }

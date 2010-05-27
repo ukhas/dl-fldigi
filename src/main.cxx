@@ -107,7 +107,7 @@
 #endif
 
 #if BENCHMARK_MODE
-	#include "benchmark.h"
+	include "benchmark.h"
 #endif
 
 #include "icons.h"
@@ -241,6 +241,15 @@ int main(int argc, char ** argv)
 	 * since it is the only thread-unsafe/global-modifying function of the library 
 	 * dl_fldigi_init requires the "HomeDir" global above. */
 	dl_fldigi_init();
+
+
+        /* RJH init chase car lat long and alt */
+        chase_car.latitude = 0;
+        chase_car.longitude = 0;
+        chase_car.altitude = 0;
+
+        /* RJH start the gps thread */
+	dl_fldigi_ext_gps_start ();
 
 	generate_option_help();
 	generate_version_text();
