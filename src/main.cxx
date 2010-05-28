@@ -242,15 +242,6 @@ int main(int argc, char ** argv)
 	 * dl_fldigi_init requires the "HomeDir" global above. */
 	dl_fldigi_init();
 
-
-        /* RJH init chase car lat long and alt */
-        chase_car.latitude = 0;
-        chase_car.longitude = 0;
-        chase_car.altitude = 0;
-
-        /* RJH start the gps thread */
-	dl_fldigi_ext_gps_start ();
-
 	generate_option_help();
 	generate_version_text();
 	int arg_idx;
@@ -305,6 +296,16 @@ int main(int argc, char ** argv)
 
 	/* if --hab was specified, default dl_online to true */
 	progdefaults.dl_online = bHAB;
+
+#ifndef __WOE32__
+        /* RJH init chase car lat long and alt */
+        chase_car.latitude = 0;
+        chase_car.longitude = 0;
+        chase_car.altitude = 0;
+
+        /* RJH start the gps thread */
+	dl_fldigi_ext_gps_start ();
+#endif
 
 	create_fl_digi_main(argc, argv);
 
