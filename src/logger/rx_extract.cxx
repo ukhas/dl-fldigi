@@ -249,10 +249,8 @@ void rx_extract_add(int c)
 					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 					UpperCase (identity_callsign);
 
-#ifndef __WOE32__
 					/* RJH Post Chase Car information */
-					dl_fldigi_post_gps(identity_callsign.c_str());
-#endif
+					dl_fldigi_post_gps();
 
 					/* dl_fldigi_post will put_status as it does its stuff */
 					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());

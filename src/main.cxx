@@ -297,19 +297,6 @@ int main(int argc, char ** argv)
 	/* if --hab was specified, default dl_online to true */
 	progdefaults.dl_online = bHAB;
 
-#ifndef __WOE32__
-        /* RJH init chase car lat long and alt */
-        chase_car.latitude = 0;
-        chase_car.longitude = 0;
-        chase_car.altitude = 0;
-
-        /* RJH start the gps thread */
-	if (! progdefaults.gpsDevice.empty() && progdefaults.gpsSpeed > 0 )
-		dl_fldigi_ext_gps_start (progdefaults.gpsDevice.c_str(),
-		    progdefaults.gpsSpeed);
-
-#endif
-
 	create_fl_digi_main(argc, argv);
 
 	/* Attempt regardless to load the cache of payload information */
@@ -322,6 +309,11 @@ int main(int argc, char ** argv)
 		dl_fldigi_download();
 		dl_fldigi_downloaded_once = 1;
 	}
+
+        /* RJH start the gps thread */
+        if (!progdefaults.gpsDevice.empty() && progdefaults.gpsSpeed > 0 )
+                dl_fldigi_ext_gps_start (progdefaults.gpsDevice.c_str(),
+                    progdefaults.gpsSpeed);
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);

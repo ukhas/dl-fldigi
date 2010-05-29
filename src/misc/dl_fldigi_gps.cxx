@@ -443,40 +443,46 @@ void GPS::parse_RMC (const char * string)
 
 }
 
-void GPS::parse_string (const char * gps_string)
+bool GPS::parse_string (const char * gps_string)
 {
-
 	/*
 	 * Check for GGA and RMC sentences and use data
 	 * to fill the track_string structure
-	 *
 	 */
 
-	int fields = 0;
-
         #ifdef DL_FLDIGI_DEBUG
-                fprintf(stderr, "dl_fldigi: parse_string %s \n", gps_string);
+                fprintf(stderr, "dl_fldigi: GPS parsing string\n", gps_string);
         #endif
 
-
-
-	if ( (fields = check_string(gps_string)) )
+	if (check_string(gps_string))
 	{
 		if ( strncmp("$GPGGA", gps_string,6) == 0 )
 		{
+        	        #ifdef DL_FLDIGI_DEBUG
+                		fprintf(stderr, "dl_fldigi: GPS found GPGGA\n", gps_string);
+		        #endif
+
 			parse_GGA (gps_string);
+			return true;
 		}
 
-		if ( strncmp("$GPRMC", gps_string,6) == 0 )
+                #ifdef DL_FLDIGI_DEBUG
+                        fprintf(stderr, "dl_fldigi: GPS discarded non GPGGA string.\n", gps_string);
+                #endif
+
+	/*
+ 		if ( strncmp("$GPRMC", gps_string,6) == 0 )
 		{
 			parse_RMC (gps_string);
 		}
+	 */
 	}
 	else
 	{
-		printf ("Invalid string\n");
+		fprintf(stderr, "dl_fldigi: GPS: Corrupted or invalid string\n");
 	}
 
+	return false;
 }
 
 bool GPS::data_ready (void)

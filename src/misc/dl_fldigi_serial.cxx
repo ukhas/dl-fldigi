@@ -1,4 +1,4 @@
-#include <iostream>
+#include <stdio.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -15,31 +15,33 @@ using namespace std;
 * \param baud The baud rate to use, e.g. 9600 or 4800. On linux this
 * is restricted to a specific range of common values.
 */
-SerialPort::SerialPort(const char* port, int baud) {
+FILE *dl_fldigi_open_serial_port(const char *port, int baud)
+{
     //Open the serial port
-    serial_port = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
+    int serial_port = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
     if( serial_port == -1 ) {
-		cout << "Error opening serial port." << endl;
-        exit(1);
+	cout << "Error opening serial port." << endl;
+	return NULL;
     }
 
-	//Initialise the port
+    //Initialise the port
     int serial_port_set = fcntl(serial_port, F_SETFL, 0);
-	if( serial_port_set == -1 ) {
-		cout << "Error initialising serial port." << endl;
-		exit(1);
-	}
+    if( serial_port_set == -1 ) {
+	cout << "Error initialising serial port." << endl;
+	close(serial_port);
+	return NULL;
+    }
 	
-	//Linux requires baudrates be given as a constant
-	speed_t baudrate = B4800;
-	if( baud == 9600 ) baudrate = B9600;
-	else if( baud == 19200 ) baudrate = B19200;
-	else if( baud == 38400 ) baudrate = B38400;
-	else if( baud == 57600 ) baudrate = B57600;
-	else if( baud == 115200 ) baudrate = B115200;
-	else if( baud == 230400 ) baudrate = B230400;
+    //Linux requires baudrates be given as a constant
+    speed_t baudrate = B4800;
+    if( baud == 9600 ) baudrate = B9600;
+    else if( baud == 19200 ) baudrate = B19200;
+    else if( baud == 38400 ) baudrate = B38400;
+    else if( baud == 57600 ) baudrate = B57600;
+    else if( baud == 115200 ) baudrate = B115200;
+    else if( baud == 230400 ) baudrate = B230400;
 
-	//Set all the weird arcane settings Linux demands (boils down to 8N1)
+    //Set all the weird arcane settings Linux demands (boils down to 8N1)
     struct termios port_settings;
     cfsetispeed(&port_settings, baudrate);
     cfsetospeed(&port_settings, baudrate);
@@ -64,63 +66,21 @@ SerialPort::SerialPort(const char* port, int baud) {
 
     //Apply settings
     serial_port_set = tcsetattr(serial_port, TCSANOW, &port_settings);
-	if( serial_port_set == -1 ) {
-		cout << "Error configuring serial port." << endl;
-		exit(1);
-	}
+    if( serial_port_set == -1 ) {
+	cout << "Error configuring serial port." << endl;
+	close(serial_port);
+	return NULL;
+    }
 
-	cout << "Serial port '" << port << "' opened successfully.\n" << endl;
-	return;
-}
+    cout << "Serial port '" << port << "' opened successfully as " << serial_port << ".\n" << endl;
+    FILE *f = fdopen(serial_port, "r");
 
-/**
-* Close the serial port handler.
-*/
-SerialPort::~SerialPort() {
-    close(serial_port);
-    cout << "Serial port closed successfully.\n" << endl;
-}
+    if (f == NULL)
+    {
+	cout << "Error associating serial_port with FILE *f." << endl;
+	close(serial_port);
+	return NULL;
+    }
 
-int SerialPort::read_line(char *buffer, unsigned int size) {
-
-	if( !serial_port ) {
-		cout << "Error: Serial port not open." << endl;
-		return -1;
-	}
-
-        /*
-         * Read a whole string from the GPS device into the buffer
-         * making sure that the size of the buffer is not exceeded
-         * in the process.
-         */
-
-        unsigned int eos = 0;           // End of string flag
-        unsigned int buffer_pos = 0;    // Buffer position
-        char c;                // Char read from port
-
-        while (!eos && (buffer_pos < size) )
-        {
-
-                if (read(serial_port, &c,1)) // Read in a char; returns true if char waiting
-                {
-                        *buffer = c;     // Assign char to NMEA string buffer;
-
-                        buffer ++;       // Increment the buffer
-                        buffer_pos ++;   // Increment the buffer
-
-                        if (c == '\n')   // Check for end of string
-                           eos = 1;
-
-                }
-
-        }
-
-        *buffer = '\0';    // Terminate the end of the buffer
-
-	return buffer_pos;
-
-}
-
-void SerialPort::flush_buffer() {
-	tcflush(serial_port, TCIFLUSH);
+    return f;
 }
