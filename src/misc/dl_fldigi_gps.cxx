@@ -36,6 +36,8 @@
  *
  */
 
+#define DL_FLDIGI_DEBUG
+
 #include "dl_fldigi_gps.h"
 #include <iostream>
 #include <string.h>
@@ -65,6 +67,7 @@ void GPS::lat_lng_alt (double &lat, double &lng, long &alt)
 	lat = gps_lat;
 	lng = gps_lng;
 	alt = gps_alt;
+	gps_status=ts_printed;
 }
 
 void GPS::print_string (void)
@@ -450,6 +453,12 @@ void GPS::parse_string (const char * gps_string)
 	 */
 
 	int fields = 0;
+
+        #ifdef DL_FLDIGI_DEBUG
+                fprintf(stderr, "dl_fldigi: parse_string %s \n", gps_string);
+        #endif
+
+
 
 	if ( (fields = check_string(gps_string)) )
 	{

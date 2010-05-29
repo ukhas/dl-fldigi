@@ -15,7 +15,7 @@ using namespace std;
 * \param baud The baud rate to use, e.g. 9600 or 4800. On linux this
 * is restricted to a specific range of common values.
 */
-SerialPort::SerialPort(char* port, int baud) {
+SerialPort::SerialPort(const char* port, int baud) {
     //Open the serial port
     serial_port = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
     if( serial_port == -1 ) {
@@ -119,4 +119,8 @@ int SerialPort::read_line(char *buffer, unsigned int size) {
 
 	return buffer_pos;
 
+}
+
+void SerialPort::flush_buffer() {
+	tcflush(serial_port, TCIFLUSH);
 }

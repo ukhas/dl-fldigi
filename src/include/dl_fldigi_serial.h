@@ -5,10 +5,11 @@
 */
 class SerialPort {
     public:
-        SerialPort(char* port, int baud);
+        SerialPort(const char* port, int baud);
         ~SerialPort();
         int send_data(char* data, unsigned int size);
 	int read_line(char* buffer, unsigned int size);
+	void flush_buffer();
     private:
         #ifdef __MINGW__
         HANDLE serial_port;

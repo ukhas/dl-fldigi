@@ -36,7 +36,7 @@ extern CHASE_CAR chase_car;
 
 void dl_fldigi_init();
 void cb_dl_fldigi_toggle_dl_online();
-void dl_fldigi_ext_gps_start(void);
+void dl_fldigi_ext_gps_start(const char * port, const int baud);
 void dl_fldigi_ext_gps_thread(void);
 void dl_fldigi_post(const char *data, const char *identity);
 void dl_fldigi_post_gps(const char *identity);

@@ -304,7 +304,10 @@ int main(int argc, char ** argv)
         chase_car.altitude = 0;
 
         /* RJH start the gps thread */
-	dl_fldigi_ext_gps_start ();
+	if (! progdefaults.gpsDevice.empty() && progdefaults.gpsSpeed > 0 )
+		dl_fldigi_ext_gps_start (progdefaults.gpsDevice.c_str(),
+		    progdefaults.gpsSpeed);
+
 #endif
 
 	create_fl_digi_main(argc, argv);
