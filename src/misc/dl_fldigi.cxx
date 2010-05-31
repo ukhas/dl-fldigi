@@ -80,12 +80,7 @@ struct payload *payload_list = NULL;
 time_t rxTimer = 0;
 
 pthread_mutex_t dl_fldigi_ext_gps_status_mutex = PTHREAD_MUTEX_INITIALIZER;
-enum 
-{
-	STOPPED,
-	STOPPING,
-	RUNNING
-} gps_thread_status;
+pthread_t gps_thread = 0;
 
 pthread_mutex_t dl_fldigi_ext_gps_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct chase_car_location chase_car = { 0, 0, 0, 1 };
@@ -193,19 +188,7 @@ static void print_put_status(const char *msg, double timeout, status_timeout act
 
 void dl_fldigi_ext_gps_start()
 {
-	pthread_t thread;
 	struct dl_fldigi_gps_threadinfo *t;
-
-	pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
-	if (gps_thread_status != STOPPED)
-	{
-		fprintf(stderr, "dl_fldigi: unable to start gps thread: it is already running\n");
-		pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
-		return;
-	}
-
-	gps_thread_status = RUNNING;
-	pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
 
 	t = (struct dl_fldigi_gps_threadinfo *) malloc(sizeof(struct dl_fldigi_gps_threadinfo));
 
@@ -222,37 +205,35 @@ void dl_fldigi_ext_gps_start()
 	// !!
 	full_memory_barrier();
 
-	if (pthread_create(&thread, NULL, dl_fldigi_ext_gps_thread, (void *) t) != 0)
+	pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
+
+	if (gps_thread != 0)
+	{
+		fprintf(stderr, "dl_fldigi: killing gps thread\n");
+		dl_fldigi_serial_cleanupkill(gps_thread);
+		pthread_join(gps_thread);
+		gps_thread = 0;
+	}
+
+	if (pthread_create(&gps_thread, NULL, dl_fldigi_ext_gps_thread, (void *) t) != 0)
 	{
 		perror("dl_fldigi: ext_gps pthread_create");
+		gps_thread = 0;
+		free(t->port);
+		free(t->identity);
 		free(t);
 		return;
 	}
 
-	return;
-}
-
-void dl_fldigi_ext_gps_stop()
-{
-	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: stopping gps thread.\n");
-	#endif
-
-	pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
-	if (gps_thread_status != RUNNING)
-	{
-		fprintf(stderr, "dl_fldigi: unable to stop gps thread: it isn't running\n");
-		pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
-		return;
-	}
-
-	gps_thread_status = STOPPING;
 	pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
 }
 
 static void *dl_fldigi_ext_gps_thread(void *thread_argument)
 {
+	// ALSO: TODO: Some sort of put_status thing.
+
 	FILE *serial_port;
+	char *result;
         char buffer [MAX_NMEA_STRING];
 	time_t last_post = 0;
 	char *identity;
@@ -261,14 +242,16 @@ static void *dl_fldigi_ext_gps_thread(void *thread_argument)
 	t = (struct dl_fldigi_gps_threadinfo *) thread_argument;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) ext_gps_thread_started \n", pthread_self());
+		fprintf(stderr, "dl_fldigi: (thread %li) ext_gps_thread started \n", pthread_self());
 		fprintf(stderr, "dl_fldigi: (thread %li) port %s baud %d identity %s \n", pthread_self(), 
 			t->port, t->baud, t->identity);
 	#endif
 
 	SET_THREAD_ID(DL_FLDIGI_TID);
 
-	identity = t->identity;
+	// using alloca
+	identity = strdupa(t->identity);
+	free(t->identity);
 
 	serial_port = dl_fldigi_open_serial_port(t->port, t->baud);
 
@@ -279,6 +262,18 @@ static void *dl_fldigi_ext_gps_thread(void *thread_argument)
 	free(t);
 	t = NULL;
 
+	if (!serial_port)
+	{
+		fprintf(stderr, "dl_fldigi: (thread %li) ext_gps_thread failed to dl_fldigi_open_serial_port\n", pthread_self());
+
+		pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
+		gps_thread = 0;
+		full_memory_barrier();
+		pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
+
+		pthread_exit(0);
+	}
+
 	// The first line is typically incomplete: read and discard
 	fgets(buffer, MAX_NMEA_STRING, serial_port);
 
@@ -287,29 +282,9 @@ static void *dl_fldigi_ext_gps_thread(void *thread_argument)
 
 	while (true)
 	{
-		pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
-		if (gps_thread_status != RUNNING)
-		{
-			close(serial_port);
-			free(identity);
+		result = fgets(buffer, MAX_NMEA_STRING, serial_port);
 
-                        #ifdef DL_FLDIGI_DEBUG
-                                fprintf(stderr, "dl_fldigi: (thread %li) gps_ext cleaned up\n", pthread_self());
-                        #endif
-
-			gps_thread_status = STOPPED;
-
-			pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
-			pthread_exit(0);
-		}
-		else
-		{
-			pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
-		}
-
-		// XXX: the thread will spend most of its time blocked inside fgets. Need a way to cancel/stop the thread nicely
-		// ALSO: TODO: Some sort of put_status thing.
-		if (fgets(buffer, MAX_NMEA_STRING, serial_port))
+		if (result)
 		{
 			#ifdef DL_FLDIGI_DEBUG
 			     	fprintf(stderr, "dl_fldigi: (thread %li) gps_ext read 1 line\n", pthread_self());
@@ -323,7 +298,7 @@ static void *dl_fldigi_ext_gps_thread(void *thread_argument)
 
 				pthread_mutex_lock(&dl_fldigi_ext_gps_data_mutex);
 
-		        	gps.lat_lng_alt( chase_car.latitude, chase_car.longitude, chase_car.altitude);
+		        	gps.lat_lng_alt(chase_car.latitude, chase_car.longitude, chase_car.altitude);
 				chase_car.posted = 0;
 				// gps.print_string();
 
@@ -350,11 +325,21 @@ static void *dl_fldigi_ext_gps_thread(void *thread_argument)
 				// gps_serial.flush_buffer();
 			}
 		}
-		else
+
+		if (!result || feof(serial_port))
 		{
 			#ifdef DL_FLDIGI_DEBUG
-                                fprintf(stderr, "dl_fldigi: (thread %li) gps_ext fgets failed\n", pthread_self());
+				fprintf(stderr, "dl_fldigi: (thread %li) gps_ext read fail: exiting\n", pthread_self());
                         #endif
+
+			pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
+			fclose(serial_port);
+
+			gps_thread = 0;
+			full_memory_barrier();
+
+			pthread_exit(0);
+			pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
 		}
 	}
 }
