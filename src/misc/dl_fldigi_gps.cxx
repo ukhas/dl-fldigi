@@ -451,7 +451,18 @@ bool GPS::parse_string (const char * gps_string)
 	 */
 
         #ifdef DL_FLDIGI_DEBUG
-                fprintf(stderr, "dl_fldigi: GPS parsing string\n", gps_string);
+		size_t ti;
+
+		if (strlen(gps_string) > 2 && gps_string[strlen(gps_string) - 1] == '\n')
+		{
+			ti = strlen(gps_string) - 1;
+		}
+		else
+		{
+			ti = strlen(gps_string);
+		}
+
+                fprintf(stderr, "dl_fldigi: GPS parsing string: '%.*s'\n", ti, gps_string);
         #endif
 
 	if (check_string(gps_string))
@@ -459,7 +470,7 @@ bool GPS::parse_string (const char * gps_string)
 		if ( strncmp("$GPGGA", gps_string,6) == 0 )
 		{
         	        #ifdef DL_FLDIGI_DEBUG
-                		fprintf(stderr, "dl_fldigi: GPS found GPGGA\n", gps_string);
+                		fprintf(stderr, "dl_fldigi: GPS found GPGGA\n");
 		        #endif
 
 			parse_GGA (gps_string);
@@ -467,7 +478,7 @@ bool GPS::parse_string (const char * gps_string)
 		}
 
                 #ifdef DL_FLDIGI_DEBUG
-                        fprintf(stderr, "dl_fldigi: GPS discarded non GPGGA string.\n", gps_string);
+                        fprintf(stderr, "dl_fldigi: GPS discarded non GPGGA string.\n");
                 #endif
 
 	/*

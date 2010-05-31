@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <signal.h>
+#include <pthread.h>
 
 /**
 * Interfaces to a serial port. Holds a file descriptor/handler.

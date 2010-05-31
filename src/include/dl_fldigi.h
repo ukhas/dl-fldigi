@@ -7,6 +7,8 @@
 #ifndef DL_FLDIGI_H
 #define DL_FLDIGI_H
 
+#define DL_FLDIGI_DEBUG
+
 #include <string>
 #include <unistd.h>
 #include <sys/types.h>

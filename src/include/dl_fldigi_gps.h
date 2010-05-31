@@ -58,7 +58,7 @@ class GPS {
         GPS();
 //        ~GPS();
         int check_string (const char * gps_string);
-        void parse_string (const char * gps_string);
+        bool parse_string (const char * gps_string);
         void print_string (void);
 	void lat_lng_alt (double &lat, double &lng, long &alt);
         void post_string (char * string);

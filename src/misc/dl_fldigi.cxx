@@ -33,7 +33,6 @@ using namespace std;
 using namespace irr; // irrXML is located 
 using namespace io;  // in the namespace irr::io
 
-#define DL_FLDIGI_DEBUG
 #define DL_FLDIGI_CACHE_FILE "dl_fldigi_cache.xml"
 
 struct dl_fldigi_post_threadinfo
@@ -44,9 +43,9 @@ struct dl_fldigi_post_threadinfo
 
 struct dl_fldigi_gps_threadinfo
 {
-	const char *port;
+	char *port;
 	int baud;
-	const char *identity;
+	char *identity;
 };
 
 struct dl_fldigi_download_threadinfo
@@ -211,7 +210,7 @@ void dl_fldigi_ext_gps_start()
 	{
 		fprintf(stderr, "dl_fldigi: killing gps thread\n");
 		dl_fldigi_serial_cleanupkill(gps_thread);
-		pthread_join(gps_thread);
+		pthread_join(gps_thread, NULL);
 		gps_thread = 0;
 	}
 
@@ -346,7 +345,6 @@ static void *dl_fldigi_ext_gps_thread(void *thread_argument)
 
 void dl_fldigi_post_gps()
 {
-	double latitude;
        	char rx_chase [200];
 
 	// RJH This is a bit of a hack but data is only posted when the latitude os not 0
@@ -375,7 +373,7 @@ void dl_fldigi_post_gps()
 
 		pthread_mutex_unlock(&dl_fldigi_ext_gps_data_mutex);
 
-		dl_fldigi_post(rx_chase, identity);
+		dl_fldigi_post(rx_chase, progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 	}
 	else
 	{

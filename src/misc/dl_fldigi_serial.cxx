@@ -2,6 +2,11 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "dl_fldigi_serial.h"
 
@@ -18,13 +23,15 @@
   #define SET_TFD(x)   pthread_setspecific(tfd_, (x))
   #define GET_TFD()    pthread_getspecific(tfd_)
 #endif
-extern TFD_TYPE tfd_;
+TFD_TYPE tfd_;
 
-void dl_fldigi_serial_cleanup();
+void dl_fldigi_serial_cleanup(int s);
 
 void dl_fldigi_serial_init()
 {
 	CREATE_TFD();
+
+	// TODO: testme.
 
 	#ifndef __WOE32__
 		struct sigaction action;
@@ -37,9 +44,9 @@ void dl_fldigi_serial_init()
 	#endif
 }
 
-void dl_fldigi_serial_cleanup()
+void dl_fldigi_serial_cleanup(int s)
 {
-	FILE *f
+	FILE *f;
 
 	f = (FILE *) GET_TFD();
 
@@ -78,14 +85,14 @@ FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	//Open the serial port
 	int serial_port = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
 	if( serial_port == -1 ) {
-		cout << "Error opening serial port." << endl;
+		fprintf(stderr, "Error opening serial port.\n");
 		return NULL;
 	}
 
 	FILE *f = fdopen(serial_port, "r");
 	if (f == NULL)
 	{
-		cout << "Error fdopening serial port as a FILE" << endl;
+		fprintf(stderr, "Error fdopening serial port as a FILE\n");
 		close(serial_port);
 		return NULL;
 	}
@@ -96,7 +103,7 @@ FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	//Initialise the port
 	int serial_port_set = fcntl(serial_port, F_SETFL, 0);
 	if( serial_port_set == -1 ) {
-		cout << "Error initialising serial port." << endl;
+		fprintf(stderr, "Error initialising serial port.\n");
 		fclose(f);
 		return NULL;
 	}
@@ -136,11 +143,14 @@ FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	//Apply settings
 	serial_port_set = tcsetattr(serial_port, TCSANOW, &port_settings);
 	if( serial_port_set == -1 ) {
-		cout << "Error configuring serial port." << endl;
+		fprintf(stderr, "Error configuring serial port.\n");
 		fclose(f);
 		return 0;
 	}
 
-	cout << "Serial port '" << port << "' opened successfully as " << serial_port << ".\n" << endl;
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "Serial port '%s' opened successfully as %p (%i==%i).\n", port, f, fileno(f), serial_port);
+	#endif
+
 	return f;
 }

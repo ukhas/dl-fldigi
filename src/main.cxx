@@ -310,10 +310,9 @@ int main(int argc, char ** argv)
 		dl_fldigi_downloaded_once = 1;
 	}
 
-        /* RJH start the gps thread */
-        if (!progdefaults.gpsDevice.empty() && progdefaults.gpsSpeed > 0 )
-                dl_fldigi_ext_gps_start (progdefaults.gpsDevice.c_str(),
-                    progdefaults.gpsSpeed);
+        /* RJH start the gps thread if there are settings*/
+	if (!progdefaults.gpsDevice.empty() && progdefaults.gpsSpeed > 0 )
+		dl_fldigi_ext_gps_start();
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
