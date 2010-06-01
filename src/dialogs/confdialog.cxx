@@ -2521,8 +2521,6 @@ progdefaults.changed = true;
 
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
-Fl_Group *tabDLImage = (Fl_Group *)0;
-
 Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
 
 static void cb_habFlightXML_conf(Fl_Choice* o, void*) {
@@ -2589,38 +2587,13 @@ static void cb_cd_xml_altitude(Fl_Value_Input2* o, void*) {
 static void cb_Device(Fl_Input* o, void*) {
   progdefaults.gpsDevice = o->value();
 progdefaults.changed = true;
-/* TODO: start/update/reset gps? */;
+dl_fldigi_ext_gps_start();
 }
 
 static void cb_Baud(Fl_Value_Input2* o, void*) {
   progdefaults.gpsSpeed = o->value();
 progdefaults.changed = true;
-/* TODO: start/update/reset gps? */;
-}
-
-static void cb_ssdv_block_upload(Fl_Check_Button* o, void*) {
-  progdefaults.ssdv_block_upload = o->value();
-  progdefaults.changed = true;
-}
-
-static void cb_ssdv_block_download(Fl_Check_Button* o, void*) {
-  progdefaults.ssdv_block_download = o->value();
-  progdefaults.changed = true;
-}
-
-static void cb_ssdv_block_url(Fl_Input2* o, void*) {
-  progdefaults.ssdv_block_url = o->value();
-  progdefaults.changed = true;
-}
-
-static void cb_ssdv_block_user(Fl_Input2* o, void*) {
-  progdefaults.ssdv_block_user = o->value();
-  progdefaults.changed = true;
-}
-
-static void cb_ssdv_block_pass(Fl_Input2* o, void*) {
-  progdefaults.ssdv_block_pass = o->value();
-  progdefaults.changed = true;
+dl_fldigi_ext_gps_start();
 }
 
 Fl_Button *btnSaveConfig=(Fl_Button *)0;
@@ -2661,11 +2634,10 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
     o->labelsize(18);
     o->align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE);
     { tabsConfigure = new Fl_Tabs(-3, 0, 500, 372);
-      tabsConfigure->color((Fl_Color)FL_LIGHT1);
-      tabsConfigure->selection_color((Fl_Color)FL_LIGHT1);
+      tabsConfigure->color(FL_LIGHT1);
+      tabsConfigure->selection_color(FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
         tabOperator->tooltip(_("Operator information"));
-        tabOperator->labelsize(12);
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
         tabOperator->hide();
@@ -3148,7 +3120,6 @@ ab and newline are automatically included."));
         tabUI->end();
       } // Fl_Group* tabUI
       { tabWaterfall = new Fl_Group(0, 25, 500, 347, _("Waterfall"));
-        tabWaterfall->labelsize(12);
         tabWaterfall->hide();
         { tabsWaterfall = new Fl_Tabs(0, 25, 500, 347);
           tabsWaterfall->color(FL_LIGHT1);
@@ -3466,7 +3437,7 @@ an merging"));
       { tabModems = new Fl_Group(0, 25, 500, 345, _("Modems"));
         tabModems->hide();
         { tabsModems = new Fl_Tabs(0, 25, 501, 345);
-          tabsModems->selection_color((Fl_Color)FL_LIGHT1);
+          tabsModems->selection_color(FL_LIGHT1);
           tabsModems->align(FL_ALIGN_TOP_RIGHT);
           { tabCW = new Fl_Group(0, 50, 500, 320, _("CW"));
             tabCW->hide();
@@ -4124,12 +4095,12 @@ an merging"));
                 cntContestia_smargin->tooltip(_("Change ONLY to experiment"));
                 cntContestia_smargin->type(1);
                 cntContestia_smargin->box(FL_UP_BOX);
-                cntContestia_smargin->color((Fl_Color)FL_BACKGROUND_COLOR);
-                cntContestia_smargin->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntContestia_smargin->color(FL_BACKGROUND_COLOR);
+                cntContestia_smargin->selection_color(FL_INACTIVE_COLOR);
                 cntContestia_smargin->labeltype(FL_NORMAL_LABEL);
                 cntContestia_smargin->labelfont(0);
                 cntContestia_smargin->labelsize(14);
-                cntContestia_smargin->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntContestia_smargin->labelcolor(FL_FOREGROUND_COLOR);
                 cntContestia_smargin->minimum(2);
                 cntContestia_smargin->maximum(128);
                 cntContestia_smargin->step(1);
@@ -4143,12 +4114,12 @@ an merging"));
                 cntContestia_sinteg->tooltip(_("Change ONLY to experiment"));
                 cntContestia_sinteg->type(1);
                 cntContestia_sinteg->box(FL_UP_BOX);
-                cntContestia_sinteg->color((Fl_Color)FL_BACKGROUND_COLOR);
-                cntContestia_sinteg->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntContestia_sinteg->color(FL_BACKGROUND_COLOR);
+                cntContestia_sinteg->selection_color(FL_INACTIVE_COLOR);
                 cntContestia_sinteg->labeltype(FL_NORMAL_LABEL);
                 cntContestia_sinteg->labelfont(0);
                 cntContestia_sinteg->labelsize(14);
-                cntContestia_sinteg->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntContestia_sinteg->labelcolor(FL_FOREGROUND_COLOR);
                 cntContestia_sinteg->minimum(2);
                 cntContestia_sinteg->maximum(128);
                 cntContestia_sinteg->step(1);
@@ -4170,7 +4141,7 @@ an merging"));
             } // Fl_Group* o
             tabContestia->end();
           } // Fl_Group* tabContestia
-          { tabPSK = new Fl_Group(0, 50, 517, 320, _("PSK"));
+          { tabPSK = new Fl_Group(0, 50, 500, 320, _("PSK"));
             tabPSK->hide();
             { tabsPSK = new Fl_Tabs(0, 50, 500, 320);
               tabsPSK->selection_color(FL_LIGHT1);
@@ -4600,7 +4571,6 @@ an merging"));
       } // Fl_Group* tabModems
       { tabRig = new Fl_Group(0, 25, 500, 345, _("Rig"));
         tabRig->tooltip(_("Transceiver control"));
-        tabRig->labelsize(12);
         tabRig->hide();
         { tabsRig = new Fl_Tabs(0, 25, 500, 345);
           tabsRig->selection_color(FL_LIGHT1);
@@ -5088,7 +5058,6 @@ an merging"));
       } // Fl_Group* tabRig
       { tabSoundCard = new Fl_Group(0, 25, 500, 345, _("Audio"));
         tabSoundCard->tooltip(_("Audio devices"));
-        tabSoundCard->labelsize(12);
         tabSoundCard->hide();
         { tabsSoundCard = new Fl_Tabs(0, 25, 500, 345);
           tabsSoundCard->selection_color(FL_LIGHT1);
@@ -5314,7 +5283,6 @@ ll with your audio device."));
         tabSoundCard->end();
       } // Fl_Group* tabSoundCard
       { tabID = new Fl_Group(0, 25, 500, 345, _("ID"));
-        tabID->labelsize(12);
         tabID->hide();
         { Fl_Group* o = new Fl_Group(5, 35, 490, 123, _("Video Preamble ID"));
           o->box(FL_ENGRAVED_FRAME);
@@ -5466,7 +5434,6 @@ d frequency"));
         tabID->end();
       } // Fl_Group* tabID
       { tabMisc = new Fl_Group(0, 25, 500, 345, _("Misc"));
-        tabMisc->labelsize(12);
         tabMisc->hide();
         { tabsMisc = new Fl_Tabs(0, 25, 500, 345);
           tabsMisc->selection_color(FL_LIGHT1);
@@ -5800,7 +5767,6 @@ d frequency"));
       } // Fl_Group* tabMisc
       { tabQRZ = new Fl_Group(0, 25, 500, 345, _("Callsign DB"));
         tabQRZ->tooltip(_("Callsign database"));
-        tabQRZ->labelsize(12);
         tabQRZ->hide();
         { Fl_Group* o = new Fl_Group(5, 180, 490, 75, _("CDROM"));
           o->box(FL_ENGRAVED_FRAME);
@@ -5910,6 +5876,7 @@ d frequency"));
         tabDL->labelsize(12);
         { tabsDL = new Fl_Tabs(0, 25, 500, 350);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
+            tabDLEnable->hide();
             { Fl_Group* o = new Fl_Group(5, 55, 490, 290, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6045,7 +6012,6 @@ d frequency"));
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("GPS"));
-            o->hide();
             { Fl_Group* o = new Fl_Group(5, 55, 490, 95, _("GPS Upload Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6067,38 +6033,6 @@ d frequency"));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gpsSpeed);
               } // Fl_Value_Input2* o
-              o->end();
-            } // Fl_Group* o
-            o->end();
-          } // Fl_Group* o
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Image"));
-            o->hide();
-            { Fl_Group* o = new Fl_Group(5, 55, 490, 150, _("Block Upload Configuration"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              int y = 45;
-              { Fl_Check_Button* o = new Fl_Check_Button(100, y += 35, 200, 25, _("Enable"));
-                o->callback((Fl_Callback*)cb_ssdv_block_upload);
-                o->down_box(FL_DOWN_BOX);
-                o->value(progdefaults.ssdv_block_upload);
-              } // Fl_Check_Button* confdialog_dl_online
-              { Fl_Check_Button* o = new Fl_Check_Button(100, y += 20, 200, 25, _("Query server for lost blocks"));
-                o->callback((Fl_Callback*)cb_ssdv_block_download);
-                o->down_box(FL_DOWN_BOX);
-                o->value(progdefaults.ssdv_block_download);
-              } // Fl_Check_Button* confdialog_dl_online
-              { Fl_Input* o = new Fl_Input(100, y += 35, 325, 25, _("URL:"));
-                o->callback((Fl_Callback*)cb_ssdv_block_url);
-                o->value(progdefaults.ssdv_block_url.c_str());
-              } // Fl_Input* o
-              { Fl_Input* o = new Fl_Input(100, y += 35, 125, 25, _("Username:"));
-                o->callback((Fl_Callback*)cb_ssdv_block_user);
-                o->value(progdefaults.ssdv_block_user.c_str());
-              } // Fl_Input* o
-              { Fl_Input* o = new Fl_Input(100 + 200, y, 125, 25, _("Password:"));
-                o->callback((Fl_Callback*)cb_ssdv_block_pass);
-                o->value(progdefaults.ssdv_block_pass.c_str());
-              } // Fl_Input* o
               o->end();
             } // Fl_Group* o
             o->end();
