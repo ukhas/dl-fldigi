@@ -104,6 +104,7 @@ FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	int serial_port_set = fcntl(serial_port, F_SETFL, 0);
 	if( serial_port_set == -1 ) {
 		fprintf(stderr, "Error initialising serial port.\n");
+		SET_TFD(NULL);
 		fclose(f);
 		return NULL;
 	}
@@ -119,6 +120,8 @@ FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 
 	//Set all the weird arcane settings Linux demands (boils down to 8N1)
 	struct termios port_settings;
+	memset(&port_settings, 0, sizeof(port_settings));
+
 	cfsetispeed(&port_settings, baudrate);
 	cfsetospeed(&port_settings, baudrate);
 
@@ -144,8 +147,9 @@ FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	serial_port_set = tcsetattr(serial_port, TCSANOW, &port_settings);
 	if( serial_port_set == -1 ) {
 		fprintf(stderr, "Error configuring serial port.\n");
+		SET_TFD(NULL);
 		fclose(f);
-		return 0;
+		return NULL;
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
