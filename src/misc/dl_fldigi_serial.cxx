@@ -10,6 +10,9 @@
 
 #include "dl_fldigi_serial.h"
 
+// TODO: Windoze it up
+#ifndef __MINGW32__
+
 // Thread local storage for the FD of the port we open.
 // This is so that it can be cleaned up and closed by a signal handler.
 #if USE_TLS
@@ -158,3 +161,5 @@ FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 
 	return f;
 }
+
+#endif /* __MINGW32__ */

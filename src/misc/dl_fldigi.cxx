@@ -185,6 +185,8 @@ static void print_put_status(const char *msg, double timeout, status_timeout act
 	put_status(msg, timeout, action);
 }
 
+// TODO: Windows support
+#ifndef __MINGW32__
 void dl_fldigi_ext_gps_start()
 {
 	struct dl_fldigi_gps_threadinfo *t;
@@ -384,7 +386,7 @@ void dl_fldigi_post_gps()
 
 	pthread_mutex_unlock(&dl_fldigi_ext_gps_data_mutex);
 }
-
+#endif /* __MINGW32__ */
 
 void dl_fldigi_post(const char *data, const char *identity)
 {
