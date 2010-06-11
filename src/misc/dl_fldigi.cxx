@@ -386,6 +386,16 @@ void dl_fldigi_post_gps()
 
 	pthread_mutex_unlock(&dl_fldigi_ext_gps_data_mutex);
 }
+#else
+void dl_fldigi_ext_gps_start()
+{
+	fprintf(stderr, "dl_fldigi: Not yet implemented for MINGW: Ext GPS.\n");
+}
+
+void dl_fldigi_post_gps()
+{
+	fprintf(stderr, "dl_fldigi: Not yet implemented for MINGW: Ext GPS post.\n"):
+}
 #endif /* __MINGW32__ */
 
 void dl_fldigi_post(const char *data, const char *identity)
