@@ -1,3 +1,6 @@
+// TODO: Windoze it up
+#ifndef __MINGW32__
+
 #include <stdio.h>
 #include <termios.h>
 #include <fcntl.h>
@@ -9,9 +12,6 @@
 #include <unistd.h>
 
 #include "dl_fldigi_serial.h"
-
-// TODO: Windoze it up
-#ifndef __MINGW32__
 
 // Thread local storage for the FD of the port we open.
 // This is so that it can be cleaned up and closed by a signal handler.

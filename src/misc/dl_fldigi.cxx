@@ -79,7 +79,10 @@ struct payload *payload_list = NULL;
 time_t rxTimer = 0;
 
 pthread_mutex_t dl_fldigi_ext_gps_status_mutex = PTHREAD_MUTEX_INITIALIZER;
+#ifndef __MINGW32__
+// Ugh.
 pthread_t gps_thread = 0;
+#endif
 
 pthread_mutex_t dl_fldigi_ext_gps_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct chase_car_location chase_car = { 0, 0, 0, 1 };
