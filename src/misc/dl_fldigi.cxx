@@ -397,7 +397,7 @@ void dl_fldigi_ext_gps_start()
 
 void dl_fldigi_post_gps()
 {
-	fprintf(stderr, "dl_fldigi: Not yet implemented for MINGW: Ext GPS post.\n"):
+	fprintf(stderr, "dl_fldigi: Not yet implemented for MINGW: Ext GPS post.\n");
 }
 #endif /* __MINGW32__ */
 
