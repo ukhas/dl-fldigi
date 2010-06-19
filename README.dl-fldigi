@@ -1,0 +1,41 @@
+               __ __        ___ __     __ __         __ 
+           .--|  |  |_____.'  _|  |.--|  |__|.-----.|__|
+           |  _  |  |_____|   _|  ||  _  |  ||  _  ||  |
+           |_____|__|     |__| |__||_____|__||___  ||__|
+                                             |_____|    
+
+- INFO ----------------------------------------------------------------
+
+dl-fldigi is a stand alone modification to fldigi, for use in decoding
+balloon telemetry. It will detect telemetry strings and forward them
+to a server where the data is processed and plotted on a map
+(currently http://spacenear.us/tracker).
+
+dl-fldigi is hosted at http://github.com/jamescoxon/dl-fldigi
+The original fldigi is hosted at http://www.w1hkj.com/Fldigi.html
+See AUTHORS.dl-fldigi for a list of contributors.
+
+- USAGE ---------------------------------------------------------------
+
+Installation instructions can be found in INSTALL.dl-fldigi
+
+Included is a new slim HAB interface which has additional features
+purely for balloon tracking; the normal interface still exists and can
+be used, however it will lack some of the additional features. To
+access the new interface, dl-fldigi should be run with the --hab
+argument.
+
+Once you have opened up the new interface, you can select the payload
+you plan to track in the drop down box on the left. Next, press the
+"Autoconfigure" button on the right and you will be set up to track.
+Remember that it is important that you have filled in your operator
+details (Configure -> Waterfall -> Operator) else your data will not
+be uploaded. Also, your location should be entered in decimal form
+('-' rather than S or W e.g. 52.0100, -0.42323).
+
+- BUGS ----------------------------------------------------------------
+
+This is very much an ongoing effort, and we expect dl-fldigi to evolve
+rapidly with the growing balloon community. Please report any issues
+to our mailing list: ukhas@googlegroups.com
+

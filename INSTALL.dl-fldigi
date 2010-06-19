@@ -1,0 +1,4 @@
+$ autoreconf -fi
+$ ./configure
+$ make
+$ src/dl-fldigi --hab
