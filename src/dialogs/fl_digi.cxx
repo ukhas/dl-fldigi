@@ -358,7 +358,7 @@ int Hwfall;
 int HNOM = DEFAULT_HNOM;
 // WNOM must be large enough to contain ALL of the horizontal widgets
 // when the main dialog is initially created.
-int WNOM = 650;//progStatus.mainW ? progStatus.mainW : WMIN;
+int WNOM = 1000;//progStatus.mainW ? progStatus.mainW : WMIN;
 int Wwfall;
 
 int					altMacros = 0;
