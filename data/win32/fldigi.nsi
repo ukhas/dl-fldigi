@@ -10,6 +10,7 @@
 !define FLDIGI_STRING "${FLDIGI_NAME}-${FLDIGI_VERSION}"
 !define FLARQ_DESCRIPTION "${FLARQ_NAME} ${FLARQ_VERSION}"
 !define FLARQ_STRING "${FLARQ_NAME}-${FLARQ_VERSION}"
+!define HABMODE " HAB mode"
 !ifdef HAVE_FLDIGI
     !define PRODUCT_BINARY "${FLDIGI_BINARY}"
     !define PRODUCT_NAME "${FLDIGI_NAME}"
@@ -152,6 +153,7 @@ Section "Start Menu Shortcuts"
     !ifdef HAVE_FLDIGI
         ${If} $WANT_FLDIGI == 'true'
             CreateShortCut "${SM_PATH}\${FLDIGI_NAME}.lnk" "$INSTDIR\${FLDIGI_BINARY}" "" "$INSTDIR\${FLDIGI_BINARY}" 0
+            CreateShortCut "${SM_PATH}\${FLDIGI_NAME} (HAB mode).lnk" "$INSTDIR\${FLDIGI_BINARY}" "--hab" "$INSTDIR\${FLDIGI_BINARY}" 0
             CreateShortCut "${SM_PATH}\${FLDIGI_NAME} Beginners' Guide.lnk" "${GUIDE_URL}"
             CreateShortCut "${SM_PATH}\${FLDIGI_NAME} Documentation.lnk" "${FLDIGI_DOCS_URL}"
         ${EndIf}
@@ -170,7 +172,7 @@ Section "Desktop Shortcuts"
         ${If} $WANT_FLDIGI == 'true'
             CreateShortCut "$DESKTOP\${FLDIGI_DESCRIPTION}.lnk" "$INSTDIR\${FLDIGI_BINARY}" "" \
                            "$INSTDIR\${FLDIGI_BINARY}" 0
-            CreateShortCut "$DESKTOP\${FLDIGI_DESCRIPTION}HAB.lnk" "$INSTDIR\${FLDIGI_BINARY}" "--hab" \
+            CreateShortCut "$DESKTOP\${FLDIGI_DESCRIPTION}${HABMODE}.lnk" "$INSTDIR\${FLDIGI_BINARY}" "--hab" \
                            "$INSTDIR\${FLDIGI_BINARY}" 0
         ${EndIf}
     !endif
@@ -187,6 +189,8 @@ Section /o "Quick Launch Shortcuts"
     !ifdef HAVE_FLDIGI
         ${If} $WANT_FLDIGI == 'true'
             CreateShortCut "$QUICKLAUNCH\${FLDIGI_DESCRIPTION}.lnk" "$INSTDIR\${FLDIGI_BINARY}" "" \
+                           "$INSTDIR\${FLDIGI_BINARY}" 0
+            CreateShortCut "$QUICKLAUNCH\${FLDIGI_DESCRIPTION}${HABMODE}.lnk" "$INSTDIR\${FLDIGI_BINARY}" "--hab" \
                            "$INSTDIR\${FLDIGI_BINARY}" 0
         ${EndIf}
     !endif
@@ -220,6 +224,8 @@ Section "Uninstall"
     !ifdef HAVE_FLDIGI
         Delete "$DESKTOP\${FLDIGI_DESCRIPTION}.lnk"
         Delete "$QUICKLAUNCH\${FLDIGI_DESCRIPTION}.lnk"
+        Delete "$DESKTOP\${FLDIGI_DESCRIPTION}${HABMODE}.lnk"
+        Delete "$QUICKLAUNCH\${FLDIGI_DESCRIPTION}${HABMODE}.lnk"
     !endif
     !ifdef HAVE_FLARQ
         Delete "$DESKTOP\${FLARQ_DESCRIPTION}.lnk"
