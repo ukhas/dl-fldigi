@@ -107,7 +107,7 @@
 #endif
 
 #if BENCHMARK_MODE
-	include "benchmark.h"
+	#include "benchmark.h"
 #endif
 
 #include "icons.h"
