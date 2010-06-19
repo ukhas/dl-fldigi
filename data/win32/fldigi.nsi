@@ -170,6 +170,8 @@ Section "Desktop Shortcuts"
         ${If} $WANT_FLDIGI == 'true'
             CreateShortCut "$DESKTOP\${FLDIGI_DESCRIPTION}.lnk" "$INSTDIR\${FLDIGI_BINARY}" "" \
                            "$INSTDIR\${FLDIGI_BINARY}" 0
+            CreateShortCut "$DESKTOP\${FLDIGI_DESCRIPTION}HAB.lnk" "$INSTDIR\${FLDIGI_BINARY}" "--hab" \
+                           "$INSTDIR\${FLDIGI_BINARY}" 0
         ${EndIf}
     !endif
     !ifdef HAVE_FLARQ
