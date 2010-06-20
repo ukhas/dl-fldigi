@@ -116,9 +116,9 @@ endif
 install-exec-local:
 if WANT_FLDIGI
 if ENABLE_XMLRPC
-	if test -f $(srcdir)/../scripts/fldigi-shell; then \
+	if test -f $(srcdir)/../scripts/dl-fldigi-shell; then \
 	    $(mkinstalldirs) $(DESTDIR)/$(bindir); \
-            $(INSTALL_SCRIPT) $(srcdir)/../scripts/fldigi-shell $(DESTDIR)/$(bindir); \
+            $(INSTALL_SCRIPT) $(srcdir)/../scripts/dl-fldigi-shell $(DESTDIR)/$(bindir); \
         fi
 endif
 endif
@@ -151,7 +151,7 @@ endif
 
 uninstall-local:
 if WANT_FLDIGI
-	rm -f $(DESTDIR)$(bindir)/fldigi-shell
+	rm -f $(DESTDIR)$(bindir)/dl-fldigi-shell
 	rm -f $(DESTDIR)/$(datadir)/pixmaps/fldigi.xpm
 	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi.desktop
 	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi-hab.desktop
@@ -603,7 +603,7 @@ flarq_SOURCES += \
 EXTRA_DIST = \
 	$(srcdir)/../scripts/mkappbundle.sh \
 	$(srcdir)/../scripts/mkhamlibstatic.sh \
-	$(srcdir)/../scripts/fldigi-shell \
+	$(srcdir)/../scripts/dl-fldigi-shell \
 	$(srcdir)/../scripts/tests/cr.sh \
 	$(srcdir)/../scripts/tests/config-h.sh \
 	$(srcdir)/../data/fldigi-psk.png \
