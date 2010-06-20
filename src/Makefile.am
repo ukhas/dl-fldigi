@@ -125,9 +125,9 @@ endif
 
 install-data-local:
 if WANT_FLDIGI
-	if test -f $(srcdir)/../data/fldigi.xpm; then \
+	if test -f $(srcdir)/../data/dl-fldigi.xpm; then \
 	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/pixmaps; \
-	    $(INSTALL_DATA) $(srcdir)/../data/fldigi.xpm $(DESTDIR)/$(datadir)/pixmaps; \
+	    $(INSTALL_DATA) $(srcdir)/../data/dl-fldigi.xpm $(DESTDIR)/$(datadir)/pixmaps; \
 	fi
 	if test -f $(srcdir)/../data/dl-fldigi.desktop; then \
 	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/applications; \
@@ -152,7 +152,7 @@ endif
 uninstall-local:
 if WANT_FLDIGI
 	rm -f $(DESTDIR)$(bindir)/dl-fldigi-shell
-	rm -f $(DESTDIR)/$(datadir)/pixmaps/fldigi.xpm
+	rm -f $(DESTDIR)/$(datadir)/pixmaps/dl-fldigi.xpm
 	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi.desktop
 	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi-hab.desktop
 endif
