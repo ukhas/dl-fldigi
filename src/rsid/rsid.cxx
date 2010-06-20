@@ -120,15 +120,19 @@ LOG_FILE_SOURCE(debug::LOG_MODEM);
         ELEM_(47, THROBX_2, MODE_THROBX2)               \
         ELEM_(146, THROBX_4, MODE_THROBX4)              \
                                                         \
-        ELEM_(49, CONTESTIA_8_250, MODE_CONTESTIA)      \
-        ELEM_(50, CONTESTIA_16_500, MODE_CONTESTIA)     \
-        ELEM_(51, CONTESTIA_32_1000, MODE_CONTESTIA)    \
-        ELEM_(52, CONTESTIA_8_500, MODE_CONTESTIA)      \
-        ELEM_(53, CONTESTIA_16_1000, MODE_CONTESTIA)    \
-        ELEM_(54, CONTESTIA_4_500, MODE_CONTESTIA)      \
         ELEM_(55, CONTESTIA_4_250, MODE_CONTESTIA)      \
-        ELEM_(117, CONTESTIA_8_1000, MODE_CONTESTIA)    \
+        ELEM_(54, CONTESTIA_4_500, MODE_CONTESTIA)      \
         ELEM_(169, CONTESTIA_8_125, MODE_CONTESTIA)     \
+        ELEM_(49, CONTESTIA_8_250, MODE_CONTESTIA)      \
+        ELEM_(52, CONTESTIA_8_500, MODE_CONTESTIA)      \
+        ELEM_(117, CONTESTIA_8_1000, MODE_CONTESTIA)    \
+        ELEM_(50, CONTESTIA_16_500, MODE_CONTESTIA)     \
+        ELEM_(53, CONTESTIA_16_1000, MODE_CONTESTIA)    \
+        ELEM_(51, CONTESTIA_32_1000, MODE_CONTESTIA)    \
+        ELEM_(201, CONTESTIA_32_2000, MODE_CONTESTIA)   \
+        ELEM_(194, CONTESTIA_64_500, MODE_CONTESTIA)    \
+        ELEM_(193, CONTESTIA_64_1000, MODE_CONTESTIA)   \
+        ELEM_(191, CONTESTIA_64_2000, MODE_CONTESTIA)   \
                                                         \
         ELEM_(56, VOICE, NUM_MODES)                     \
                                                         \
@@ -489,8 +493,7 @@ void cRsId::apply(int iSymbol, int iBin)
 		REQ(toggleRSID);
 
 	switch (iSymbol) {
-	// rtty parameters
-	case RSID_RTTY_ASCII_7:
+ 	case RSID_RTTY_ASCII_7:
 		progdefaults.rtty_baud = 5;
 		progdefaults.rtty_bits = 1;
 		progdefaults.rtty_shift = 9;
@@ -520,10 +523,16 @@ void cRsId::apply(int iSymbol, int iBin)
 		progdefaults.rtty_shift = 9;
 		REQ(&set_rtty_tab_widgets);
 		break;
-	// special MultiPsk FEC modes
+	// DominoEX / FEC
+	case RSID_DOMINOEX_4: case RSID_DOMINOEX_5: case RSID_DOMINOEX_8:
+	case RSID_DOMINOEX_11: case RSID_DOMINOEX_16: case RSID_DOMINOEX_22:
+		progdefaults.DOMINOEX_FEC = false;
+		REQ(&set_dominoex_tab_widgets);
+		break;
 	case RSID_DOMINOEX_4_FEC: case RSID_DOMINOEX_5_FEC: case RSID_DOMINOEX_8_FEC:
 	case RSID_DOMINOEX_11_FEC: case RSID_DOMINOEX_16_FEC: case RSID_DOMINOEX_22_FEC:
 		progdefaults.DOMINOEX_FEC = true;
+		REQ(&set_dominoex_tab_widgets);
 		break;
 	// olivia parameters
 	case RSID_OLIVIA_8_250:
@@ -617,6 +626,26 @@ void cRsId::apply(int iSymbol, int iBin)
 		progdefaults.contestiabw = 3;
 		REQ(&set_contestia_tab_widgets);
 		break;
+	case RSID_CONTESTIA_32_2000:
+		progdefaults.contestiatones = 4;
+		progdefaults.contestiabw = 4;
+		REQ(&set_contestia_tab_widgets);
+		break;
+	case RSID_CONTESTIA_64_500:
+		progdefaults.contestiatones = 5;
+		progdefaults.contestiabw = 2;
+		REQ(&set_contestia_tab_widgets);
+		break;
+	case RSID_CONTESTIA_64_1000:
+		progdefaults.contestiatones = 5;
+		progdefaults.contestiabw = 3;
+		REQ(&set_contestia_tab_widgets);
+		break;
+	case RSID_CONTESTIA_64_2000:
+		progdefaults.contestiatones = 5;
+		progdefaults.contestiabw = 4;
+		REQ(&set_contestia_tab_widgets);
+		break;
 	// mt63
 	case RSID_MT63_500_LG: case RSID_MT63_1000_LG: case RSID_MT63_2000_LG:
 		progdefaults.mt63_interleave = 64;
@@ -639,8 +668,12 @@ void cRsId::apply(int iSymbol, int iBin)
 		REQ(note_qrg, false, "\nBefore RSID: ", "\n",
 		    active_modem->get_mode(), 0LL, active_modem->get_freq());
 	REQ(notify_rsid, mbin, freq);
-	if (!progdefaults.rsid_notify_only)
-		REQ(init_modem, mbin, freq);
+	if (!progdefaults.rsid_notify_only) {
+		if (progdefaults.rsid_squelch)
+			REQ(init_modem_squelch, mbin, freq);
+		else
+			REQ(init_modem, mbin, freq);
+	}
 }
 
 //=============================================================================
@@ -769,7 +802,7 @@ void cRsId::send(bool preRSID)
 		else if (progdefaults.rtty_baud == 4 && progdefaults.rtty_bits == 0 && progdefaults.rtty_shift == 9)
 			rmode = RSID_RTTY_75;
 		else
-			rmode = RSID_RTTY_45;; // 45 baud Baudot, shift 170
+			return;
 		break;
 
 	case MODE_OLIVIA:
@@ -792,7 +825,7 @@ void cRsId::send(bool preRSID)
 		else if (progdefaults.oliviatones == 2 && progdefaults.oliviabw == 0)
 			rmode = RSID_OLIVIA_8_125;
 		else
-			rmode = RSID_OLIVIA_16_500;
+			return;
 		break;
 
 	case MODE_CONTESTIA:
@@ -814,8 +847,16 @@ void cRsId::send(bool preRSID)
 			rmode = RSID_CONTESTIA_8_1000;
 		else if (progdefaults.contestiatones == 2 && progdefaults.contestiabw == 0)
 			rmode = RSID_CONTESTIA_8_125;
+		else if (progdefaults.contestiatones == 4 && progdefaults.contestiabw == 4)
+			rmode = RSID_CONTESTIA_32_2000;
+		else if (progdefaults.contestiatones == 5 && progdefaults.contestiabw == 2)
+			rmode = RSID_CONTESTIA_64_500;
+		else if (progdefaults.contestiatones == 5 && progdefaults.contestiabw == 3)
+			rmode = RSID_CONTESTIA_64_1000;
+		else if (progdefaults.contestiatones == 5 && progdefaults.contestiabw == 4)
+			rmode = RSID_CONTESTIA_64_2000;
 		else
-			rmode = RSID_CONTESTIA_16_500;
+			return;
 		break;
 
 	case MODE_DOMINOEX4:
