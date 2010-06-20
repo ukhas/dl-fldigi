@@ -19,6 +19,8 @@
 #include "util.h"
 #include "fl_digi.h"
 #include "dl_fldigi.h"
+#include "dl_fldigi_serial.h"
+#include "dl_fldigi_gps.h"
 #include "util.h"
 #include "confdialog.h"
 #include "fl_digi.h"
@@ -38,6 +40,12 @@ struct dl_fldigi_post_threadinfo
 {
 	CURL *curl;
 	char *post_data;
+};
+
+struct dl_fldigi_gps_threadinfo
+{
+	const char *port;
+	int baud;
 };
 
 struct dl_fldigi_download_threadinfo
@@ -63,13 +71,19 @@ struct payload
 	struct payload *next;
 };
 
+CHASE_CAR chase_car;
+
 bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
 time_t rxTimer = 0;
-pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t dl_fldigi_ext_gps_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void dl_fldigi_ext_gps_start(const char *port, const int baud);
+static void *dl_fldigi_ext_gps_thread(void *thread_argument);
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
 static void put_status_safe(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
@@ -167,6 +181,154 @@ static void print_put_status(const char *msg, double timeout, status_timeout act
 
 	put_status(msg, timeout, action);
 }
+
+
+void dl_fldigi_ext_gps_start(const char *port, const int baud)
+{
+
+	pthread_t thread;
+	struct dl_fldigi_gps_threadinfo *t;
+
+	t = (struct dl_fldigi_gps_threadinfo *) malloc(sizeof(struct dl_fldigi_gps_threadinfo));
+
+	if (t == NULL)
+	{
+		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_gps_threadinfo'\n", sizeof(struct dl_fldigi_post_threadinfo));
+		return;
+	}
+
+	t->port = port;
+	t->baud = baud;
+	
+	// !!
+	full_memory_barrier();
+
+	if (pthread_create(&thread, NULL, dl_fldigi_ext_gps_thread, (void *) t) != 0)
+	{
+		perror("dl_fldigi: ext_gps pthread_create");
+		free(t);
+		return;
+	}
+
+	return;
+}
+
+static void *dl_fldigi_ext_gps_thread(void *thread_argument)
+{
+
+        char buffer [MAX_NMEA_STRING];
+	struct dl_fldigi_gps_threadinfo *t;
+	t = (struct dl_fldigi_gps_threadinfo *) thread_argument;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: (thread %li) ext_gps_thread_started \n", pthread_self());
+		fprintf(stderr, "dl_fldigi: (thread %li) port %s baud %d \n", pthread_self(), 
+			t->port, t->baud);
+	#endif
+
+
+        SerialPort gps_serial (t->port, t->baud);
+	// RJH Need a check here that the port was opened sucessfully
+
+        GPS gps;
+
+	while ( 1 == 1)
+
+	{
+
+	    // First line is incomplete read and discard
+            gps_serial.read_line(buffer,200);
+
+#ifdef DL_FLDIGI_DEBUG
+     	fprintf(stderr, "dl_fldigi: (thread %li) gps_ext retrieve gps data \n", pthread_self());
+#endif
+
+            while ( ! gps.data_ready() )
+            {
+
+#ifdef DL_FLDIGI_DEBUG
+     	fprintf(stderr, "dl_fldigi: (thread %li) gps_ext reading gps data \n", pthread_self());
+#endif
+
+                gps_serial.read_line(buffer,200);
+
+	        if (gps.check_string(buffer) > 0)
+	        {
+	            gps.parse_string(buffer);
+	        }
+            }
+        
+#ifdef DL_FLDIGI_DEBUG
+	fprintf(stderr, "dl_fldigi: (thread %li) gps_ext assign gps data to lat and long \n", pthread_self());
+#endif
+
+	    pthread_mutex_lock(&dl_fldigi_ext_gps_mutex);
+
+            gps.lat_lng_alt( chase_car.latitude, chase_car.longitude, chase_car.altitude);
+	    gps.print_string();
+
+#ifdef DL_FLDIGI_DEBUG
+	fprintf(stderr, "dl_fldigi: (thread %li) lat %0.6f and long %0.6f and alt %ld\n", 
+		pthread_self(), chase_car.latitude, chase_car.longitude, chase_car.altitude);
+#endif
+
+	    full_memory_barrier();
+
+	    pthread_mutex_unlock(&dl_fldigi_ext_gps_mutex);
+
+	    sleep(5);
+	    gps_serial.flush_buffer();
+
+	}
+
+	pthread_exit(0);
+}
+
+void dl_fldigi_post_gps(const char *identity)
+{
+
+	double latitude;
+       	char rx_chase [200];
+
+	// RJH This is a bit of a hack but data is only posted when the latitude os not 0
+        // this is to prevent posting of data if the external gps is not working
+        // If the GPS becomes disconnected this won't work.
+
+#ifdef DL_FLDIGI_DEBUG
+	fprintf(stderr, "dl_fldigi: dl_fldigi_post_gps Setting up ZC for post\n");
+#endif
+
+	pthread_mutex_lock(&dl_fldigi_ext_gps_mutex);
+
+       	    sprintf (rx_chase,"ZC,%s,%6f,%6f,%ld",
+       	    identity,
+       	    chase_car.latitude,
+       	    chase_car.longitude,
+       	    chase_car.altitude);
+
+#ifdef DL_FLDIGI_DEBUG
+	fprintf(stderr, "dl_fldigi: dl_fldigi_post_gps post string %s\n",rx_chase);
+#endif
+
+	    latitude = chase_car.latitude;
+
+	    full_memory_barrier();
+
+	pthread_mutex_unlock(&dl_fldigi_ext_gps_mutex);
+
+	if (latitude != 0)
+       	{
+
+#ifdef DL_FLDIGI_DEBUG
+	fprintf(stderr, "dl_fldigi: dl_fldigi_post_gps posting\n");
+#endif
+
+       		dl_fldigi_post(rx_chase, identity);
+	
+	}
+
+}
+
 
 void dl_fldigi_post(const char *data, const char *identity)
 {

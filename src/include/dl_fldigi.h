@@ -22,13 +22,24 @@
 #include "fl_digi.h"
 #include "main.h"
 
+struct CHASE_CAR
+{
+        double latitude;
+        double longitude;
+        long altitude;     // Altitude can be negative :)
+};
+
 extern bool dl_fldigi_downloaded_once;
 extern Fl_Choice *habFlightXML;
 extern Fl_Button *habConfigureButton;
+extern CHASE_CAR chase_car;
 
 void dl_fldigi_init();
 void cb_dl_fldigi_toggle_dl_online();
+void dl_fldigi_ext_gps_start(const char * port, const int baud);
+void dl_fldigi_ext_gps_thread(void);
 void dl_fldigi_post(const char *data, const char *identity);
+void dl_fldigi_post_gps(const char *identity);
 void dl_fldigi_download();
 void dl_fldigi_update_payloads();
 void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a);

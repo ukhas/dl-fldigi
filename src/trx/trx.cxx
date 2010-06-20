@@ -284,8 +284,18 @@ void trx_trx_receive_loop()
 				
 				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
 				if (identity_callsign != "UNKNOWN") { 
+
 					//ZZ,Callsign,Date Time,Lat,Lon,Radio,Antenna
-					string rx_data ="ZZ," + identity_callsign + "," + date_time + "," + string_lat + "," + string_lon + "," + string_radio + "," + string_antenna + "," + dlfldigi_version + "," + string_payload;
+					string rx_data ="ZZ," + 
+						identity_callsign + "," + 
+						date_time + "," + 
+						string_lat + "," + 
+						string_lon + "," + 
+						string_radio + "," + 
+						string_antenna + "," + 
+						dlfldigi_version + "," + 
+						string_payload;
+					
 					dl_fldigi_post(rx_data.c_str(), identity_callsign.c_str());
 				}
 				else {
