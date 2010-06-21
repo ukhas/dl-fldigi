@@ -778,7 +778,7 @@ void dl_fldigi_update_payloads()
 						case 45:
 							p->baud = 0;
 							break;
-						//case 45.45:
+						//case 45.45: //of course switch/case only works with integers - dirty hack to save me changes everything.
 						//	p->baud = 1;
 						//	break;
 						case 50:
@@ -811,11 +811,10 @@ void dl_fldigi_update_payloads()
 			{
 				xml->read();
 				r_parity = xml->getNodeData();
-				
-				//xml->read();
+				/*for some reason this breaks the parsing of the data.*/
+				//xml->read(); 
 				if (strcmp("none", r_parity) == 0)
 				{
-					printf("%s\n", r_parity);
 					p->parity = 0;
 				}
 				else if (strcmp("even", r_parity) == 0)
@@ -963,14 +962,52 @@ static void dl_fldigi_enable_rtty()
 
 static void dl_fldigi_enable_domex()
 {
-	/* TODO: current_payload->domino_mode has no effect */
-	init_modem_sync(MODE_DOMINOEX22);
+	if (current_payload->domino_mode > 0) {
+		switch ( current_payload->domino_mode )
+		{
+				case 4:
+					init_modem_sync(MODE_DOMINOEX4);
+					if (bHAB)
+					{
+						habSwitchModes->label("DomX4");
+					}
+					break;
+				case 5:
+					init_modem_sync(MODE_DOMINOEX5);
+					{
+						habSwitchModes->label("DomX5");
+					}
+					break;
+				case 8:
+					init_modem_sync(MODE_DOMINOEX8);
+					{
+						habSwitchModes->label("DomX8");
+					}
+					break;
+				case 11:
+					init_modem_sync(MODE_DOMINOEX11);
+					{
+						habSwitchModes->label("DomX11");
+					}
+					break;
+				case 16:
+					init_modem_sync(MODE_DOMINOEX16);
+					{
+						habSwitchModes->label("DomX16");
+					}
+					break;
+				case 22:
+					init_modem_sync(MODE_DOMINOEX22);
+					{
+						habSwitchModes->label("DomX22");
+					}
+					break;
+		}
+	}
+
 	resetDOMEX();
 
-	if (bHAB)
-	{
-		habSwitchModes->label("DomX22");
-	}
+
 }
 
 void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
