@@ -868,6 +868,20 @@ void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a)
 	dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
 }
 
+void dl_fldigi_enable_rtty()
+{
+	init_modem_sync(MODE_RTTY);
+	resetRTTY();
+	habSwitchModes->label("RTTY");
+}
+
+void dl_fldigi_enable_domex()
+{
+	init_modem_sync(MODE_DOMINOEX22);
+	resetDOMEX();
+	habSwitchModes->label("DomX22");
+}
+
 void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
 {
 #ifdef DL_FLDIGI_DEBUG
@@ -880,9 +894,7 @@ void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
 			fprintf(stderr, "dl_fldigi: currently in RTTY mode\n");
 			#endif
 			
-			init_modem_sync(MODE_DOMINOEX22);
-			resetDOMEX();
-			habSwitchModes->label("DomX22");
+			dl_fldigi_enable_domex();
 		}
 		else if (active_modem->get_mode() == MODE_DOMINOEX22) {
 			
@@ -890,9 +902,7 @@ void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
 			fprintf(stderr, "dl_fldigi: currently in DominoEX22 mode\n");
 			#endif
 			
-			init_modem_sync(MODE_RTTY);
-			resetRTTY();
-			habSwitchModes->label("RTTY");
+			dl_fldigi_enable_rtty();
 		}
 	}
 	
@@ -965,30 +975,38 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.xmlFields = p->fields;
 			progdefaults.xmlCallsign = p->callsign;
 
-			if (rtty_mode == 1)
+			if (p->rtty_enabled == 1)
 			{
 				progdefaults.rtty_shift = p->shift;
 				progdefaults.rtty_baud = p->baud;
 				progdefaults.rtty_bits = p->coding;
+
+				selShift->value(progdefaults.rtty_shift);
+				selBaud->value(progdefaults.rtty_baud);
+				selBits->value(progdefaults.rtty_bits);
 			}
 
 			progdefaults.domino_mode = p->domino_mode;
 
-			if (p->domino_mode > 0 and rtty_mode == 1)
+			if (p->domino_mode > 0 and p->rtty_enabled == 1)
 			{
 				progdefaults.mode_num = 2;
+
 				if (active_modem->get_mode() == MODE_RTTY) {
-					habSwitchModes->label("RTTY");
+					dl_fldigi_enable_rtty();
 				}
 				if (active_modem->get_mode() == MODE_DOMINOEX22) {
-					habSwitchModes->label("DomX22");
+					dl_fldigi_enable_domex();
 				}
+
 				habSwitchModes->tooltip("RTTY, DomX22");
+				habSwitchModes->show();
 			}
 			else
 			{
 				progdefaults.mode_num = 1;
-				habSwitchModes->label("RTTY");
+				dl_fldigi_enable_rtty();
+				habSwitchModes->hide();
 			}
 
 			progdefaults.xml_time = p->time;
@@ -1007,10 +1025,6 @@ void dl_fldigi_select_payload(const char *name)
 			update_conf_ui_i(xml_longitude);
 			update_conf_ui_i(xml_altitude);
 
-			selShift->value(progdefaults.rtty_shift);
-			selBaud->value(progdefaults.rtty_baud);
-			selBits->value(progdefaults.rtty_bits);
-			resetRTTY();
 
 			#ifdef DL_FLDIGI_DEBUG
 				fprintf(stderr, "dl_fldigi: configured payload '%s'...\n", p->name);

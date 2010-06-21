@@ -4844,6 +4844,7 @@ void create_fl_digi_main_dl_fldigi() {
 			habSwitchModes->when(FL_WHEN_RELEASE);
 			habSwitchModes->align(FL_ALIGN_INSIDE);
 			habSwitchModes->callback(cb_dl_fldigi_switch_modes);
+			habSwitchModes->hide();
 //			if (active_modem->get_mode() == MODE_RTTY) {
 //				habSwitchModes->label("RTTY");
 //			}
