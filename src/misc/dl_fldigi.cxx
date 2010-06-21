@@ -882,7 +882,7 @@ void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
 			
 			init_modem_sync(MODE_DOMINOEX22);
 			resetDOMEX();
-			habSwitchModes->label("DOMINO");
+			habSwitchModes->label("DomX22");
 		}
 		else if (active_modem->get_mode() == MODE_DOMINOEX22) {
 			
@@ -977,12 +977,18 @@ void dl_fldigi_select_payload(const char *name)
 			if (p->domino_mode > 0 and rtty_mode == 1)
 			{
 				progdefaults.mode_num = 2;
-				habSwitchModes->label("2 Modes");
+				if (active_modem->get_mode() == MODE_RTTY) {
+					habSwitchModes->label("RTTY");
+				}
+				if (active_modem->get_mode() == MODE_DOMINOEX22) {
+					habSwitchModes->label("DomX22");
+				}
+				habSwitchModes->tooltip("RTTY, DomX22");
 			}
 			else
 			{
 				progdefaults.mode_num = 1;
-				habSwitchModes->label("NULL");
+				habSwitchModes->label("RTTY");
 			}
 
 			progdefaults.xml_time = p->time;
