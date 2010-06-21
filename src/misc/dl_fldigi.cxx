@@ -58,6 +58,7 @@ struct payload
 	int  shift;
 	int  baud;
 	int  coding;
+	int rtty_enabled;
 	int domino_mode;
 	int time;
 	int latitude;
@@ -68,7 +69,6 @@ struct payload
 
 bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
-int rtty_mode = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
 time_t rxTimer = 0;
@@ -714,7 +714,7 @@ void dl_fldigi_update_payloads()
 			}
 			else if (strcmp("rtty", xml->getNodeName()) == 0)
 			{
-				rtty_mode = 1;
+				p->rtty_enabled = 1;
 				xml->read();
 			}
 			else if (strcmp("dominoex", xml->getNodeName()) == 0)
@@ -939,7 +939,7 @@ void dl_fldigi_select_payload(const char *name)
 				print_s(field_delimiter);
 				print_i(fields);
 				print_s(callsign);
-				if (rtty_mode == 1) {
+				if (p->rtty_enabled == 1) {
 					print_i(shift);
 					print_i(baud);
 					print_i(coding);
@@ -964,25 +964,27 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.xmlField_delimiter = p->field_delimiter;
 			progdefaults.xmlFields = p->fields;
 			progdefaults.xmlCallsign = p->callsign;
-			if (rtty_mode == 1) {
+
+			if (rtty_mode == 1)
+			{
 				progdefaults.rtty_shift = p->shift;
 				progdefaults.rtty_baud = p->baud;
 				progdefaults.rtty_bits = p->coding;
 			}
-			if (p->domino_mode > 0) {
-				progdefaults.domino_mode = p->domino_mode;
-			}
-			else {
-				progdefaults.domino_mode = 0;
-			}
-			if (p->domino_mode > 0 and rtty_mode == 1) {
+
+			progdefaults.domino_mode = p->domino_mode;
+
+			if (p->domino_mode > 0 and rtty_mode == 1)
+			{
 				progdefaults.mode_num = 2;
 				habSwitchModes->label("2 Modes");
 			}
-			else {
+			else
+			{
 				progdefaults.mode_num = 1;
 				habSwitchModes->label("NULL");
 			}
+
 			progdefaults.xml_time = p->time;
 			progdefaults.xml_latitude = p->latitude;
 			progdefaults.xml_longitude = p->longitude;
