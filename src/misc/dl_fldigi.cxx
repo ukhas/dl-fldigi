@@ -57,6 +57,8 @@ struct payload
 	char *callsign;
 	int  shift;
 	int  baud;
+	int  parity;
+	int		stopbits;
 	int  coding;
 	int rtty_enabled;
 	int domino_mode;
@@ -588,7 +590,7 @@ void dl_fldigi_update_payloads()
 {
 	FILE *file;
 	int r1, r_shift, r_baud;
-	const char *r_coding, *r_dbfield;
+	const char *r_coding, *r_dbfield, *r_parity, *r_stopbits;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
 	int i, dbfield_no;
@@ -805,6 +807,54 @@ void dl_fldigi_update_payloads()
 							break;
 				}
 			}
+			else if (strcmp("parity", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				r_parity = xml->getNodeData();
+				
+				//xml->read();
+				if (strcmp("none", r_parity) == 0)
+				{
+					printf("%s\n", r_parity);
+					p->parity = 0;
+				}
+				else if (strcmp("even", r_parity) == 0)
+				{
+					p->parity = 1;
+				}
+				else if (strcmp("odd", r_parity) == 0)
+				{
+					p->parity = 2;
+				}
+				else if (strcmp("zero", r_parity) == 0)
+				{
+					p->parity = 3;
+				}
+				else if (strcmp("one", r_parity) == 0)
+				{
+					p->parity = 4;
+				}
+			}
+			else if (strcmp("stop", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				r_stopbits = xml->getNodeData();
+				
+				//xml->read();
+				if (strcmp("1", r_stopbits) == 0) 
+				{
+					p->stopbits = 0;
+				}
+				else if (strcmp("1.5", r_stopbits) == 0) 
+				{
+					p->stopbits = 1;
+				}
+				else if (strcmp("2", r_stopbits) == 0) 
+				{
+					p->stopbits = 2;
+				}
+			}
+			
 			else if (strcmp("coding", xml->getNodeName()) == 0)
 			{
 				/* Why does this need to be commented? XXX */
@@ -998,6 +1048,8 @@ void dl_fldigi_select_payload(const char *name)
 					print_i(shift);
 					print_i(baud);
 					print_i(coding);
+					print_i(parity);
+					print_i(stopbits);
 				}
 				if (p->domino_mode > 0) {
 					print_i(domino_mode);
@@ -1025,10 +1077,14 @@ void dl_fldigi_select_payload(const char *name)
 				progdefaults.rtty_shift = p->shift;
 				progdefaults.rtty_baud = p->baud;
 				progdefaults.rtty_bits = p->coding;
+				progdefaults.rtty_parity = p->parity;
+				progdefaults.rtty_stop = p->stopbits;
 
 				selShift->value(progdefaults.rtty_shift);
 				selBaud->value(progdefaults.rtty_baud);
 				selBits->value(progdefaults.rtty_bits);
+				selParity->value(progdefaults.rtty_parity);
+				selStopBits->value(progdefaults.rtty_stop);
 			}
 
 			if (p->domino_mode > 0 and p->rtty_enabled == 1)
