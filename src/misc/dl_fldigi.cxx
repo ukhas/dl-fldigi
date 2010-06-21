@@ -71,6 +71,7 @@ bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
+struct payload *current_payload = NULL;
 time_t rxTimer = 0;
 pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -872,31 +873,44 @@ void dl_fldigi_enable_rtty()
 {
 	init_modem_sync(MODE_RTTY);
 	resetRTTY();
-	habSwitchModes->label("RTTY");
+
+	if (bHAB)
+	{
+		habSwitchModes->label("RTTY");
+	}
 }
 
 void dl_fldigi_enable_domex()
 {
+	/* TODO: current_payload->domino_mode has no effect */
 	init_modem_sync(MODE_DOMINOEX22);
 	resetDOMEX();
-	habSwitchModes->label("DomX22");
+
+	if (bHAB)
+	{
+		habSwitchModes->label("DomX22");
+	}
 }
 
 void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
 {
-#ifdef DL_FLDIGI_DEBUG
-	fprintf(stderr, "dl_fldigi: switching modes '%d'\n", progdefaults.mode_num);
-#endif
-	if (progdefaults.mode_num > 1) {
+	if (current_payload == NULL)
+		return;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: switching modes '%d, %d'\n", current_payload->rtty_enabled, current_payload->domino_mode);
+	#endif
+
+	if (current_payload->rtty_enabled and current_payload->domino_mode > 0) {
 		if (active_modem->get_mode() == MODE_RTTY) {
-			
 			#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: currently in RTTY mode\n");
 			#endif
 			
 			dl_fldigi_enable_domex();
 		}
-		else if (active_modem->get_mode() == MODE_DOMINOEX22) {
+		else {
+		// else if (active_modem->get_mode() == MODE_DOMINOEX22) {  -- if a totally random other mode is chosen this will break.
 			
 			#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: currently in DominoEX22 mode\n");
@@ -968,7 +982,7 @@ void dl_fldigi_select_payload(const char *name)
 			/* TODO: Currently, we don't set progdefaults.changed (I think it might become annoying?).
 			 * This might be a bad idea. */
 
-			init_modem_sync(MODE_RTTY);
+			current_payload = p;
 
 			progdefaults.xmlSentence_delimiter = p->sentence_delimiter;
 			progdefaults.xmlField_delimiter = p->field_delimiter;
@@ -986,27 +1000,30 @@ void dl_fldigi_select_payload(const char *name)
 				selBits->value(progdefaults.rtty_bits);
 			}
 
-			progdefaults.domino_mode = p->domino_mode;
-
 			if (p->domino_mode > 0 and p->rtty_enabled == 1)
 			{
-				progdefaults.mode_num = 2;
-
-				if (active_modem->get_mode() == MODE_RTTY) {
-					dl_fldigi_enable_rtty();
-				}
-				if (active_modem->get_mode() == MODE_DOMINOEX22) {
-					dl_fldigi_enable_domex();
-				}
+				/* Default to RTTY */
+				dl_fldigi_enable_rtty();
 
 				habSwitchModes->tooltip("RTTY, DomX22");
-				habSwitchModes->show();
+			}
+			else if (p->domino_mode > 0)
+			{
+				dl_fldigi_enable_domex();
+
+				if (bHAB)
+				{
+					habSwitchModes->tooltip("DomX22 only");
+				}
 			}
 			else
 			{
-				progdefaults.mode_num = 1;
 				dl_fldigi_enable_rtty();
-				habSwitchModes->hide();
+
+				if (bHAB)
+				{
+					habSwitchModes->tooltip("RTTY only");
+				}
 			}
 
 			progdefaults.xml_time = p->time;
