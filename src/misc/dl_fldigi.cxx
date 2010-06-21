@@ -80,6 +80,8 @@ static void *dl_fldigi_download_thread(void *thread_argument);
 static void put_status_safe(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
 static void print_put_status(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
 static void dl_fldigi_delete_payloads();
+static void dl_fldigi_enable_rtty();
+static void dl_fldigi_enable_domex();
 
 void dl_fldigi_init()
 {
@@ -869,7 +871,7 @@ void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a)
 	dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
 }
 
-void dl_fldigi_enable_rtty()
+static void dl_fldigi_enable_rtty()
 {
 	init_modem_sync(MODE_RTTY);
 	resetRTTY();
@@ -880,7 +882,7 @@ void dl_fldigi_enable_rtty()
 	}
 }
 
-void dl_fldigi_enable_domex()
+static void dl_fldigi_enable_domex()
 {
 	/* TODO: current_payload->domino_mode has no effect */
 	init_modem_sync(MODE_DOMINOEX22);
@@ -1005,7 +1007,10 @@ void dl_fldigi_select_payload(const char *name)
 				/* Default to RTTY */
 				dl_fldigi_enable_rtty();
 
-				habSwitchModes->tooltip("RTTY, DomX22");
+				if (bHAB)
+				{
+					habSwitchModes->tooltip("RTTY, DomX22");
+				}
 			}
 			else if (p->domino_mode > 0)
 			{
