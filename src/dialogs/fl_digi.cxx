@@ -295,18 +295,20 @@ Fl_Output			*habBearing;
 Fl_Output			*habDistance;
 Fl_Button			*habConfigureButton = 0;
 Fl_Output			*habTimeSinceLastRx;
+Fl_Button			*habSwitchModes = 0;
 
 int w_habTime = 90;
 int w_habLat = 90;
 int w_habLon = 90;
 int w_habAlt = 90;
-int w_habCustom = 500;
+int w_habCustom = 430;
 int w_habFlightXML = 100;
 int w_habConfigureButton = 120;
 int w_habChecksum = 70;
 int w_habBearing = 70;
 int w_habDistance = 70;
 int w_habTimeSinceLastRx = 100;
+int w_habSwitchModes = 70;
 int HAB_height = 0;
 
 int pad = 1;
@@ -4827,13 +4829,25 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->callback(cb_dl_fldigi_configure_payload);
 		}
 		
-		{ habCustom = new Fl_Output(10, below(habFlightXML) + 4, w_habCustom, Hentry);
+		{ habCustom = new Fl_Output(10, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 2, Hentry);
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
 		habCustom->color(FL_BACKGROUND2_COLOR);
 		habCustom->selection_color(FL_SELECTION_COLOR);
 		habCustom->when(FL_WHEN_RELEASE);}
 
+		{ habSwitchModes = new Fl_Button(rightof(habCustom), below(habFlightXML) + 4, w_habSwitchModes, Hentry, "Switch");
+			habSwitchModes->tooltip("Switches Telemetry Modes");
+			habSwitchModes->labeltype(FL_NORMAL_LABEL);
+			habSwitchModes->labelfont(0);
+			habSwitchModes->labelsize(13);
+			habSwitchModes->when(FL_WHEN_RELEASE);
+			habSwitchModes->align(FL_ALIGN_INSIDE);
+			habSwitchModes->callback(cb_dl_fldigi_switch_modes);
+//			if (active_modem->get_mode() == MODE_RTTY) {
+//				habSwitchModes->label("RTTY");
+//			}
+		}
 		Fl_Group::current()->resizable(TopFrameHAB);
 		//TopFrameHAB->resizable(TopFrameHAB);
 		TopFrameHAB->end();

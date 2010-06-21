@@ -25,6 +25,7 @@
 extern bool dl_fldigi_downloaded_once;
 extern Fl_Choice *habFlightXML;
 extern Fl_Button *habConfigureButton;
+extern Fl_Button *habSwitchModes;
 
 void dl_fldigi_init();
 void cb_dl_fldigi_toggle_dl_online();
@@ -36,5 +37,7 @@ void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a);
 void dl_fldigi_select_payload(const char *name);
 void dl_fldigi_reset_rxtimer();
 void dl_fldigi_update_rxtimer();
+
+void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a);
 
 #endif

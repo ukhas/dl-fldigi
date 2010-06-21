@@ -26,6 +26,8 @@
 #include "threads.h"
 #include "qrunner.h"
 
+#include "trx.h"
+
 #include "irrXML.h"
 using namespace std;
 using namespace irr; // irrXML is located 
@@ -56,6 +58,7 @@ struct payload
 	int  shift;
 	int  baud;
 	int  coding;
+	int domino_mode;
 	int time;
 	int latitude;
 	int longitude;
@@ -65,6 +68,7 @@ struct payload
 
 bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
+int rtty_mode = 0;
 const char *dl_fldigi_cache_file;
 struct payload *payload_list = NULL;
 time_t rxTimer = 0;
@@ -708,6 +712,17 @@ void dl_fldigi_update_payloads()
 				p->callsign = strdup(xml->getNodeData());
 				xml->read();
 			}
+			else if (strcmp("rtty", xml->getNodeName()) == 0)
+			{
+				rtty_mode = 1;
+				xml->read();
+			}
+			else if (strcmp("dominoex", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				p->domino_mode = atoi(xml->getNodeData());
+				xml->read();
+			}
 			else if (strcmp("shift", xml->getNodeName()) == 0)
 			{
 				xml->read();
@@ -853,6 +868,36 @@ void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a)
 	dl_fldigi_select_payload(progdefaults.xmlPayloadname.c_str());
 }
 
+void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
+{
+#ifdef DL_FLDIGI_DEBUG
+	fprintf(stderr, "dl_fldigi: switching modes '%d'\n", progdefaults.mode_num);
+#endif
+	if (progdefaults.mode_num > 1) {
+		if (active_modem->get_mode() == MODE_RTTY) {
+			
+			#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: currently in RTTY mode\n");
+			#endif
+			
+			init_modem_sync(MODE_DOMINOEX22);
+			resetDOMEX();
+			habSwitchModes->label("DOMINO");
+		}
+		else if (active_modem->get_mode() == MODE_DOMINOEX22) {
+			
+			#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: currently in DominoEX22 mode\n");
+			#endif
+			
+			init_modem_sync(MODE_RTTY);
+			resetRTTY();
+			habSwitchModes->label("RTTY");
+		}
+	}
+	
+}
+
 void dl_fldigi_select_payload(const char *name)
 {
 	struct payload *p;
@@ -894,9 +939,14 @@ void dl_fldigi_select_payload(const char *name)
 				print_s(field_delimiter);
 				print_i(fields);
 				print_s(callsign);
-				print_i(shift);
-				print_i(baud);
-				print_i(coding);
+				if (rtty_mode == 1) {
+					print_i(shift);
+					print_i(baud);
+					print_i(coding);
+				}
+				if (p->domino_mode > 0) {
+					print_i(domino_mode);
+				}
 				print_i(time);
 				print_i(latitude);
 				print_i(longitude);
@@ -914,9 +964,25 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.xmlField_delimiter = p->field_delimiter;
 			progdefaults.xmlFields = p->fields;
 			progdefaults.xmlCallsign = p->callsign;
-			progdefaults.rtty_shift = p->shift;
-			progdefaults.rtty_baud = p->baud;
-			progdefaults.rtty_bits = p->coding;
+			if (rtty_mode == 1) {
+				progdefaults.rtty_shift = p->shift;
+				progdefaults.rtty_baud = p->baud;
+				progdefaults.rtty_bits = p->coding;
+			}
+			if (p->domino_mode > 0) {
+				progdefaults.domino_mode = p->domino_mode;
+			}
+			else {
+				progdefaults.domino_mode = 0;
+			}
+			if (p->domino_mode > 0 and rtty_mode == 1) {
+				progdefaults.mode_num = 2;
+				habSwitchModes->label("2 Modes");
+			}
+			else {
+				progdefaults.mode_num = 1;
+				habSwitchModes->label("NULL");
+			}
 			progdefaults.xml_time = p->time;
 			progdefaults.xml_latitude = p->latitude;
 			progdefaults.xml_longitude = p->longitude;

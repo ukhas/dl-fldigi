@@ -1136,7 +1136,9 @@
 		ELEM_(bool, ssdv_block_download, "SSDV_BLOCK_DOWNLOAD", "Query server for missing image data", false) \
 		ELEM_(std::string, ssdv_block_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/hadie/query.php") \
 		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "") \
-		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")
+		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "") \
+		ELEM_(int, domino_mode, "DOMINO_MODE", "Dominoex mode", 0)							\
+		ELEM_(int, mode_num, "MODE_NUMBER", "Number of different modes", 1)			
 
 
 // declare the struct
