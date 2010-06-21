@@ -732,17 +732,38 @@ void dl_fldigi_update_payloads()
 				r_shift = atoi(xml->getNodeData());
 				xml->read();
 
-				if (r_shift == 170)
+				switch ( r_shift )
 				{
-					p->shift = 4;
-				}
-				else if (r_shift == 350)
-				{
-					p->shift = 7;
-				}
-				else if (r_shift == 425)
-				{
-					p->shift = 8;
+						case 23:
+							p->shift = 0;
+							break;
+						case 85:
+							p->shift = 1;
+							break;
+						case 160:
+							p->shift = 2;
+							break;
+						case 170:
+							p->shift = 3;
+							break;
+						case 182:
+							p->shift = 4;
+							break;
+						case 200:
+							p->shift = 5;
+							break;
+						case 240:
+							p->shift = 6;
+							break;
+						case 350:
+							p->shift = 7;
+							break;
+						case 425:
+							p->shift = 8;
+							break;
+						case 850:
+							p->shift = 9;
+							break;
 				}
 			}
 			else if (strcmp("baud", xml->getNodeName()) == 0)
@@ -750,30 +771,38 @@ void dl_fldigi_update_payloads()
 				xml->read();
 				r_baud = atoi(xml->getNodeData());
 				xml->read();
-
-				if (r_baud == 45)
+				switch	(r_baud)
 				{
-					p->baud = 0;
-				}
-				else if (r_baud == 50)
-				{
-					p->baud = 2;
-				}
-				else if (r_baud == 100)
-				{
-					p->baud = 5;
-				}
-				else if (r_baud == 150)
-				{
-					p->baud = 7;
-				}
-				else if (r_baud == 200)
-				{
-					p->baud = 8;
-				}
-				else if (r_baud == 300)
-				{
-					p->baud = 9;
+						case 45:
+							p->baud = 0;
+							break;
+						//case 45.45:
+						//	p->baud = 1;
+						//	break;
+						case 50:
+							p->baud = 2;
+							break;
+						case 56:
+							p->baud = 3;
+							break;
+						case 75:
+							p->baud = 4;
+							break;
+						case 100:
+							p->baud = 5;
+							break;
+						case 110:
+							p->baud = 6;
+							break;
+						case 150:
+							p->baud = 7;
+							break;
+						case 200:
+							p->baud = 8;
+							break;
+						case 300:
+							p->baud = 9;
+							break;
 				}
 			}
 			else if (strcmp("coding", xml->getNodeName()) == 0)
