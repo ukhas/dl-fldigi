@@ -3,15 +3,15 @@
 
 ASCIIDOC_CONF = asciidoc.conf
 
-ASCIIDOC_SRC = dl-fldigi.1.txt fldigi-shell.1.txt flarq.1.txt guide.txt
-ASCIIDOC_MAN_DIST = dl-fldigi.1 fldigi-shell.1 flarq.1
+ASCIIDOC_SRC = dl-fldigi.1.txt dl-fldigi-shell.1.txt flarq.1.txt guide.txt
+ASCIIDOC_MAN_DIST = dl-fldigi.1 dl-fldigi-shell.1 flarq.1
 ASCIIDOC_MAN_INST =
 ASCIIDOC_HTML =
 
 if WANT_FLDIGI
     ASCIIDOC_MAN_INST += dl-fldigi.1
 if ENABLE_XMLRPC
-        ASCIIDOC_MAN_INST += fldigi-shell.1
+        ASCIIDOC_MAN_INST += dl-fldigi-shell.1
 endif
     ASCIIDOC_HTML += guide.html
 endif
@@ -47,7 +47,7 @@ endif
 #$(ASCIIDOC_MAN_INST): asciidoc.conf
 #	a2x $(A2X_ARGS) $@.txt
 #fldigi.1: fldigi.1.txt
-#fldigi-shell.1: fldigi-shell.1.txt
+#dl-fldigi-shell.1: dl-fldigi-shell.1.txt
 
 # The rest of the Makefile is enabled only if we have asciidoc
 if HAVE_ASCIIDOC
