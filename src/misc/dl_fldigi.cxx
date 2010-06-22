@@ -55,11 +55,11 @@ struct payload
 	char *field_delimiter;
 	int fields;
 	char *callsign;
-	int  shift;
-	int  baud;
-	int  parity;
-	int		stopbits;
-	int  coding;
+	int shift;
+	int baud;
+	int parity;
+	int	stopbits;
+	int coding;
 	int rtty_enabled;
 	int domino_mode;
 	int time;
@@ -693,41 +693,48 @@ void dl_fldigi_update_payloads()
 
 				i++;
 			}
+			
 			else if (strcmp("sentence_delimiter", xml->getNodeName()) == 0)
 			{
 				xml->read();
 				p->sentence_delimiter = strdup(xml->getNodeData());
 				xml->read();
 			}
+			
 			else if (strcmp("field_delimiter", xml->getNodeName()) == 0)
 			{
 				xml->read();
 				p->field_delimiter = strdup(xml->getNodeData());
 				xml->read();
 			}
+			
 			else if (strcmp("fields", xml->getNodeName()) == 0)
 			{
 				xml->read();
 				p->fields = atoi(xml->getNodeData());
 				xml->read();
 			}
+			
 			else if (strcmp("callsign", xml->getNodeName()) == 0)
 			{
 				xml->read();
 				p->callsign = strdup(xml->getNodeData());
 				xml->read();
 			}
+			
 			else if (strcmp("rtty", xml->getNodeName()) == 0)
 			{
 				p->rtty_enabled = 1;
 				xml->read();
 			}
+			
 			else if (strcmp("dominoex", xml->getNodeName()) == 0)
 			{
 				xml->read();
 				p->domino_mode = atoi(xml->getNodeData());
 				xml->read();
 			}
+			
 			else if (strcmp("shift", xml->getNodeName()) == 0)
 			{
 				xml->read();
@@ -768,6 +775,7 @@ void dl_fldigi_update_payloads()
 							break;
 				}
 			}
+			
 			else if (strcmp("baud", xml->getNodeName()) == 0)
 			{
 				xml->read();
@@ -778,7 +786,7 @@ void dl_fldigi_update_payloads()
 						case 45:
 							p->baud = 0;
 							break;
-						//case 45.45: //of course switch/case only works with integers - dirty hack to save me changes everything.
+						//case 45.45: //of course switch/case only works with integers - dirty hack to save me changing everything.
 						//	p->baud = 1;
 						//	break;
 						case 50:
@@ -807,6 +815,7 @@ void dl_fldigi_update_payloads()
 							break;
 				}
 			}
+			
 			else if (strcmp("parity", xml->getNodeName()) == 0)
 			{
 				xml->read();
@@ -834,6 +843,7 @@ void dl_fldigi_update_payloads()
 					p->parity = 4;
 				}
 			}
+			
 			else if (strcmp("stop", xml->getNodeName()) == 0)
 			{
 				xml->read();
@@ -874,6 +884,7 @@ void dl_fldigi_update_payloads()
 					p->coding = 2;
 				}
 			}
+			
 			else if (strcmp("dbfield", xml->getNodeName()) == 0)
 			{
 				xml->read();
