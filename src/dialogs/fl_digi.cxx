@@ -5001,6 +5001,7 @@ void create_fl_digi_main_dl_fldigi() {
 	make_scopeviewer();
 	noop_controls();
 
+ /*
 	progdefaults.WF_UIwfcarrier =
 	progdefaults.WF_UIwfreflevel =
 	progdefaults.WF_UIwfampspan =
@@ -5014,6 +5015,8 @@ void create_fl_digi_main_dl_fldigi() {
 	progdefaults.WF_UIqsy = false;
 	progdefaults.autoextract = true;
 	wf->UI_select(true);
+ */
+	wf->UI_select(progStatus.WF_UI);
 
 	createConfig();
 	if (withnoise)
