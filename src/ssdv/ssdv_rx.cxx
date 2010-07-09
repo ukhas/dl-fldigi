@@ -10,6 +10,9 @@
 #include "ssdv_rx.h"
 #include "rs8.h"
 
+/* For put_status() */
+#include "fl_digi.h"
+
 #if 1
 
 #ifdef __cplusplus
@@ -288,6 +291,16 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		pkt_imageid = b[2];
 		pkt_filesize = b[4] + (b[5] << 8);
 		
+		put_status("SSDV: Decoded image packet!", 10);
+		if(bHAB)
+		{
+			char msg[100];
+			snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Block: %02X/%02X, Image size: %i bytes", pkt_imageid, pkt_blockno, 0, pkt_filesize);
+			
+			habCustom->value(msg);
+			habCustom->color(FL_GREEN);
+		}
+		
 		/* Is this a new image? */
 		if(pkt_imageid != img_imageid ||
 		   pkt_filesize != img_filesize) new_image();
@@ -299,6 +312,17 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		/* Increase counters */
 		img_lastblock = pkt_blockno;
 		img_received++;
+		
+		/* Display a message on the fldigi interface */
+		put_status("SSDV: Decoded image packet!", 10);
+		if(bHAB)
+		{
+			char msg[100];
+			snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Block: %i/%i, Image size: %i bytes", pkt_imageid, pkt_blockno + 1, img_blocks, pkt_filesize);
+			
+			habCustom->value(msg);
+			habCustom->color(FL_GREEN);
+		}
 		
 		/* Copy payload into jpeg buffer */
 		memcpy(jpeg + pkt_blockno * PAYLOAD_SIZE, &b[6], PAYLOAD_SIZE);
