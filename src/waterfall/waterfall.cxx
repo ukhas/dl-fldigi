@@ -863,7 +863,8 @@ void WFdisp::drawcolorWF() {
 
 	if (waterwheel == 0)
 	{
-		if (progdefaults.png_wfall == 1) {
+		if (progdefaults.png_wfall == 1)
+		{
 			fp = fopen("dl-fldigi-waterfall.png", "w");
 			if (fp == NULL)
 			{
@@ -885,7 +886,7 @@ void WFdisp::drawcolorWF() {
 			if (info_ptr == NULL)
 			{
 				fclose(fp);
-				png_destroy_write_struct(&png_ptr,  png_infopp_NULL);
+				png_destroy_write_struct(&png_ptr, NULL);
 				fprintf(stderr, "waterfall export png_create_info_struct failed.\n");
 				return;
 			}
@@ -921,7 +922,7 @@ void WFdisp::drawcolorWF() {
 			png_destroy_write_struct(&png_ptr, &info_ptr);
 
 			fclose(fp);
-			}
+		}
 	}
 
 	waterwheel++;
