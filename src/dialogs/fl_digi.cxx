@@ -821,24 +821,26 @@ void startup_modem(modem* m, int f)
 			Status1->show();
 		}
 	}
-
+	
 	if (id >= MODE_HELL_FIRST && id <= MODE_HELL_LAST) {
+		printf("Setup Hell\n");
 		ReceiveText->hide();
 		FHdisp->show();
 		sldrHellBW->value(progdefaults.HELL_BW);
 	}
-//jcoxon 
-/*
+	//jcoxon
+	/*
+	 else if (!bWF_only) {
+	 ReceiveText->show();
+	 FHdisp->hide();
+	 }
+	 */
 	else if (!bWF_only) {
 		ReceiveText->show();
 		FHdisp->hide();
+		printf("Hidden\n");
 	}
-	*/
-	else if (!bWF_only && !bHAB) {
-		ReceiveText->show();
-		FHdisp->hide();
-	}
-//
+	//
 	if (id == MODE_RTTY)
 	    sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
 	else if (id >= MODE_PSK_FIRST && id <= MODE_PSK_LAST)
@@ -4338,9 +4340,10 @@ void noop_controls() // create and then hide all controls not being used
 
 	if(bWF_only) {
 		ReceiveText = new FTextRX(0,0,100,100); ReceiveText->hide();
+		FHdisp = new Raster(0,0,10,100); FHdisp->hide();
 	}
 	TransmitText = new FTextTX(0,0,100,100); TransmitText->hide();
-	FHdisp = new Raster(0,0,10,100); FHdisp->hide();
+	
 
 	for (int i = 0; i < NUMMACKEYS; i++) {
 		btnMacro[i] = new Fl_Button(defwidget); btnMacro[i]->hide();
@@ -4452,8 +4455,11 @@ void altTabs()
 {
 	tabsConfigure->remove(tabUI);
 	tabsConfigure->remove(tabFeld);
-	tabsConfigure->remove(tabMisc);
-	tabsConfigure->remove(tabQRZ);
+	//tabsConfigure->remove(tabMisc);
+	tabMisc->remove(tabQRZ);
+	tabMisc->remove(tabMacros);
+	tabMisc->remove(tabSpot);
+	tabMisc->remove(tabPskmail);
 }
 
 int WF_only_height = 0;
@@ -4878,7 +4884,10 @@ void create_fl_digi_main_dl_fldigi() {
 			ReceiveText->setFontColor(progdefaults.CTRLcolor, FTextBase::CTRL);
 			ReceiveText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
 			ReceiveText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
-			int sw = DEFAULT_SW;
+	
+			FHdisp = new Raster(0, Y, progStatus.mainW, minRxHeight);
+			FHdisp->hide();
+			
 
 			Fl_Box *minbox = new Fl_Box(0,Y + minRxHeight + 1, progStatus.mainW, minRxHeight);
 			//Fl_Box *minbox = new Fl_Box(sw,Y + 66, progStatus.mainW-sw, Htext - 66 - 66);
