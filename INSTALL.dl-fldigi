@@ -1,4 +1,21 @@
+On Linux:
 $ autoreconf -fi
-$ ./configure
+$ ./configure --disable-flarq
 $ make
 $ src/dl-fldigi --hab
+
+For ubuntu more information can be found: http://ukhas.org.uk/projects:dl-fldigi:build-ubuntu
+
+On OS X:
+$ ln -s /opt/local/share/aclocal/pkg.m4 ~/dl-fldigi/m4/
+$ autoreconf -fi
+$ ./configure --disable-flarq
+$ make
+$ src/dl-fldigi --hab
+$ cp src/dl-fldgi-3.20.16/* /Applications/ 
+To create an appbundle
+$make appbundle
+
+On Windows:
+To build dl-fldigi you will need to cross compile from linux - the build scripts
+can be found here: http://github.com/danielrichman/dl-fldigi-windows-build
