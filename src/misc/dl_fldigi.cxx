@@ -373,7 +373,7 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+			//fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
 		put_status_safe("dl_fldigi: sentence upload failed", 10);
@@ -531,7 +531,7 @@ static void *dl_fldigi_download_thread(void *thread_argument)
 	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+			//fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
 		#endif
 
 		put_status_safe("dl_fldigi: payload information: download failed", 10);
