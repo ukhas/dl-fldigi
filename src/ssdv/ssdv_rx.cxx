@@ -10,8 +10,19 @@
 #include "ssdv_rx.h"
 #include "rs8.h"
 
+#include <curl/curl.h>
+
 /* For put_status() */
 #include "fl_digi.h"
+
+/* For progdefaults */
+#include "configuration.h"
+
+/* Used for passing curl data to post thread */
+typedef struct {
+	CURL *curl;
+	struct curl_httppost* post;
+} ssdv_post_data_t;
 
 #if 1
 
@@ -269,6 +280,110 @@ int ssdv_rx::have_packet()
 	return(0);
 }
 
+static void *upload_packet_thread(void *arg)
+{
+	ssdv_post_data_t *t = (ssdv_post_data_t *) arg;
+	struct curl_httppost* post = t->post;
+	CURL *curl = t->curl;
+	CURLcode r;
+	
+	r = curl_easy_perform(curl);
+	if(r == 0)
+	{
+		fprintf(stderr, "SSDV: packet uploaded!\n");
+	}
+	else
+	{
+		fprintf(stderr, "CURL upload failed! \"%s\"\n", curl_easy_strerror(r));
+	}
+	
+	curl_easy_cleanup(curl);
+	curl_formfree(post);
+	
+	pthread_exit(0);
+}
+
+void ssdv_rx::upload_packet()
+{
+	ssdv_post_data_t *t;
+	pthread_t thread;
+	const char *callsign, *payload;
+	char *packet;
+	struct curl_httppost* post = NULL;
+	struct curl_httppost* last = NULL;
+	CURL *curl;
+	
+	/* Get the callsign, or "UNKNOWN" if none is set */
+	callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
+	curl_formadd(&post, &last, CURLFORM_COPYNAME, "callsign",
+		CURLFORM_COPYCONTENTS, callsign, CURLFORM_END);
+	
+	/* Get the payload name */
+	payload = (progdefaults.xmlPayloadname.empty() ? "UNKNOWN" : progdefaults.xmlPayloadname.c_str());
+	curl_formadd(&post, &last, CURLFORM_COPYNAME, "payload",
+		CURLFORM_COPYCONTENTS, payload, CURLFORM_END);
+	
+	/* The encoding used on the packet */
+	curl_formadd(&post, &last, CURLFORM_COPYNAME, "encoding",
+		CURLFORM_COPYCONTENTS, "hex", CURLFORM_END);
+	
+	/* URL-encode the packet */
+	packet = (char *) malloc((PACKET_SIZE * 2) + 1);
+	if(!packet)
+	{
+		fprintf(stderr, "ssdv_rx::upload_packet(): failed to allocate memory for packet\n");
+		curl_formfree(post);
+		return;
+	}
+	
+	for(int i = 0; i < PACKET_SIZE; i++)
+		snprintf(packet + (i * 2), 3, "%02X", buffer[bc + i]);
+	
+	/* Add a copy of the packet */
+	curl_formadd(&post, &last, CURLFORM_COPYNAME, "packet",
+		CURLFORM_COPYCONTENTS, packet, CURLFORM_END);
+	
+	free(packet);
+	
+	/* Initialise libcurl */
+	curl = curl_easy_init();
+	if(!curl)
+	{
+		fprintf(stderr, "ssdv_rx::upload_packet(): curl_easy_init() failed\n");
+		curl_formfree(post);
+		return;
+	}
+	
+	curl_easy_setopt(curl, CURLOPT_URL, "http://www.sanslogic.co.uk/hadie/live.php");
+	curl_easy_setopt(curl, CURLOPT_HTTPPOST, post); 
+	
+	/* Begin the thread to do the post */
+	t = (ssdv_post_data_t *) malloc(sizeof(ssdv_post_data_t));
+	if(!t)
+	{
+		fprintf(stderr, "ssdv_rx::upload_packet(): failed to allocate memory for thread data\n");
+		curl_easy_cleanup(curl);
+		curl_formfree(post);
+		return;
+	}
+	
+	t->curl = curl;
+	t->post = post;
+	
+	if(pthread_create(&thread, NULL, upload_packet_thread, (void *) t) != 0)
+	{
+		fprintf(stderr, "ssdv_rx::upload_packet(): failed to start post thread\n");
+		curl_easy_cleanup(curl);
+		curl_formfree(post);
+		free(t);
+		return;
+	}
+	
+	/* All done! */
+	
+	return;
+}
+
 void ssdv_rx::put_byte(uint8_t byte, int lost)
 {
 	/* If more than 16 bytes where lost clear the buffer */
@@ -286,20 +401,13 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	{
 		uint8_t *b = &buffer[bc];
 		
+		/* Packet received.. upload to server */
+		if(progdefaults.dl_online) upload_packet();
+		
 		/* Read the header */
 		pkt_blockno = b[3];
 		pkt_imageid = b[2];
 		pkt_filesize = b[4] + (b[5] << 8);
-		
-		put_status("SSDV: Decoded image packet!", 10);
-		if(bHAB)
-		{
-			char msg[100];
-			snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Block: %02X/%02X, Image size: %i bytes", pkt_imageid, pkt_blockno, 0, pkt_filesize);
-			
-			habCustom->value(msg);
-			habCustom->color(FL_GREEN);
-		}
 		
 		/* Is this a new image? */
 		if(pkt_imageid != img_imageid ||

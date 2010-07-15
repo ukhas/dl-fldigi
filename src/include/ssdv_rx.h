@@ -50,6 +50,7 @@ private:
 	void feed_buffer(uint8_t byte);
 	void clear_buffer();
 	int have_packet();
+	void upload_packet();
 	void render_image();
 	void new_image();
 	
