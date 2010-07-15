@@ -4482,7 +4482,7 @@ an merging"));
                 sldrRTTYbandwidth->labelsize(14);
                 sldrRTTYbandwidth->labelcolor(FL_FOREGROUND_COLOR);
                 sldrRTTYbandwidth->minimum(5);
-                sldrRTTYbandwidth->maximum(200);
+                sldrRTTYbandwidth->maximum(1000);
                 sldrRTTYbandwidth->step(1);
                 sldrRTTYbandwidth->value(25);
                 sldrRTTYbandwidth->textsize(14);
