@@ -54,6 +54,7 @@ struct payload
 	char *sentence_delimiter;
 	char *field_delimiter;
 	int fields;
+	int string_limit;
 	char *callsign;
 	int shift;
 	int baud;
@@ -701,6 +702,13 @@ void dl_fldigi_update_payloads()
 				xml->read();
 			}
 			
+			else if (strcmp("string_limit", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				p->string_limit = atoi(xml->getNodeData());
+				xml->read();
+			}
+			
 			else if (strcmp("field_delimiter", xml->getNodeName()) == 0)
 			{
 				xml->read();
@@ -1089,6 +1097,7 @@ void dl_fldigi_select_payload(const char *name)
 
 				print_s(name);
 				print_s(sentence_delimiter);
+				print_i(string_limit);
 				print_s(field_delimiter);
 				print_i(fields);
 				print_s(callsign);
@@ -1116,6 +1125,7 @@ void dl_fldigi_select_payload(const char *name)
 			current_payload = p;
 
 			progdefaults.xmlSentence_delimiter = p->sentence_delimiter;
+			progdefaults.xml_stringlimit = p->string_limit;
 			progdefaults.xmlField_delimiter = p->field_delimiter;
 			progdefaults.xmlFields = p->fields;
 			progdefaults.xmlCallsign = p->callsign;

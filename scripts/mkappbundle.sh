@@ -71,7 +71,7 @@ function copy_libs()
 
 function bundle()
 {
-    appname="${binary}-${appversion}.app"
+    appname="${binary}.app"
     cd "$build"
 
     # bundle the binary

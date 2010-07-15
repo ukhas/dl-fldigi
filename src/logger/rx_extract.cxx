@@ -243,8 +243,13 @@ void rx_extract_add(int c)
 			// Old copy:
 			// if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) { 
 
+			
+			if (progdefaults.xml_stringlimit > total_string_length)
+			{
+				total_string_length = progdefaults.xml_stringlimit;
+			}
+			
 			// FIXME: For the purposes of testing we won't check min_number_fields
-
 			if (rx_buff.length() < total_string_length) {
 					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 					UpperCase (identity_callsign);
