@@ -402,7 +402,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		uint8_t *b = &buffer[bc];
 		
 		/* Packet received.. upload to server */
-		upload_packet();
+		if(progdefaults.dl_online) upload_packet();
 		
 		/* Read the header */
 		pkt_blockno = b[3];
