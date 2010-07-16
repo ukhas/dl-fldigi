@@ -238,6 +238,16 @@
               "  0: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"      \
               "  8: 200; 9: 300",                                                       \
               0)   /* 45 */                                                             \
+		ELEM_(int, rtty_baud0, "RTTYBAUD",                                               \
+			"Carrier baud rate. Values are as follows:\n"								\
+			"  0: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"		\
+			"  8: 200; 9: 300",															\
+				0)   /* 45 */                                                           \
+		ELEM_(int, rtty_baud1, "RTTYBAUD",                                               \
+			"Carrier baud rate. Values are as follows:\n"								\
+			"  0: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"		\
+			"  8: 200; 9: 300",															\
+			0)   /* 45 */                                                           \
         ELEM_(int, rtty_bits, "RTTYBITS",                                               \
               "Bits per character. Values are as follows:\n"                            \
               "  0: 5 (baudot); 1: 7 (ascii); 2: 8 (ascii)",                            \

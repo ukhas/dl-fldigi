@@ -58,6 +58,8 @@ struct payload
 	char *callsign;
 	int shift;
 	int baud;
+	int baud0;
+	int baud1;
 	int parity;
 	int	stopbits;
 	int coding;
@@ -590,7 +592,7 @@ static void dl_fldigi_delete_payloads()
 void dl_fldigi_update_payloads()
 {
 	FILE *file;
-	int r1, r_shift, r_baud;
+	int r1, r_shift, r_baud, r_baud1;
 	const char *r_coding, *r_dbfield, *r_parity, *r_stopbits;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
@@ -824,6 +826,46 @@ void dl_fldigi_update_payloads()
 				}
 			}
 			
+			else if (strcmp("baud1", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				r_baud1 = atoi(xml->getNodeData());
+				xml->read();
+				switch	(r_baud1)
+				{
+					case 45:
+						p->baud1 = 0;
+						break;
+						//case 45.45: //of course switch/case only works with integers - dirty hack to save me changing everything.
+						//	p->baud1 = 1;
+						//	break;
+					case 50:
+						p->baud1 = 2;
+						break;
+					case 56:
+						p->baud1 = 3;
+						break;
+					case 75:
+						p->baud1 = 4;
+						break;
+					case 100:
+						p->baud1 = 5;
+						break;
+					case 110:
+						p->baud1 = 6;
+						break;
+					case 150:
+						p->baud1 = 7;
+						break;
+					case 200:
+						p->baud1 = 8;
+						break;
+					case 300:
+						p->baud1 = 9;
+						break;
+				}
+			}
+			
 			else if (strcmp("parity", xml->getNodeName()) == 0)
 			{
 				xml->read();
@@ -970,12 +1012,59 @@ void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a)
 
 static void dl_fldigi_enable_rtty()
 {
+	if (current_payload->baud1 > 0) 
+	{
+		if (current_payload->baud == current_payload->baud1)
+		{
+			progdefaults.rtty_baud = current_payload->baud0;
+			current_payload->baud = current_payload->baud0;
+		}
+		else
+		{
+			progdefaults.rtty_baud = current_payload->baud1;
+			current_payload->baud = current_payload->baud1;
+		}
+		
+		selBaud->value(progdefaults.rtty_baud);
+	}
 	init_modem_sync(MODE_RTTY);
 	resetRTTY();
 
 	if (bHAB)
 	{
-		habSwitchModes->label("RTTY");
+		switch	(current_payload->baud)
+		{
+			case 0:
+				habSwitchModes->label("RTTY 45");
+				break;
+			case 1:
+				habSwitchModes->label("RTTY 45.45");
+				break;
+			case 2:
+				habSwitchModes->label("RTTY 50");
+				break;
+			case 3:
+				habSwitchModes->label("RTTY 56");
+				break;
+			case 4:
+				habSwitchModes->label("RTTY 75");
+				break;
+			case 5:
+				habSwitchModes->label("RTTY 100");
+				break;
+			case 6:
+				habSwitchModes->label("RTTY 110");
+				break;
+			case 7:
+				habSwitchModes->label("RTTY 150");
+				break;
+			case 8:
+				habSwitchModes->label("RTTY 200");
+				break;
+			case 9:
+				habSwitchModes->label("RTTY 300");
+				break;
+		}
 	}
 }
 
@@ -1046,15 +1135,21 @@ void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a)
 			
 			dl_fldigi_enable_domex();
 		}
-		else {
+	else {
 		// else if (active_modem->get_mode() == MODE_DOMINOEX22) {  -- if a totally random other mode is chosen this will break.
 			
 			#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: currently in DominoEX22 mode\n");
+			fprintf(stderr, "dl_fldigi: currently in DominoEX mode\n");
 			#endif
 			
 			dl_fldigi_enable_rtty();
 		}
+	}
+	else if (current_payload->rtty_enabled and current_payload->baud1 > 0) {
+		dl_fldigi_enable_rtty();
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: dual RTTY baud rates\n");
+		#endif
 	}
 	
 }
@@ -1107,6 +1202,10 @@ void dl_fldigi_select_payload(const char *name)
 					print_i(coding);
 					print_i(parity);
 					print_i(stopbits);
+					if(p->baud1 > 0) {
+						print_i(baud0);
+						print_i(baud1);
+					}
 				}
 				if (p->domino_mode > 0) {
 					print_i(domino_mode);
@@ -1134,6 +1233,11 @@ void dl_fldigi_select_payload(const char *name)
 			{
 				progdefaults.rtty_shift = p->shift;
 				progdefaults.rtty_baud = p->baud;
+				if(p->baud1 > 0) {
+					p->baud0 = p->baud;
+					progdefaults.rtty_baud0 = p->baud0;
+					progdefaults.rtty_baud1 = p->baud1;
+				}
 				progdefaults.rtty_bits = p->coding;
 				progdefaults.rtty_parity = p->parity;
 				progdefaults.rtty_stop = p->stopbits;
