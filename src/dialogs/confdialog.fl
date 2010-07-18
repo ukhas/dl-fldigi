@@ -95,15 +95,15 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
   code {} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {832 622 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
+    xywh {635 224 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-3 0 520 372} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;} selected
-        tooltip {Operator information} xywh {0 25 500 345} when 1
+        callback {progdefaults.changed = true;}
+        tooltip {Operator information} xywh {0 25 500 345} when 1 hide
       } {
         Fl_Group {} {
           label Station open
@@ -3237,7 +3237,7 @@ progdefaults.changed = true;}
           xywh {0 25 500 350}
         } {
           Fl_Group tabDLEnable {
-            label Enable open
+            label Enable open selected
             xywh {0 50 500 320}
           } {
             Fl_Group {} {
@@ -3247,13 +3247,13 @@ progdefaults.changed = true;}
               Fl_Check_Button confdialog_dl_online {
                 label Online
                 callback {cb_dl_fldigi_toggle_dl_online();
-set_menu_dl_online();} selected
+set_menu_dl_online();}
                 xywh {35 75 200 25} down_box DOWN_BOX
                 code0 {o->value(progdefaults.dl_online);}
               }
               Fl_Check_Button {} {
                 label {Detection and Extraction}
-                callback {fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box\n");}
+                callback {fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box\\n");}
                 xywh {35 100 200 25} down_box DOWN_BOX
               }
               Fl_Check_Button {} {
@@ -3377,6 +3377,23 @@ progdefaults.changed = true;
                 xywh {100 115 325 25} type Int
                 code0 {o->value(progdefaults.gpsSpeed);}
                 class Fl_Value_Input2
+              }
+            }
+          }
+          Fl_Group {} {
+            label Image open
+            xywh {0 50 500 322} hide
+          } {
+            Fl_Group {} {
+              label {Packet Upload Configuration} open
+              xywh {4 54 492 105} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Input {} {
+                label {URL:}
+                callback {progdefaults.ssdv_packet_url = o->value();
+progdefaults.changed = true;}
+                xywh {100 81 330 20} labelsize 12 textsize 12
+                code0 {o->value(progdefaults.ssdv_packet_url.c_str());}
               }
             }
           }

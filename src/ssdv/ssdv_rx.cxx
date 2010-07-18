@@ -313,6 +313,9 @@ void ssdv_rx::upload_packet()
 	struct curl_httppost* last = NULL;
 	CURL *curl;
 	
+	/* Don't upload if no URL is present */
+	if(progdefaults.ssdv_packet_url.length() <= 0) return;
+	
 	/* Get the callsign, or "UNKNOWN" if none is set */
 	callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 	curl_formadd(&post, &last, CURLFORM_COPYNAME, "callsign",
@@ -354,7 +357,7 @@ void ssdv_rx::upload_packet()
 		return;
 	}
 	
-	curl_easy_setopt(curl, CURLOPT_URL, "http://www.sanslogic.co.uk/hadie/live.php");
+	curl_easy_setopt(curl, CURLOPT_URL, progdefaults.ssdv_packet_url.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, post); 
 	
 	/* Begin the thread to do the post */
