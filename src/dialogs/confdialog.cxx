@@ -2517,10 +2517,6 @@ static void cb_confdialog_dl_online(Fl_Check_Button*, void*) {
 set_menu_dl_online();
 }
 
-static void cb_Detection(Fl_Check_Button*, void*) {
-  fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box\n");
-}
-
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
 Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
@@ -5907,7 +5903,6 @@ d frequency"));
         tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 500, 350);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
-            tabDLEnable->hide();
             { Fl_Group* o = new Fl_Group(5, 55, 490, 290, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -5916,10 +5911,6 @@ d frequency"));
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
                 o->value(progdefaults.dl_online);
               } // Fl_Check_Button* confdialog_dl_online
-              { Fl_Check_Button* o = new Fl_Check_Button(35, 100, 200, 25, _("Detection and Extraction"));
-                o->down_box(FL_DOWN_BOX);
-                o->callback((Fl_Callback*)cb_Detection);
-              } // Fl_Check_Button* o
               o->end();
             } // Fl_Group* o
             tabDLEnable->end();
@@ -6080,6 +6071,7 @@ d frequency"));
             o->end();
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("Remote"));
+            o->hide();
             { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("Waterfall PNG"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);

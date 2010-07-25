@@ -373,7 +373,6 @@ extern Fl_Round_Button *btnQRZnotavailable;
 extern Fl_Round_Button *btnHAMCALLonline;
 extern Fl_Group *tabDL;
 extern Fl_Tabs *tabsDL;
-extern Fl_Group *tabDLEnable;
 extern Fl_Check_Button *confdialog_dl_online;
 extern Fl_Group *tabDLPayload;
 extern Fl_Choice *habFlightXML_conf;
