@@ -88,18 +88,11 @@ static void cb_inpMyAntenna(Fl_Input2* o, void*) {
 progdefaults.changed = true;
 }
 
-Fl_Group *grpNoise=(Fl_Group *)0;
+Fl_Input *MyRadio=(Fl_Input *)0;
 
-Fl_Check_Button *btnNoiseOn=(Fl_Check_Button *)0;
-
-static void cb_btnNoiseOn(Fl_Check_Button* o, void*) {
-  progdefaults.noise = o->value();
-}
-
-Fl_Counter2 *noiseDB=(Fl_Counter2 *)0;
-
-static void cb_noiseDB(Fl_Counter2* o, void*) {
-  progdefaults.s2n = o->value();
+static void cb_MyRadio(Fl_Input* o, void*) {
+  progdefaults.myRadio = o->value();
+progdefaults.changed = true;
 }
 
 Fl_Input *MyLat=(Fl_Input *)0;
@@ -116,11 +109,18 @@ static void cb_MyLon(Fl_Input* o, void*) {
 progdefaults.changed = true;
 }
 
-Fl_Input *MyRadio=(Fl_Input *)0;
+Fl_Group *grpNoise=(Fl_Group *)0;
 
-static void cb_MyRadio(Fl_Input* o, void*) {
-  progdefaults.myRadio = o->value();
-progdefaults.changed = true;
+Fl_Check_Button *btnNoiseOn=(Fl_Check_Button *)0;
+
+static void cb_btnNoiseOn(Fl_Check_Button* o, void*) {
+  progdefaults.noise = o->value();
+}
+
+Fl_Counter2 *noiseDB=(Fl_Counter2 *)0;
+
+static void cb_noiseDB(Fl_Counter2* o, void*) {
+  progdefaults.s2n = o->value();
 }
 
 Fl_Group *tabUI=(Fl_Group *)0;
@@ -2521,11 +2521,6 @@ static void cb_Detection(Fl_Check_Button*, void*) {
   fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box\n");
 }
 
-static void cb_Waterfall(Fl_Check_Button* o, void*) {
-  progdefaults.png_wfall = o->value();
-progdefaults.changed = true;
-}
-
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
 Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
@@ -2608,6 +2603,11 @@ static void cb_URL(Fl_Input* o, void*) {
 progdefaults.changed = true;
 }
 
+static void cb_Waterfall(Fl_Check_Button* o, void*) {
+  progdefaults.png_wfall = o->value();
+progdefaults.changed = true;
+}
+
 static void cb_Location(Fl_Input* o, void*) {
   progdefaults.waterfall_png_location = o->value();
 progdefaults.changed = true;
@@ -2657,7 +2657,6 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
         tabOperator->tooltip(_("Operator information"));
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
-        tabOperator->hide();
         { Fl_Group* o = new Fl_Group(5, 35, 490, 275, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -2717,22 +2716,36 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
             inpMyLocator->when(FL_WHEN_RELEASE);
             inpMyLocator->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyLocator
+          { inpMyAntenna = new Fl_Input2(115, 172, 320, 24, _("Antenna:"));
+            inpMyAntenna->tooltip(_("Short description of antenna"));
+            inpMyAntenna->box(FL_DOWN_BOX);
+            inpMyAntenna->color((Fl_Color)FL_BACKGROUND2_COLOR);
+            inpMyAntenna->selection_color((Fl_Color)FL_SELECTION_COLOR);
+            inpMyAntenna->labeltype(FL_NORMAL_LABEL);
+            inpMyAntenna->labelfont(0);
+            inpMyAntenna->labelsize(14);
+            inpMyAntenna->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+            inpMyAntenna->callback((Fl_Callback*)cb_inpMyAntenna);
+            inpMyAntenna->align(FL_ALIGN_LEFT);
+            inpMyAntenna->when(FL_WHEN_RELEASE);
+            inpMyAntenna->labelsize(FL_NORMAL_SIZE);
+          } // Fl_Input2* inpMyAntenna
+          { Fl_Input* o = MyRadio = new Fl_Input(115, 205, 320, 25, _("Radio:"));
+            MyRadio->callback((Fl_Callback*)cb_MyRadio);
+            o->value(progdefaults.myRadio.c_str());
+          } // Fl_Input* MyRadio
+          { Fl_Input* o = MyLat = new Fl_Input(115, 240, 320, 25, _("Lat (DD):"));
+            MyLat->tooltip(_("DD.DDDD"));
+            MyLat->callback((Fl_Callback*)cb_MyLat);
+            o->value(progdefaults.myLat.c_str());
+          } // Fl_Input* MyLat
+          { Fl_Input* o = MyLon = new Fl_Input(115, 275, 320, 25, _("Long (DD):"));
+            MyLon->tooltip(_("DD.DDDD"));
+            MyLon->callback((Fl_Callback*)cb_MyLon);
+            o->value(progdefaults.myLon.c_str());
+          } // Fl_Input* MyLon
           o->end();
         } // Fl_Group* o
-        { inpMyAntenna = new Fl_Input2(110, 167, 320, 24, _("Antenna:"));
-          inpMyAntenna->tooltip(_("Short description of antenna"));
-          inpMyAntenna->box(FL_DOWN_BOX);
-          inpMyAntenna->color((Fl_Color)FL_BACKGROUND2_COLOR);
-          inpMyAntenna->selection_color((Fl_Color)FL_SELECTION_COLOR);
-          inpMyAntenna->labeltype(FL_NORMAL_LABEL);
-          inpMyAntenna->labelfont(0);
-          inpMyAntenna->labelsize(14);
-          inpMyAntenna->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
-          inpMyAntenna->callback((Fl_Callback*)cb_inpMyAntenna);
-          inpMyAntenna->align(FL_ALIGN_LEFT);
-          inpMyAntenna->when(FL_WHEN_RELEASE);
-          inpMyAntenna->labelsize(FL_NORMAL_SIZE);
-        } // Fl_Input2* inpMyAntenna
         { grpNoise = new Fl_Group(5, 203, 490, 165, _("Test Signal - Do NOT use with transmitter"));
           grpNoise->box(FL_ENGRAVED_FRAME);
           grpNoise->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -2762,18 +2775,6 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
           } // Fl_Counter2* noiseDB
           grpNoise->end();
         } // Fl_Group* grpNoise
-        { Fl_Input* o = MyLat = new Fl_Input(110, 235, 320, 25, _("Lat (DD):"));
-          MyLat->callback((Fl_Callback*)cb_MyLat);
-          o->value(progdefaults.myLat.c_str());
-        } // Fl_Input* MyLat
-        { Fl_Input* o = MyLon = new Fl_Input(110, 270, 320, 25, _("Long (DD):"));
-          MyLon->callback((Fl_Callback*)cb_MyLon);
-          o->value(progdefaults.myLon.c_str());
-        } // Fl_Input* MyLon
-        { Fl_Input* o = MyRadio = new Fl_Input(110, 200, 320, 25, _("Radio:"));
-          MyRadio->callback((Fl_Callback*)cb_MyRadio);
-          o->value(progdefaults.myRadio.c_str());
-        } // Fl_Input* MyRadio
         tabOperator->end();
       } // Fl_Group* tabOperator
       { tabUI = new Fl_Group(-3, 25, 508, 345, _("UI"));
@@ -5903,6 +5904,7 @@ d frequency"));
       } // Fl_Group* tabQRZ
       { tabDL = new Fl_Group(0, 25, 500, 350, _("DL Client"));
         tabDL->labelsize(12);
+        tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 500, 350);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
             tabDLEnable->hide();
@@ -5917,11 +5919,6 @@ d frequency"));
               { Fl_Check_Button* o = new Fl_Check_Button(35, 100, 200, 25, _("Detection and Extraction"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Detection);
-              } // Fl_Check_Button* o
-              { Fl_Check_Button* o = new Fl_Check_Button(35, 125, 200, 25, _("Waterfall PNG Export"));
-                o->down_box(FL_DOWN_BOX);
-                o->callback((Fl_Callback*)cb_Waterfall);
-                o->value(progdefaults.png_wfall);
               } // Fl_Check_Button* o
               o->end();
             } // Fl_Group* o
@@ -6086,9 +6083,13 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("Waterfall PNG"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Input* o = new Fl_Input(101, 82, 330, 20, _("Location:"));
-                o->labelsize(12);
-                o->textsize(12);
+              { Fl_Check_Button* o = new Fl_Check_Button(45, 75, 200, 25, _("Waterfall PNG Export"));
+                o->down_box(FL_DOWN_BOX);
+                o->callback((Fl_Callback*)cb_Waterfall);
+                o->value(progdefaults.png_wfall);
+              } // Fl_Check_Button* o
+              { Fl_Input* o = new Fl_Input(110, 115, 334, 20, _("Location:"));
+                o->tooltip(_("Please use full path including filename"));
                 o->callback((Fl_Callback*)cb_Location);
                 o->value(progdefaults.waterfall_png_location.c_str());
               } // Fl_Input* o
