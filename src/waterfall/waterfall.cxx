@@ -902,6 +902,10 @@ void WFdisp::drawcolorWF() {
 
 			png_init_io(png_ptr, fp);
 
+			/* Don't use libpngs filters, they increase
+			 * the image size for this type of image */
+			png_set_filter(png_ptr, 0, PNG_FILTER_NONE);
+
 			png_set_IHDR(png_ptr, info_ptr, disp_width, image_height, 8, PNG_COLOR_TYPE_RGB,
 					 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
