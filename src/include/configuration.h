@@ -1142,6 +1142,7 @@
 		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)										\
 /* Config stuff */																		\
 		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)										\
+		ELEM_(std::string, waterfall_png_location, "PNG_WFALL_LOC", "Save location for PNG", "dl-fldigi-waterfall.png") \
         ELEM_(bool, dl_online, "", "", false) \
 		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/hadie/live.php") \
 		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "") \

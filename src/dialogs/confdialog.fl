@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0109 
+version 1.0110 
 i18n_type 1 
 i18n_include "gettext.h" 
 i18n_function _ 
@@ -98,12 +98,12 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
     xywh {635 224 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
   } {
     Fl_Tabs tabsConfigure {open
-      xywh {-3 0 520 372} color 50 selection_color 50
+      xywh {-3 0 520 375} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;}
-        tooltip {Operator information} xywh {0 25 500 345} when 1 hide
+        callback {progdefaults.changed = true;} open
+        tooltip {Operator information} xywh {0 25 500 345} when 1
       } {
         Fl_Group {} {
           label Station open
@@ -153,14 +153,35 @@ progdefaults.changed = true;}
             code0 {inpMyLocator->labelsize(FL_NORMAL_SIZE);}
             class Fl_Input2
           }
-        }
-        Fl_Input inpMyAntenna {
-          label {Antenna:}
-          callback {progdefaults.myAntenna = o->value();
+          Fl_Input inpMyAntenna {
+            label {Antenna:}
+            callback {progdefaults.myAntenna = o->value();
 progdefaults.changed = true;}
-          tooltip {Short description of antenna} xywh {110 167 320 24}
-          code0 {inpMyAntenna->labelsize(FL_NORMAL_SIZE);}
-          class Fl_Input2
+            tooltip {Short description of antenna} xywh {115 172 320 24}
+            code0 {inpMyAntenna->labelsize(FL_NORMAL_SIZE);}
+            class Fl_Input2
+          }
+          Fl_Input MyRadio {
+            label {Radio:}
+            callback {progdefaults.myRadio = o->value();
+progdefaults.changed = true;} selected
+            xywh {115 205 320 25}
+            code0 {o->value(progdefaults.myRadio.c_str());}
+          }
+          Fl_Input MyLat {
+            label {Lat (DD):}
+            callback {progdefaults.myLat = o->value();
+progdefaults.changed = true;}
+            tooltip {DD.DDDD} xywh {115 240 320 25}
+            code0 {o->value(progdefaults.myLat.c_str());}
+          }
+          Fl_Input MyLon {
+            label {Long (DD):}
+            callback {progdefaults.myLon = o->value();
+progdefaults.changed = true;}
+            tooltip {DD.DDDD} xywh {115 275 320 25}
+            code0 {o->value(progdefaults.myLon.c_str());}
+          }
         }
         Fl_Group grpNoise {
           label {Test Signal - Do NOT use with transmitter} open
@@ -179,27 +200,6 @@ progdefaults.changed = true;}
             code0 {o->value(progdefaults.s2n);}
             class Fl_Counter2
           }
-        }
-        Fl_Input MyLat {
-          label {Lat (DD):}
-          callback {progdefaults.myLat = o->value();
-progdefaults.changed = true;}
-          xywh {110 235 320 25}
-          code0 {o->value(progdefaults.myLat.c_str());}
-        }
-        Fl_Input MyLon {
-          label {Long (DD):}
-          callback {progdefaults.myLon = o->value();
-progdefaults.changed = true;}
-          xywh {110 270 320 25}
-          code0 {o->value(progdefaults.myLon.c_str());}
-        }
-        Fl_Input MyRadio {
-          label {Radio:}
-          callback {progdefaults.myRadio = o->value();
-progdefaults.changed = true;}
-          xywh {110 200 320 25}
-          code0 {o->value(progdefaults.myRadio.c_str());}
         }
       }
       Fl_Group tabUI {
@@ -1248,7 +1248,7 @@ progdefaults.changed = true;}
                 label {Transmit width}
                 callback {progdefaults.HellXmtWidth=(int)o->value();
 progdefaults.changed = true;}
-                tooltip {\# of multiple scans / character line} xywh {15 100 40 20} align 8 maximum 3 value 1
+                tooltip {\# of multiple scans / character line} xywh {15 100 40 20} align 8 maximum 3
                 code0 {o->value(progdefaults.HellXmtWidth);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Spinner2
@@ -1556,7 +1556,7 @@ OFF - Clear & restart} xywh {212 125 165 20} down_box DOWN_BOX
                     label Channels
                     callback {progdefaults.VIEWERchannels = (int)(o->value());
 initViewer();}
-                    tooltip {Change \# of psk viewer channels} xywh {15 95 50 20} align 8 value 1
+                    tooltip {Change \# of psk viewer channels} xywh {15 95 50 20} align 8
                     code0 {o->minimum(5); o->maximum(30); o->step(1);}
                     code1 {o->value(progdefaults.VIEWERchannels);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -1567,7 +1567,7 @@ initViewer();}
                     callback {progdefaults.VIEWERstart = (int)(o->value());
 progdefaults.changed = true;
 initViewer();}
-                    tooltip {Start decoding at this frequency} xywh {15 125 50 20} align 8 value 1
+                    tooltip {Start decoding at this frequency} xywh {15 125 50 20} align 8
                     code0 {o->minimum(200); o->maximum(1000); o->step(100);}
                     code1 {o->value(progdefaults.VIEWERstart);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -1578,7 +1578,7 @@ initViewer();}
                     callback {progdefaults.VIEWERtimeout = (int)(o->value());
 progdefaults.changed = true;}
                     tooltip {Clear channel text after
-\# seconds of inactivity} xywh {212 95 50 20} align 8 value 1
+\# seconds of inactivity} xywh {212 95 50 20} align 8
                     code0 {o->minimum(1); o->maximum(180); o->step(1);}
                     code1 {o->value(progdefaults.VIEWERtimeout);}
                     code2 {o->labelsize(FL_NORMAL_SIZE);}
@@ -2543,7 +2543,7 @@ o->tooltip(src_get_description(sample_rate_converters[o->value()]));} open
                 label {RX ppm}
                 callback {progdefaults.RX_corr = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {RX sound card correction} xywh {15 180 85 20} align 8 value 1
+                tooltip {RX sound card correction} xywh {15 180 85 20} align 8
                 code0 {o->step(1);}
                 code1 {o->minimum(-50000);}
                 code2 {o->maximum(50000);}
@@ -2554,7 +2554,7 @@ progdefaults.changed = true;}
                 label {TX ppm}
                 callback {progdefaults.TX_corr = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {TX sound card correction} xywh {176 180 85 20} align 8 value 1
+                tooltip {TX sound card correction} xywh {176 180 85 20} align 8
                 code0 {o->step(1);}
                 code1 {o->minimum(-50000);}
                 code2 {o->maximum(50000);}
@@ -2565,7 +2565,7 @@ progdefaults.changed = true;}
                 label {TX offset}
                 callback {progdefaults.TxOffset = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {Difference between Rx & Tx freq (rig offset)} xywh {338 180 85 20} align 8 value 1
+                tooltip {Difference between Rx & Tx freq (rig offset)} xywh {338 180 85 20} align 8
                 code0 {o->value(progdefaults.TxOffset);}
                 code1 {o->step(1);}
                 code2 {o->minimum(-50); o->maximum(50);}
@@ -3231,14 +3231,14 @@ progdefaults.changed = true;}
       }
       Fl_Group tabDL {
         label {DL Client} open
-        xywh {0 25 500 350} labelsize 12
+        xywh {0 25 500 350} labelsize 12 hide
       } {
         Fl_Tabs tabsDL {open
           xywh {0 25 500 350}
         } {
           Fl_Group tabDLEnable {
-            label Enable open selected
-            xywh {0 50 500 320}
+            label Enable open
+            xywh {0 50 500 320} hide
           } {
             Fl_Group {} {
               label Enable open
@@ -3255,13 +3255,6 @@ set_menu_dl_online();}
                 label {Detection and Extraction}
                 callback {fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box\\n");}
                 xywh {35 100 200 25} down_box DOWN_BOX
-              }
-              Fl_Check_Button {} {
-                label {Waterfall PNG Export}
-                callback {progdefaults.png_wfall = o->value();
-progdefaults.changed = true;}
-                xywh {35 125 200 25} down_box DOWN_BOX
-                code0 {o->value(progdefaults.png_wfall);}
               }
             }
           }
@@ -3394,6 +3387,30 @@ progdefaults.changed = true;
 progdefaults.changed = true;}
                 xywh {100 81 330 20} labelsize 12 textsize 12
                 code0 {o->value(progdefaults.ssdv_packet_url.c_str());}
+              }
+            }
+          }
+          Fl_Group {} {
+            label Remote open
+            xywh {5 55 492 105}
+          } {
+            Fl_Group {} {
+              label {Waterfall PNG} open
+              xywh {5 55 492 105} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Check_Button {} {
+                label {Waterfall PNG Export}
+                callback {progdefaults.png_wfall = o->value();
+progdefaults.changed = true;}
+                xywh {45 75 200 25} down_box DOWN_BOX
+                code0 {o->value(progdefaults.png_wfall);}
+              }
+              Fl_Input {} {
+                label {Location:}
+                callback {progdefaults.waterfall_png_location = o->value();
+progdefaults.changed = true;}
+                tooltip {Please use full path including filename} xywh {110 115 334 20}
+                code0 {o->value(progdefaults.waterfall_png_location.c_str());}
               }
             }
           }

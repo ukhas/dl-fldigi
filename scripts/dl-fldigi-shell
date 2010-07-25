@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/opt/local/bin/perl
 
 # ----------------------------------------------------------------------------
 #      fldigi-shell version 0.36
@@ -337,7 +337,7 @@ sub pskrep_qsy
 
 ################################################################################
 
-%opts = ( "c" => "", "d" => 0, "u" => "http://localhost:7362/RPC2" );
+%opts = ( "c" => "", "d" => 0, "u" => "http://localhost:7236/RPC2" );
 
 %commands = (
     "debug"     => [ "n:n", "Toggle debugging output", sub { $debug = (@_ ? $_[0] : !$debug); } ],

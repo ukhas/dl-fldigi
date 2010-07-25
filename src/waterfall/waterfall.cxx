@@ -865,7 +865,8 @@ void WFdisp::drawcolorWF() {
 	{
 		if (progdefaults.png_wfall == 1)
 		{
-			fp = fopen("dl-fldigi-waterfall.png", "w");
+			const char * pngfilename = progdefaults.waterfall_png_location.c_str();
+			fp = fopen(pngfilename, "w");
 			if (fp == NULL)
 			{
 				perror("waterfall export fopen");
