@@ -3348,7 +3348,7 @@ dl_fldigi_downloaded_once = 1;}
           }
           Fl_Group {} {
             label GPS open
-            xywh {0 50 500 320} hide
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {
               label {GPS Upload Configuration} open
@@ -3358,7 +3358,7 @@ dl_fldigi_downloaded_once = 1;}
                 label Device
                 callback {progdefaults.gpsDevice = o->value();
 progdefaults.changed = true;
-/* TODO: start/update/reset gps? */}
+dl_fldigi_ext_gps_start();}
                 xywh {100 80 325 25}
                 code0 {o->value(progdefaults.gpsDevice.c_str());}
               }
@@ -3366,7 +3366,7 @@ progdefaults.changed = true;
                 label Baud
                 callback {progdefaults.gpsSpeed = o->value();
 progdefaults.changed = true;
-/* TODO: start/update/reset gps? */}
+dl_fldigi_ext_gps_start();} selected
                 xywh {100 115 325 25} type Int
                 code0 {o->value(progdefaults.gpsSpeed);}
                 class Fl_Value_Input2

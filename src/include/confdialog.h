@@ -23,14 +23,14 @@ extern Fl_Input2 *inpMyName;
 extern Fl_Input2 *inpMyQth;
 extern Fl_Input2 *inpMyLocator;
 extern Fl_Input2 *inpMyAntenna;
+#include <FL/Fl_Input.H>
+extern Fl_Input *MyRadio;
+extern Fl_Input *MyLat;
+extern Fl_Input *MyLon;
 extern Fl_Group *grpNoise;
 #include <FL/Fl_Check_Button.H>
 extern Fl_Check_Button *btnNoiseOn;
 extern Fl_Counter2 *noiseDB;
-#include <FL/Fl_Input.H>
-extern Fl_Input *MyLat;
-extern Fl_Input *MyLon;
-extern Fl_Input *MyRadio;
 extern Fl_Group *tabUI;
 extern Fl_Tabs *tabsUI;
 extern Fl_Group *tabUserInterface;
