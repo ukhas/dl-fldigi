@@ -1521,7 +1521,7 @@ void cb_mnuCheckUpdate(Fl_Widget*, void*)
 		string version_str;
 		unsigned long version;
 	} sites[] = {
-		{ PACKAGE_DL, "fldigi-distro/fldigi-([0-9.]+).tar.gz", "", 0 },
+		{ PACKAGE_DL, "downloads/fldigi-([0-9.]+).tar.gz", "", 0 },
 		{ PACKAGE_PROJ, "fldigi/fldigi-([0-9.]+).tar.gz", "", 0 }
 	}, *latest;
 	string reply;
@@ -2066,6 +2066,20 @@ void qsoSave_cb(Fl_Widget *b, void *)
 	ReceiveText->mark(FTextBase::XMIT);
 	restoreFocus();
 }
+
+void qso_save_now()
+{
+	string havecall = inpCall->value();
+	while (!havecall.empty() && havecall[0] == ' ') havecall.erase(0,1);
+	if (havecall.empty())
+		return;
+
+	submit_log();
+	if (progdefaults.ClearOnSave)
+		clearQSO();
+//	ReceiveText->mark(FTextBase::XMIT);
+}
+
 
 void cb_QRZ(Fl_Widget *b, void *)
 {
@@ -3823,7 +3837,8 @@ void create_fl_digi_main_primary() {
 				fl_rgb_color(
 					progdefaults.RxColor.R,
 					progdefaults.RxColor.G,
-					progdefaults.RxColor.B));
+					progdefaults.RxColor.B),
+				progdefaults.RxTxSelectcolor);
 			ReceiveText->setFont(progdefaults.RxFontnbr);
 			ReceiveText->setFontSize(progdefaults.RxFontsize);
 			ReceiveText->setFontColor(progdefaults.RxFontcolor, FTextBase::RECV);
@@ -3840,7 +3855,8 @@ void create_fl_digi_main_primary() {
 				fl_rgb_color(
 					progdefaults.TxColor.R,
 					progdefaults.TxColor.G,
-					progdefaults.TxColor.B));
+					progdefaults.TxColor.B),
+				progdefaults.RxTxSelectcolor);
 			TransmitText->setFont(progdefaults.TxFontnbr);
 			TransmitText->setFontSize(progdefaults.TxFontsize);
 			TransmitText->setFontColor(progdefaults.TxFontcolor, FTextBase::RECV);
@@ -5204,7 +5220,7 @@ void set_zdata(complex *zarray, int len)
 	wf->wfscope->zdata(zarray, len);
 }
 
-static void put_rx_char_flmain(unsigned int data)
+static void put_rx_char_flmain(unsigned int data, int style)
 {
 	ENSURE_THREAD(FLMAIN_TID);
 
@@ -5217,7 +5233,6 @@ static void put_rx_char_flmain(unsigned int data)
 	if (mode == MODE_RTTY || mode == MODE_CW)
 		asc = ascii;
 
-	int style = FTextBase::RECV;
 	if (asc == ascii2 && iscntrl(data))
 		style = FTextBase::CTRL;
 	if (wf->tmp_carrier())
@@ -5257,7 +5272,7 @@ static void put_rx_char_flmain(unsigned int data)
 		logfile->log_to_file(cLogfile::LOG_RX, s);
 }
 
-void put_rx_char(unsigned int data)
+void put_rx_char(unsigned int data, int style)
 {
 #if BENCHMARK_MODE
 	if (!benchmark.output.empty()) {
@@ -5266,7 +5281,7 @@ void put_rx_char(unsigned int data)
 		benchmark.buffer += (char)data;
 	}
 #else
-	REQ(put_rx_char_flmain, data);
+	REQ(put_rx_char_flmain, data, style);
 #endif
 }
 
@@ -5425,6 +5440,16 @@ void put_rx_data(int *data, int len)
 }
 
 extern bool macro_idle_on;
+extern string text2repeat;
+extern size_t repeatchar;
+
+bool idling = false;
+
+void get_tx_char_idle(void *)
+{
+	idling = false;
+	progStatus.repeatIdleTime = 0;
+}
 
 char szTestChar[] = "E|I|S|T|M|O|A|V";
 int get_tx_char(void)
@@ -5448,15 +5473,33 @@ int get_tx_char(void)
 	enum { STATE_CHAR, STATE_CTRL };
 	static int state = STATE_CHAR;
 
-	switch (c = TransmitText->nextChar()) {
+	if ( progStatus.repeatMacro && progStatus.repeatIdleTime > 0 &&
+		 !idling ) {
+		Fl::add_timeout(progStatus.repeatIdleTime, get_tx_char_idle);
+		idling = true;
+	}
+	if (idling) return -1;
+
+	if (progStatus.repeatMacro > -1 && text2repeat.length()) {
+		c = text2repeat[repeatchar];
+		repeatchar++;
+		if (repeatchar == text2repeat.length()) {
+			text2repeat.clear();
+			macros.repeat(progStatus.repeatMacro);
+		}
+		return c;
+	}
+
+	c = TransmitText->nextChar();
+	if (c == '^' && state == STATE_CHAR) {
+		state = STATE_CTRL;
+		c = TransmitText->nextChar();
+	}
+	switch (c) {
+	case -1: break; // no character available
 	case '\n':
 		pending = '\n';
 		return '\r';
-	case '^':
-		if (state == STATE_CTRL)
-			break;
-		state = STATE_CTRL;
-		return -1;
 	case 'r':
 		if (state != STATE_CTRL)
 			break;
@@ -5474,7 +5517,15 @@ int get_tx_char(void)
 		} else
 			c = -1;
 		break;
-	case -1:
+	case 'L':
+		if (state != STATE_CTRL)
+			break;
+		state = STATE_CHAR;
+		c = -1;
+		REQ(qso_save_now);
+		break;
+	case '^':
+		state = STATE_CHAR;
 		break;
 	default:
 		if (state == STATE_CTRL) {
@@ -5488,7 +5539,7 @@ int get_tx_char(void)
 	return c;
 }
 
-void put_echo_char(unsigned int data)
+void put_echo_char(unsigned int data, int style)
 {
 //if (bWF_only) return;
     if (progdefaults.QSKadjust) return;
@@ -5507,7 +5558,6 @@ void put_echo_char(unsigned int data)
 
 	last = data;
 
-	int style = FTextBase::XMIT;
 	if (asc == ascii2 && iscntrl(data))
 		style = FTextBase::CTRL;
 	REQ(&FTextBase::addchr, ReceiveText, data, style);

@@ -97,6 +97,7 @@ void loadBrowser(Fl_Widget *widget) {
 
 	w->add(LINE_SEP);
 	w->add(_("<LOG>\tsave QSO data"));
+	w->add(_("<LNW>\tlog at xmt time"));
 
 	w->add(LINE_SEP);
 	w->add(_("<QSOTIME>\tQSO time (HHMM))"));
@@ -129,10 +130,11 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<TIMER:NN>\trepeat every NN sec"));
 	w->add(_("<TUNE:NN>\ttune signal for NN sec"));
 	w->add(_("<WAIT:NN>\tdelay xmt for NN sec"));
+	w->add(_("<REPEAT>\trepeat macro continuously"));
 
 	w->add(LINE_SEP);
 	w->add(_("<CWID>\tCW identifier"));
-	w->add(_("<ID>\tmode ID"));
+	w->add(_("<ID>\tsend mode ID in video text"));
 	w->add(_("<TEXT>\tvideo text"));
 	w->add(_("<TXRSID:on|off|t>\tTx RSID on,off,toggle"));
 	w->add(_("<RXRSID:on|off|t>\tRx RSID on,off,toggle"));

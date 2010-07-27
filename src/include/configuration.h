@@ -372,6 +372,12 @@
         ELEM_(bool, CWnarrow, "CWNARROW",                                               \
               "Weight decreases with increasing edge timing",                           \
               false)                                                                    \
+        ELEM_(bool, CW_use_paren, "CWUSEPAREN",                                         \
+              "Use open paren character; typically used in MARS ops",                   \
+              false)                                                                    \
+        ELEM_(std::string, CW_prosigns, "CWPROSIGNS",                                   \
+              "CW prosigns BT AA AS AR SK KN INT HM VE",                                \
+              "=~<>%+&{}")                                                              \
         /* FELD HELL */                                                                 \
         ELEM_(double, HELL_BW, "HELL_BW0", "Feld Hell working bandwidth",  245.0)       \
         ELEM_(double, HELL_BW_FH, "HELL_BW1", "FH bandwidth",  245.0)                   \
@@ -543,6 +549,12 @@
         ELEM_(int, videowidth, "VIDEOWIDTH",                                            \
               "Video ID text width (characters per row)",                               \
               1)                                                                        \
+        ELEM_(bool, vidlimit, "VIDLIMIT",                                               \
+              "Limit video width to 500 Hz",                                            \
+              true)                                                                     \
+        ELEM_(bool, vidmodelimit, "VIDMODELIMIT",                                       \
+              "Limit video width to mode bandwidth",                                    \
+              true)                                                                     \
         ELEM_(bool, ID_SMALL, "IDSMALL",                                                \
               "Use small video ID font",                                                \
               true)                                                                     \
@@ -972,6 +984,9 @@
         ELEM_(Fl_Color, RxFontcolor, "RXFNTCOLOR",                                      \
               "RX text font color",                                                     \
               FL_BLACK)                                                                 \
+        ELEM_(Fl_Color, RxTxSelectcolor, "RXTXSELCOLOR",                                \
+              "RX/TX text select color",                                                \
+              FL_MAGENTA)                                                               \
         ELEM_(std::string, TxFontName, "TXFONTNAME",                                    \
               "TX text font name",                                                      \
               "")                                                                       \
@@ -1125,7 +1140,7 @@
               "report.pskreporter.info")                                                \
         ELEM_(std::string, pskrep_port, "PSKREPPORT",                                   \
               "Reception report server port",                                           \
-              "4739")																	\
+              "4739")                                                                   \
 /* Flight Data */																		\
 		ELEM_(std::string, xmlPayloadname, "PAYLOADNAME", "The last selected payload", "")							\
 		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")							\
