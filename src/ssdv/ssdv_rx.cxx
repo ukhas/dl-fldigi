@@ -244,10 +244,10 @@ void ssdv_rx::feed_buffer(uint8_t byte)
 	int bp = bc + bl;
 	
 	buffer[bp] = byte;
-	if((bp -= PACKET_SIZE) >= 0) buffer[bp] = byte;
+	if((bp -= PKT_SIZE) >= 0) buffer[bp] = byte;
 	
-	if(bl < PACKET_SIZE) bl++;
-	else if(++bc == PACKET_SIZE) bc = 0;
+	if(bl < PKT_SIZE) bl++;
+	else if(++bc == PKT_SIZE) bc = 0;
 }
 
 void ssdv_rx::clear_buffer()
@@ -262,7 +262,7 @@ int ssdv_rx::have_packet()
 	uint8_t *b = &buffer[bc];
 	
 	/* Enough data present? */
-	if(bl < PACKET_SIZE) return(-1);
+	if(bl < PKT_SIZE) return(-1);
 	
 	/* Headers present? TODO: Check for fuzzy headers */
 	if(b[0] != 0x55 || b[1] != 0x66) return(-1);
@@ -331,7 +331,7 @@ void ssdv_rx::upload_packet()
 		CURLFORM_COPYCONTENTS, "hex", CURLFORM_END);
 	
 	/* URL-encode the packet */
-	packet = (char *) malloc((PACKET_SIZE * 2) + 1);
+	packet = (char *) malloc((PKT_SIZE * 2) + 1);
 	if(!packet)
 	{
 		fprintf(stderr, "ssdv_rx::upload_packet(): failed to allocate memory for packet\n");
@@ -339,7 +339,7 @@ void ssdv_rx::upload_packet()
 		return;
 	}
 	
-	for(int i = 0; i < PACKET_SIZE; i++)
+	for(int i = 0; i < PKT_SIZE; i++)
 		snprintf(packet + (i * 2), 3, "%02X", buffer[bc + i]);
 	
 	/* Add a copy of the packet */
@@ -408,13 +408,13 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		if(progdefaults.dl_online) upload_packet();
 		
 		/* Read the header */
-		pkt_blockno = b[3];
 		pkt_imageid = b[2];
-		pkt_filesize = b[4] + (b[5] << 8);
+		pkt_blockno = b[3];
+		pkt_blocks  = b[4];
 		
 		/* Is this a new image? */
 		if(pkt_imageid != img_imageid ||
-		   pkt_filesize != img_filesize) new_image();
+		   pkt_blocks != img_blocks) new_image();
 		
 		/* Have we missed a block? */
 		/* Assumes blocks are transmitted sequentially */
@@ -429,14 +429,14 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		if(bHAB)
 		{
 			char msg[100];
-			snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Block: %i/%i, Image size: %i bytes", pkt_imageid, pkt_blockno + 1, img_blocks, pkt_filesize);
+			snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Block: %i/%i, Image size: %i bytes", pkt_imageid, pkt_blockno + 1, pkt_blocks, pkt_blocks * PKT_SIZE_PAYLOAD);
 			
 			habCustom->value(msg);
 			habCustom->color(FL_GREEN);
 		}
 		
 		/* Copy payload into jpeg buffer */
-		memcpy(jpeg + pkt_blockno * PAYLOAD_SIZE, &b[6], PAYLOAD_SIZE);
+		memcpy(jpeg + pkt_blockno * PKT_SIZE_PAYLOAD, &b[PKT_SIZE_HEADER], PKT_SIZE_PAYLOAD);
 		
 		/* Attempt to render the image */
 		render_image();
@@ -450,7 +450,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		snprintf(s, 16, "0x%02X", pkt_imageid);
 		flimageid->copy_label(s);
 		
-		snprintf(s, 16, "%d", pkt_filesize);
+		snprintf(s, 16, "%d", pkt_blocks * PKT_SIZE_PAYLOAD);
 		flsize->copy_label(s);
 		
 		snprintf(s, 16, "%d", img_missing);
@@ -477,9 +477,8 @@ void ssdv_rx::new_image()
 	
 	/* Set details for new image */
 	img_imageid   = pkt_imageid;
-	img_filesize  = pkt_filesize;
-	img_blocks    = (img_filesize / PAYLOAD_SIZE);
-	img_blocks   += (img_filesize % PAYLOAD_SIZE == 0 ? 0 : 1);
+	img_filesize  = pkt_blocks * PKT_SIZE_PAYLOAD;
+	img_blocks    = pkt_blocks;
 	img_lastblock = -1;
 	img_errors    = 0;
 	img_missing   = 0;

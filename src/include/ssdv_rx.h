@@ -20,9 +20,13 @@ private:
 	Fl_Progress *flprogress;
 
 	/* RX buffer */
-	static const int PACKET_SIZE = 256;
-	static const int PAYLOAD_SIZE = 218;
-	static const int BUFFER_SIZE = PACKET_SIZE * 2;
+	static const int PKT_SIZE         = 0x100;
+	static const int PKT_SIZE_HEADER  = 0x0A;
+	static const int PKT_SIZE_RSCODES = 0x20;
+	static const int PKT_SIZE_PAYLOAD =
+		PKT_SIZE - PKT_SIZE_HEADER - PKT_SIZE_RSCODES;
+	
+	static const int BUFFER_SIZE = PKT_SIZE * 2;
 
 	uint8_t *buffer;
 	int bc;
@@ -34,8 +38,8 @@ private:
 	
 	/* Last packet details */
 	int pkt_blockno;
+	int pkt_blocks;
 	int pkt_imageid;
-	int pkt_filesize;
 	
 	/* Image counters */
 	int img_imageid;
