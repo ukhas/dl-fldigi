@@ -1159,6 +1159,8 @@
 		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)										\
 		ELEM_(std::string, waterfall_png_location, "PNG_WFALL_LOC", "Save location for PNG", "dl-fldigi-waterfall.png") \
         ELEM_(bool, dl_online, "", "", false) \
+		ELEM_(bool, ssdv_save_image, "SSDV_SAVE_IMAGES", "", false) \
+		ELEM_(std::string, ssdv_save_dir, "SSDV_SAVE_DIR", "Save location for received images", "") \
 		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/hadie/live.php") \
 		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "") \
 		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")

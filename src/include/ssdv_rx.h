@@ -1,4 +1,6 @@
 
+#include <time.h>
+
 #ifndef _SSDV_RX_H
 #define _SSDV_RX_H
 
@@ -42,6 +44,7 @@ private:
 	int pkt_imageid;
 	
 	/* Image counters */
+	time_t img_timestamp;
 	int img_imageid;
 	int img_filesize;
 	int img_lastblock;
@@ -55,6 +58,7 @@ private:
 	void clear_buffer();
 	int have_packet();
 	void upload_packet();
+	void save_image();
 	void render_image();
 	void new_image();
 	

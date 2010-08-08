@@ -157,7 +157,7 @@ progdefaults.changed = true;}
             label {Antenna:}
             callback {progdefaults.myAntenna = o->value();
 progdefaults.changed = true;}
-            tooltip {Short description of antenna} xywh {115 172 320 24}
+            tooltip {Short description of antenna} xywh {110 172 320 24}
             code0 {inpMyAntenna->labelsize(FL_NORMAL_SIZE);}
             class Fl_Input2
           }
@@ -165,21 +165,21 @@ progdefaults.changed = true;}
             label {Radio:}
             callback {progdefaults.myRadio = o->value();
 progdefaults.changed = true;}
-            xywh {115 205 320 25}
+            xywh {110 205 320 25}
             code0 {o->value(progdefaults.myRadio.c_str());}
           }
           Fl_Input MyLat {
             label {Lat (DD):}
             callback {progdefaults.myLat = o->value();
 progdefaults.changed = true;}
-            tooltip {DD.DDDD} xywh {115 240 320 25}
+            tooltip {DD.DDDD} xywh {110 240 320 25}
             code0 {o->value(progdefaults.myLat.c_str());}
           }
           Fl_Input MyLon {
             label {Long (DD):}
             callback {progdefaults.myLon = o->value();
 progdefaults.changed = true;}
-            tooltip {DD.DDDD} xywh {115 275 320 25}
+            tooltip {DD.DDDD} xywh {110 275 320 25}
             code0 {o->value(progdefaults.myLon.c_str());}
           }
         }
@@ -3551,16 +3551,30 @@ progdefaults.changed = true;
             xywh {0 50 500 322} hide
           } {
             Fl_Group {} {
-              label {Packet Upload Configuration} open
-              xywh {4 54 492 105} box ENGRAVED_FRAME align 21
+              label {Image Configuration} open
+              xywh {4 54 492 116} box ENGRAVED_FRAME align 21
             } {
-              Fl_Input {} {
-                label {URL:}
+              Fl_Input imagepacketurl {
+                label {Packet URL:}
                 callback {progdefaults.ssdv_packet_url = o->value();
 progdefaults.changed = true;}
                 xywh {100 81 330 20} labelsize 12 textsize 12
                 code0 {o->value(progdefaults.ssdv_packet_url.c_str());}
               }
+            }
+            Fl_Check_Button imagesave {
+              label {Save received images}
+              callback {progdefaults.ssdv_save_image = o->value();
+progdefaults.changed = true;}
+              xywh {100 115 150 15} down_box DOWN_BOX labelsize 12
+              code0 {o->value(progdefaults.ssdv_save_image);}
+            }
+            Fl_Input imagesavedir {
+              label {Location:}
+              callback {progdefaults.ssdv_save_dir = o->value();
+progdefaults.changed = true;}
+              xywh {100 135 330 20} labelsize 12 textsize 12
+              code0 {o->value(progdefaults.ssdv_save_dir.c_str());}
             }
           }
           Fl_Group {} {

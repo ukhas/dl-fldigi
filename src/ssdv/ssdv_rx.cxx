@@ -438,6 +438,9 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		/* Copy payload into jpeg buffer */
 		memcpy(jpeg + pkt_blockno * PKT_SIZE_PAYLOAD, &b[PKT_SIZE_HEADER], PKT_SIZE_PAYLOAD);
 		
+		/* Save the image to disk */
+		save_image();
+		
 		/* Attempt to render the image */
 		render_image();
 		
@@ -470,12 +473,8 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 
 void ssdv_rx::new_image()
 {
-	if(img_imageid != -1)
-	{
-		/* TODO: Save previous image, trigger upload */
-	}
-	
 	/* Set details for new image */
+	img_timestamp = time(NULL);
 	img_imageid   = pkt_imageid;
 	img_filesize  = pkt_blocks * PKT_SIZE_PAYLOAD;
 	img_blocks    = pkt_blocks;
@@ -491,6 +490,55 @@ void ssdv_rx::new_image()
 	/* 0xFF bytes are used for padding purposes in the JPEG format */
 	/* (see JPEG specification section F.1.2.3 for details). */
 	memset(jpeg, 0xFF, JPEG_SIZE);
+}
+
+void ssdv_rx::save_image()
+{
+	char fname[FILENAME_MAX];
+	const char *payload, *savedir;
+	struct tm tm;
+	FILE *f;
+	uint16_t l;
+	
+	/* Does the user want the image saved? */
+	if(!progdefaults.ssdv_save_image) return;
+	
+	/* Save Directory - user specified or pwd */
+	savedir = (progdefaults.ssdv_save_dir.empty() ?
+		"." : progdefaults.ssdv_save_dir.c_str());
+	
+	/* Get the payload name */
+	payload = (progdefaults.xmlPayloadname.empty() ?
+		"UNKNOWN" : progdefaults.xmlPayloadname.c_str());
+	
+	/* Construct the filename */
+	gmtime_r(&img_timestamp, &tm);
+	snprintf(fname, FILENAME_MAX - 1,
+		"%s/%04i-%02i-%02i-%02i-%02i-%02i-%s-%02X.jpeg",
+		savedir,
+		1900 + tm.tm_year, 1 + tm.tm_mon, 1 + tm.tm_mday,
+		tm.tm_hour, tm.tm_min, tm.tm_sec,
+		payload, img_imageid);
+	
+	f = fopen(fname, "wb");
+	if(!f)
+	{
+		fprintf(stderr, "Error saving image to %s\n", fname);
+		/* TODO: Error reporting -- is strerror thread safe? */
+		return;
+	}
+	
+	/* Loop until all bytes are written */
+	l = 0;
+	while(l < img_filesize)
+	{
+		size_t r = fwrite(jpeg + l, 1, img_filesize - l, f);
+		if(r == 0) break;
+		l += r;
+	}
+	fclose(f);
+	
+	/* Job done */
 }
 
 void ssdv_rx::render_image()

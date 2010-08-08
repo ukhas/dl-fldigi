@@ -2730,8 +2730,24 @@ progdefaults.changed = true;
 /* TODO: start/update/reset gps? */;
 }
 
-static void cb_URL(Fl_Input* o, void*) {
+Fl_Input *imagepacketurl=(Fl_Input *)0;
+
+static void cb_imagepacketurl(Fl_Input* o, void*) {
   progdefaults.ssdv_packet_url = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *imagesave=(Fl_Check_Button *)0;
+
+static void cb_imagesave(Fl_Check_Button* o, void*) {
+  progdefaults.ssdv_save_image = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Input *imagesavedir=(Fl_Input *)0;
+
+static void cb_imagesavedir(Fl_Input* o, void*) {
+  progdefaults.ssdv_save_dir = o->value();
 progdefaults.changed = true;
 }
 
@@ -2849,7 +2865,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
             inpMyLocator->when(FL_WHEN_RELEASE);
             inpMyLocator->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyLocator
-          { inpMyAntenna = new Fl_Input2(115, 172, 320, 24, _("Antenna:"));
+          { inpMyAntenna = new Fl_Input2(110, 172, 320, 24, _("Antenna:"));
             inpMyAntenna->tooltip(_("Short description of antenna"));
             inpMyAntenna->box(FL_DOWN_BOX);
             inpMyAntenna->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -2863,16 +2879,16 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
             inpMyAntenna->when(FL_WHEN_RELEASE);
             inpMyAntenna->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyAntenna
-          { Fl_Input* o = MyRadio = new Fl_Input(115, 205, 320, 25, _("Radio:"));
+          { Fl_Input* o = MyRadio = new Fl_Input(110, 205, 320, 25, _("Radio:"));
             MyRadio->callback((Fl_Callback*)cb_MyRadio);
             o->value(progdefaults.myRadio.c_str());
           } // Fl_Input* MyRadio
-          { Fl_Input* o = MyLat = new Fl_Input(115, 240, 320, 25, _("Lat (DD):"));
+          { Fl_Input* o = MyLat = new Fl_Input(110, 240, 320, 25, _("Lat (DD):"));
             MyLat->tooltip(_("DD.DDDD"));
             MyLat->callback((Fl_Callback*)cb_MyLat);
             o->value(progdefaults.myLat.c_str());
           } // Fl_Input* MyLat
-          { Fl_Input* o = MyLon = new Fl_Input(115, 275, 320, 25, _("Long (DD):"));
+          { Fl_Input* o = MyLon = new Fl_Input(110, 275, 320, 25, _("Long (DD):"));
             MyLon->tooltip(_("DD.DDDD"));
             MyLon->callback((Fl_Callback*)cb_MyLon);
             o->value(progdefaults.myLon.c_str());
@@ -6289,17 +6305,29 @@ d frequency"));
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(0, 50, 500, 322, _("Image"));
             o->hide();
-            { Fl_Group* o = new Fl_Group(4, 54, 492, 105, _("Packet Upload Configuration"));
+            { Fl_Group* o = new Fl_Group(4, 54, 492, 116, _("Image Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Input* o = new Fl_Input(100, 81, 330, 20, _("URL:"));
-                o->labelsize(12);
-                o->textsize(12);
-                o->callback((Fl_Callback*)cb_URL);
+              { Fl_Input* o = imagepacketurl = new Fl_Input(100, 81, 330, 20, _("Packet URL:"));
+                imagepacketurl->labelsize(12);
+                imagepacketurl->textsize(12);
+                imagepacketurl->callback((Fl_Callback*)cb_imagepacketurl);
                 o->value(progdefaults.ssdv_packet_url.c_str());
-              } // Fl_Input* o
+              } // Fl_Input* imagepacketurl
               o->end();
             } // Fl_Group* o
+            { Fl_Check_Button* o = imagesave = new Fl_Check_Button(100, 115, 150, 15, _("Save received images"));
+              imagesave->down_box(FL_DOWN_BOX);
+              imagesave->labelsize(12);
+              imagesave->callback((Fl_Callback*)cb_imagesave);
+              o->value(progdefaults.ssdv_save_image);
+            } // Fl_Check_Button* imagesave
+            { Fl_Input* o = imagesavedir = new Fl_Input(100, 135, 330, 20, _("Location:"));
+              imagesavedir->labelsize(12);
+              imagesavedir->textsize(12);
+              imagesavedir->callback((Fl_Callback*)cb_imagesavedir);
+              o->value(progdefaults.ssdv_save_dir.c_str());
+            } // Fl_Input* imagesavedir
             o->end();
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("Remote"));
