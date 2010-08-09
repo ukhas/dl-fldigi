@@ -516,7 +516,7 @@ void ssdv_rx::save_image()
 	snprintf(fname, FILENAME_MAX - 1,
 		"%s/%04i-%02i-%02i-%02i-%02i-%02i-%s-%02X.jpeg",
 		savedir,
-		1900 + tm.tm_year, 1 + tm.tm_mon, 1 + tm.tm_mday,
+		1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
 		tm.tm_hour, tm.tm_min, tm.tm_sec,
 		payload, img_imageid);
 	
