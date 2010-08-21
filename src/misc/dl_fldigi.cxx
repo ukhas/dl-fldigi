@@ -80,6 +80,7 @@ struct payload *current_payload = NULL;
 time_t rxTimer = 0;
 pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static long int thread_identifier();
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
 static void put_status_safe(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
@@ -87,6 +88,34 @@ static void print_put_status(const char *msg, double timeout = 0.0, status_timeo
 static void dl_fldigi_delete_payloads();
 static void dl_fldigi_enable_rtty();
 static void dl_fldigi_enable_domex();
+
+static long int thread_identifier()
+{
+	/* WARNING: Horrible hack below! This was the option that required the least effort ! */
+	/* Unlike the majority of fldigi we create and destroy threads for one off tasks regularly
+	 * and rely on the OS, rather than the enum in threads.h, to identify threads in debug
+	 * messages. Unfortunatly it is never guaranteed that pthread_t is an int; on MINGW32 for
+	 * example it is infact a struct containing a pointer and an integer. This makes using
+	 * pthread_self directly with fprintf difficult; so this function simply grabs the first
+	 * few byes of the pthread_t; a bit crude but seemingly effective. See http://gist.github.com/489883 */
+
+	long int identifier;
+	pthread_t thread_id;
+
+	thread_id = pthread_self();
+	identifier = 0;
+
+	if (sizeof(long int) > sizeof(pthread_t))
+	{
+		memcpy(&identifier, &thread_id, sizeof(pthread_t));
+	}
+	else
+	{
+		memcpy(&identifier, &thread_id, sizeof(long int));
+	}
+
+	return identifier;
+}
 
 void dl_fldigi_init()
 {
@@ -96,7 +125,7 @@ void dl_fldigi_init()
 	size_t i, fsz;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: dl_fldigi_init() was executed in thread %li\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: dl_fldigi_init() was executed in thread %li\n", thread_identifier());
 	#endif
 
 	/* The only thread-unsafe step of dl_fldigi. Needs to be run once, at the start, when there are no other threads. */
@@ -197,7 +226,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: dl_fldigi_post() was executed in \"parent\" thread %li\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: dl_fldigi_post() was executed in \"parent\" thread %li\n", thread_identifier());
 		fprintf(stderr, "dl_fldigi: begin attempting to post string '%s' and identity '%s'\n", data, identity);
 	#endif
 
@@ -355,7 +384,7 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", pthread_self(), t->post_data);
+		fprintf(stderr, "dl_fldigi: (thread %li) posting '%s'\n", thread_identifier(), t->post_data);
 	#endif
 
 	SET_THREAD_ID(DL_FLDIGI_TID);
@@ -368,7 +397,7 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 	if (result == 0)
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", thread_identifier(), result);
 		#endif
 
 		put_status_safe("dl_fldigi: sentence uploaded!", 10);
@@ -376,7 +405,7 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			//fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", thread_identifier(), result, curl_easy_strerror(result));	
 		#endif
 
 		put_status_safe("dl_fldigi: sentence upload failed", 10);
@@ -411,7 +440,7 @@ void dl_fldigi_download()
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: dl_fldigi_download() was executed in \"parent\" thread %li\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: dl_fldigi_download() was executed in \"parent\" thread %li\n", thread_identifier());
 		fprintf(stderr, "dl_fldigi: begin download attempt...\n");
 	#endif
 
@@ -509,7 +538,7 @@ static void *dl_fldigi_download_thread(void *thread_argument)
 	CURLcode result;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: (thread %li) performing download...\n", thread_identifier());
 	#endif
 
 	SET_THREAD_ID(DL_FLDIGI_TID);
@@ -522,7 +551,7 @@ static void *dl_fldigi_download_thread(void *thread_argument)
 	if (result == 0)
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", pthread_self(), result);
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) Success!\n", thread_identifier(), result);
 		#endif
 
 		pthread_mutex_lock(&dl_fldigi_tid_mutex);
@@ -534,7 +563,7 @@ static void *dl_fldigi_download_thread(void *thread_argument)
 	else
 	{
 		#ifdef DL_FLDIGI_DEBUG
-			//fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", pthread_self(), result, curl_easy_strerror(result));	
+			fprintf(stderr, "dl_fldigi: (thread %li) curl result (%i) %s\n", thread_identifier(), result, curl_easy_strerror(result));	
 		#endif
 
 		put_status_safe("dl_fldigi: payload information: download failed", 10);
@@ -553,7 +582,7 @@ static void dl_fldigi_delete_payloads()
 	int i;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) cleaning in-memory payload information (structs)...\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: (thread %li) cleaning in-memory payload information (structs)...\n", thread_identifier());
 	#endif
 
 	if (bHAB)
@@ -585,7 +614,7 @@ static void dl_fldigi_delete_payloads()
 	payload_list = NULL;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) cleaned %i payload structs...\n", pthread_self(), i);
+		fprintf(stderr, "dl_fldigi: (thread %li) cleaned %i payload structs...\n", thread_identifier(), i);
 	#endif
 }
 
@@ -599,7 +628,7 @@ void dl_fldigi_update_payloads()
 	int i, dbfield_no;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", pthread_self());
+		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", thread_identifier());
 	#endif
 
 	file = fopen(dl_fldigi_cache_file, "r");
@@ -1161,7 +1190,7 @@ void dl_fldigi_select_payload(const char *name)
 	int i;
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) attempting to find and configure payload '%s'...\n", pthread_self(), name);
+		fprintf(stderr, "dl_fldigi: (thread %li) attempting to find and configure payload '%s'...\n", thread_identifier(), name);
 	#endif
 
 	p = payload_list;
