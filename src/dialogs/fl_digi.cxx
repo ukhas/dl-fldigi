@@ -403,6 +403,7 @@ void cb_contestiaE(Fl_Widget *w, void *arg);
 void cb_contestiaF(Fl_Widget *w, void *arg);
 void cb_contestiaG(Fl_Widget *w, void *arg);
 void cb_contestiaH(Fl_Widget *w, void *arg);
+void cb_contestiaI(Fl_Widget *w, void *arg);
 void cb_contestiaCustom(Fl_Widget *w, void *arg);
 
 void cb_rtty45(Fl_Widget *w, void *arg);
@@ -512,6 +513,7 @@ Fl_Menu_Item quick_change_olivia[] = {
 };
 
 Fl_Menu_Item quick_change_contestia[] = {
+	{ "4/125", 0, cb_contestiaI, (void *)MODE_CONTESTIA },
 	{ "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA },
 	{ "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA },
 	{ "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA },
@@ -692,6 +694,14 @@ void cb_contestiaH(Fl_Widget *w, void *arg)
 {
 	progdefaults.contestiatones = 4;
 	progdefaults.contestiabw = 3;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaI(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 1;
+	progdefaults.contestiabw = 0;
 	set_contestia_tab_widgets();
 	cb_init_mode(w, arg);
 }
@@ -2544,6 +2554,7 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_CW].name, 0, cb_init_mode, (void *)MODE_CW, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 { CONTESTIA_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/125", 0, cb_contestiaI, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -4133,6 +4144,7 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_CW].name, 0, cb_init_mode, (void *)MODE_CW, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 {"Contestia", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/125", 0, cb_contestiaI, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -5220,6 +5232,85 @@ void set_zdata(complex *zarray, int len)
 	wf->wfscope->zdata(zarray, len);
 }
 
+// raw buffer functions can ONLY be called by FLMAIN_TID
+
+//======================================================================
+#define RAW_BUFF_LEN 256
+
+static char rxtx_raw_chars[RAW_BUFF_LEN+1] = "";
+static char rxtx_raw_buff[RAW_BUFF_LEN+1] = "";
+static int  rxtx_raw_len = 0;
+
+char *get_rxtx_data()
+{
+	ENSURE_THREAD(FLMAIN_TID);
+	memset(rxtx_raw_chars, 0, RAW_BUFF_LEN+1);
+	strncpy(rxtx_raw_chars, rxtx_raw_buff, RAW_BUFF_LEN);
+	memset(rxtx_raw_buff, 0, RAW_BUFF_LEN+1);
+	rxtx_raw_len = 0;
+	return rxtx_raw_chars;
+}
+
+void add_rxtx_char(int data)
+{
+	if (rxtx_raw_len == RAW_BUFF_LEN) {
+		memset(rxtx_raw_buff, 0, RAW_BUFF_LEN+1);
+		rxtx_raw_len = 0;
+	}
+	rxtx_raw_buff[rxtx_raw_len++] = (unsigned char)data;
+}
+
+//======================================================================
+static char rx_raw_chars[RAW_BUFF_LEN+1] = "";
+static char rx_raw_buff[RAW_BUFF_LEN+1] = "";
+static int  rx_raw_len = 0;
+
+char *get_rx_data()
+{
+	ENSURE_THREAD(FLMAIN_TID);
+	memset(rx_raw_chars, 0, RAW_BUFF_LEN+1);
+	strncpy(rx_raw_chars, rx_raw_buff, RAW_BUFF_LEN);
+	memset(rx_raw_buff, 0, RAW_BUFF_LEN+1);
+	rx_raw_len = 0;
+	return rx_raw_chars;
+}
+
+void add_rx_char(int data)
+{
+	add_rxtx_char(data);
+	if (rx_raw_len == RAW_BUFF_LEN) {
+		memset(rx_raw_buff, 0, RAW_BUFF_LEN+1);
+		rx_raw_len = 0;
+	}
+	rx_raw_buff[rx_raw_len++] = (unsigned char)data;
+}
+
+//======================================================================
+static char tx_raw_chars[RAW_BUFF_LEN+1] = "";
+static char tx_raw_buff[RAW_BUFF_LEN+1] = "";
+static int  tx_raw_len = 0;
+
+char *get_tx_data()
+{
+	ENSURE_THREAD(FLMAIN_TID);
+	memset(tx_raw_chars, 0, RAW_BUFF_LEN+1);
+	strncpy(tx_raw_chars, tx_raw_buff, RAW_BUFF_LEN);
+	memset(tx_raw_buff, 0, RAW_BUFF_LEN+1);
+	tx_raw_len = 0;
+	return tx_raw_chars;
+}
+
+void add_tx_char(int data)
+{
+	add_rxtx_char(data);
+	if (tx_raw_len == RAW_BUFF_LEN) {
+		memset(tx_raw_buff, 0, RAW_BUFF_LEN+1);
+		tx_raw_len = 0;
+	}
+	tx_raw_buff[tx_raw_len++] = (unsigned char)data;
+}
+
+//======================================================================
 static void put_rx_char_flmain(unsigned int data, int style)
 {
 	ENSURE_THREAD(FLMAIN_TID);
@@ -5241,6 +5332,8 @@ static void put_rx_char_flmain(unsigned int data, int style)
 	if (progdefaults.autoextract == true) rx_extract_add(data);
 	speak(data);
 
+	add_rx_char(data);
+
 	switch (data) {
 		case '\n':
 			if (last == '\r')
@@ -5249,6 +5342,7 @@ static void put_rx_char_flmain(unsigned int data, int style)
 			ReceiveText->add('\n', style);
 			break;
 		default:
+
 			ReceiveText->add(data, style);
 	}
 
@@ -5546,6 +5640,8 @@ void put_echo_char(unsigned int data, int style)
 
 	static unsigned int last = 0;
 	const char **asc = ascii;
+
+	add_tx_char(data);
 
 	if (mailclient || mailserver || arqmode)
 		asc = ascii2;
