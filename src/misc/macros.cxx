@@ -68,6 +68,11 @@ std::string qso_exchange = "";
 bool save_xchg;
 size_t  xbeg = 0, xend = 0;
 
+string text2send = "";
+string text2repeat = "";
+string text2save = "";
+size_t repeatchar = 0;
+
 struct MTAGS { const char *mTAG; void (*fp)(string &, size_t &);};
 
 void pCALL(string &, size_t &);
@@ -102,6 +107,7 @@ void pSAVEXCHG(string &, size_t &);
 void pXBEG(string &, size_t &);
 void pXEND(string &, size_t &);
 void pLOG(string &, size_t &);
+void pLNW(string &, size_t &);
 void pTIMER(string &, size_t &);
 void pIDLE(string &, size_t &);
 void pTUNE(string &, size_t &);
@@ -129,6 +135,7 @@ void pSRCHDN(string&, size_t&);
 void pGOHOME(string&, size_t&);
 void pGOFREQ(string&, size_t&);
 void pMAPIT(string&, size_t&);
+void pREPEAT(string&, size_t&);
 
 //void pMACROS(string &, size_t &);
 
@@ -168,6 +175,7 @@ MTAGS mtags[] = {
 {"<XEND>",		pXEND},
 {"<SAVEXCHG>",	pSAVEXCHG},
 {"<LOG>",		pLOG},
+{"<LNW>",		pLNW},
 {"<TIMER:",		pTIMER},
 {"<IDLE:",		pIDLE},
 {"<TUNE:",		pTUNE},
@@ -194,6 +202,7 @@ MTAGS mtags[] = {
 {"<GOFREQ:",	pGOFREQ},
 {"<MAPIT:",		pMAPIT},
 {"<MAPIT>",		pMAPIT},
+{"<REPEAT>",	pREPEAT},
 {0, 0}
 };
 
@@ -251,6 +260,16 @@ void pTIMER(string &s, size_t &i)
 		progStatus.timerMacro = mNbr;
 	}
 	s.replace(i, endbracket - i + 1, "");
+}
+
+void pREPEAT(string &s, size_t &i)
+{
+	size_t endbracket = s.find('>',i);
+	progStatus.repeatMacro = mNbr;
+	s.replace(i, endbracket - i + 1, "");
+	text2repeat = s;
+	repeatchar = 0;
+	s.insert(i, "[REPEAT]");
 }
 
 void pWPM(string &s, size_t &i)
@@ -598,6 +617,11 @@ void pLOG(string &s, size_t &i)
 	s.replace(i, 5, "");
 }
 
+void pLNW(string &s, size_t &i)
+{
+	s.replace(i, 5, "^L");
+}
+
 void pMODEM_compat(string &s, size_t &i)
 {
 	size_t	j, k,
@@ -615,7 +639,7 @@ void pMODEM_compat(string &s, size_t &i)
 	for (int m = 0; m < NUM_MODES; m++) {
 		if (name == mode_info[m].sname) {
 			if (active_modem->get_mode() != mode_info[m].mode)
-				init_modem_sync(mode_info[m].mode);
+				init_modem(mode_info[m].mode);
 			break;
 		}
 	}
@@ -645,7 +669,7 @@ void pMODEM(string &s, size_t &i)
 	// do we have arguments and a valid modem?
 	if (o.size() == 2 || m == NUM_MODES) {
 		if (m < NUM_MODES && active_modem->get_mode() != mode_info[m].mode)
-			init_modem_sync(mode_info[m].mode);
+			init_modem(mode_info[m].mode);
 		s.erase(i, o[0].rm_eo - i);
 		return;
 	}
@@ -695,7 +719,7 @@ void pMODEM(string &s, size_t &i)
 	catch (const exception& e) { }
 
 	if (active_modem->get_mode() != mode_info[m].mode)
-		init_modem_sync(mode_info[m].mode);
+		init_modem(mode_info[m].mode);
 
 	s.erase(i, o[0].rm_eo - i);
 }
@@ -1208,6 +1232,11 @@ string MACROTEXT::expandMacro(int n)
 
 	xbeg = xend = -1;
 	save_xchg = false;
+	progStatus.repeatMacro = -1;
+	text2repeat.clear();
+	idleTime = 0;
+	waitTime = 0;
+	tuneTime = 0;
 
 	while ((idx = expanded.find('<', idx)) != string::npos) {
 		if (expanded.find("<MACROS:",idx) == idx) {
@@ -1261,10 +1290,14 @@ string MACROTEXT::expandMacro(int n)
 		save_xchg = false;
 	}
 
+// force "^r" to be last tag in the expanded string
+	if ((idx = expanded.find("^r")) != string::npos) {
+		expanded.erase(idx, 2);
+		expanded.append("^r");
+	}
+
 	return expanded;
 }
-
-string text2send = "";
 
 void idleTimer(void *)
 {
@@ -1280,7 +1313,6 @@ void continueMacro(void *)
 		start_tx();
 		TransmitON = false;
 	}
-	TransmitText->add( text2send.c_str() );
 	text2send.clear();
 }
 
@@ -1306,8 +1338,6 @@ void finishWait(void *)
 		start_tx();
 		TransmitON = false;
 	}
-	TransmitText->add( text2send.c_str() );
-	text2send.clear();
 }
 
 static void set_button(Fl_Button* button, bool value)
@@ -1318,7 +1348,21 @@ static void set_button(Fl_Button* button, bool value)
 
 void MACROTEXT::execute(int n)
 {
-	text2send = expandMacro(n);
+	text2save = text2send = expandMacro(n);
+
+	if (progStatus.repeatMacro == -1)
+		TransmitText->add( text2send.c_str() );
+	else {
+		size_t p = string::npos;
+		text2send = text[n];
+		while ((p = text2send.find('<')) != string::npos)
+			text2send[p] = '[';
+		while ((p = text2send.find('>')) != string::npos)
+			text2send[p] = ']';
+		TransmitText->add( text2send.c_str() );
+	}
+	text2send.clear();
+
 	if (ToggleTXRX) {
 		text2send.clear();
 		if (!wf->xmtrcv->value()) {
@@ -1348,8 +1392,14 @@ void MACROTEXT::execute(int n)
 		start_tx();
 		TransmitON = false;
 	}
-	TransmitText->add( text2send.c_str() );
-	text2send.clear();
+}
+
+void MACROTEXT::repeat(int n)
+{
+	expandMacro(n);
+printf("%s\n",text2repeat.c_str());
+	macro_idle_on = false;
+	if (idleTime) progStatus.repeatIdleTime = idleTime;
 }
 
 MACROTEXT::MACROTEXT()

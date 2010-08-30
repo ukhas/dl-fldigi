@@ -218,7 +218,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	pthread_t thread;
 	CURL *curl;
 	CURLcode r1, r2, r3;
-
+	string server_location_complete = progdefaults.server_location;
 	/* The first of two globals accessed by this function */
 	if (!dl_fldigi_initialised)
 	{
@@ -337,8 +337,8 @@ void dl_fldigi_post(const char *data, const char *identity)
 		free(post_data);
 		return;
 	}
-
-	r3 = curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/listen.php");
+	
+	r3 = curl_easy_setopt(curl, CURLOPT_URL, server_location_complete.append("listen.php").c_str());
 	if (r3 != 0)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_URL) failed: %s\n", curl_easy_strerror(r3));
@@ -427,6 +427,7 @@ void dl_fldigi_download()
 	CURLcode r1, r3;
 	FILE *file;
 	int r2;
+	string server_location_complete = progdefaults.server_location;
 
 	if (!dl_fldigi_initialised)
 	{
@@ -453,7 +454,7 @@ void dl_fldigi_download()
 		return;
 	}
 
-	r1 = curl_easy_setopt(curl, CURLOPT_URL, "http://www.robertharrison.org/listen/allpayloads.php");
+	r1 = curl_easy_setopt(curl, CURLOPT_URL, server_location_complete.append("allpayloads.php").c_str());
 	if (r1 != 0)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_URL) failed: %s\n", curl_easy_strerror(r1));
@@ -1406,5 +1407,35 @@ void dl_fldigi_update_rxtimer()
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: would have set habTimeSinceLastRx to '%s'\n", buf);
 		#endif
+	}
+}
+
+void dl_fldigi_gps_swap_NSEW()
+{
+	if (progdefaults.myLat.at(progdefaults.myLat.length() - 1) == 'N')
+	{
+		fprintf(stderr, "dl_fldigi: found N\n");
+		progdefaults.myLat.erase(progdefaults.myLat.length() - 1);
+		progdefaults.changed = true;
+	}
+	if (progdefaults.myLat.at(progdefaults.myLat.length() - 1) == 'S')
+	{
+		fprintf(stderr, "dl_fldigi: found S\n");
+		progdefaults.myLat.erase(progdefaults.myLat.length() - 1);
+		progdefaults.myLat.insert(0, "-");
+		progdefaults.changed = true;
+	}
+	if (progdefaults.myLon.at(progdefaults.myLon.length() - 1) == 'E')
+	{
+		fprintf(stderr, "dl_fldigi: found E\n");
+		progdefaults.myLon.erase(progdefaults.myLon.length() - 1);
+		progdefaults.changed = true;
+	}
+	if (progdefaults.myLon.at(progdefaults.myLon.length() - 1) == 'W')
+	{
+		fprintf(stderr, "dl_fldigi: found W\n");
+		progdefaults.myLon.erase(progdefaults.myLon.length() - 1);
+		progdefaults.myLon.insert(0, "-");
+		progdefaults.changed = true;
 	}
 }

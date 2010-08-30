@@ -539,11 +539,12 @@ cQsoRec rec;
 	rec.putField(ITUZ, inpITUZ_log->value());
 	rec.putField(TX_PWR, inpTX_pwr_log->value());
 
-	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
-	qsodb.isdirty(0);
-
 	qsodb.qsoNewRec (&rec);
 	dxcc_entity_cache_add(&rec);
+	submit_record(rec);
+
+	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
+	qsodb.isdirty(0);
 }
 
 void updateRecord() {
@@ -673,10 +674,8 @@ void AddRecord ()
 	inpITUZ_log->value("");
 
 	saveRecord();
-	qsodb.SortByDate();
-	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
-	qsodb.isdirty(0);
 
+	qsodb.SortByDate();
 	loadBrowser();
 	logState = VIEWREC;
 	activateButtons();
@@ -703,7 +702,7 @@ void loadBrowser(bool keep_pos)
 		snprintf(sNbr,sizeof(sNbr),"%d",i);
 		wBrowser->addRow (7,
 			rec->getField(QSO_DATE),
-			rec->getField(TIME_OFF),
+			rec->getField(TIME_ON),
 			rec->getField(CALL),
 			rec->getField(NAME),
 			rec->getField(FREQ),
@@ -869,7 +868,7 @@ void cabrillo_append_qso (FILE *fp, cQsoRec *rec)
 	if (btnCabMode->value()) {
 		mode = rec->getField(MODE);
 		if (mode.compare("USB") == 0 || mode.compare("LSB") == 0 ||
-		    mode.compare("PH") == 0 ) mode = "PH";
+			mode.compare("SSB") == 0 || mode.compare("PH") == 0 ) mode = "PH";
 		else if (mode.compare("FM") == 0 || mode.compare("CW") == 0 ) ;
 		else mode = "RY";
 		if (mode.compare("PH") == 0 || mode.compare("FM") == 0 ) rst_len = 2;

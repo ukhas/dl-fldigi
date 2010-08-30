@@ -372,6 +372,12 @@
         ELEM_(bool, CWnarrow, "CWNARROW",                                               \
               "Weight decreases with increasing edge timing",                           \
               false)                                                                    \
+        ELEM_(bool, CW_use_paren, "CWUSEPAREN",                                         \
+              "Use open paren character; typically used in MARS ops",                   \
+              false)                                                                    \
+        ELEM_(std::string, CW_prosigns, "CWPROSIGNS",                                   \
+              "CW prosigns BT AA AS AR SK KN INT HM VE",                                \
+              "=~<>%+&{}")                                                              \
         /* FELD HELL */                                                                 \
         ELEM_(double, HELL_BW, "HELL_BW0", "Feld Hell working bandwidth",  245.0)       \
         ELEM_(double, HELL_BW_FH, "HELL_BW1", "FH bandwidth",  245.0)                   \
@@ -543,6 +549,12 @@
         ELEM_(int, videowidth, "VIDEOWIDTH",                                            \
               "Video ID text width (characters per row)",                               \
               1)                                                                        \
+        ELEM_(bool, vidlimit, "VIDLIMIT",                                               \
+              "Limit video width to 500 Hz",                                            \
+              true)                                                                     \
+        ELEM_(bool, vidmodelimit, "VIDMODELIMIT",                                       \
+              "Limit video width to mode bandwidth",                                    \
+              true)                                                                     \
         ELEM_(bool, ID_SMALL, "IDSMALL",                                                \
               "Use small video ID font",                                                \
               true)                                                                     \
@@ -972,6 +984,9 @@
         ELEM_(Fl_Color, RxFontcolor, "RXFNTCOLOR",                                      \
               "RX text font color",                                                     \
               FL_BLACK)                                                                 \
+        ELEM_(Fl_Color, RxTxSelectcolor, "RXTXSELCOLOR",                                \
+              "RX/TX text select color",                                                \
+              FL_MAGENTA)                                                               \
         ELEM_(std::string, TxFontName, "TXFONTNAME",                                    \
               "TX text font name",                                                      \
               "")                                                                       \
@@ -1125,28 +1140,31 @@
               "report.pskreporter.info")                                                \
         ELEM_(std::string, pskrep_port, "PSKREPPORT",                                   \
               "Reception report server port",                                           \
-              "4739")													\
-/* Flight Data */													\
-		ELEM_(std::string, xmlPayloadname, "PAYLOADNAME", "The last selected payload", "")			\
-		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")							\
-		ELEM_(std::string, xmlField_delimiter, "", "", ",")							\
-		ELEM_(int, xmlFields, "", "", 7)									\
-		ELEM_(std::string, xmlCallsign, "", "", "")								\
-		ELEM_(int, xml_time, "", "", 0)										\
-		ELEM_(int, xml_latitude, "", "", 0)									\
-		ELEM_(int, xml_longitude, "", "", 0)									\
-		ELEM_(int, xml_altitude, "", "", 0)									\
-		ELEM_(int, xml_stringlimit, "", "", 100)								\
-/* GPS Device Info */													\
-		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")							\
-		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)								\
-		ELEM_(std::string, gpsIdentity, "GPSID", "", "chase_car")						\
-/* Config stuff */													\
-		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)								\
-	        ELEM_(bool, dl_online, "", "", false) 									\
-		ELEM_(std::string, waterfall_png_location, "PNG_WFALL_LOC", "Save location for PNG", "dl-fldigi-waterfall.png") 	\
-		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/hadie/live.php") 	\
-		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "") 					\
+              "4739")                                                                   \
+/* Flight Data */											\
+		ELEM_(std::string, xmlPayloadname, "PAYLOADNAME", "The last selected payload", "")	\
+		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")					\
+		ELEM_(std::string, xmlField_delimiter, "", "", ",")					\
+		ELEM_(int, xmlFields, "", "", 7)							\
+		ELEM_(std::string, xmlCallsign, "", "", "")						\
+		ELEM_(int, xml_time, "", "", 0)								\
+		ELEM_(int, xml_latitude, "", "", 0)							\
+		ELEM_(int, xml_longitude, "", "", 0)							\
+		ELEM_(int, xml_altitude, "", "", 0)							\
+		ELEM_(int, xml_stringlimit, "", "", 100)						\
+/* GPS Device Info */											\
+		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")					\
+		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)						\
+		ELEM_(std::string, gpsIdentity, "GPSID", "", "chase_car")				\
+/* Config stuff */											\
+		ELEM_(bool, dl_online, "", "", false)							\
+		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)						\
+		ELEM_(std::string, waterfall_png_location, "PNG_WFALL_LOC", "Save location for PNG", "dl-fldigi-waterfall.png")		\
+		ELEM_(std::string, server_location, "SERVER_LOC", "Server location", "http://robertharrison.org/listen/")		\
+		ELEM_(bool, ssdv_save_image, "SSDV_SAVE_IMAGES", "", false)								\
+		ELEM_(std::string, ssdv_save_dir, "SSDV_SAVE_DIR", "Save location for received images", "")				\
+		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/hadie/live.php")	\
+		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "")					\
 		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")
 
 

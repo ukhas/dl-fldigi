@@ -890,6 +890,132 @@ static void cb_mnuTestChar(Fl_Choice* o, void*) {
   progdefaults.TestChar = o->value();
 }
 
+Fl_Check_Button *btnCW_use_paren=(Fl_Check_Button *)0;
+
+static void cb_btnCW_use_paren(Fl_Check_Button* o, void*) {
+  progdefaults.CW_use_paren=o->value();
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[0] = ps[c];
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign1(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c); 
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[1] = ps[c];
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign2(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[2] = ps[c];
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign3(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[3] = ps[c];
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign4(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[4] = ps[c];
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign5(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[5] = ps[c];
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign6(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[6] = ps[c];
+progdefaults.changed = true;
+}
+
+static void cb_mnu_prosign7(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[7] = ps[c];
+progdefaults.changed = true;
+}
+
+Fl_Choice *mnu_prosign[9]={(Fl_Choice *)0};
+
+static void cb_mnu_prosign8(Fl_Choice* o, void*) {
+  int c = o->value();
+for (int i = 0; i < 9; i++)
+  if (mnu_prosign[i]->value() == c) {
+    mnu_prosign[i]->value(11);
+    progdefaults.CW_prosigns[i] = ' ';
+  }
+o->value(c);
+char ps[] = "~%&+={}<>[] ";
+progdefaults.CW_prosigns[8] = ps[c];
+progdefaults.changed = true;
+}
+
 Fl_Group *tabDomEX=(Fl_Group *)0;
 
 Fl_Input2 *txtSecondary=(Fl_Input2 *)0;
@@ -1602,7 +1728,7 @@ Fl_Round_Button *btnRigCatRTSptt=(Fl_Round_Button *)0;
 
 static void cb_btnRigCatRTSptt(Fl_Round_Button* o, void*) {
   if (o->value() == 1) {
-  btnRigCatDTRptt->value(0);
+//  btnRigCatDTRptt->value(0);
   btnRigCatCMDptt->value(0);
 }
 
@@ -1615,7 +1741,7 @@ Fl_Round_Button *btnRigCatDTRptt=(Fl_Round_Button *)0;
 
 static void cb_btnRigCatDTRptt(Fl_Round_Button* o, void*) {
   if (o->value() == 1) {
-  btnRigCatRTSptt->value(0);
+//  btnRigCatRTSptt->value(0);
   btnRigCatCMDptt->value(0);
 }
 
@@ -2118,10 +2244,6 @@ Fl_Check_Button *chkID_SMALL=(Fl_Check_Button *)0;
 
 static void cb_chkID_SMALL(Fl_Check_Button* o, void*) {
   progdefaults.ID_SMALL=o->value();
-if (o->value() == 1)
-sldrVideowidth->deactivate();
-else
-sldrVideowidth->activate();
 progdefaults.changed = true;
 }
 
@@ -2130,6 +2252,20 @@ Fl_Value_Slider2 *sldrVideowidth=(Fl_Value_Slider2 *)0;
 static void cb_sldrVideowidth(Fl_Value_Slider2* o, void*) {
   progdefaults.videowidth = (int)o->value();
 progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_vidlimit=(Fl_Check_Button *)0;
+
+static void cb_btn_vidlimit(Fl_Check_Button* o, void*) {
+  progdefaults.vidlimit=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_vidmodelimit=(Fl_Check_Button *)0;
+
+static void cb_btn_vidmodelimit(Fl_Check_Button* o, void*) {
+  progdefaults.vidmodelimit=o->value();
+progdefaults.changed=true;
 }
 
 Fl_Button *bVideoIDModes=(Fl_Button *)0;
@@ -2518,8 +2654,9 @@ static void cb_confdialog_dl_online(Fl_Check_Button*, void*) {
 set_menu_dl_online();
 }
 
-static void cb_Detection(Fl_Check_Button*, void*) {
-  fprintf(stderr, "dl_fldigi: TODO Detection and Extraction toggle box\n");
+static void cb_Server(Fl_Input* o, void*) {
+  progdefaults.server_location = o->value();
+progdefaults.changed = true;
 }
 
 Fl_Group *tabDLPayload=(Fl_Group *)0;
@@ -2605,8 +2742,24 @@ progdefaults.changed = true;
 dl_fldigi_gps_setup_fromprogdefaults();
 }
 
-static void cb_URL(Fl_Input* o, void*) {
+Fl_Input *imagepacketurl=(Fl_Input *)0;
+
+static void cb_imagepacketurl(Fl_Input* o, void*) {
   progdefaults.ssdv_packet_url = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *imagesave=(Fl_Check_Button *)0;
+
+static void cb_imagesave(Fl_Check_Button* o, void*) {
+  progdefaults.ssdv_save_image = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Input *imagesavedir=(Fl_Input *)0;
+
+static void cb_imagesavedir(Fl_Input* o, void*) {
+  progdefaults.ssdv_save_dir = o->value();
 progdefaults.changed = true;
 }
 
@@ -2651,6 +2804,7 @@ static const char szOliviaBandwidth[] = "125|250|500|1000|2000";
 static const char szContestiaTones[] = "2|4|8|16|32|64|128|256";
 static const char szContestiaBandwidth[] = "125|250|500|1000|2000";
 static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600|115200|230400|460800";
+static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
   { Fl_Double_Window* o = new Fl_Double_Window(500, 400, _("Fldigi configuration"));
     w = o;
     o->color((Fl_Color)FL_DARK2);
@@ -2724,7 +2878,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
             inpMyLocator->when(FL_WHEN_RELEASE);
             inpMyLocator->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyLocator
-          { inpMyAntenna = new Fl_Input2(115, 172, 320, 24, _("Antenna:"));
+          { inpMyAntenna = new Fl_Input2(110, 172, 320, 24, _("Antenna:"));
             inpMyAntenna->tooltip(_("Short description of antenna"));
             inpMyAntenna->box(FL_DOWN_BOX);
             inpMyAntenna->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -2738,16 +2892,16 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
             inpMyAntenna->when(FL_WHEN_RELEASE);
             inpMyAntenna->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyAntenna
-          { Fl_Input* o = MyRadio = new Fl_Input(115, 205, 320, 25, _("Radio:"));
+          { Fl_Input* o = MyRadio = new Fl_Input(110, 205, 320, 25, _("Radio:"));
             MyRadio->callback((Fl_Callback*)cb_MyRadio);
             o->value(progdefaults.myRadio.c_str());
           } // Fl_Input* MyRadio
-          { Fl_Input* o = MyLat = new Fl_Input(115, 240, 320, 25, _("Lat (DD):"));
+          { Fl_Input* o = MyLat = new Fl_Input(110, 240, 320, 25, _("Lat (DD):"));
             MyLat->tooltip(_("DD.DDDD"));
             MyLat->callback((Fl_Callback*)cb_MyLat);
             o->value(progdefaults.myLat.c_str());
           } // Fl_Input* MyLat
-          { Fl_Input* o = MyLon = new Fl_Input(115, 275, 320, 25, _("Long (DD):"));
+          { Fl_Input* o = MyLon = new Fl_Input(110, 275, 320, 25, _("Long (DD):"));
             MyLon->tooltip(_("DD.DDDD"));
             MyLon->callback((Fl_Callback*)cb_MyLon);
             o->value(progdefaults.myLon.c_str());
@@ -3465,9 +3619,8 @@ an merging"));
         { tabsModems = new Fl_Tabs(0, 25, 517, 345);
           tabsModems->selection_color((Fl_Color)FL_LIGHT1);
           tabsModems->align(FL_ALIGN_TOP_RIGHT);
-          { tabCW = new Fl_Group(0, 50, 500, 320, _("CW"));
-            tabCW->hide();
-            { tabsCW = new Fl_Tabs(0, 50, 500, 320);
+          { tabCW = new Fl_Group(0, 50, 504, 320, _("CW"));
+            { tabsCW = new Fl_Tabs(0, 50, 504, 320);
               tabsCW->selection_color((Fl_Color)FL_LIGHT1);
               { Fl_Group* o = new Fl_Group(0, 75, 500, 295, _("General"));
                 o->align(FL_ALIGN_TOP_LEFT);
@@ -3779,6 +3932,92 @@ an merging"));
                 } // Fl_Choice* mnuTestChar
                 o->end();
                 } // Fl_Group* o
+                o->end();
+              } // Fl_Group* o
+              { Fl_Group* o = new Fl_Group(0, 75, 500, 295, _("Prosigns"));
+                o->align(FL_ALIGN_TOP_LEFT);
+                o->hide();
+                { Fl_Group* o = new Fl_Group(4, 81, 492, 283);
+                o->box(FL_ENGRAVED_FRAME);
+                { Fl_Check_Button* o = btnCW_use_paren = new Fl_Check_Button(235, 236, 68, 15, _("Use \'(\' paren not KN"));
+                btnCW_use_paren->down_box(FL_DOWN_BOX);
+                btnCW_use_paren->callback((Fl_Callback*)cb_btnCW_use_paren);
+                o->value(progdefaults.CW_use_paren);
+                } // Fl_Check_Button* btnCW_use_paren
+                o->end();
+                } // Fl_Group* o
+                { Fl_Choice* o = mnu_prosign[0] = new Fl_Choice(167, 94, 47, 22, _("<BT>"));
+                mnu_prosign[0]->down_box(FL_BORDER_BOX);
+                mnu_prosign[0]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[0]->callback((Fl_Callback*)cb_mnu_prosign);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[0];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[0]
+                { Fl_Choice* o = mnu_prosign[1] = new Fl_Choice(167, 121, 47, 22, _("<AA>"));
+                mnu_prosign[1]->down_box(FL_BORDER_BOX);
+                mnu_prosign[1]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[1]->callback((Fl_Callback*)cb_mnu_prosign1);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[1];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[1]
+                { Fl_Choice* o = mnu_prosign[2] = new Fl_Choice(167, 149, 47, 22, _("<AS>"));
+                mnu_prosign[2]->down_box(FL_BORDER_BOX);
+                mnu_prosign[2]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[2]->callback((Fl_Callback*)cb_mnu_prosign2);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[2];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[2]
+                { Fl_Choice* o = mnu_prosign[3] = new Fl_Choice(167, 176, 47, 22, _("<AR>"));
+                mnu_prosign[3]->down_box(FL_BORDER_BOX);
+                mnu_prosign[3]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[3]->callback((Fl_Callback*)cb_mnu_prosign3);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[3];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[3]
+                { Fl_Choice* o = mnu_prosign[4] = new Fl_Choice(167, 204, 47, 22, _("<SK>"));
+                mnu_prosign[4]->down_box(FL_BORDER_BOX);
+                mnu_prosign[4]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[4]->callback((Fl_Callback*)cb_mnu_prosign4);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[4];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[4]
+                { Fl_Choice* o = mnu_prosign[5] = new Fl_Choice(167, 232, 47, 22, _("<KN>"));
+                mnu_prosign[5]->down_box(FL_BORDER_BOX);
+                mnu_prosign[5]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[5]->callback((Fl_Callback*)cb_mnu_prosign5);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[5];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[5]
+                { Fl_Choice* o = mnu_prosign[6] = new Fl_Choice(167, 259, 47, 22, _("<INT>"));
+                mnu_prosign[6]->down_box(FL_BORDER_BOX);
+                mnu_prosign[6]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[6]->callback((Fl_Callback*)cb_mnu_prosign6);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[6];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[6]
+                { Fl_Choice* o = mnu_prosign[7] = new Fl_Choice(167, 287, 47, 22, _("<HM>"));
+                mnu_prosign[7]->down_box(FL_BORDER_BOX);
+                mnu_prosign[7]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[7]->callback((Fl_Callback*)cb_mnu_prosign7);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[7];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[7]
+                { Fl_Choice* o = mnu_prosign[8] = new Fl_Choice(167, 315, 47, 22, _("<VE>"));
+                mnu_prosign[8]->down_box(FL_BORDER_BOX);
+                mnu_prosign[8]->color((Fl_Color)FL_LIGHT2);
+                mnu_prosign[8]->callback((Fl_Callback*)cb_mnu_prosign8);
+                o->add(szProsigns);
+                char s[2] = " "; s[0] = progdefaults.CW_prosigns[8];
+                o->value(o->find_item(s));
+                } // Fl_Choice* mnu_prosign[8]
                 o->end();
               } // Fl_Group* o
               tabsCW->end();
@@ -5317,7 +5556,7 @@ ll with your audio device."));
             btnsendvideotext->callback((Fl_Callback*)cb_btnsendvideotext);
             o->value(progdefaults.sendtextid);
           } // Fl_Check_Button* btnsendvideotext
-          { Fl_Input2* o = valVideotext = new Fl_Input2(365, 82, 120, 20, _("Video text:"));
+          { Fl_Input2* o = valVideotext = new Fl_Input2(182, 83, 161, 20, _(":"));
             valVideotext->tooltip(_("Limit to a few characters,\nas in CQEM or IOTA etc."));
             valVideotext->box(FL_DOWN_BOX);
             valVideotext->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -5339,7 +5578,7 @@ ll with your audio device."));
             chkID_SMALL->callback((Fl_Callback*)cb_chkID_SMALL);
             o->value(progdefaults.ID_SMALL);
           } // Fl_Check_Button* chkID_SMALL
-          { Fl_Value_Slider2* o = sldrVideowidth = new Fl_Value_Slider2(365, 109, 120, 20, _("Video row width:"));
+          { Fl_Value_Slider2* o = sldrVideowidth = new Fl_Value_Slider2(243, 109, 100, 20, _("Chars/Row:"));
             sldrVideowidth->tooltip(_("Set the number of characters per row"));
             sldrVideowidth->type(1);
             sldrVideowidth->box(FL_DOWN_BOX);
@@ -5350,18 +5589,27 @@ ll with your audio device."));
             sldrVideowidth->labelsize(14);
             sldrVideowidth->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
             sldrVideowidth->minimum(1);
-            sldrVideowidth->maximum(4);
+            sldrVideowidth->maximum(8);
             sldrVideowidth->step(1);
-            sldrVideowidth->value(1);
+            sldrVideowidth->value(4);
             sldrVideowidth->textsize(14);
             sldrVideowidth->callback((Fl_Callback*)cb_sldrVideowidth);
             sldrVideowidth->align(FL_ALIGN_LEFT);
             sldrVideowidth->when(FL_WHEN_CHANGED);
             o->value(progdefaults.videowidth);
-            if (progdefaults.ID_SMALL) o->deactivate();
             o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
           } // Fl_Value_Slider2* sldrVideowidth
-          { bVideoIDModes = new Fl_Button(365, 58, 120, 20, _("Video ID modes"));
+          { Fl_Check_Button* o = btn_vidlimit = new Fl_Check_Button(352, 85, 110, 15, _("500 Hz limit"));
+            btn_vidlimit->down_box(FL_DOWN_BOX);
+            btn_vidlimit->callback((Fl_Callback*)cb_btn_vidlimit);
+            o->value(progdefaults.vidlimit);
+          } // Fl_Check_Button* btn_vidlimit
+          { Fl_Check_Button* o = btn_vidmodelimit = new Fl_Check_Button(352, 111, 110, 15, _("Mode width limit"));
+            btn_vidmodelimit->down_box(FL_DOWN_BOX);
+            btn_vidmodelimit->callback((Fl_Callback*)cb_btn_vidmodelimit);
+            o->value(progdefaults.vidmodelimit);
+          } // Fl_Check_Button* btn_vidmodelimit
+          { bVideoIDModes = new Fl_Button(223, 58, 120, 20, _("Video ID modes"));
             bVideoIDModes->callback((Fl_Callback*)cb_bVideoIDModes);
           } // Fl_Button* bVideoIDModes
           o->end();
@@ -5462,6 +5710,7 @@ d frequency"));
             chkRSidPost->tooltip(_("Send RSID at end of transmission"));
             chkRSidPost->down_box(FL_DOWN_BOX);
             chkRSidPost->callback((Fl_Callback*)cb_chkRSidPost);
+            chkRSidPost->hide();
             o->value(progdefaults.rsid_post);
           } // Fl_Check_Button* chkRSidPost
           { bRSIDTxModes = new Fl_Button(310, 224, 130, 20, _("Transmit modes"));
@@ -5914,19 +6163,19 @@ d frequency"));
         tabDL->labelsize(12);
         { tabsDL = new Fl_Tabs(0, 25, 500, 350);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
-            tabDLEnable->hide();
-            { Fl_Group* o = new Fl_Group(5, 55, 490, 290, _("Enable"));
+            { Fl_Group* o = new Fl_Group(10, 55, 490, 290, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = confdialog_dl_online = new Fl_Check_Button(35, 75, 200, 25, _("Online"));
+              { Fl_Check_Button* o = confdialog_dl_online = new Fl_Check_Button(40, 75, 200, 25, _("Online"));
                 confdialog_dl_online->down_box(FL_DOWN_BOX);
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
                 o->value(progdefaults.dl_online);
               } // Fl_Check_Button* confdialog_dl_online
-              { Fl_Check_Button* o = new Fl_Check_Button(35, 100, 200, 25, _("Detection and Extraction"));
-                o->down_box(FL_DOWN_BOX);
-                o->callback((Fl_Callback*)cb_Detection);
-              } // Fl_Check_Button* o
+              { Fl_Input* o = new Fl_Input(90, 105, 334, 20, _("Server:"));
+                o->tooltip(_("Tracker Server Address"));
+                o->callback((Fl_Callback*)cb_Server);
+                o->value(progdefaults.server_location.c_str());
+              } // Fl_Input* o
               o->end();
             } // Fl_Group* o
             tabDLEnable->end();
@@ -6076,17 +6325,29 @@ d frequency"));
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(0, 50, 500, 322, _("Image"));
             o->hide();
-            { Fl_Group* o = new Fl_Group(4, 54, 492, 105, _("Packet Upload Configuration"));
+            { Fl_Group* o = new Fl_Group(4, 54, 492, 116, _("Image Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Input* o = new Fl_Input(100, 81, 330, 20, _("URL:"));
-                o->labelsize(12);
-                o->textsize(12);
-                o->callback((Fl_Callback*)cb_URL);
+              { Fl_Input* o = imagepacketurl = new Fl_Input(100, 81, 330, 20, _("Packet URL:"));
+                imagepacketurl->labelsize(12);
+                imagepacketurl->textsize(12);
+                imagepacketurl->callback((Fl_Callback*)cb_imagepacketurl);
                 o->value(progdefaults.ssdv_packet_url.c_str());
-              } // Fl_Input* o
+              } // Fl_Input* imagepacketurl
               o->end();
             } // Fl_Group* o
+            { Fl_Check_Button* o = imagesave = new Fl_Check_Button(100, 115, 150, 15, _("Save received images"));
+              imagesave->down_box(FL_DOWN_BOX);
+              imagesave->labelsize(12);
+              imagesave->callback((Fl_Callback*)cb_imagesave);
+              o->value(progdefaults.ssdv_save_image);
+            } // Fl_Check_Button* imagesave
+            { Fl_Input* o = imagesavedir = new Fl_Input(100, 135, 330, 20, _("Location:"));
+              imagesavedir->labelsize(12);
+              imagesavedir->textsize(12);
+              imagesavedir->callback((Fl_Callback*)cb_imagesavedir);
+              o->value(progdefaults.ssdv_save_dir.c_str());
+            } // Fl_Input* imagesavedir
             o->end();
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("Remote"));

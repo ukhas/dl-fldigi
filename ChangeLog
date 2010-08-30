@@ -1,8 +1,77 @@
 
 
-=Version 3.20.16=
+=Version 3.20.23=
+
+2010-08-11  David Freese  <w1hkj@w1hkj.com>
+
+	d513ee8: Macro Mode Change
+	b7b3eb3: Combo Widget
+
+
+=Version 3.20.22=
+
+	9717eb5: TX file insertion
+	90ff2b5: Xmlrpc Raw data
+	95e7367: Log Sort
+	42be5c7: Xmlrpc BS char
+	fff8410: RsID
+
+
+=Version 3.20.21=
+
+	56c0527: Logger
+	390aee7: Compile Warnings
+
+
+=Version 3.20.20=
+
+	444aea6: ThrobX
+	37e5c82: Post RsID
+	306d195: Contestia Olivia info
+	581a16c: Logbook Save
+	7b8f585: '^' Parser
+
+2010-07-13  Fer Maresca, LU2DFM  <lu2dfm@gmail.com>
+
+	9fedb61: <LOG> change
+
+2010-07-03  David Freese  <w1hkj@w1hkj.com>
+
+	0e72fea: Update check
+
+
+=Version 3.20.19=
+
+	357f3b1: RX-TX Select
+	8d15561: REPEAT Macro
+	7f5b55f: RTS-DTR PTT
+
+
+=Version 3.20.18=
+
+	800eac7: Mode prefs
+	f21cbca: Morse Prosigns
+
+
+=Version 3.20.17=
+
+	c8ea4df: RSID code additions
+
+2010-06-21  Chris Sylvain  <kb3cs@arrl.net>
+
+	1c1f059: PSK Browser modes
+	2c94158: Beginners Guide update
+
+2010-06-21  Chris Sylvain kb3cs@arrl.net, David Freese  <w1hkj@w1hkj.com>
+
+	fde3cce: <ID> video text mod
 
 2010-06-15  David Freese  <w1hkj@w1hkj.com>
+
+	8bff921: PH Cabrillo report
+
+
+=Version 3.20.16=
 
 	b17468b: QRZ xml service
 
@@ -771,8 +840,3 @@
 	77bc966: Use band functions in logbook
 	2124791: Add functions to set the socket buffer size
 	4b1292c: Improve logging and error notification
-	d73c8fd: Add OS X and MinGW stack tracing
-	e192d1d: Add preliminary support for MinGW
-	01fd3d9: Change set_log macro
-	9d56656: Clean up headers
-	b4bf47f: Distribute cr.sh test script

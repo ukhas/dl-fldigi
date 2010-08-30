@@ -244,7 +244,7 @@ void rx_extract_add(int c)
 			// if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) { 
 
 			
-			if (progdefaults.xml_stringlimit > total_string_length)
+			if (progdefaults.xml_stringlimit > (int) total_string_length)
 			{
 				total_string_length = progdefaults.xml_stringlimit;
 			}
@@ -347,7 +347,7 @@ void rx_extract_update_ui(string rx_buff)
 		
 		balloonvector target_vector;
 		coordinate presentCoords;
-		coordinate targetCoords;
+		coordinate targetCoords = {0, 0};
 		
 		habCustom->value(rx_buff.c_str());
 		

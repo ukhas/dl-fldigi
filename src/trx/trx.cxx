@@ -261,6 +261,7 @@ void trx_trx_receive_loop()
 				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 				UpperCase (identity_callsign);
 
+				dl_fldigi_gps_swap_NSEW();
 				string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
 				UpperCase (string_lat);
 				string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());
@@ -404,8 +405,8 @@ void trx_trx_transmit_loop()
 
 		trx_xmit_wfall_end(current_samplerate);
 
-		if (progdefaults.TransmitRSid)
-			ReedSolomon->send(false);
+//		if (progdefaults.TransmitRSid)
+//			ReedSolomon->send(false);
 
 		scard->flush();
 		if (scard->must_close(O_WRONLY))
