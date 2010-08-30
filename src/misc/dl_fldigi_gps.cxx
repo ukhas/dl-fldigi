@@ -1,516 +1,399 @@
-/*
- * Robert Harrison
- * rharrison (email at sign) hgf.com
- * August 2008
- *
- * Version 0.1 Beta
- *
- * This is a small C++ class to pass NMEA 0183 output on the GPS serial port 
- * and produce sentences used by the tracker on the UKHAS wiki.
- *
- * NMEA Protocol
- *
- * NMEA data is sent in 8-bit ASCII where the MSB is set to zero (0). 
- * The specification also has a set of reserved characters. These characters 
- * assist in the formatting of the NMEA data string. 
- *
- * The specification also states valid characters and gives a table of 
- * these characters ranging from HEX 20 to HEX 7E.
- *
- * As stated in the NMEA 0183 specification version 3.01 the maximum number 
- * of characters shall be 82, consisting of a maximum of 79 characters between 
- * start of message $ and terminating delimiter <CR><LF> 
- * (HEX 0D and 0A). The minimum number of fields is one (1).
- *
- * Basic sentence format:
- *
- * $aaccc,c--c*hh<CR><LF>
- *
- * $             Start of sentence
- * aaccc         Address field/Command
- * “,”           Field delimiter (Hex 2C)
- * c--c          Data sentence block
- * *             Checksum delimiter (HEX 2A)
- * hh            Checksum field (the hexadecimal value represented in ASCII)
- * <CR><LF>      End of sentence (HEX OD OA)
- *
- */
+// TODO: Windoze it up
+#ifndef __MINGW32__
 
-#define DL_FLDIGI_DEBUG
-
-#include "dl_fldigi_gps.h"
-#include <iostream>
-#include <string.h>
 #include <stdio.h>
+#include <termios.h>
+#include <fcntl.h>
 #include <stdlib.h>
-#include <math.h>
+#include <pthread.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <signal.h>
 
-using namespace std;
+#include "configuration.h"
+#include "util.h"
+#include "fl_digi.h"
+#include "dl_fldigi.h"
+#include "dl_fldigi_gps.h"
+#include "util.h"
+#include "confdialog.h"
+#include "fl_digi.h"
+#include "main.h"
+#include "threads.h"
+#include "qrunner.h"
 
-enum ts_status {ts_ready, ts_pending, ts_printed}; 
-enum ts_options {ts_hms_fmt, ts_dec_fmt, ts_url_fmt, ts_email_fmt}; 
+/* Is the pointer volatile, or the stuff it points to volatile? */
+static volatile char *serial_port, *serial_identity;
+static volatile int serial_baud;
+static volatile int serial_updated;
 
-GPS::GPS ()
+static pthread_t serial_thread_id;
+static pthread_mutex_t serial_info_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t serial_info_cond = PTHREAD_COND_INITIALIZER;
+
+static void *serial_thread(void *a);
+static void empty_handler(int sig);
+static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity);
+static FILE *dl_fldigi_open_serial_port(const char *port, int baud);
+
+struct gps_data
 {
-	gps_time=0;
-        gps_date[0]='\0';
-        gps_lat=0;
-        gps_lng=0;
-        gps_alt=0;
-        gps_hdg=0;
-        gps_spd=0;
-	gps_status=ts_printed;
-}
+	unsigned int hour;
+	unsigned int minute;
+	unsigned int second;
+	float lat;
+	unsigned int lat_d;
+	float lat_m;
+	char lat_ns;
+	float lon;
+	unsigned int lon_d;
+	float lon_m;
+	char lon_we;
+	unsigned int sats;
+	unsigned int alt;
+};
 
-void GPS::lat_lng_alt (double &lat, double &lng, long &alt)
+void dl_fldigi_gps_init()
 {
-	lat = gps_lat;
-	lng = gps_lng;
-	alt = gps_alt;
-	gps_status=ts_printed;
-}
+	struct sigaction act;
+	int i;
 
-void GPS::print_string (void)
-{
-	cout << "time:" << gps_time << endl;
-	cout << "date:" << gps_date << endl;
-	cout << "latitude:" << gps_lat << endl;
-	cout << "longitude:" << gps_lng << endl;
-	cout << "altitude:" << gps_alt << endl;
-	cout << "heading:" << gps_hdg << endl;
-	cout << "speed:" << gps_spd << endl;
-	cout << "status:" << gps_status << endl;
-}
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps init()\n");
+	#endif
 
-int GPS::check_string (const char * gps_string)
-{
+	memset(&act, 0, sizeof(act));
+	act.sa_handler = empty_handler;
 
-	/*
-	 * Check the string contains only valid NMEA chars
-	 * and count the number of fields.
-	 *
-	 * Returns number of fields on success 0 on failure
-	 */
-
-	int char_count = 0;
-	int field_count = 0;
-	bool invalid_chars = false;
-	char c = 32;
-
-	while ((char_count < MAX_NMEA_STRING) && (c != '\0'))
+	i = sigaction(SIGUSR1, &act, NULL);
+	if (i != 0)
 	{
-		c = gps_string[char_count];
-	
-		if (c != '\0') 
-		{
-			/* Check if chars are valid */
-			if ( (c < 0x20 || c > 0x7e) && (c !=0xa ) ) 
-				invalid_chars = true;
-			
-			/* Increment the field count if comma */
-			if (c == ',') field_count ++;
-		}
-
-		char_count ++;
+		perror("dl_fldigi: sigaction");
+		exit(EXIT_FAILURE);
 	}
 
-	if (invalid_chars) 
-		return 0; 
-	else
-		return field_count ++;
-
-}
-
-void GPS::parse_GGA (const char * string)
-{
-        /*
-         * Efficiency single pass of string
-         */
-
-        int char_count = 0;  // Char counter for parsing string
-        int field_count = 1; // We start in the first field
-        int field_pos = 0;   // Char counter within field
-        char c = ' ';        // Must be init to anything other than \0
-	char tmp_string [20];// Temporary storage for fields
-	long int mins = 0;
-		
-			
-	while ((char_count < MAX_NMEA_STRING) && (c != '\0'))
+	if (pthread_create(&serial_thread_id, NULL, serial_thread, NULL) != 0)
 	{
-		c = string[char_count];
+		perror("dl_fldigi: ext_gps pthread_create");
+		exit(EXIT_FAILURE);
+	}
 
-		if (c != '\0')
-		{
-			
-			switch (field_count)
-			{
-				case 1: // Sentence type ($GPGGA in this case)
-				break;
-				case 2: // Time ignore any values after dp
-					if (c == ',')
-					{
-						tmp_string[field_pos] = '\0';
-						gps_time = atol(tmp_string);
-					}
-					else
-					{
-						if (c == '.')
-						{
-							tmp_string[field_pos] = '\0';
-						}
-						else
-						{
-							tmp_string[field_pos] = c;
-						}
-						field_pos ++;
-					}
-				break;
+	dl_fldigi_gps_setup_fromprogdefaults();
 
-				case 3: // Latitude
-					if (c == ',')
-					{
-						tmp_string[field_pos] = '\0';
-										
-						gps_lat = floor(atof(tmp_string)/100);		
-
-						// Set string to the minutes value
-						tmp_string[0]=tmp_string[2];
-						tmp_string[1]=tmp_string[3];
-						tmp_string[2]=tmp_string[5];
-						tmp_string[3]=tmp_string[6];
-						tmp_string[4]=tmp_string[7];
-						tmp_string[5]=tmp_string[8];
-						tmp_string[6]='\0';
-
-						mins = atol(tmp_string);
-
-						// Convert to degree decimal by dividing by 60
-						mins = mins*10/6;	
-	
-						gps_lat += (mins/1000000.0);
-					}
-					else
-					{
-						tmp_string[field_pos] = c;
-						field_pos ++;
-					}
-				break;
-
-				case 4: // Latitude Direction
-					if (c == 'S')
-					{
-						gps_lat *= -1;
-					}
-				break;
-
-				case 5: // Longitude
-					if (c == ',')
-					{
-						tmp_string[field_pos] = '\0';
-
-						gps_lng = floor(atof(tmp_string)/100);	
-													
-						// Set string to the minutes value
-						tmp_string[0]=tmp_string[3];
-						tmp_string[1]=tmp_string[4];
-						tmp_string[2]=tmp_string[6];
-						tmp_string[3]=tmp_string[7];
-						tmp_string[4]=tmp_string[8];
-						tmp_string[5]=tmp_string[9];
-						tmp_string[6]='\0';
-
-						mins = atol(tmp_string);
-
-						// Convert to degree decimal by dividing by 60
-						mins = mins*10/6;			
-								
-						gps_lng += (mins/1000000.0);
-					}
-					else
-					{
-						tmp_string[field_pos] = c;
-						field_pos ++;
-					}
-				break;
-
-				case 6: // Longitude Direction
-					if (c == 'W')
-					{
-						gps_lng *= -1;
-					}
-				break;
-
-				case 7: // Fix quality
-				break;
-
-				case 8: // Satellites being tracked
-				break;
-
-				case 9: // Hoz. dilution of position
-				break;
-
-				case 10: // Altitude in meters with respect to sea level
-					if (c == ',')
-					{
-						tmp_string[field_pos] = '\0';
-							
-						gps_alt = atol(tmp_string);
-							
-					}
-					else
-					{
-						tmp_string[field_pos] = c;
-						field_pos ++;
-					}
-				break;
-
-				case 11: // Altitude units (Meters)
-				break;
-
-				case 12: // Height of geiod
-				break;
-
-				case 13: // Height Units (Meters)
-				break;
-
-				case 14: // Time in seconds since last DGPS update (empty field)
-				break;
-
-				case 15: // DGPS station ID number (empty field)
-				break;
-
-				case 16: // Checksum
-				break;
-
-			}
-
-			// Increment the field count if comma
-			// and set the field position to 0 
-			if (c == ',')
-			{
-				field_count ++;
-				field_pos = 0;
-			}
-		}
-		char_count ++;
-	} // End while
-		
-        /*
-         * Set the status for the track string
-         * NB we need to parse a GGA and a RMC
-         * NMEA string before the track string
-         * is valid.
-         */
-
-        if (gps_status == ts_printed)
-        {
-                gps_status = ts_pending;
-        }
-        else
-        {
-                gps_status = ts_ready;
-        }
-
+	/* signal(SIGUSR1, dl_fldigi_gps_cleanup); 
+	 * Would require re-setting every time a signal is delivered, iirc. */
 }
 
-
-void GPS::parse_RMC (const char * string)
+void dl_fldigi_gps_setup_fromprogdefaults()
 {
-        /*
-         * Efficiency single pass of string
-         */
+        dl_fldigi_gps_setup(progdefaults.gpsDevice.c_str(),
+	                    progdefaults.gpsSpeed,
+                            progdefaults.gpsIdentity.c_str());
+}
 
-        int char_count = 0;  // Char counter for parsing string
-        int field_count = 1; // We start in the first field
-        int field_pos = 0;   // Char counter within field
-        char c = ' ';        // Must be init to anything other than \0
-	char tmp_string [20];// Temporary storage for fields
-		
-	/* Test that lat & lng is set before updating the structure
-	*/
-	/* Re using vars here to save space 
-	*/
-	
-	// If lat and long less than this then assume no GPS fix
+void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
+{
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps setup begin\n");
+	#endif
 
-	while ((char_count < MAX_NMEA_STRING) && (c != '\0'))
+	pthread_mutex_lock(&serial_info_mutex);
+
+	serial_port = strdup(port);
+	serial_baud = baud;
+	serial_identity = strdup(identity);
+	serial_updated = 1;
+
+	full_memory_barrier();
+
+	pthread_kill(serial_thread_id, SIGUSR1);
+	pthread_cond_signal(&serial_info_cond);
+
+	pthread_mutex_unlock(&serial_info_mutex);
+}
+
+static void empty_handler(int sig)
+{
+	if (!pthread_equal(pthread_self(), serial_thread_id))
 	{
-		c = string[char_count];
-
-		if (c != '\0')
-		{
-			switch (field_count)
-			{
-				case 1: // Sentence type ($GPRMC in this case)
-				break;
-
-				case 2: // Time ignore any values after dp
-				break;
-								
-				case 4: // Latitude
-				break;
-
-				case 5: // Latitude Direction
-				break;
-
-				case 6: // Longitude
-				break;
-
-				case 7: // Longitude Direction
-				break;	
-									
-				case 8: // Speed x.xx
-					if (c == ',')
-					{
-						tmp_string[field_pos] = '\0';
-
-						gps_spd = atof(tmp_string);
-													
-						// Convert from knots to km/h
-						gps_spd *= 1.852;
-
-						if (gps_spd < 1) gps_spd = 0;
-					}
-					else
-					{
-						tmp_string[field_pos] = c;
-						field_pos ++;
-					}
-				break;
-
-				case 9: // Heading
-					if (c == ',')
-					{
-						tmp_string[field_pos] = '\0';
-						gps_hdg = atof(tmp_string);
-
-						if (gps_spd < 1) gps_hdg = 0;
-
-					}
-					else
-					{
-						tmp_string[field_pos] = c;
-						field_pos ++;
-					}
-				break;
-
-				case 10: // Date
-					if (c == ',')
-					{
-						gps_date[field_pos] = '\0';
-					}
-					else
-					{
-						gps_date[field_pos] = c;
-						field_pos ++;
-					}
-				break;
-
-				case 11: // Magnetic Variation
-				break;
-
-				case 12: // Checksum
-				break;
-
-			}
-
-			/* Increment the field count if comma
-			* and set the field position to 0 */
-			if (c == ',')
-			{
-				field_count ++;
-				field_pos = 0;
-			}
-		}
-		char_count ++;
-	} // End While
-		
-        /*
-         * Set the status for the track string
-         * NB we need to parse a GGA and a RMC
-         * NMEA string before the track string
-         * is valid.
-         */
-
-        if (gps_status == ts_printed)
-        {
-                gps_status = ts_pending;
-        }
-        else
-        {
-                gps_status = ts_ready;
-        }
-
+		raise(SIGUSR2);
+	}
 }
 
-bool GPS::parse_string (const char * gps_string)
+static void *serial_thread(void *a)
 {
-	/*
-	 * Check for GGA and RMC sentences and use data
-	 * to fill the track_string structure
-	 */
+	char *port, *identity;
+	int baud;
+	FILE *f;
+	struct gps_data fix;
+	int i, c;
+	time_t last_post;
+	struct timespec abstime;
+	time_t retry_time;
 
-        #ifdef DL_FLDIGI_DEBUG
-		size_t ti;
+	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
 
-		if (strlen(gps_string) > 2 && gps_string[strlen(gps_string) - 1] == '\n')
+	memset(&abstime, 0, sizeof(abstime));
+	retry_time = 0;
+	port = NULL;
+	identity = NULL;
+	baud = 0;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: start\n");
+	#endif
+
+	for (;;)
+	{
+		pthread_mutex_lock(&serial_info_mutex);
+
+		if (retry_time == 0)
 		{
-			ti = strlen(gps_string) - 1;
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: sleeping on serial_updated\n");
+			#endif
+
+			while (!serial_updated)
+				pthread_cond_wait(&serial_info_cond, &serial_info_mutex);
 		}
 		else
 		{
-			ti = strlen(gps_string);
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: sleeping on serial_updated with a timeout in %is\n", retry_time - time(NULL));
+			#endif
+
+			abstime.tv_sec = retry_time;
+
+			while (!serial_updated && (time(NULL) < retry_time))
+				pthread_cond_timedwait(&serial_info_cond, &serial_info_mutex, &abstime);
 		}
 
-                fprintf(stderr, "dl_fldigi: GPS parsing string: '%.*s'\n", ti, gps_string);
-        #endif
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: woke up\n");
+		#endif
 
-	if (check_string(gps_string))
-	{
-		if ( strncmp("$GPGGA", gps_string,6) == 0 )
+		if (serial_updated)
 		{
-        	        #ifdef DL_FLDIGI_DEBUG
-                		fprintf(stderr, "dl_fldigi: GPS found GPGGA\n");
-		        #endif
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: updating thread's serial config\n");
+			#endif
 
-			parse_GGA (gps_string);
-			return true;
+			if (port != NULL)     free(port);
+			if (identity != NULL) free(identity);
+
+			port = (char *) serial_port;
+			baud = (int) serial_baud;
+			identity = (char *) serial_identity;
+
+			serial_updated = 0;
 		}
 
-                #ifdef DL_FLDIGI_DEBUG
-                        fprintf(stderr, "dl_fldigi: GPS discarded non GPGGA string.\n");
-                #endif
+		pthread_mutex_unlock(&serial_info_mutex);
 
-	/*
- 		if ( strncmp("$GPRMC", gps_string,6) == 0 )
+		if (port == NULL || port[0] == '\0' || baud == 0)
 		{
-			parse_RMC (gps_string);
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: empty config, restarting\n");
+			#endif
+
+			retry_time = 0;
+			continue;
 		}
-	 */
-	}
-	else
-	{
-		fprintf(stderr, "dl_fldigi: GPS: Corrupted or invalid string\n");
+
+		f = dl_fldigi_open_serial_port(port, baud);
+	
+		if (f == NULL)
+		{
+			#ifdef DL_FLDIGI_DEBUG
+				fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: restarting\n");
+			#endif
+
+			retry_time = time(NULL) + 10;
+			continue;
+		}
+
+		last_post = 0;
+
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: beginning processing loop\n");
+		#endif
+
+		for (;;)
+		{
+			do
+			{
+				c = fgetc(f);
+			}
+			while (c != '$' && c != EOF);
+
+			if (c == EOF)
+			{
+				perror("dl-fldigi: fgetc gps");
+				break;
+			}
+
+			/* $GPGGA,123519.00,4807.0381,N,00056.0002,W,1,08,0.29,00545,M,046,M,,*76 */
+			i = fscanf(f, "GPGGA,%2u%2u%2u.%*2u,%2u%f,%c,%3u%f,%c,1,%u,%*f,%u,M,%*u,%*c,,*%*2x\n",
+				   &fix.hour, &fix.minute, &fix.second,
+				   &fix.lat_d, &fix.lat_m, &fix.lat_ns,
+				   &fix.lon_d, &fix.lon_m, &fix.lon_we,
+				   &fix.sats, &fix.alt);
+
+			if (i == 11)
+			{
+				fix.lat = fix.lat_d + (fix.lat_m / 60);
+				fix.lon = fix.lon_d + (fix.lon_m / 60);
+
+				if (fix.lat_ns == 'S')  fix.lat = -fix.lat;
+				else if (fix.lat_ns != 'N')  continue;
+
+				if (fix.lon_we == 'W')  fix.lon = -fix.lon;
+				else if (fix.lon_we != 'E')  continue;
+
+				if (time(NULL) - last_post > 5)
+				{
+					last_post = time(NULL);
+					dl_fldigi_gps_post(fix.lat, fix.lon, fix.alt, identity);
+				}
+			}
+			else if (i == EOF)
+			{
+				perror("dl-fldigi: fscanf gps");
+				break;
+			}
+		}
+
+		fclose(f);
+
+		retry_time = time(NULL) + 10;
+
+		#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: restart\n");
+		#endif
 	}
 
-	return false;
+	return NULL;
 }
 
-bool GPS::data_ready (void)
+static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity)
 {
-	/*
-	 * For the GPS structure to be up to date it 
-         * requires information from $GPGGA and $GPRMC
-         * The status is set to ts_ready when both sentances
-         * have been processed.
-         *
-         * This function returns TRUE when the status = tx_ready
-         * else it returns FALSE
-         */
+	char rx_chase [200];
 
-	 if (gps_status == ts_ready)
-		return true;
-	 else
-		return false;
+	snprintf(rx_chase, sizeof(rx_chase), "ZC,%s,%6f,%6f,%d",
+		 (identity ? identity : "UNKNOWN"),
+		 lat, lon, alt);
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps post string '%s'\n", rx_chase);
+	#endif
+
+	/* XXX is progdefaults thread safe? */
+	dl_fldigi_post(rx_chase, progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 }
-//
+
+/**
+* Open the serial port and check it succeeded.
+* The named port is opened at the given baud rate using 8N1
+* with no hardware flow control.
+* \param port The serial port to use, e.g. COM8 or /dev/ttyUSB0
+* \param baud The baud rate to use, e.g. 9600 or 4800. On linux this
+* is restricted to a specific range of common values.
+*/
+static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
+{
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: Attempting to open serial port '%s' at %i baud.\n", port, baud);
+	#endif
+
+	//Open the serial port
+	int serial_port = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
+	if( serial_port == -1 ) {
+		fprintf(stderr, "dl_fldigi: Error opening serial port.\n");
+		return NULL;
+	}
+
+	FILE *f = fdopen(serial_port, "r");
+	if (f == NULL)
+	{
+		fprintf(stderr, "dl_fldigi: Error fdopening serial port as a FILE\n");
+		close(serial_port);
+		return NULL;
+	}
+
+	//Initialise the port
+	int serial_port_set = fcntl(serial_port, F_SETFL, 0);
+	if( serial_port_set == -1 ) {
+		fprintf(stderr, "dl_fldigi: Error initialising serial port.\n");
+		fclose(f);
+		return NULL;
+	}
+
+	//Linux requires baudrates be given as a constant
+	speed_t baudrate = B4800;
+	if( baud == 9600 ) baudrate = B9600;
+	else if( baud == 19200 ) baudrate = B19200;
+	else if( baud == 38400 ) baudrate = B38400;
+	else if( baud == 57600 ) baudrate = B57600;
+	else if( baud == 115200 ) baudrate = B115200;
+	else if( baud == 230400 ) baudrate = B230400;
+
+	//Set all the weird arcane settings Linux demands (boils down to 8N1)
+	struct termios port_settings;
+	memset(&port_settings, 0, sizeof(port_settings));
+
+	cfsetispeed(&port_settings, baudrate);
+	cfsetospeed(&port_settings, baudrate);
+
+	/* Enable the reciever and set local */
+	port_settings.c_cflag |= (CLOCAL | CREAD);
+
+	/* Set 8N1 */
+	port_settings.c_cflag &= ~PARENB;
+	port_settings.c_cflag &= ~CSTOPB;
+	port_settings.c_cflag &= ~CSIZE;
+	port_settings.c_cflag |= CS8;
+
+	/* Set raw input */
+	port_settings.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+
+	/* Ignore CR NMEA does CR LF at end of each sentence */
+	port_settings.c_iflag |= (IGNCR);
+
+	/* Set raw output (mute point as we don't send stuff to gps in here) */
+	port_settings.c_oflag &= ~OPOST;
+
+	//Apply settings
+	serial_port_set = tcsetattr(serial_port, TCSANOW, &port_settings);
+	if( serial_port_set == -1 ) {
+		fprintf(stderr, "dl_fldigi: Error configuring serial port.\n");
+		fclose(f);
+		return NULL;
+	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port);
+	#endif
+
+	return f;
+}
+
+#else /* __MINGW32__ */
+
+void dl_fldigi_gps_init()
+{
+	fprintf(stderr, "dl_fldigi: Not yet implemented on windows: dl_fldigi_gps_init\n");
+}
+
+void dl_fldigi_gps_setup_fromprogdefaults()
+{
+
+}
+
+void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
+{
+	fprintf(stderr, "dl_fldigi: Not yet implemented on windows: dl_fldigi_gps_setup\n");
+}
+
+#endif /* __MINGW32__ */

@@ -255,7 +255,7 @@ void rx_extract_add(int c)
 					UpperCase (identity_callsign);
 
 					/* RJH Post Chase Car information */
-					dl_fldigi_post_gps();
+					/* Not yet implemented (TODO) dl_fldigi_post_gps(); */
 
 					/* dl_fldigi_post will put_status as it does its stuff */
 					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());

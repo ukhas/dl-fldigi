@@ -19,7 +19,6 @@
 #include "util.h"
 #include "fl_digi.h"
 #include "dl_fldigi.h"
-#include "dl_fldigi_serial.h"
 #include "dl_fldigi_gps.h"
 #include "util.h"
 #include "confdialog.h"
@@ -41,13 +40,6 @@ struct dl_fldigi_post_threadinfo
 {
 	CURL *curl;
 	char *post_data;
-};
-
-struct dl_fldigi_gps_threadinfo
-{
-	char *port;
-	int baud;
-	char *identity;
 };
 
 struct dl_fldigi_download_threadinfo
@@ -80,7 +72,6 @@ struct payload
 	struct payload *next;
 };
 
-
 bool dl_fldigi_downloaded_once = false;
 int dl_fldigi_initialised = 0;
 const char *dl_fldigi_cache_file;
@@ -88,19 +79,9 @@ struct payload *payload_list = NULL;
 struct payload *current_payload = NULL;
 time_t rxTimer = 0;
 
-pthread_mutex_t dl_fldigi_ext_gps_status_mutex = PTHREAD_MUTEX_INITIALIZER;
-#ifndef __MINGW32__
-// Ugh.
-pthread_t gps_thread = 0;
-#endif
-
-pthread_mutex_t dl_fldigi_ext_gps_data_mutex = PTHREAD_MUTEX_INITIALIZER;
-struct chase_car_location chase_car = { 0, 0, 0, 1 };
-
 pthread_mutex_t dl_fldigi_tid_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static long int thread_identifier();
-static void *dl_fldigi_ext_gps_thread(void *thread_argument);
 static void *dl_fldigi_post_thread(void *thread_argument);
 static void *dl_fldigi_download_thread(void *thread_argument);
 static void put_status_safe(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
@@ -228,219 +209,6 @@ static void print_put_status(const char *msg, double timeout, status_timeout act
 
 	put_status(msg, timeout, action);
 }
-
-// TODO: Windows support
-#ifndef __MINGW32__
-void dl_fldigi_ext_gps_start()
-{
-	struct dl_fldigi_gps_threadinfo *t;
-
-	t = (struct dl_fldigi_gps_threadinfo *) malloc(sizeof(struct dl_fldigi_gps_threadinfo));
-
-	if (t == NULL)
-	{
-		fprintf(stderr, "dl_fldigi: denied %zi bytes of RAM for 'struct dl_fldigi_gps_threadinfo'\n", sizeof(struct dl_fldigi_post_threadinfo));
-		return;
-	}
-
-	t->port = strdup(progdefaults.gpsDevice.c_str());
-	t->baud = progdefaults.gpsSpeed;
-	t->identity = strdup(progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
-
-	// !!
-	full_memory_barrier();
-
-	pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
-
-	if (gps_thread != 0)
-	{
-		fprintf(stderr, "dl_fldigi: killing gps thread\n");
-		dl_fldigi_serial_cleanupkill(gps_thread);
-		pthread_join(gps_thread, NULL);
-		gps_thread = 0;
-	}
-
-	if (pthread_create(&gps_thread, NULL, dl_fldigi_ext_gps_thread, (void *) t) != 0)
-	{
-		perror("dl_fldigi: ext_gps pthread_create");
-		gps_thread = 0;
-		free(t->port);
-		free(t->identity);
-		free(t);
-		return;
-	}
-
-	pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
-}
-
-static void *dl_fldigi_ext_gps_thread(void *thread_argument)
-{
-	// ALSO: TODO: Some sort of put_status thing.
-
-	FILE *serial_port;
-	char *result;
-        char buffer [MAX_NMEA_STRING];
-	time_t last_post = 0;
-	char *identity;
-
-	struct dl_fldigi_gps_threadinfo *t;
-	t = (struct dl_fldigi_gps_threadinfo *) thread_argument;
-
-	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: (thread %li) ext_gps_thread started \n", pthread_self());
-		fprintf(stderr, "dl_fldigi: (thread %li) port %s baud %d identity %s \n", pthread_self(), 
-			t->port, t->baud, t->identity);
-	#endif
-
-	SET_THREAD_ID(DL_FLDIGI_TID);
-
-	// using alloca
-	identity = strdupa(t->identity);
-	free(t->identity);
-
-	serial_port = dl_fldigi_open_serial_port(t->port, t->baud);
-
-	free(t->port);
-	t->port = NULL;
-	t->baud = -1;
-
-	free(t);
-	t = NULL;
-
-	if (!serial_port)
-	{
-		fprintf(stderr, "dl_fldigi: (thread %li) ext_gps_thread failed to dl_fldigi_open_serial_port\n", pthread_self());
-
-		pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
-		gps_thread = 0;
-		full_memory_barrier();
-		pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
-
-		pthread_exit(0);
-	}
-
-	// The first line is typically incomplete: read and discard
-	fgets(buffer, MAX_NMEA_STRING, serial_port);
-
-	// NMEA parsing class
-	GPS gps;
-
-	while (true)
-	{
-		result = fgets(buffer, MAX_NMEA_STRING, serial_port);
-
-		if (result)
-		{
-			#ifdef DL_FLDIGI_DEBUG
-			     	fprintf(stderr, "dl_fldigi: (thread %li) gps_ext read 1 line\n", pthread_self());
-			#endif
-
-		        if (gps.parse_string(buffer))
-        		{
-				#ifdef DL_FLDIGI_DEBUG
-					fprintf(stderr, "dl_fldigi: (thread %li) gps_ext assign gps data to lat and long \n", pthread_self());
-				#endif
-
-				pthread_mutex_lock(&dl_fldigi_ext_gps_data_mutex);
-
-		        	gps.lat_lng_alt(chase_car.latitude, chase_car.longitude, chase_car.altitude);
-				chase_car.posted = 0;
-				// gps.print_string();
-
-				#ifdef DL_FLDIGI_DEBUG
-					fprintf(stderr, "dl_fldigi: (thread %li) lat %0.6f and long %0.6f and alt %ld\n", 
-						pthread_self(), chase_car.latitude, chase_car.longitude, chase_car.altitude);
-				#endif
-
-				full_memory_barrier();
-				pthread_mutex_unlock(&dl_fldigi_ext_gps_data_mutex);
-
-				// Throttle to post once every 5 seconds
-				if (time(NULL) - last_post > 5)
-				{
-					last_post = time(NULL);
-
-					pthread_mutex_lock(&dl_fldigi_tid_mutex);
-					REQ(dl_fldigi_post_gps);
-					full_memory_barrier();
-					pthread_mutex_unlock(&dl_fldigi_tid_mutex);
-				}
-
-				// sleep(5);
-				// gps_serial.flush_buffer();
-			}
-		}
-
-		if (!result || feof(serial_port))
-		{
-			#ifdef DL_FLDIGI_DEBUG
-				fprintf(stderr, "dl_fldigi: (thread %li) gps_ext read fail: exiting\n", pthread_self());
-                        #endif
-
-			pthread_mutex_lock(&dl_fldigi_ext_gps_status_mutex);
-			fclose(serial_port);
-
-			gps_thread = 0;
-			full_memory_barrier();
-
-			pthread_exit(0);
-			pthread_mutex_unlock(&dl_fldigi_ext_gps_status_mutex);
-		}
-	}
-}
-
-void dl_fldigi_post_gps()
-{
-       	char rx_chase [200];
-
-	// RJH This is a bit of a hack but data is only posted when the latitude os not 0
-        // this is to prevent posting of data if the external gps is not working
-        // If the GPS becomes disconnected this won't work.
-
-	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: dl_fldigi_post_gps called\n");
-	#endif
-
-	pthread_mutex_lock(&dl_fldigi_ext_gps_data_mutex);
-
-	if (!chase_car.posted)
-	{
-		chase_car.posted = 1;
-
-		snprintf(rx_chase, sizeof(rx_chase), "ZC,%s,%6f,%6f,%ld",
-			 (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str()),
-			 chase_car.latitude,
-			 chase_car.longitude,
-			 chase_car.altitude);
-
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: dl_fldigi_post_gps post string %s\n",rx_chase);
-		#endif
-
-		pthread_mutex_unlock(&dl_fldigi_ext_gps_data_mutex);
-
-		dl_fldigi_post(rx_chase, progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
-	}
-	else
-	{
-		#ifdef DL_FLDIGI_DEBUG
-			fprintf(stderr, "dl_fldigi: dl_fldigi_post_gps refusing to post duplicate\n");
-		#endif
-	}
-
-	pthread_mutex_unlock(&dl_fldigi_ext_gps_data_mutex);
-}
-#else
-void dl_fldigi_ext_gps_start()
-{
-	fprintf(stderr, "dl_fldigi: Not yet implemented for MINGW: Ext GPS.\n");
-}
-
-void dl_fldigi_post_gps()
-{
-	fprintf(stderr, "dl_fldigi: Not yet implemented for MINGW: Ext GPS post.\n");
-}
-#endif /* __MINGW32__ */
 
 void dl_fldigi_post(const char *data, const char *identity)
 {

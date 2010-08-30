@@ -1125,27 +1125,28 @@
               "report.pskreporter.info")                                                \
         ELEM_(std::string, pskrep_port, "PSKREPPORT",                                   \
               "Reception report server port",                                           \
-              "4739")																	\
-/* Flight Data */																		\
-		ELEM_(std::string, xmlPayloadname, "PAYLOADNAME", "The last selected payload", "")							\
+              "4739")													\
+/* Flight Data */													\
+		ELEM_(std::string, xmlPayloadname, "PAYLOADNAME", "The last selected payload", "")			\
 		ELEM_(std::string, xmlSentence_delimiter, "", "", "$$")							\
-		ELEM_(std::string, xmlField_delimiter, "", "", ",")								\
-		ELEM_(int, xmlFields, "", "", 7)												\
-		ELEM_(std::string, xmlCallsign, "", "", "")										\
-		ELEM_(int, xml_time, "", "", 0)													\
-		ELEM_(int, xml_latitude, "", "", 0)												\
-		ELEM_(int, xml_longitude, "", "", 0)											\
-		ELEM_(int, xml_altitude, "", "", 0)												\
-		ELEM_(int, xml_stringlimit, "", "", 100)										\
-/* GPS Device Info */																	\
-		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")								\
-		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)										\
-/* Config stuff */																		\
-		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)										\
-		ELEM_(std::string, waterfall_png_location, "PNG_WFALL_LOC", "Save location for PNG", "dl-fldigi-waterfall.png") \
-        ELEM_(bool, dl_online, "", "", false) \
-		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/hadie/live.php") \
-		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "") \
+		ELEM_(std::string, xmlField_delimiter, "", "", ",")							\
+		ELEM_(int, xmlFields, "", "", 7)									\
+		ELEM_(std::string, xmlCallsign, "", "", "")								\
+		ELEM_(int, xml_time, "", "", 0)										\
+		ELEM_(int, xml_latitude, "", "", 0)									\
+		ELEM_(int, xml_longitude, "", "", 0)									\
+		ELEM_(int, xml_altitude, "", "", 0)									\
+		ELEM_(int, xml_stringlimit, "", "", 100)								\
+/* GPS Device Info */													\
+		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")							\
+		ELEM_(int, gpsSpeed, "GPSSPEED", "", 4800)								\
+		ELEM_(std::string, gpsIdentity, "GPSID", "", "chase_car")						\
+/* Config stuff */													\
+		ELEM_(int, png_wfall, "PNG_WFALL", "", 0)								\
+	        ELEM_(bool, dl_online, "", "", false) 									\
+		ELEM_(std::string, waterfall_png_location, "PNG_WFALL_LOC", "Save location for PNG", "dl-fldigi-waterfall.png") 	\
+		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/hadie/live.php") 	\
+		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "") 					\
 		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")
 
 

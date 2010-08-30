@@ -300,7 +300,6 @@ dl_fldigi_SOURCES += \
 	include/fl_digi.h \
 	include/dl_fldigi.h \
 	include/dl_fldigi_gps.h \
-	include/dl_fldigi_serial.h \
 	include/fl_lock.h \
 	include/fldigi-config.h \
 	include/flinput2.h \
@@ -451,7 +450,6 @@ dl_fldigi_SOURCES += \
 	misc/util.cxx \
 	misc/dl_fldigi.cxx \
 	misc/dl_fldigi_gps.cxx \
-	misc/dl_fldigi_serial.cxx \
 	mt63/dsp.cxx \
 	mt63/mt63.cxx \
 	mt63/mt63base.cxx \
