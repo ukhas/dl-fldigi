@@ -1345,7 +1345,7 @@ void cb_mnuVisitTracker(Fl_Widget*, void*)
 
 void cb_mnuVisitView(Fl_Widget*, void*)
 {
-	cb_mnuVisitURL(0, (void*)string("http://www.robertharrison.org/listen/view.php").c_str());
+	cb_mnuVisitURL(0, (void*)string(progdefaults.server_location.append("listen.php")).c_str());
 }
 
 //End

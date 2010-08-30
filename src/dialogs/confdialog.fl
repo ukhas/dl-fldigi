@@ -102,8 +102,8 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;} open selected
-        tooltip {Operator information} xywh {0 25 500 345} when 1
+        callback {progdefaults.changed = true;} open
+        tooltip {Operator information} xywh {0 25 500 345} when 1 hide
       } {
         Fl_Group {} {
           label Station open
@@ -2823,7 +2823,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabID {
         label ID open
-        xywh {0 25 500 345}
+        xywh {0 25 500 345} hide
       } {
         Fl_Group {} {
           label {Video Preamble ID} open
@@ -2990,7 +2990,7 @@ progdefaults.changed = true;}
           Fl_Check_Button chkRSidPost {
             label {Send at EOT}
             callback {progdefaults.rsid_post = o->value();
-progdefaults.changed = true;} selected
+progdefaults.changed = true;}
             tooltip {Send RSID at end of transmission} xywh {310 247 120 20} down_box DOWN_BOX hide
             code0 {o->value(progdefaults.rsid_post);}
           }
@@ -3409,7 +3409,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabDL {
         label {DL Client} open
-        xywh {0 25 500 350} labelsize 12 hide
+        xywh {0 25 500 350} labelsize 12
       } {
         Fl_Tabs tabsDL {open
           xywh {0 25 500 350}
@@ -3420,14 +3420,21 @@ progdefaults.changed = true;}
           } {
             Fl_Group {} {
               label Enable open
-              xywh {5 55 490 290} box ENGRAVED_FRAME align 21
+              xywh {10 55 490 290} box ENGRAVED_FRAME align 21
             } {
               Fl_Check_Button confdialog_dl_online {
                 label Online
                 callback {cb_dl_fldigi_toggle_dl_online();
 set_menu_dl_online();}
-                xywh {35 75 200 25} down_box DOWN_BOX
+                xywh {40 75 200 25} down_box DOWN_BOX
                 code0 {o->value(progdefaults.dl_online);}
+              }
+              Fl_Input {} {
+                label {Server:}
+                callback {progdefaults.server_location = o->value();
+progdefaults.changed = true;}
+                tooltip {Tracker Server Address} xywh {90 105 334 20}
+                code0 {o->value(progdefaults.server_location.c_str());}
               }
             }
           }
@@ -3611,7 +3618,7 @@ progdefaults.changed = true;}
     }
     Fl_Return_Button btnCloseConfig {
       label Close
-      callback {closeDialog();}
+      callback {closeDialog();} selected
       xywh {367 375 130 22}
     }
     Fl_Button btnResetConfig {

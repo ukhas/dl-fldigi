@@ -2653,6 +2653,11 @@ static void cb_confdialog_dl_online(Fl_Check_Button*, void*) {
 set_menu_dl_online();
 }
 
+static void cb_Server(Fl_Input* o, void*) {
+  progdefaults.server_location = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
 Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
@@ -2806,6 +2811,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
         tabOperator->tooltip(_("Operator information"));
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
+        tabOperator->hide();
         { Fl_Group* o = new Fl_Group(5, 35, 490, 275, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6148,17 +6154,21 @@ d frequency"));
       } // Fl_Group* tabQRZ
       { tabDL = new Fl_Group(0, 25, 500, 350, _("DL Client"));
         tabDL->labelsize(12);
-        tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 500, 350);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
-            { Fl_Group* o = new Fl_Group(5, 55, 490, 290, _("Enable"));
+            { Fl_Group* o = new Fl_Group(10, 55, 490, 290, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = confdialog_dl_online = new Fl_Check_Button(35, 75, 200, 25, _("Online"));
+              { Fl_Check_Button* o = confdialog_dl_online = new Fl_Check_Button(40, 75, 200, 25, _("Online"));
                 confdialog_dl_online->down_box(FL_DOWN_BOX);
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
                 o->value(progdefaults.dl_online);
               } // Fl_Check_Button* confdialog_dl_online
+              { Fl_Input* o = new Fl_Input(90, 105, 334, 20, _("Server:"));
+                o->tooltip(_("Tracker Server Address"));
+                o->callback((Fl_Callback*)cb_Server);
+                o->value(progdefaults.server_location.c_str());
+              } // Fl_Input* o
               o->end();
             } // Fl_Group* o
             tabDLEnable->end();
