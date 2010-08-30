@@ -261,6 +261,7 @@ void trx_trx_receive_loop()
 				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 				UpperCase (identity_callsign);
 
+				dl_fldigi_gps_swap_NSEW();
 				string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
 				UpperCase (string_lat);
 				string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());

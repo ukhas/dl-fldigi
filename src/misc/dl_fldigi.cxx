@@ -1408,3 +1408,33 @@ void dl_fldigi_update_rxtimer()
 		#endif
 	}
 }
+
+void dl_fldigi_gps_swap_NSEW()
+{
+	if (progdefaults.myLat.at(progdefaults.myLat.length() - 1) == 'N')
+	{
+		fprintf(stderr, "dl_fldigi: found N\n");
+		progdefaults.myLat.erase(progdefaults.myLat.length() - 1);
+		progdefaults.changed = true;
+	}
+	if (progdefaults.myLat.at(progdefaults.myLat.length() - 1) == 'S')
+	{
+		fprintf(stderr, "dl_fldigi: found S\n");
+		progdefaults.myLat.erase(progdefaults.myLat.length() - 1);
+		progdefaults.myLat.insert(0, "-");
+		progdefaults.changed = true;
+	}
+	if (progdefaults.myLon.at(progdefaults.myLon.length() - 1) == 'E')
+	{
+		fprintf(stderr, "dl_fldigi: found E\n");
+		progdefaults.myLon.erase(progdefaults.myLon.length() - 1);
+		progdefaults.changed = true;
+	}
+	if (progdefaults.myLon.at(progdefaults.myLon.length() - 1) == 'W')
+	{
+		fprintf(stderr, "dl_fldigi: found W\n");
+		progdefaults.myLon.erase(progdefaults.myLon.length() - 1);
+		progdefaults.myLon.insert(0, "-");
+		progdefaults.changed = true;
+	}
+}
