@@ -34,7 +34,6 @@ static pthread_mutex_t serial_info_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t serial_info_cond = PTHREAD_COND_INITIALIZER;
 
 static void *serial_thread(void *a);
-static void empty_handler(int sig);
 static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity);
 static FILE *dl_fldigi_open_serial_port(const char *port, int baud);
 
@@ -57,22 +56,9 @@ struct gps_data
 
 void dl_fldigi_gps_init()
 {
-	struct sigaction act;
-	int i;
-
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: dl_fldigi_gps init()\n");
 	#endif
-
-	memset(&act, 0, sizeof(act));
-	act.sa_handler = empty_handler;
-
-	i = sigaction(SIGUSR1, &act, NULL);
-	if (i != 0)
-	{
-		perror("dl_fldigi: sigaction");
-		exit(EXIT_FAILURE);
-	}
 
 	if (pthread_create(&serial_thread_id, NULL, serial_thread, NULL) != 0)
 	{
@@ -81,9 +67,6 @@ void dl_fldigi_gps_init()
 	}
 
 	dl_fldigi_gps_setup_fromprogdefaults();
-
-	/* signal(SIGUSR1, dl_fldigi_gps_cleanup); 
-	 * Would require re-setting every time a signal is delivered, iirc. */
 }
 
 void dl_fldigi_gps_setup_fromprogdefaults()
@@ -108,18 +91,10 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 
 	full_memory_barrier();
 
-	pthread_kill(serial_thread_id, SIGUSR1);
+	pthread_kill(serial_thread_id, SIGUSR2);
 	pthread_cond_signal(&serial_info_cond);
 
 	pthread_mutex_unlock(&serial_info_mutex);
-}
-
-static void empty_handler(int sig)
-{
-	if (!pthread_equal(pthread_self(), serial_thread_id))
-	{
-		raise(SIGUSR2);
-	}
 }
 
 static void *serial_thread(void *a)
