@@ -1412,6 +1412,8 @@ void dl_fldigi_update_rxtimer()
 
 void dl_fldigi_gps_swap_NSEW()
 {
+	if (progdefaults.myLat.empty() || progdefaults.myLon.empty())  return;
+
 	if (progdefaults.myLat.at(progdefaults.myLat.length() - 1) == 'N')
 	{
 		fprintf(stderr, "dl_fldigi: found N\n");
