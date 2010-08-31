@@ -947,10 +947,8 @@ void dl_fldigi_update_payloads()
 			
 			else if (strcmp("coding", xml->getNodeName()) == 0)
 			{
-				/* Why does this need to be commented? XXX */
-				// xml->read();
-				r_coding = xml->getNodeData();
 				xml->read();
+				r_coding = xml->getNodeData();
 
 				if (strcmp("baudot", r_coding) == 0)
 				{
