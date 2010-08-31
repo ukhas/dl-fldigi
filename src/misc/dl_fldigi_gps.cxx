@@ -101,9 +101,9 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 
 	pthread_mutex_lock(&serial_info_mutex);
 
-	serial_port = strdup(port);
+	serial_port = (port != NULL ? strdup(port) : NULL);
 	serial_baud = baud;
-	serial_identity = strdup(identity);
+	serial_identity = (identity != NULL ? strdup(identity) : NULL);
 	serial_updated = 1;
 
 	full_memory_barrier();
