@@ -92,7 +92,7 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 	full_memory_barrier();
 
 	pthread_kill(serial_thread_id, SIGUSR2);
-	pthread_cond_signal(&serial_info_cond);
+	pthread_cond_signal(&serial_info_cond);  /* Not really required since the signal will have caused a spurious wakeup */
 
 	pthread_mutex_unlock(&serial_info_mutex);
 }
