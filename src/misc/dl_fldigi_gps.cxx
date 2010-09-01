@@ -339,6 +339,9 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	/* Set raw output (mute point as we don't send stuff to gps in here) */
 	port_settings.c_oflag &= ~OPOST;
 
+	/* Blocking read until 1 character arrives */
+	port_settings.c_cc[VMIN] = 1;
+
 	//Apply settings
 	serial_port_set = tcsetattr(serial_port, TCSANOW, &port_settings);
 	if( serial_port_set == -1 ) {
