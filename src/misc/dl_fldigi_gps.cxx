@@ -160,6 +160,11 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 	#endif
 }
 
+void dl_fldigi_gps_stop()
+{
+	dl_fldigi_gps_setup(NULL, progdefaults.gpsSpeed, progdefaults.gpsIdentity.c_str());
+}
+
 static void dl_fldigi_gps_set_status_safe(char *port, int baud, char *identity, enum gps_status s)
 {
 	if (port != NULL)	port = strdup(port);

@@ -2761,6 +2761,10 @@ static void cb_Restart(Fl_Button*, void*) {
   dl_fldigi_gps_setup_fromprogdefaults();
 }
 
+static void cb_Stop(Fl_Button*, void*) {
+  dl_fldigi_gps_stop();
+}
+
 Fl_Output *gpsTLat=(Fl_Output *)0;
 
 Fl_Output *gpsTLon=(Fl_Output *)0;
@@ -6366,8 +6370,11 @@ d frequency"));
               } // Fl_Output* gpsTIdentity
               { gpsTBaud = new Fl_Output(315, 205, 105, 25, _("Baud"));
               } // Fl_Output* gpsTBaud
-              { Fl_Button* o = new Fl_Button(100, 235, 320, 25, _("Restart Thread"));
+              { Fl_Button* o = new Fl_Button(100, 235, 155, 25, _("Restart Thread"));
                 o->callback((Fl_Callback*)cb_Restart);
+              } // Fl_Button* o
+              { Fl_Button* o = new Fl_Button(260, 235, 160, 25, _("Stop Thread"));
+                o->callback((Fl_Callback*)cb_Stop);
               } // Fl_Button* o
               o->end();
             } // Fl_Group* o
@@ -6380,7 +6387,7 @@ d frequency"));
               } // Fl_Output* gpsTLon
               { gpsTAlt = new Fl_Output(100, 330, 105, 25, _("Altitude"));
               } // Fl_Output* gpsTAlt
-              { Fl_Button* o = new Fl_Button(240, 332, 181, 25, _("Save as operator position"));
+              { Fl_Button* o = new Fl_Button(225, 330, 196, 25, _("Save as operator position"));
                 o->callback((Fl_Callback*)cb_Save);
               } // Fl_Button* o
               o->end();
