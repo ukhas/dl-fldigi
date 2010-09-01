@@ -1099,7 +1099,7 @@ echo	   : %c\n",
 		rigio.ClosePort();
 		return false;
 	}
-	LOG_VERBOSE("New thread %p", rigCAT_thread);
+	// LOG_VERBOSE("New thread %p", rigCAT_thread);
 
 	rigCAT_open = true;
 
