@@ -46,7 +46,7 @@ void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a);
 void dl_fldigi_select_payload(const char *name);
 void dl_fldigi_reset_rxtimer();
 void dl_fldigi_update_rxtimer();
-void dl_fldigi_gps_swap_NSEW();
+double dl_fldigi_geotod(char *s);
 
 void cb_dl_fldigi_switch_modes(Fl_Widget *o, void *a);
 

@@ -389,8 +389,8 @@ void rx_extract_update_ui(string rx_buff)
 
 	}
 	if(progdefaults.myLat.length() > 0 && progdefaults.myLon.length() > 0) {
-		presentCoords.lat = atof(progdefaults.myLat.c_str());
-		presentCoords.lon = atof(progdefaults.myLon.c_str());
+		presentCoords.lat = dl_fldigi_geotod((char *) progdefaults.myLat.c_str());
+		presentCoords.lon = dl_fldigi_geotod((char *) progdefaults.myLon.c_str());
 		target_vector = Coords_to_bearing_and_distance(presentCoords, targetCoords);
 
 		printf("Target bearing = %fdeg, distance %fKm\n",target_vector.bearing,target_vector.distance);

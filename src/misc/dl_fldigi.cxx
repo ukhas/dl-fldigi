@@ -1416,34 +1416,39 @@ void dl_fldigi_update_rxtimer()
 	}
 }
 
-void dl_fldigi_gps_swap_NSEW()
+/* Converts any geographic coordinate string (DMS) to degrees (double) */
+double dl_fldigi_geotod(char *s)
 {
-	if (progdefaults.myLat.empty() || progdefaults.myLon.empty())  return;
-
-	if (progdefaults.myLat.at(progdefaults.myLat.length() - 1) == 'N')
+	int i = 0, neg = 0;
+	double r = 0;
+	
+	while(*s)
 	{
-		fprintf(stderr, "dl_fldigi: found N\n");
-		progdefaults.myLat.erase(progdefaults.myLat.length() - 1);
-		progdefaults.changed = true;
+		if(*s == 'S' || *s == 's' || *s == 'W' || *s == 'w') neg = -1;
+		else if((*s >= '0' && *s <= '9') || *s == '-' || *s == '+' || *s == '.')
+		{
+			char *es = s;
+			double d = strtod(s, &es);
+			
+			/* Give up if no conversion was performed */
+			if(es == s || es == NULL) return(r);
+			
+			/* Add the value to the total */
+			switch(i++)
+			{
+			case 0: r  = d; break; /* Degrees */
+			case 1: r += d / 60; break; /* Minutes */
+			case 2: r += d / 3600; break; /* Seconds */
+			}
+			
+			s = es;
+			continue;
+		}
+		
+		s++;
 	}
-	if (progdefaults.myLat.at(progdefaults.myLat.length() - 1) == 'S')
-	{
-		fprintf(stderr, "dl_fldigi: found S\n");
-		progdefaults.myLat.erase(progdefaults.myLat.length() - 1);
-		progdefaults.myLat.insert(0, "-");
-		progdefaults.changed = true;
-	}
-	if (progdefaults.myLon.at(progdefaults.myLon.length() - 1) == 'E')
-	{
-		fprintf(stderr, "dl_fldigi: found E\n");
-		progdefaults.myLon.erase(progdefaults.myLon.length() - 1);
-		progdefaults.changed = true;
-	}
-	if (progdefaults.myLon.at(progdefaults.myLon.length() - 1) == 'W')
-	{
-		fprintf(stderr, "dl_fldigi: found W\n");
-		progdefaults.myLon.erase(progdefaults.myLon.length() - 1);
-		progdefaults.myLon.insert(0, "-");
-		progdefaults.changed = true;
-	}
+	
+	if(neg) r = -r;
+	return(r);
 }
+

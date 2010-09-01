@@ -195,6 +195,15 @@ void trx_xmit_wfall_queue(int samplerate, const double* buf, size_t len)
 
 //=============================================================================
 
+static string get_coordinate(std::string str)
+{
+	if(str.empty()) return("UNKNOWN");
+	
+	char s[20];
+	snprintf(s, 20, "%f", dl_fldigi_geotod((char *) str.c_str()));
+	return(s);
+}
+
 void trx_trx_receive_loop()
 {
 	size_t  numread;
@@ -260,12 +269,8 @@ void trx_trx_receive_loop()
 			
 				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 				UpperCase (identity_callsign);
-
-				dl_fldigi_gps_swap_NSEW();
-				string string_lat = (progdefaults.myLat.empty() ? "UNKNOWN" : progdefaults.myLat.c_str());
-				UpperCase (string_lat);
-				string string_lon = (progdefaults.myLon.empty() ? "UNKNOWN" : progdefaults.myLon.c_str());
-				UpperCase (string_lon);
+				string string_lat = get_coordinate(progdefaults.myLat);
+				string string_lon = get_coordinate(progdefaults.myLon);
 				string string_radio = (progdefaults.myRadio.empty() ? "UNKNOWN" : progdefaults.myRadio.c_str());
 				UpperCase (string_radio);
 				string string_antenna = (progdefaults.myAntenna.empty() ? "UNKNOWN" : progdefaults.myAntenna.c_str());
