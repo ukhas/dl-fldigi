@@ -136,7 +136,7 @@ static void *serial_thread(void *a)
 		else
 		{
 			#ifdef DL_FLDIGI_DEBUG
-				fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: sleeping on serial_updated with a timeout in %is\n", retry_time - time(NULL));
+				fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: sleeping on serial_updated with a timeout in %is\n", (int) (retry_time - time(NULL)));
 			#endif
 
 			abstime.tv_sec = retry_time;
