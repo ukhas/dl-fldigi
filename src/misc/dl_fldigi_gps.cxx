@@ -205,7 +205,7 @@ static void *serial_thread(void *a)
 
 			if (c == EOF)
 			{
-				perror("dl-fldigi: fgetc gps");
+				fprintf(stderr, "dl-fldigi: fgetc returned EOF; feof() == %i, ferror() == %i", feof(f), ferror(f));
 				break;
 			}
 
