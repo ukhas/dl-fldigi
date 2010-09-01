@@ -210,7 +210,7 @@ static void *serial_thread(void *a)
 			}
 
 			/* $GPGGA,123519.00,4807.0381,N,00056.0002,W,1,08,0.29,00545,M,046,M,,*76 */
-			i = fscanf(f, "GPGGA,%2u%2u%2u.%*2u,%2u%f,%c,%3u%f,%c,1,%u,%*f,%u,M,%*u,%*c,,*%*2x\n",
+			i = fscanf(f, "GPGGA,%2u%2u%2u%*[^,],%2u%f,%c,%3u%f,%c,%*u,%u,%*f,%u,M,%*u,%*c,,*%*2x\n",
 				   &fix.hour, &fix.minute, &fix.second,
 				   &fix.lat_d, &fix.lat_m, &fix.lat_ns,
 				   &fix.lon_d, &fix.lon_m, &fix.lon_we,
