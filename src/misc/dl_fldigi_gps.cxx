@@ -215,9 +215,11 @@ static void *serial_thread(void *a)
 
 	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
 
+#ifndef __MINGW32__
 	sigemptyset(&usr2);
 	sigaddset(&usr2, SIGUSR2);
 	pthread_sigmask(SIG_UNBLOCK, &usr2, NULL);
+#endif
 
 	memset(&abstime, 0, sizeof(abstime));
 	retry_time = 0;
@@ -482,14 +484,30 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 		fclose(f);
 		return NULL;
 	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port);
+	#endif
+
+	return f;
 #else
+	HANDLE serial_port_handle;
+
+	serial_port_handle = _get_osfhandle(serial_port);
+	if (serial_port_handle == INVALID_HANDLE_VALUE)
+	{
+		fprintf(stderr, "dl_fldigi: Unable to get OS F-HANDLE\n");
+		fclose(f);
+		return NULL;
+	}
+
 	DCB dcbSerialParams = {0};
 	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
 
-	if (!GetCommState(serial_port, &dcbSerialParams)) {
+	if (!GetCommState(serial_port_handle, &dcbSerialParams)) {
 		fprintf(stderr, "dl_fldigi: Error in GetCommState\n");
 		fclose(f);
-		return NULL'
+		return NULL;
 	}
 
 	dcbSerialParams.BaudRate = baud;
@@ -497,17 +515,11 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	dcbSerialParams.StopBits = ONESTOPBIT;
 	dcbSerialParams.Parity = NOPARITY;
 
-	if(!SetCommState(serial_port, &dcbSerialParams)){
+	if(!SetCommState(serial_port_handle, &dcbSerialParams)){
 		fprintf(stderr, "dl_fldigi: Error in SetCommState\n");
 		fclose(f);
-		return NULL'
+		return NULL;
 	}
 #endif
-
-	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port);
-	#endif
-
-	return f;
 }
 
