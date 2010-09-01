@@ -35,9 +35,19 @@ static pthread_cond_t  serial_ready_cond  = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t serial_info_mutex  = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  serial_info_cond   = PTHREAD_COND_INITIALIZER;
 
+enum gps_status
+{
+        OPENING,
+        PROCESSING,
+        FAILED,
+        SLEEPING,
+};
+
 static void *serial_thread(void *a);
 static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity);
 static FILE *dl_fldigi_open_serial_port(const char *port, int baud);
+static void dl_fldigi_gps_set_status_safe(char *port, int baud, char *identity, enum gps_status s);
+static void dl_fldigi_gps_set_status(char *port, int baud, char *identity, enum gps_status s);
 
 struct gps_data
 {
@@ -144,6 +154,50 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 	#endif
 }
 
+static void dl_fldigi_gps_set_status_safe(char *port, int baud, char *identity, enum gps_status s)
+{
+	if (port != NULL)	port = strdup(port);
+	if (identity != NULL)	identity = strdup(identity);
+	REQ(dl_fldigi_gps_set_status, port, baud, identity, s);
+}
+
+static void dl_fldigi_gps_set_status(char *port_f, int baud, char *identity_f, enum gps_status s)
+{
+	char buf[200];
+	char *status_str, *port, *identity;
+
+	switch (s)
+	{
+		case OPENING:    status_str = (char *) "Opening port...";    break;
+		case PROCESSING: status_str = (char *) "Processing data..."; break;
+		case FAILED:     status_str = (char *) "Error";              break;
+		case SLEEPING:   status_str = (char *) "Sleeping";           break;
+	}
+
+	if (port_f == NULL)	port = (char *) "None";
+	else			port = port_f;
+	if (identity_f == NULL)	identity = (char *) "Unknown";
+	else			identity = identity_f;
+
+	snprintf(buf, sizeof(buf), "dl_fldigi gps %s (%s)",
+	         status_str, port);
+	put_status(buf);
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi_gps put UI status %s\n", buf);
+	#endif
+
+	snprintf(buf, sizeof(buf), "%i", baud);
+
+	gpsTStatus->value(status_str);
+	gpsTBaud->value(buf);
+	gpsTPort->value(port);
+	gpsTIdentity->value(identity);
+
+	if (port_f != NULL)	free(port_f);
+	if (identity_f != NULL)	free(identity_f);
+}
+
 static void *serial_thread(void *a)
 {
 	char *port, *identity;
@@ -155,6 +209,8 @@ static void *serial_thread(void *a)
 	struct timespec abstime;
 	time_t retry_time;
 	sigset_t usr2;
+
+	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
 
 	sigemptyset(&usr2);
 	sigaddset(&usr2, SIGUSR2);
@@ -182,6 +238,15 @@ static void *serial_thread(void *a)
 
 	for (;;)
 	{
+		if (retry_time != 0)
+		{
+			dl_fldigi_gps_set_status_safe(port, baud, identity, FAILED);
+		}
+		else
+		{
+			dl_fldigi_gps_set_status_safe(port, baud, identity, SLEEPING);
+		}
+
 		pthread_mutex_lock(&serial_info_mutex);
 
 		if (retry_time == 0)
@@ -237,6 +302,8 @@ static void *serial_thread(void *a)
 			continue;
 		}
 
+		dl_fldigi_gps_set_status_safe(port, baud, identity, OPENING);
+
 		f = dl_fldigi_open_serial_port(port, baud);
 	
 		if (f == NULL)
@@ -254,6 +321,8 @@ static void *serial_thread(void *a)
 		#ifdef DL_FLDIGI_DEBUG
 			fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: beginning processing loop\n");
 		#endif
+
+		dl_fldigi_gps_set_status_safe(port, baud, identity, PROCESSING);
 
 		for (;;)
 		{

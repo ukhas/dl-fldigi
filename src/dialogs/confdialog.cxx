@@ -2749,6 +2749,18 @@ progdefaults.changed = true;
 dl_fldigi_gps_setup_fromprogdefaults();
 }
 
+static void cb_Restart(Fl_Button*, void*) {
+  dl_fldigi_gps_setup_fromprogdefaults();
+}
+
+Fl_Output *gpsTStatus=(Fl_Output *)0;
+
+Fl_Output *gpsTPort=(Fl_Output *)0;
+
+Fl_Output *gpsTIdentity=(Fl_Output *)0;
+
+Fl_Output *gpsTBaud=(Fl_Output *)0;
+
 Fl_Input *imagepacketurl=(Fl_Input *)0;
 
 static void cb_imagepacketurl(Fl_Input* o, void*) {
@@ -6302,7 +6314,7 @@ d frequency"));
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("GPS"));
-            { Fl_Group* o = new Fl_Group(5, 55, 490, 130, _("GPS Upload Configuration"));
+            { Fl_Group* o = new Fl_Group(5, 55, 490, 160, _("GPS Upload Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
               { Fl_Value_Input2* o = new Fl_Value_Input2(100, 115, 325, 25, _("Baud"));
@@ -6330,6 +6342,22 @@ d frequency"));
                 inpGPSdev->down_box(FL_BORDER_BOX);
                 inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
               } // Fl_Choice* inpGPSdev
+              { Fl_Button* o = new Fl_Button(100, 180, 325, 25, _("Restart Thread"));
+                o->callback((Fl_Callback*)cb_Restart);
+              } // Fl_Button* o
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(5, 220, 490, 90, _("GPS Thread Status"));
+              o->box(FL_ENGRAVED_BOX);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { gpsTStatus = new Fl_Output(100, 245, 105, 25, _("Status"));
+              } // Fl_Output* gpsTStatus
+              { gpsTPort = new Fl_Output(100, 275, 105, 25, _("Port"));
+              } // Fl_Output* gpsTPort
+              { gpsTIdentity = new Fl_Output(315, 245, 105, 25, _("Identity"));
+              } // Fl_Output* gpsTIdentity
+              { gpsTBaud = new Fl_Output(315, 275, 105, 25, _("Baud"));
+              } // Fl_Output* gpsTBaud
               o->end();
             } // Fl_Group* o
             o->end();
