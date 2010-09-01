@@ -1452,3 +1452,13 @@ double dl_fldigi_geotod(char *s)
 	return(r);
 }
 
+void dl_fldigi_gps_save_position()
+{
+	progdefaults.myLat = gpsTLat->value();
+	progdefaults.myLon = gpsTLon->value();
+	
+	MyLat->value(progdefaults.myLat.c_str());
+	MyLon->value(progdefaults.myLon.c_str());
+	
+	progdefaults.changed = true;
+}

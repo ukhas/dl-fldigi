@@ -2767,6 +2767,11 @@ Fl_Output *gpsTLon=(Fl_Output *)0;
 
 Fl_Output *gpsTAlt=(Fl_Output *)0;
 
+static void cb_Save(Fl_Button*, void*) {
+  /* Copy coordinates to the operator form */
+dl_fldigi_gps_save_position();
+}
+
 Fl_Input *imagepacketurl=(Fl_Input *)0;
 
 static void cb_imagepacketurl(Fl_Input* o, void*) {
@@ -6375,6 +6380,9 @@ d frequency"));
               } // Fl_Output* gpsTLon
               { gpsTAlt = new Fl_Output(100, 330, 105, 25, _("Altitude"));
               } // Fl_Output* gpsTAlt
+              { Fl_Button* o = new Fl_Button(240, 332, 181, 25, _("Save as operator position"));
+                o->callback((Fl_Callback*)cb_Save);
+              } // Fl_Button* o
               o->end();
             } // Fl_Group* o
             o->end();

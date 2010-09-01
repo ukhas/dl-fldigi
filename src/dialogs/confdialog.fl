@@ -3609,6 +3609,12 @@ dl_fldigi_gps_setup_fromprogdefaults();} open
                 label Altitude
                 xywh {100 330 105 25}
               }
+              Fl_Button {} {
+                label {Save as operator position}
+                callback {/* Copy coordinates to the operator form */
+dl_fldigi_gps_save_position();}
+                xywh {240 332 181 25}
+              }
             }
           }
           Fl_Group {} {
