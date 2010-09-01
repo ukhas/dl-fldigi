@@ -211,11 +211,12 @@ static void *serial_thread(void *a)
 	time_t last_post;
 	struct timespec abstime;
 	time_t retry_time;
-	sigset_t usr2;
 
 	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
 
 #ifndef __MINGW32__
+	sigset_t usr2;
+
 	sigemptyset(&usr2);
 	sigaddset(&usr2, SIGUSR2);
 	pthread_sigmask(SIG_UNBLOCK, &usr2, NULL);
@@ -416,8 +417,14 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 		fprintf(stderr, "dl_fldigi: Attempting to open serial port '%s' at %i baud.\n", port, baud);
 	#endif
 
+#ifndef __MINGW32__
+	#define serial_flags O_RDONLY | O_NOCTTY | O_NDELAY
+#else
+	#define serial_flags O_RDONLY
+#endif
+
 	//Open the serial port
-	int serial_port = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
+	int serial_port = open(port, serial_flags);
 	if( serial_port == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error opening serial port.\n");
 		return NULL;
@@ -493,7 +500,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 #else
 	HANDLE serial_port_handle;
 
-	serial_port_handle = _get_osfhandle(serial_port);
+	serial_port_handle = (HANDLE) _get_osfhandle(serial_port);
 	if (serial_port_handle == INVALID_HANDLE_VALUE)
 	{
 		fprintf(stderr, "dl_fldigi: Unable to get OS F-HANDLE\n");
