@@ -338,7 +338,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 		return;
 	}
 	
-	r3 = curl_easy_setopt(curl, CURLOPT_URL, server_location_complete.append("listen.php").c_str());
+	r3 = curl_easy_setopt(curl, CURLOPT_URL, server_location_complete.append("listen.test.php").c_str());
 	if (r3 != 0)
 	{
 		fprintf(stderr, "dl_fldigi: curl_easy_setopt (CURLOPT_URL) failed: %s\n", curl_easy_strerror(r3));
