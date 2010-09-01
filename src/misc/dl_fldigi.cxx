@@ -998,12 +998,14 @@ void dl_fldigi_update_payloads()
 
 	if (bHAB && progdefaults.xmlPayloadname.length() != 0)
 	{
-		const Fl_Menu_Item *item = habFlightXML->find_item(progdefaults.xmlPayloadname.c_str())
+		const Fl_Menu_Item *item = habFlightXML->find_item(progdefaults.xmlPayloadname.c_str());
 		if (item != NULL) habFlightXML->value(item);
+		habFlightXML->redraw();
 	}
 
-	const Fl_Menu_Item *item = habFlightXML_conf->find_item(progdefaults.xmlPayloadname.c_str())
+	const Fl_Menu_Item *item = habFlightXML_conf->find_item(progdefaults.xmlPayloadname.c_str());
 	if (item != NULL) habFlightXML_conf->value(item);
+	habFlightXML_conf->redraw();
 
 	put_status("dl_fldigi: payload information loaded", 10);
 
@@ -1019,14 +1021,16 @@ void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a)
 
 	if (bHAB && o == habFlightXML_conf)
 	{	
-		const Fl_Menu_Item *item = habFlightXML->find_item(progdefaults.xmlPayloadname.c_str())
+		const Fl_Menu_Item *item = habFlightXML->find_item(progdefaults.xmlPayloadname.c_str());
 		if (item != NULL) habFlightXML->value(item);
+		habFlightXML->redraw();
 	}
 
 	if (bHAB && o == habFlightXML)
 	{
-		const Fl_Menu_Item *item = habFlightXML_conf->find_item(progdefaults.xmlPayloadname.c_str())
+		const Fl_Menu_Item *item = habFlightXML_conf->find_item(progdefaults.xmlPayloadname.c_str());
 		if (item != NULL) habFlightXML_conf->value(item);
+		habFlightXML_conf->redraw();
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
