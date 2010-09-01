@@ -173,8 +173,9 @@ static void dl_fldigi_gps_set_status(char *port_f, int baud, char *identity_f, e
 	{
 		case OPENING:    status_str = (char *) "Opening port...";    break;
 		case PROCESSING: status_str = (char *) "Processing data..."; break;
-		case FAILED:     status_str = (char *) "Error";              break;
 		case SLEEPING:   status_str = (char *) "Sleeping";           break;
+		default:
+		case FAILED:     status_str = (char *) "Error";              break;
 	}
 
 	if (port_f == NULL)	port = (char *) "None";
@@ -495,8 +496,6 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port);
 	#endif
-
-	return f;
 #else
 	HANDLE serial_port_handle;
 
@@ -528,5 +527,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 		return NULL;
 	}
 #endif
+
+	return f;
 }
 
