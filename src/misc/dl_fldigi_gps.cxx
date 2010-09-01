@@ -28,10 +28,12 @@
 static volatile char *serial_port, *serial_identity;
 static volatile int serial_baud;
 static volatile int serial_updated;
-
+static volatile int serial_ready;
 static pthread_t serial_thread_id;
-static pthread_mutex_t serial_info_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t serial_info_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t serial_ready_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t  serial_ready_cond  = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t serial_info_mutex  = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t  serial_info_cond   = PTHREAD_COND_INITIALIZER;
 
 static void *serial_thread(void *a);
 static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity);
@@ -57,14 +59,29 @@ struct gps_data
 void dl_fldigi_gps_init()
 {
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: dl_fldigi_gps init()\n");
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps init() creating thread\n");
 	#endif
+
+	pthread_mutex_lock(&serial_ready_mutex);
 
 	if (pthread_create(&serial_thread_id, NULL, serial_thread, NULL) != 0)
 	{
 		perror("dl_fldigi: ext_gps pthread_create");
 		exit(EXIT_FAILURE);
 	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps init created thread, waiting for it to become ready\n");
+	#endif
+
+	while (!serial_ready)
+		pthread_cond_wait(&serial_ready_cond, &serial_ready_mutex);
+
+	pthread_mutex_unlock(&serial_ready_mutex);
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps init thread creation done, setting default settings\n");
+	#endif
 
 	dl_fldigi_gps_setup_fromprogdefaults();
 }
@@ -95,6 +112,10 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 	pthread_cond_signal(&serial_info_cond);  /* Not really required since the signal will have caused a spurious wakeup */
 
 	pthread_mutex_unlock(&serial_info_mutex);
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps setup done, sent signal & cond_signal\n");
+	#endif
 }
 
 static void *serial_thread(void *a)
@@ -107,6 +128,11 @@ static void *serial_thread(void *a)
 	time_t last_post;
 	struct timespec abstime;
 	time_t retry_time;
+	sigset_t usr2;
+
+	sigemptyset(&usr2);
+	sigaddset(&usr2, SIGUSR2);
+	pthread_sigmask(SIG_UNBLOCK, &usr2, NULL);
 
 	memset(&abstime, 0, sizeof(abstime));
 	retry_time = 0;
@@ -116,6 +142,16 @@ static void *serial_thread(void *a)
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: start\n");
+	#endif
+
+	pthread_mutex_lock(&serial_ready_mutex);
+	serial_ready = 1;
+	full_memory_barrier();
+	pthread_cond_signal(&serial_ready_cond);
+	pthread_mutex_unlock(&serial_ready_mutex);
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: signaled ready\n");
 	#endif
 
 	for (;;)
@@ -203,7 +239,7 @@ static void *serial_thread(void *a)
 
 			if (c == EOF)
 			{
-				fprintf(stderr, "dl-fldigi: fgetc returned EOF; feof() == %i, ferror() == %i", feof(f), ferror(f));
+				fprintf(stderr, "dl-fldigi: fgetc returned EOF; feof() == %i, ferror() == %i\n", feof(f), ferror(f));
 				break;
 			}
 
