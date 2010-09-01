@@ -108,8 +108,6 @@ static void *serial_thread(void *a)
 	struct timespec abstime;
 	time_t retry_time;
 
-	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
-
 	memset(&abstime, 0, sizeof(abstime));
 	retry_time = 0;
 	port = NULL;
