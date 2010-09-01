@@ -2749,10 +2749,6 @@ progdefaults.changed = true;
 dl_fldigi_gps_setup_fromprogdefaults();
 }
 
-static void cb_Restart(Fl_Button*, void*) {
-  dl_fldigi_gps_setup_fromprogdefaults();
-}
-
 Fl_Output *gpsTStatus=(Fl_Output *)0;
 
 Fl_Output *gpsTPort=(Fl_Output *)0;
@@ -2760,6 +2756,16 @@ Fl_Output *gpsTPort=(Fl_Output *)0;
 Fl_Output *gpsTIdentity=(Fl_Output *)0;
 
 Fl_Output *gpsTBaud=(Fl_Output *)0;
+
+static void cb_Restart(Fl_Button*, void*) {
+  dl_fldigi_gps_setup_fromprogdefaults();
+}
+
+Fl_Output *gpsTLat=(Fl_Output *)0;
+
+Fl_Output *gpsTLon=(Fl_Output *)0;
+
+Fl_Output *gpsTAlt=(Fl_Output *)0;
 
 Fl_Input *imagepacketurl=(Fl_Input *)0;
 
@@ -2830,7 +2836,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE);
-    { tabsConfigure = new Fl_Tabs(-3, 0, 520, 375);
+    { tabsConfigure = new Fl_Tabs(-3, 0, 520, 435);
       tabsConfigure->color((Fl_Color)FL_LIGHT1);
       tabsConfigure->selection_color((Fl_Color)FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
@@ -6178,9 +6184,9 @@ d frequency"));
         } // Fl_Group* o
         tabQRZ->end();
       } // Fl_Group* tabQRZ
-      { tabDL = new Fl_Group(0, 25, 500, 350, _("DL Client"));
+      { tabDL = new Fl_Group(0, 25, 500, 410, _("DL Client"));
         tabDL->labelsize(12);
-        { tabsDL = new Fl_Tabs(0, 25, 500, 350);
+        { tabsDL = new Fl_Tabs(0, 25, 500, 410);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
             tabDLEnable->hide();
             { Fl_Group* o = new Fl_Group(10, 55, 490, 290, _("Enable"));
@@ -6313,11 +6319,11 @@ d frequency"));
             } // Fl_Group* o
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("GPS"));
-            { Fl_Group* o = new Fl_Group(5, 55, 490, 160, _("GPS Upload Configuration"));
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 385, _("GPS"));
+            { Fl_Group* o = new Fl_Group(5, 55, 490, 90, _("GPS Upload Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 115, 325, 25, _("Baud"));
+              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 110, 150, 25, _("Baud"));
                 o->type(2);
                 o->box(FL_DOWN_BOX);
                 o->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -6331,33 +6337,44 @@ d frequency"));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gpsSpeed);
               } // Fl_Value_Input2* o
-              { Fl_Input* o = new Fl_Input(100, 150, 325, 25, _("Identity"));
+              { Fl_Input* o = new Fl_Input(315, 110, 140, 25, _("Identity"));
                 o->callback((Fl_Callback*)cb_Identity);
                 o->value(progdefaults.gpsIdentity.c_str());
               } // Fl_Input* o
-              { Fl_Button* o = new Fl_Button(305, 85, 120, 25, _("Refresh List"));
+              { Fl_Button* o = new Fl_Button(285, 80, 170, 25, _("Refresh Device List"));
                 o->callback((Fl_Callback*)cb_Refresh);
               } // Fl_Button* o
-              { inpGPSdev = new Fl_Choice(100, 85, 195, 25, _("Device"));
+              { inpGPSdev = new Fl_Choice(100, 80, 180, 25, _("Device"));
                 inpGPSdev->down_box(FL_BORDER_BOX);
                 inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
               } // Fl_Choice* inpGPSdev
-              { Fl_Button* o = new Fl_Button(100, 180, 325, 25, _("Restart Thread"));
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(5, 150, 490, 120, _("GPS Thread Status"));
+              o->box(FL_ENGRAVED_BOX);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { gpsTStatus = new Fl_Output(100, 175, 105, 25, _("Status"));
+              } // Fl_Output* gpsTStatus
+              { gpsTPort = new Fl_Output(100, 205, 105, 25, _("Port"));
+              } // Fl_Output* gpsTPort
+              { gpsTIdentity = new Fl_Output(315, 175, 105, 25, _("Identity"));
+              } // Fl_Output* gpsTIdentity
+              { gpsTBaud = new Fl_Output(315, 205, 105, 25, _("Baud"));
+              } // Fl_Output* gpsTBaud
+              { Fl_Button* o = new Fl_Button(100, 235, 320, 25, _("Restart Thread"));
                 o->callback((Fl_Callback*)cb_Restart);
               } // Fl_Button* o
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(5, 220, 490, 90, _("GPS Thread Status"));
+            { Fl_Group* o = new Fl_Group(5, 275, 490, 90, _("GPS Last Known Position"));
               o->box(FL_ENGRAVED_BOX);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { gpsTStatus = new Fl_Output(100, 245, 105, 25, _("Status"));
-              } // Fl_Output* gpsTStatus
-              { gpsTPort = new Fl_Output(100, 275, 105, 25, _("Port"));
-              } // Fl_Output* gpsTPort
-              { gpsTIdentity = new Fl_Output(315, 245, 105, 25, _("Identity"));
-              } // Fl_Output* gpsTIdentity
-              { gpsTBaud = new Fl_Output(315, 275, 105, 25, _("Baud"));
-              } // Fl_Output* gpsTBaud
+              { gpsTLat = new Fl_Output(100, 300, 105, 25, _("Latitude"));
+              } // Fl_Output* gpsTLat
+              { gpsTLon = new Fl_Output(315, 300, 105, 25, _("Longitude"));
+              } // Fl_Output* gpsTLon
+              { gpsTAlt = new Fl_Output(100, 330, 105, 25, _("Altitude"));
+              } // Fl_Output* gpsTAlt
               o->end();
             } // Fl_Group* o
             o->end();

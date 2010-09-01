@@ -52,6 +52,8 @@ static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity);
 static FILE *dl_fldigi_open_serial_port(const char *port, int baud);
 static void dl_fldigi_gps_set_status_safe(char *port, int baud, char *identity, enum gps_status s);
 static void dl_fldigi_gps_set_status(char *port, int baud, char *identity, enum gps_status s);
+#define dl_fldigi_gps_set_debugpos_safe(lat, lon, alt)  REQ(dl_fldigi_gps_set_debugpos, lat, lon, alt)
+static void dl_fldigi_gps_set_debugpos(float lat, float lon, int alt);
 
 struct gps_data
 {
@@ -203,6 +205,21 @@ static void dl_fldigi_gps_set_status(char *port_f, int baud, char *identity_f, e
 	if (port_f != NULL)	free(port_f);
 	if (identity_f != NULL)	free(identity_f);
 }
+
+static void dl_fldigi_gps_set_debugpos(float lat, float lon, int alt)
+{
+	char buf[40];
+
+	snprintf(buf, sizeof(buf), "%6f", lat);
+	gpsTLat->value(buf);
+
+	snprintf(buf, sizeof(buf), "%6f", lon);
+	gpsTLon->value(buf);
+
+	snprintf(buf, sizeof(buf), "%i", alt);
+	gpsTAlt->value(buf);
+}
+
 
 static void *serial_thread(void *a)
 {
@@ -377,6 +394,8 @@ static void *serial_thread(void *a)
 					dl_fldigi_gps_set_status_safe(port, baud, identity, PROCESSING);
 					got_a_fix = 1;
 				}
+
+				dl_fldigi_gps_set_debugpos_safe(fix.lat, fix.lon, fix.alt);
 			}
 			else if (i == EOF)
 			{
@@ -429,7 +448,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 
 #ifndef __MINGW32__
 	//Open the serial port
-	int serial_port_fd = open(port, serial_flags);
+	int serial_port_fd = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
 	if( serial_port_fd == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error opening serial port.\n");
 		return NULL;
