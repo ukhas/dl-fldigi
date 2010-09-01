@@ -97,7 +97,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
 static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {740 84 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
+    xywh {532 462 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-3 0 520 375} color 50 selection_color 50
@@ -3418,7 +3418,7 @@ progdefaults.changed = true;}
         } {
           Fl_Group tabDLEnable {
             label Enable open
-            xywh {0 50 500 320}
+            xywh {0 50 500 320} hide
           } {
             Fl_Group {} {
               label Enable open
@@ -3537,18 +3537,10 @@ dl_fldigi_downloaded_once = 1;}
               xywh {5 55 490 130} box ENGRAVED_FRAME align 21
             } {
               Fl_Input {} {
-                label Device
-                callback {progdefaults.gpsDevice = o->value();
-progdefaults.changed = true;
-dl_fldigi_gps_setup_fromprogdefaults();}
-                xywh {100 80 325 25}
-                code0 {o->value(progdefaults.gpsDevice.c_str());}
-              }
-              Fl_Input {} {
                 label Baud
                 callback {progdefaults.gpsSpeed = o->value();
 progdefaults.changed = true;
-dl_fldigi_gps_setup_fromprogdefaults();} selected
+dl_fldigi_gps_setup_fromprogdefaults();}
                 xywh {100 115 325 25} type Int
                 code0 {o->value(progdefaults.gpsSpeed);}
                 class Fl_Value_Input2
@@ -3561,6 +3553,19 @@ dl_fldigi_gps_setup_fromprogdefaults();}
                 xywh {100 150 325 25}
                 code0 {o->value(progdefaults.gpsIdentity.c_str());}
               }
+              Fl_Button {} {
+                label {Refresh List}
+                callback {/* As far as I can tell running this again is harmless. */
+dl_fldigi_gps_update_ports(1, 1);} selected
+                xywh {305 85 120 25}
+              }
+              Fl_Choice inpGPSdev {
+                label Device
+                callback {progdefaults.gpsDevice = o->text();
+progdefaults.changed = true;
+dl_fldigi_gps_setup_fromprogdefaults();} open
+                xywh {100 85 195 25} down_box BORDER_BOX
+              } {}
             }
           }
           Fl_Group {} {
@@ -3628,7 +3633,7 @@ progdefaults.changed = true;}
     }
     Fl_Return_Button btnCloseConfig {
       label Close
-      callback {closeDialog();} selected
+      callback {closeDialog();}
       xywh {367 375 130 22}
     }
     Fl_Button btnResetConfig {

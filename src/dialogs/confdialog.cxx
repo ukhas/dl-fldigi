@@ -2724,12 +2724,6 @@ static void cb_cd_xml_altitude(Fl_Value_Input2* o, void*) {
   progdefaults.xml_altitude = o->value();
 }
 
-static void cb_Device(Fl_Input* o, void*) {
-  progdefaults.gpsDevice = o->value();
-progdefaults.changed = true;
-dl_fldigi_gps_setup_fromprogdefaults();
-}
-
 static void cb_Baud(Fl_Value_Input2* o, void*) {
   progdefaults.gpsSpeed = o->value();
 progdefaults.changed = true;
@@ -2738,6 +2732,19 @@ dl_fldigi_gps_setup_fromprogdefaults();
 
 static void cb_Identity(Fl_Input* o, void*) {
   progdefaults.gpsIdentity = o->value();
+progdefaults.changed = true;
+dl_fldigi_gps_setup_fromprogdefaults();
+}
+
+static void cb_Refresh(Fl_Button*, void*) {
+  /* As far as I can tell running this again is harmless. */
+dl_fldigi_gps_update_ports(1, 1);
+}
+
+Fl_Choice *inpGPSdev=(Fl_Choice *)0;
+
+static void cb_inpGPSdev(Fl_Choice* o, void*) {
+  progdefaults.gpsDevice = o->text();
 progdefaults.changed = true;
 dl_fldigi_gps_setup_fromprogdefaults();
 }
@@ -2892,7 +2899,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
             inpMyAntenna->when(FL_WHEN_RELEASE);
             inpMyAntenna->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyAntenna
-          { Fl_Input* o = MyRadio = new Fl_Input(110, 205, 320, 25, _("Radio:"));
+          { Fl_Input* o = MyRadio = new Fl_Input(115, 205, 320, 25, _("Radio:"));
             MyRadio->callback((Fl_Callback*)cb_MyRadio);
             o->value(progdefaults.myRadio.c_str());
           } // Fl_Input* MyRadio
@@ -6163,6 +6170,7 @@ d frequency"));
         tabDL->labelsize(12);
         { tabsDL = new Fl_Tabs(0, 25, 500, 350);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
+            tabDLEnable->hide();
             { Fl_Group* o = new Fl_Group(10, 55, 490, 290, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6297,10 +6305,6 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 55, 490, 130, _("GPS Upload Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Input* o = new Fl_Input(100, 80, 325, 25, _("Device"));
-                o->callback((Fl_Callback*)cb_Device);
-                o->value(progdefaults.gpsDevice.c_str());
-              } // Fl_Input* o
               { Fl_Value_Input2* o = new Fl_Value_Input2(100, 115, 325, 25, _("Baud"));
                 o->type(2);
                 o->box(FL_DOWN_BOX);
@@ -6319,6 +6323,13 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Identity);
                 o->value(progdefaults.gpsIdentity.c_str());
               } // Fl_Input* o
+              { Fl_Button* o = new Fl_Button(305, 85, 120, 25, _("Refresh List"));
+                o->callback((Fl_Callback*)cb_Refresh);
+              } // Fl_Button* o
+              { inpGPSdev = new Fl_Choice(100, 85, 195, 25, _("Device"));
+                inpGPSdev->down_box(FL_BORDER_BOX);
+                inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
+              } // Fl_Choice* inpGPSdev
               o->end();
             } // Fl_Group* o
             o->end();

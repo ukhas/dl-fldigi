@@ -389,6 +389,7 @@ extern Fl_Value_Input2 *cd_xml_time;
 extern Fl_Value_Input2 *cd_xml_latitude;
 extern Fl_Value_Input2 *cd_xml_longitude;
 extern Fl_Value_Input2 *cd_xml_altitude;
+extern Fl_Choice *inpGPSdev;
 extern Fl_Input *imagepacketurl;
 extern Fl_Check_Button *imagesave;
 extern Fl_Input *imagesavedir;

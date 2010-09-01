@@ -852,6 +852,7 @@ void configuration::testCommPorts()
 	inpTTYdev->clear();
 	inpRIGdev->clear();
 	inpXmlRigDevice->clear();
+	inpGPSdev->clear();
 
 #ifndef PATH_MAX
 #  define PATH_MAX 1024
@@ -892,6 +893,7 @@ void configuration::testCommPorts()
 			inpRIGdev->add(ttyname);
 #endif
 			inpXmlRigDevice->add(ttyname);
+			inpGPSdev->add(ttyname);
 		}
 	}
 	ret = true;
@@ -954,6 +956,7 @@ out:
 			inpRIGdev->add(ttyname);
 #  endif
 			inpXmlRigDevice->add(ttyname);
+			inpGPSdev->add(ttyname);
 		}
 #else // __APPLE__
 		glob(tty_fmt[i], 0, NULL, &gbuf);
@@ -967,7 +970,7 @@ out:
 			inpRIGdev->add(gbuf.gl_pathv[j]);
 #  endif
 			inpXmlRigDevice->add(gbuf.gl_pathv[j]);
-
+			inpGPSdev->add(gbuf.gl_pathv[j]);
 		}
 		globfree(&gbuf);
 #endif // __APPLE__

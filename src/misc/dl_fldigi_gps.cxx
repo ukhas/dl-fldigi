@@ -83,7 +83,33 @@ void dl_fldigi_gps_init()
 		fprintf(stderr, "dl_fldigi: dl_fldigi_gps init thread creation done, setting default settings\n");
 	#endif
 
+	dl_fldigi_gps_update_ports(0, 0);
 	dl_fldigi_gps_setup_fromprogdefaults();
+}
+
+void dl_fldigi_gps_update_ports(int rescan, int update)
+{
+	const Fl_Menu_Item *item;
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps update ports: rescan = %i\n", rescan);
+	#endif
+
+	if (rescan)
+		progdefaults.testCommPorts();
+
+	item = inpGPSdev->find_item(progdefaults.gpsDevice.c_str());
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: dl_fldigi_gps update ports: item = %p\n", item);
+	#endif
+
+	if (item != NULL)
+	{
+		inpGPSdev->value(item);
+	}
+
+	inpGPSdev->redraw();
 }
 
 void dl_fldigi_gps_setup_fromprogdefaults()

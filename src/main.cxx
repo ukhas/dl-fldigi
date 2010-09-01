@@ -311,9 +311,6 @@ int main(int argc, char ** argv)
 		dl_fldigi_downloaded_once = 1;
 	}
 
-	/* Needs to be initialised once we have progdefaults */
-	dl_fldigi_gps_init();
-
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
 
@@ -379,6 +376,9 @@ int main(int argc, char ** argv)
 
 	progdefaults.initInterface();
 	trx_start();
+
+	/* Needs to be initialised once we have progdefaults AND testCommPorts */
+	dl_fldigi_gps_init();
 
 #if SHOW_WIZARD_BEFORE_MAIN_WINDOW
 	if (!have_config) {
