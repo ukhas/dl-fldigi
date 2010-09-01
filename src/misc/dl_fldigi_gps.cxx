@@ -1,8 +1,4 @@
-// TODO: Windoze it up
-#ifndef __MINGW32__
-
 #include <stdio.h>
-#include <termios.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -11,6 +7,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+
+#ifndef __MINGW32__
+#include <termios.h>
+#else
+#include <windows.h>
+#include "compat.h"
+#endif
 
 #include "configuration.h"
 #include "util.h"
@@ -37,10 +40,11 @@ static pthread_cond_t  serial_info_cond   = PTHREAD_COND_INITIALIZER;
 
 enum gps_status
 {
-        OPENING,
-        PROCESSING,
-        FAILED,
-        SLEEPING,
+	OPENING,
+	WAITING,
+	PROCESSING,
+	FAILED,
+	SLEEPING,
 };
 
 static void *serial_thread(void *a);
@@ -48,6 +52,8 @@ static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity);
 static FILE *dl_fldigi_open_serial_port(const char *port, int baud);
 static void dl_fldigi_gps_set_status_safe(char *port, int baud, char *identity, enum gps_status s);
 static void dl_fldigi_gps_set_status(char *port, int baud, char *identity, enum gps_status s);
+#define dl_fldigi_gps_set_debugpos_safe(lat, lon, alt)  REQ(dl_fldigi_gps_set_debugpos, lat, lon, alt)
+static void dl_fldigi_gps_set_debugpos(float lat, float lon, int alt);
 
 struct gps_data
 {
@@ -168,10 +174,12 @@ static void dl_fldigi_gps_set_status(char *port_f, int baud, char *identity_f, e
 
 	switch (s)
 	{
-		case OPENING:    status_str = (char *) "Opening port...";    break;
-		case PROCESSING: status_str = (char *) "Processing data..."; break;
-		case FAILED:     status_str = (char *) "Error";              break;
+		case OPENING:    status_str = (char *) "Opening port";       break;
+		case WAITING:    status_str = (char *) "Waiting for fix";    break;
+		case PROCESSING: status_str = (char *) "Processing data";    break;
 		case SLEEPING:   status_str = (char *) "Sleeping";           break;
+		default:
+		case FAILED:     status_str = (char *) "Error";              break;
 	}
 
 	if (port_f == NULL)	port = (char *) "None";
@@ -198,23 +206,41 @@ static void dl_fldigi_gps_set_status(char *port_f, int baud, char *identity_f, e
 	if (identity_f != NULL)	free(identity_f);
 }
 
+static void dl_fldigi_gps_set_debugpos(float lat, float lon, int alt)
+{
+	char buf[40];
+
+	snprintf(buf, sizeof(buf), "%6f", lat);
+	gpsTLat->value(buf);
+
+	snprintf(buf, sizeof(buf), "%6f", lon);
+	gpsTLon->value(buf);
+
+	snprintf(buf, sizeof(buf), "%i", alt);
+	gpsTAlt->value(buf);
+}
+
+
 static void *serial_thread(void *a)
 {
 	char *port, *identity;
-	int baud;
+	int baud, got_a_fix;
 	FILE *f;
 	struct gps_data fix;
 	int i, c;
 	time_t last_post;
 	struct timespec abstime;
 	time_t retry_time;
-	sigset_t usr2;
 
 	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
+
+#ifndef __MINGW32__
+	sigset_t usr2;
 
 	sigemptyset(&usr2);
 	sigaddset(&usr2, SIGUSR2);
 	pthread_sigmask(SIG_UNBLOCK, &usr2, NULL);
+#endif
 
 	memset(&abstime, 0, sizeof(abstime));
 	retry_time = 0;
@@ -322,7 +348,8 @@ static void *serial_thread(void *a)
 			fprintf(stderr, "dl_fldigi: dl_fldigi_gps thread: beginning processing loop\n");
 		#endif
 
-		dl_fldigi_gps_set_status_safe(port, baud, identity, PROCESSING);
+		dl_fldigi_gps_set_status_safe(port, baud, identity, WAITING);
+		got_a_fix = 0;
 
 		for (;;)
 		{
@@ -361,6 +388,14 @@ static void *serial_thread(void *a)
 					last_post = time(NULL);
 					dl_fldigi_gps_post(fix.lat, fix.lon, fix.alt, identity);
 				}
+
+				if (got_a_fix == 0)
+				{
+					dl_fldigi_gps_set_status_safe(port, baud, identity, PROCESSING);
+					got_a_fix = 1;
+				}
+
+				dl_fldigi_gps_set_debugpos_safe(fix.lat, fix.lon, fix.alt);
 			}
 			else if (i == EOF)
 			{
@@ -411,23 +446,24 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 		fprintf(stderr, "dl_fldigi: Attempting to open serial port '%s' at %i baud.\n", port, baud);
 	#endif
 
+#ifndef __MINGW32__
 	//Open the serial port
-	int serial_port = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
-	if( serial_port == -1 ) {
+	int serial_port_fd = open(port, O_RDONLY | O_NOCTTY | O_NDELAY);
+	if( serial_port_fd == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error opening serial port.\n");
 		return NULL;
 	}
 
-	FILE *f = fdopen(serial_port, "r");
+	FILE *f = fdopen(serial_port_fd, "r");
 	if (f == NULL)
 	{
 		fprintf(stderr, "dl_fldigi: Error fdopening serial port as a FILE\n");
-		close(serial_port);
+		close(serial_port_fd);
 		return NULL;
 	}
 
 	//Initialise the port
-	int serial_port_set = fcntl(serial_port, F_SETFL, 0);
+	int serial_port_set = fcntl(serial_port_fd, F_SETFL, 0);
 	if( serial_port_set == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error initialising serial port.\n");
 		fclose(f);
@@ -472,7 +508,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	port_settings.c_cc[VMIN] = 1;
 
 	//Apply settings
-	serial_port_set = tcsetattr(serial_port, TCSANOW, &port_settings);
+	serial_port_set = tcsetattr(serial_port_fd, TCSANOW, &port_settings);
 	if( serial_port_set == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error configuring serial port.\n");
 		fclose(f);
@@ -480,27 +516,54 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port);
+		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port_fd);
 	#endif
+#else
+	HANDLE serial_port_handle = CreateFile(port, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+	if (serial_port_handle == INVALID_HANDLE_VALUE)
+	{
+		fprintf(stderr, "dl_fldigi: CreateFile failed\n");
+		CloseHandle(serial_port_handle);
+		return NULL;
+	}
+
+	DCB dcbSerialParams = {0};
+	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+
+	if (!GetCommState(serial_port_handle, &dcbSerialParams)) {
+		fprintf(stderr, "dl_fldigi: Error in GetCommState\n");
+		CloseHandle(serial_port_handle);
+		return NULL;
+	}
+
+	dcbSerialParams.BaudRate = baud;
+	dcbSerialParams.ByteSize = 8;
+	dcbSerialParams.StopBits = ONESTOPBIT;
+	dcbSerialParams.Parity = NOPARITY;
+
+	if(!SetCommState(serial_port_handle, &dcbSerialParams)){
+		fprintf(stderr, "dl_fldigi: Error in SetCommState\n");
+		CloseHandle(serial_port_handle);
+		return NULL;
+	}
+
+	int serial_port_fd = _open_osfhandle((intptr_t) serial_port_handle, _O_RDONLY);
+	if (serial_port_fd == -1)
+	{
+		fprintf(stderr, "dl_fldigi: _open_osfhandle failed\n");
+		CloseHandle(serial_port_handle);
+		return NULL;
+	}
+
+	FILE *f = fdopen(serial_port_fd, "r");
+	if (f == NULL)
+	{
+		fprintf(stderr, "dl_fldigi: Error fdopening serial port as a FILE\n");
+		close(serial_port_fd); /* Closes the underlying HANDLE too */
+		return NULL;
+	}
+#endif
 
 	return f;
 }
 
-#else /* __MINGW32__ */
-
-void dl_fldigi_gps_init()
-{
-	fprintf(stderr, "dl_fldigi: Not yet implemented on windows: dl_fldigi_gps_init\n");
-}
-
-void dl_fldigi_gps_setup_fromprogdefaults()
-{
-
-}
-
-void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
-{
-	fprintf(stderr, "dl_fldigi: Not yet implemented on windows: dl_fldigi_gps_setup\n");
-}
-
-#endif /* __MINGW32__ */

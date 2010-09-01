@@ -840,6 +840,18 @@ static bool open_serial(const char* dev)
 		CloseHandle(fd);
 		ret = true;
 	}
+	else 
+	{
+		DWORD err = GetLastError();
+
+		LOG_VERBOSE("testCommPorts %s: error %i", dev, err);
+
+		if (err == ERROR_SHARING_VIOLATION)
+		{
+			LOG_INFO("testCommPorts port %s was a ERROR_SHARING_VIOLATION, allowing", dev, err);
+			ret = true;
+		}
+	}
 #endif
 	return ret;
 }
