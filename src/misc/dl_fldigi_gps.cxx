@@ -519,7 +519,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 		return NULL;
 	}
 
-	int serial_port_fd = _open_osfhandle((intptr_t) serial_port_handle, "r");
+	int serial_port_fd = _open_osfhandle((intptr_t) serial_port_handle, _O_RDONLY);
 	if (serial_port_fd == -1)
 	{
 		fprintf(stderr, "dl_fldigi: _open_osfhandle failed\n");
