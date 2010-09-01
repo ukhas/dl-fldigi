@@ -419,29 +419,23 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	#endif
 
 #ifndef __MINGW32__
-	#define serial_flags O_RDONLY | O_NOCTTY | O_NDELAY
-#else
-	#define serial_flags O_RDONLY
-#endif
-
 	//Open the serial port
-	int serial_port = open(port, serial_flags);
-	if( serial_port == -1 ) {
+	int serial_port_fd = open(port, serial_flags);
+	if( serial_port_fd == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error opening serial port.\n");
 		return NULL;
 	}
 
-	FILE *f = fdopen(serial_port, "r");
+	FILE *f = fdopen(serial_port_fd, "r");
 	if (f == NULL)
 	{
 		fprintf(stderr, "dl_fldigi: Error fdopening serial port as a FILE\n");
-		close(serial_port);
+		close(serial_port_fd);
 		return NULL;
 	}
 
-#ifndef __MINGW32__
 	//Initialise the port
-	int serial_port_set = fcntl(serial_port, F_SETFL, 0);
+	int serial_port_set = fcntl(serial_port_fd, F_SETFL, 0);
 	if( serial_port_set == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error initialising serial port.\n");
 		fclose(f);
@@ -486,7 +480,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	port_settings.c_cc[VMIN] = 1;
 
 	//Apply settings
-	serial_port_set = tcsetattr(serial_port, TCSANOW, &port_settings);
+	serial_port_set = tcsetattr(serial_port_fd, TCSANOW, &port_settings);
 	if( serial_port_set == -1 ) {
 		fprintf(stderr, "dl_fldigi: Error configuring serial port.\n");
 		fclose(f);
@@ -494,16 +488,14 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	}
 
 	#ifdef DL_FLDIGI_DEBUG
-		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port);
+		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port_fd);
 	#endif
 #else
-	HANDLE serial_port_handle;
-
-	serial_port_handle = (HANDLE) _get_osfhandle(serial_port);
+	HANDLE serial_port_handle = CreateFile(port, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 	if (serial_port_handle == INVALID_HANDLE_VALUE)
 	{
-		fprintf(stderr, "dl_fldigi: Unable to get OS F-HANDLE\n");
-		fclose(f);
+		fprintf(stderr, "dl_fldigi: CreateFile failed\n");
+		CloseHandle(serial_port_handle);
 		return NULL;
 	}
 
@@ -512,7 +504,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 
 	if (!GetCommState(serial_port_handle, &dcbSerialParams)) {
 		fprintf(stderr, "dl_fldigi: Error in GetCommState\n");
-		fclose(f);
+		CloseHandle(serial_port_handle);
 		return NULL;
 	}
 
@@ -523,7 +515,23 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 
 	if(!SetCommState(serial_port_handle, &dcbSerialParams)){
 		fprintf(stderr, "dl_fldigi: Error in SetCommState\n");
-		fclose(f);
+		CloseHandle(serial_port_handle);
+		return NULL;
+	}
+
+	int serial_port_fd = _open_osfhandle((intptr_t) serial_port_handle, "r");
+	if (serial_port_fd == -1)
+	{
+		fprintf(stderr, "dl_fldigi: _open_osfhandle failed\n");
+		CloseHandle(serial_port_handle);
+		return NULL;
+	}
+
+	FILE *f = fdopen(serial_port_fd, "r");
+	if (f == NULL)
+	{
+		fprintf(stderr, "dl_fldigi: Error fdopening serial port as a FILE\n");
+		close(serial_port_fd); /* Closes the underlying HANDLE too */
 		return NULL;
 	}
 #endif
