@@ -1,8 +1,4 @@
-// TODO: Windoze it up
-#ifndef __MINGW32__
-
 #include <stdio.h>
-#include <termios.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -11,6 +7,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+
+#ifndef __MINGW32__
+#include <termios.h>
+#else
+#include <windows.h>
+#include "compat.h"
+#endif
 
 #include "configuration.h"
 #include "util.h"
@@ -426,6 +429,7 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 		return NULL;
 	}
 
+#ifndef __MINGW32__
 	//Initialise the port
 	int serial_port_set = fcntl(serial_port, F_SETFL, 0);
 	if( serial_port_set == -1 ) {
@@ -478,6 +482,27 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 		fclose(f);
 		return NULL;
 	}
+#else
+	DCB dcbSerialParams = {0};
+	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+
+	if (!GetCommState(serial_port, &dcbSerialParams)) {
+		fprintf(stderr, "dl_fldigi: Error in GetCommState\n");
+		fclose(f);
+		return NULL'
+	}
+
+	dcbSerialParams.BaudRate = baud;
+	dcbSerialParams.ByteSize = 8;
+	dcbSerialParams.StopBits = ONESTOPBIT;
+	dcbSerialParams.Parity = NOPARITY;
+
+	if(!SetCommState(serial_port, &dcbSerialParams)){
+		fprintf(stderr, "dl_fldigi: Error in SetCommState\n");
+		fclose(f);
+		return NULL'
+	}
+#endif
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: Serial port '%s' opened successfully as %p (%i == %i).\n", port, f, fileno(f), serial_port);
@@ -486,21 +511,3 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	return f;
 }
 
-#else /* __MINGW32__ */
-
-void dl_fldigi_gps_init()
-{
-	fprintf(stderr, "dl_fldigi: Not yet implemented on windows: dl_fldigi_gps_init\n");
-}
-
-void dl_fldigi_gps_setup_fromprogdefaults()
-{
-
-}
-
-void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
-{
-	fprintf(stderr, "dl_fldigi: Not yet implemented on windows: dl_fldigi_gps_setup\n");
-}
-
-#endif /* __MINGW32__ */
