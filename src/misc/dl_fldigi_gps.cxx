@@ -406,6 +406,7 @@ static void *serial_thread(void *a)
 			else if(i == 12)
 			{
 				dl_fldigi_gps_set_status_safe(port, baud, identity, WAITING);
+				got_a_fix = 0;
 			}
 			else if (i == EOF)
 			{
