@@ -844,7 +844,7 @@ static bool open_serial(const char* dev)
 	{
 		DWORD err = GetLastError();
 
-		LOG_VERBOSE("testCommPorts %s: error %i", dev, err);
+		LOG_WARNING("testCommPorts %s: error %i", dev, err);
 
 		if (err == ERROR_SHARING_VIOLATION)
 		{
