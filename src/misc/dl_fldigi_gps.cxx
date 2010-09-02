@@ -243,13 +243,15 @@ static void dl_fldigi_gps_set_debugpos(float lat, float lon, int alt)
 static void *serial_thread(void *a)
 {
 	char *port, *identity;
-	int baud, got_a_fix;
+	int baud, got_a_fix,  i, c, s;
 	FILE *f;
 	struct gps_data fix;
-	int i, c, s;
-	time_t last_post;
 	struct timespec abstime;
-	time_t retry_time;
+	time_t last_post, retry_time;
+
+#ifdef __MINGW32__
+	int chars
+#endif
 
 	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
 
@@ -372,9 +374,39 @@ static void *serial_thread(void *a)
 
 		for (;;)
 		{
+			#ifdef __MINGW32__
+			chars = 15; /* check immediately */
+			#endif
+
 			do
 			{
 				c = fgetc(f);
+
+				#ifdef __MINGW32__
+				/* Windows doesn't have signals so we can't interrupt the thread. Therefore, we use
+				 * two timeouts: one is for when the serial port goes silent. This is implemented by
+				 * the kernel and setup at the bottom of this file: after 5 seconds of silence an
+				 * error is produced and the processing loop exits.
+				 * The other checks serial_updated periodically: every time the processing loop
+				 * begins, and then every 15 chars afterwards. */
+
+				chars++;
+				if (chars > 15)
+				{
+					chars = 0;
+
+					pthread_mutex_lock(&serial_info_mutex);
+					s = serial_updated;
+					pthread_mutex_unlock(&serial_info_mutex);
+
+					if (s)
+					{
+						fprintf(stderr, "Periodic check: serial_updated = 1; breaking.\n");
+						c = EOF;
+						break;
+					}
+				}
+				#endif
 			}
 			while (c != '$' && c != EOF);
 
@@ -426,18 +458,6 @@ static void *serial_thread(void *a)
 				perror("dl-fldigi: fscanf gps");
 				break;
 			}
-
-#ifdef __MINGW32__
-			pthread_mutex_lock(&serial_info_mutex);
-			s = serial_updated;
-			pthread_mutex_unlock(&serial_info_mutex);
-
-			if (s)
-			{
-				fprintf(stderr, "Periodic check: serial_updated = 1; breaking.\n");
-				break;
-			}
-#endif
 		}
 
 		fclose(f);

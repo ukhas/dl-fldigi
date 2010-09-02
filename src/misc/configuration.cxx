@@ -844,11 +844,9 @@ static bool open_serial(const char* dev)
 	{
 		DWORD err = GetLastError();
 
-		LOG_WARNING("testCommPorts %s: error %i", dev, err);
-
-		if (err == ERROR_SHARING_VIOLATION)
+		if (err == ERROR_ACCESS_DENIED)
 		{
-			LOG_INFO("testCommPorts port %s was a ERROR_SHARING_VIOLATION, allowing", dev);
+			LOG_INFO("opening port %s resulted in ERROR_ACCESS_DENIED, it exists but is currently open - allowing");
 			ret = true;
 		}
 	}
