@@ -1102,7 +1102,6 @@ static void setup_signal_handlers(void)
 	signal(SIGSEGV, handle_signal);
 	signal(SIGILL, handle_signal);
 	signal(SIGABRT, handle_signal);
-	signal(SIGUSR2, handle_signal);
 #endif
 }
 

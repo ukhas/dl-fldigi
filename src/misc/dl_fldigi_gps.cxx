@@ -151,7 +151,10 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 
 	full_memory_barrier();
 
-	pthread_kill(serial_thread_id, SIGUSR2);
+	#ifndef __MINGW32__
+		pthread_kill(serial_thread_id, SIGUSR2);
+	#endif
+
 	pthread_cond_signal(&serial_info_cond);  /* Not really required since the signal will have caused a spurious wakeup */
 
 	pthread_mutex_unlock(&serial_info_mutex);
@@ -236,7 +239,7 @@ static void *serial_thread(void *a)
 	int baud, got_a_fix;
 	FILE *f;
 	struct gps_data fix;
-	int i, c;
+	int i, c, s;
 	time_t last_post;
 	struct timespec abstime;
 	time_t retry_time;
@@ -416,6 +419,18 @@ static void *serial_thread(void *a)
 				perror("dl-fldigi: fscanf gps");
 				break;
 			}
+
+#ifdef __MINGW32__
+			pthread_mutex_lock(&serial_info_mutex);
+			s = serial_updated;
+			pthread_mutex_unlock(&serial_info_mutex);
+
+			if (s)
+			{
+				fprintf(stderr, "Periodic check: serial_updated = 1; breaking.\n");
+				break;
+			}
+#endif
 		}
 
 		fclose(f);
@@ -544,7 +559,8 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	DCB dcbSerialParams = {0};
 	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
 
-	if (!GetCommState(serial_port_handle, &dcbSerialParams)) {
+	if (!GetCommState(serial_port_handle, &dcbSerialParams))
+	{
 		fprintf(stderr, "dl_fldigi: Error in GetCommState\n");
 		CloseHandle(serial_port_handle);
 		return NULL;
@@ -555,8 +571,23 @@ static FILE *dl_fldigi_open_serial_port(const char *port, int baud)
 	dcbSerialParams.StopBits = ONESTOPBIT;
 	dcbSerialParams.Parity = NOPARITY;
 
-	if(!SetCommState(serial_port_handle, &dcbSerialParams)){
+	if(!SetCommState(serial_port_handle, &dcbSerialParams))
+	{
 		fprintf(stderr, "dl_fldigi: Error in SetCommState\n");
+		CloseHandle(serial_port_handle);
+		return NULL;
+	}
+
+	COMMTIMEOUTS timeouts;
+	timeouts.ReadIntervalTimeout 		= 1000;
+	timeouts.ReadTotalTimeoutMultiplier 	= 0;
+	timeouts.ReadTotalTimeoutConstant 	= 5000;
+	timeouts.WriteTotalTimeoutMultiplier 	= 0;
+	timeouts.WriteTotalTimeoutConstant 	= 0;
+
+	if (!SetCommTimeouts(serial_port_handle, &timeouts))
+	{
+		fprintf(stderr, "dl_fldigi: Error in SetCommTimeouts\n");
 		CloseHandle(serial_port_handle);
 		return NULL;
 	}
