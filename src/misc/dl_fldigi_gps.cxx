@@ -403,6 +403,10 @@ static void *serial_thread(void *a)
 
 				dl_fldigi_gps_set_debugpos_safe(fix.lat, fix.lon, fix.alt);
 			}
+			else if(i == 12)
+			{
+				dl_fldigi_gps_set_status_safe(port, baud, identity, WAITING);
+			}
 			else if (i == EOF)
 			{
 				perror("dl-fldigi: fscanf gps");
