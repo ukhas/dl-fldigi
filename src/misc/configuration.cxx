@@ -848,7 +848,7 @@ static bool open_serial(const char* dev)
 
 		if (err == ERROR_SHARING_VIOLATION)
 		{
-			LOG_INFO("testCommPorts port %s was a ERROR_SHARING_VIOLATION, allowing", dev, err);
+			LOG_INFO("testCommPorts port %s was a ERROR_SHARING_VIOLATION, allowing", dev);
 			ret = true;
 		}
 	}
