@@ -171,11 +171,18 @@ void dl_fldigi_gps_stop()
 
 static void dl_fldigi_gps_set_status_safe(char *port, int baud, char *identity, enum gps_status s)
 {
-	if (port[0] == '\0')		port = NULL;
-	if (identity[0] == '\0')	identity = NULL;
+	if (port != NULL)
+	{
+		if (port[0] == '\0')		port = NULL;
+		else				port = strdup(port);
+	}
 
-	if (port != NULL)		port = strdup(port);
-	if (identity != NULL)		identity = strdup(identity);
+	if (identity != NULL)
+	{
+		if (identity[0] == '\0')	identity = NULL;
+		else				identity = strdup(identity);
+	}
+
 	REQ(dl_fldigi_gps_set_status, port, baud, identity, s);
 }
 
