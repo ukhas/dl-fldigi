@@ -250,7 +250,7 @@ static void *serial_thread(void *a)
 	time_t last_post, retry_time;
 
 #ifdef __MINGW32__
-	int chars
+	int chars;
 #endif
 
 	SET_THREAD_ID(DL_FLDIGI_GPS_TID);
