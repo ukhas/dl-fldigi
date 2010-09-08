@@ -57,6 +57,7 @@
 #include "waterfall.h"
 #include "macros.h"
 #include "qrunner.h"
+#include "dl_fldigi.h"
 
 #if USE_HAMLIB
         #include "hamlib.h"
@@ -414,6 +415,20 @@ public:
 	}
 };
 
+class Payload_get_name : public xmlrpc_c::method
+{
+public:
+	Payload_get_name()
+	{
+		_signature = "s:n";
+		_help = "Returns the name of the current payload.";
+	}
+	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
+	{
+		*retval = xmlrpc_c::value_string(progdefaults.xmlPayloadname.c_str());
+	}
+};
+
 class Modem_get_names : public xmlrpc_c::method
 {
 public:
@@ -482,6 +497,23 @@ public:
 			}
 		}
 		throw xmlrpc_c::fault("No such modem");
+	}
+};
+
+class Payload_select_payload : public xmlrpc_c::method
+{
+public:
+	Payload_select_payload()
+	{
+		_signature = "i:i";
+		_help = "Sets the current payload. Returns old name.";
+	}
+	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
+	{
+		XMLRPC_LOCK;
+		dl_fldigi_select_payload(params.getString(0).c_str());
+		progdefaults.xmlPayloadname = params.getString(0).c_str();
+		*retval = xmlrpc_c::value_string(progdefaults.xmlPayloadname.c_str());
 	}
 };
 
@@ -2446,12 +2478,16 @@ public:
 	ELEM_(Fldigi_config_dir, "fldigi.config_dir")					\
 	ELEM_(Fldigi_terminate, "fldigi.terminate")						\
 																	\
+	ELEM_(Payload_get_name, "payload.get_name")						\
+																	\
 	ELEM_(Modem_get_name, "modem.get_name")							\
 	ELEM_(Modem_get_names, "modem.get_names")						\
 	ELEM_(Modem_get_id, "modem.get_id")								\
 	ELEM_(Modem_get_max_id, "modem.get_max_id")						\
 	ELEM_(Modem_set_by_name, "modem.set_by_name")					\
 	ELEM_(Modem_set_by_id, "modem.set_by_id")						\
+																	\
+	ELEM_(Payload_select_payload, "payload.select_payload")						\
 																	\
 	ELEM_(Modem_set_carrier, "modem.set_carrier")					\
 	ELEM_(Modem_inc_carrier, "modem.inc_carrier")					\
