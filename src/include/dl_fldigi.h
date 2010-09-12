@@ -42,6 +42,7 @@ void dl_fldigi_post(const char *data, const char *identity);
 void dl_fldigi_download();
 void dl_fldigi_update_payloads();
 void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a);
+void cb_dl_fldigi_select_payload_manual(char *payload);
 void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a);
 void dl_fldigi_select_payload(const char *name);
 void dl_fldigi_reset_rxtimer();

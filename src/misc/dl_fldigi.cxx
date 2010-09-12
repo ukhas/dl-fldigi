@@ -1038,6 +1038,31 @@ void cb_dl_fldigi_select_payload(Fl_Widget *o, void *a)
 	#endif
 }
 
+void cb_dl_fldigi_select_payload_manual(char *payload)
+{
+	progdefaults.xmlPayloadname = payload;
+	free(payload);
+	progdefaults.changed = true;
+
+	if (bHAB)
+	{	
+		const Fl_Menu_Item *item = habFlightXML->find_item(progdefaults.xmlPayloadname.c_str());
+		if (item != NULL) habFlightXML->value(item);
+		habFlightXML->redraw();
+	}
+
+	if (bHAB)
+	{
+		const Fl_Menu_Item *item = habFlightXML_conf->find_item(progdefaults.xmlPayloadname.c_str());
+		if (item != NULL) habFlightXML_conf->value(item);
+		habFlightXML_conf->redraw();
+	}
+
+	#ifdef DL_FLDIGI_DEBUG
+		fprintf(stderr, "dl_fldigi: set current payload name to '%s' (have not configured) (manual)\n", progdefaults.xmlPayloadname.c_str());
+	#endif
+}
+
 void cb_dl_fldigi_configure_payload(Fl_Widget *o, void *a)
 {
 	#ifdef DL_FLDIGI_DEBUG

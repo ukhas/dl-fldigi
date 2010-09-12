@@ -511,9 +511,8 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
 	{
 		XMLRPC_LOCK;
-		dl_fldigi_select_payload(params.getString(0).c_str());
-		progdefaults.xmlPayloadname = params.getString(0).c_str();
-		*retval = xmlrpc_c::value_string(progdefaults.xmlPayloadname.c_str());
+		REQ(cb_dl_fldigi_select_payload_manual, strdup(params.getString(0).c_str()));
+		*retval = xmlrpc_c::value_string(params.getString(0).c_str());
 	}
 };
 
