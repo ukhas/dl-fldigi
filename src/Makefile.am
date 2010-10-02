@@ -476,7 +476,7 @@ dl_fldigi_SOURCES += \
 	spot/pskrep.cxx \
 	spot/spot.cxx \
 	ssdv/ssdv_rx.cxx \
-	ssdv/rs8decode.c \
+	ssdv/rs8.c \
 	ssb/ssb.cxx \
 	throb/throb.cxx \
 	trx/modem.cxx \
