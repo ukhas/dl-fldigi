@@ -373,6 +373,7 @@ dl_fldigi_SOURCES += \
 	include/sound.h \
 	include/soundconf.h \
 	include/spot.h \
+	include/ssdv.h \
 	include/ssdv_rx.h \
 	include/ssb.h \
 	include/stacktrace.h \
@@ -475,6 +476,7 @@ dl_fldigi_SOURCES += \
 	spot/notify.cxx \
 	spot/pskrep.cxx \
 	spot/spot.cxx \
+	ssdv/ssdv.c \
 	ssdv/ssdv_rx.cxx \
 	ssdv/rs8.c \
 	ssb/ssb.cxx \

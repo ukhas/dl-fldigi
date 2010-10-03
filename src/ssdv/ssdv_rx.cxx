@@ -8,7 +8,6 @@
 #include <FL/Fl_Progress.H>
 #include <setjmp.h>
 #include "ssdv_rx.h"
-#include "rs8.h"
 
 #include <curl/curl.h>
 
@@ -140,14 +139,12 @@ ssdv_error_exit (j_common_ptr cinfo)
 #define IMG_WIDTH (320)
 #define IMG_HEIGHT (240)
 #define IMG_SIZE (IMG_WIDTH * IMG_HEIGHT * 3)
-#define JPEG_SIZE (64 * 1024)
 
 ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	: Fl_Double_Window(w, h, title)
 {
 	image = new unsigned char[IMG_SIZE];
 	buffer = new uint8_t[BUFFER_SIZE];
-	jpeg = new uint8_t[JPEG_SIZE]; /* Maximum JPEG image size is < 64k */
 	
 	/* Empty receive buffer */
 	clear_buffer();
@@ -156,7 +153,8 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	memset(image, 0x80, IMG_SIZE);
 	
 	/* No image yet */
-	img_imageid = -1;
+	packets = NULL;
+	image_id = -1;
 	
 	begin();
 	
@@ -178,13 +176,13 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 		flimageid->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
-	/* Last Block: */
+	/* Last Packet: */
 	{
 		Fl_Box* o = new Fl_Box(x1 + 2, y + 22, 72, 20, "Last Block:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flblock = new Fl_Box(x1 + 75, y + 22, 60, 20, "");
-		flblock->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+		flpacket = new Fl_Box(x1 + 75, y + 22, 60, 20, "");
+		flpacket->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
 	/* Size: */
@@ -236,7 +234,6 @@ ssdv_rx::~ssdv_rx()
 {
 	delete image;
 	delete buffer;
-	delete jpeg;
 }
 
 void ssdv_rx::feed_buffer(uint8_t byte)
@@ -244,40 +241,16 @@ void ssdv_rx::feed_buffer(uint8_t byte)
 	int bp = bc + bl;
 	
 	buffer[bp] = byte;
-	if((bp -= PKT_SIZE) >= 0) buffer[bp] = byte;
+	if((bp -= SSDV_PKT_SIZE) >= 0) buffer[bp] = byte;
 	
-	if(bl < PKT_SIZE) bl++;
-	else if(++bc == PKT_SIZE) bc = 0;
+	if(bl < SSDV_PKT_SIZE) bl++;
+	else if(++bc == SSDV_PKT_SIZE) bc = 0;
 }
 
 void ssdv_rx::clear_buffer()
 {
 	bc = 0;
 	bl = 0;
-}
-
-int ssdv_rx::have_packet()
-{
-	int i;
-	uint8_t *b = &buffer[bc];
-	
-	/* Enough data present? */
-	if(bl < PKT_SIZE) return(-1);
-	
-	/* Headers present? TODO: Check for fuzzy headers */
-	if(b[0] != 0x55 || b[1] != 0x66) return(-1);
-	
-	/* Looks like a packet header, try the reed-solomon decoder */
-	i = decode_rs_8(&b[1], 0, 0, 0);
-	if(i < 0) return(-1);
-	if(i > 0)
-	{
-		fprintf(stderr, "ssdv: %i bytes corrected\n", i);
-		img_errors += i;
-	}
-	
-	/* Looks like we got a packet! */
-	return(0);
 }
 
 static void *upload_packet_thread(void *arg)
@@ -331,7 +304,7 @@ void ssdv_rx::upload_packet()
 		CURLFORM_COPYCONTENTS, "hex", CURLFORM_END);
 	
 	/* URL-encode the packet */
-	packet = (char *) malloc((PKT_SIZE * 2) + 1);
+	packet = (char *) malloc((SSDV_PKT_SIZE * 2) + 1);
 	if(!packet)
 	{
 		fprintf(stderr, "ssdv_rx::upload_packet(): failed to allocate memory for packet\n");
@@ -339,7 +312,7 @@ void ssdv_rx::upload_packet()
 		return;
 	}
 	
-	for(int i = 0; i < PKT_SIZE; i++)
+	for(int i = 0; i < SSDV_PKT_SIZE; i++)
 		snprintf(packet + (i * 2), 3, "%02X", buffer[bc + i]);
 	
 	/* Add a copy of the packet */
@@ -389,110 +362,151 @@ void ssdv_rx::upload_packet()
 
 void ssdv_rx::put_byte(uint8_t byte, int lost)
 {
+	int i;
+	
 	/* If more than 16 bytes where lost clear the buffer */
 	if(lost > 16) clear_buffer();
 	
 	/* Fill in the lost bytes */
-	for(int i = 0; i < lost; i++)
+	for(i = 0; i < lost; i++)
 		feed_buffer(0x00);
 	
 	/* Feed the byte into the buffer */
 	feed_buffer(byte);
 	
-	/* Test if a packet is present */
-	if(have_packet() == 0)
+	/* Enough data yet to form a packet? */
+	if(bl < SSDV_PKT_SIZE) return;
+	
+	/* Test if this is a packet and is valid */
+	uint8_t *b = &buffer[bc];
+	if(ssdv_dec_is_packet(b) != 0) return;
+	
+	/* Packet received.. upload to server */
+	if(progdefaults.dl_online) upload_packet();
+	
+	/* Read the header */
+	ssdv_dec_header(&pkt_info, b);
+	
+	/* Does this belong to the same image? */
+	if(pkt_info.image_id != image_id ||
+	   pkt_info.width != image_width ||
+	   pkt_info.height != image_height)
 	{
-		uint8_t *b = &buffer[bc];
+		/* Prepare the new image */
+		image_timestamp      = time(NULL);
+		image_id             = pkt_info.image_id;
+		image_width          = pkt_info.width;
+		image_height         = pkt_info.height;
+		image_lost_packets   = 0;
 		
-		/* Packet received.. upload to server */
-		if(progdefaults.dl_online) upload_packet();
+		/* Clear the image buffer */
+		memset(image, 0x80, IMG_SIZE);
 		
-		/* Read the header */
-		pkt_imageid = b[2];
-		pkt_blockno = b[3];
-		pkt_blocks  = b[4];
-		
-		/* Is this a new image? */
-		if(pkt_imageid != img_imageid ||
-		   pkt_blocks != img_blocks) new_image();
-		
-		/* Have we missed a block? */
-		/* Assumes blocks are transmitted sequentially */
-		img_missing += pkt_blockno - (img_lastblock + 1);
-		
-		/* Increase counters */
-		img_lastblock = pkt_blockno;
-		img_received++;
-		
-		/* Display a message on the fldigi interface */
-		put_status("SSDV: Decoded image packet!", 10);
-		if(bHAB)
+		/* Clear the packet buffer */
+		if(packets != NULL) free(packets);
+		packets = NULL;
+		packets_len = 0;
+	}
+	
+	/* Realloc packet buffer for new packet */
+	if(pkt_info.packet_id + 1 > packets_len)
+	{
+		size_t l = SSDV_PKT_SIZE * (pkt_info.packet_id + 1);
+		void *a = realloc(packets, l);
+		if(!a)
 		{
-			char msg[100];
-			snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Block: %i/%i, Image size: %i bytes", pkt_imageid, pkt_blockno + 1, pkt_blocks, pkt_blocks * PKT_SIZE_PAYLOAD);
-			
-			habCustom->value(msg);
-			habCustom->color(FL_GREEN);
+			fprintf(stderr, "Error reallocating memory\n");
+			perror("realloc");
+			return;
 		}
 		
-		/* Copy payload into jpeg buffer */
-		memcpy(jpeg + pkt_blockno * PKT_SIZE_PAYLOAD, &b[PKT_SIZE_HEADER], PKT_SIZE_PAYLOAD);
+		packets = (uint8_t *) a;
 		
-		/* Save the image to disk */
-		save_image();
+		size_t s = SSDV_PKT_SIZE * packets_len;
+		memset(packets + s, 0, l - s);
 		
-		/* Attempt to render the image */
-		render_image();
-		
-		/* Update values on display */
-		char s[16];
-		
-		snprintf(s, 16, "%d/%d", pkt_blockno + 1, img_blocks);
-		flblock->copy_label(s);
-		
-		snprintf(s, 16, "0x%02X", pkt_imageid);
-		flimageid->copy_label(s);
-		
-		snprintf(s, 16, "%d", pkt_blocks * PKT_SIZE_PAYLOAD);
-		flsize->copy_label(s);
-		
-		snprintf(s, 16, "%d", img_missing);
-		flmissing->copy_label(s);
-		
-		snprintf(s, 16, "%d", img_errors);
-		flfixes->copy_label(s);
-		
-		flprogress->maximum(img_blocks);
-		flprogress->value(pkt_blockno + 1);
-		
-		/* Update the image */
-		flrgb->uncache();
-		box->redraw();
+		packets_len = pkt_info.packet_id + 1;
 	}
+	
+	/* Copy it into place */
+	memcpy(packets + (pkt_info.packet_id * SSDV_PKT_SIZE), b, SSDV_PKT_SIZE);
+	
+	/* Display a message on the fldigi interface */
+	put_status("SSDV: Decoded image packet!", 10);
+	if(bHAB)
+	{
+		char msg[100];
+		snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Resolution: %dx%d, Packet ID: %d",
+			pkt_info.image_id,
+			pkt_info.width,
+			pkt_info.height,
+			pkt_info.packet_id);
+		
+		habCustom->value(msg);
+		habCustom->color(FL_GREEN);
+	}
+	
+	/* TODO: Dynamic allocation */
+	//size_t length = 128 * 1024;
+	//uint8_t *jpeg = (uint8_t *) malloc(length);
+	//if(!jpeg)
+	//{
+	//	perror("malloc");
+	//	return;
+	//}
+	
+	/* Initialise the decoder */
+	ssdv_t dec;
+	ssdv_dec_init(&dec);
+	//ssdv_dec_set_buffer(&dec, jpeg, length);
+	
+	image_lost_packets = 0;
+	for(i = 0; i < packets_len; i++)
+	{
+		uint8_t *p = packets + (i * SSDV_PKT_SIZE);
+		if(p[0] != 0x55) { image_lost_packets++; continue; }
+		ssdv_dec_feed(&dec, p);
+	}
+	
+	/* Store the last decoded MCU, for the progress bar */
+	int mcu_id = dec.mcu_id;
+	
+	/* Get the final image */
+	uint8_t *jpeg;
+	size_t length;
+	
+	i = ssdv_dec_get_jpeg(&dec, &jpeg, &length);
+	
+	/* Save the image to disk */
+	save_image(jpeg, length);
+	
+	/* Render the image to screen */
+	render_image(jpeg, length);
+	flrgb->uncache();
+	box->redraw();
+	
+	free(jpeg);
+	
+	/* Update values on display */
+	char s[16];
+	
+	snprintf(s, 16, "%d", pkt_info.packet_id + 1);
+	flpacket->copy_label(s);
+	
+	snprintf(s, 16, "0x%02X", pkt_info.image_id);
+	flimageid->copy_label(s);
+	
+	snprintf(s, 16, "%d", image_lost_packets);
+	flmissing->copy_label(s);
+	
+	//snprintf(s, 16, "%d", img_errors);
+	//flfixes->copy_label(s);
+	
+	flprogress->maximum(dec.mcu_count);
+	flprogress->value(mcu_id);
 }
 
-void ssdv_rx::new_image()
-{
-	/* Set details for new image */
-	img_timestamp = time(NULL);
-	img_imageid   = pkt_imageid;
-	img_filesize  = pkt_blocks * PKT_SIZE_PAYLOAD;
-	img_blocks    = pkt_blocks;
-	img_lastblock = -1;
-	img_errors    = 0;
-	img_missing   = 0;
-	img_received  = 0;
-	
-	/* Clear the image buffer */
-	memset(image, 0x80, IMG_SIZE);
-	
-	/* Fill the JPEG buffer with 0xFF */
-	/* 0xFF bytes are used for padding purposes in the JPEG format */
-	/* (see JPEG specification section F.1.2.3 for details). */
-	memset(jpeg, 0xFF, JPEG_SIZE);
-}
-
-void ssdv_rx::save_image()
+void ssdv_rx::save_image(uint8_t *jpeg, size_t length)
 {
 	char fname[FILENAME_MAX];
 	const char *payload, *savedir;
@@ -512,13 +526,13 @@ void ssdv_rx::save_image()
 		"UNKNOWN" : progdefaults.xmlPayloadname.c_str());
 	
 	/* Construct the filename */
-	gmtime_r(&img_timestamp, &tm);
+	gmtime_r(&image_timestamp, &tm);
 	snprintf(fname, FILENAME_MAX - 1,
 		"%s/%04i-%02i-%02i-%02i-%02i-%02i-%s-%02X.jpeg",
 		savedir,
 		1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
 		tm.tm_hour, tm.tm_min, tm.tm_sec,
-		payload, img_imageid);
+		payload, image_id);
 	
 	f = fopen(fname, "wb");
 	if(!f)
@@ -530,9 +544,9 @@ void ssdv_rx::save_image()
 	
 	/* Loop until all bytes are written */
 	l = 0;
-	while(l < img_filesize)
+	while(l < length)
 	{
-		size_t r = fwrite(jpeg + l, 1, img_filesize - l, f);
+		size_t r = fwrite(jpeg + l, 1, length - l, f);
 		if(r == 0) break;
 		l += r;
 	}
@@ -541,7 +555,7 @@ void ssdv_rx::save_image()
 	/* Job done */
 }
 
-void ssdv_rx::render_image()
+void ssdv_rx::render_image(uint8_t *jpeg, size_t length)
 {
 	int r;
 	struct jpeg_decompress_struct cinfo;
@@ -558,7 +572,7 @@ void ssdv_rx::render_image()
 	}
 	
 	jpeg_create_decompress(&cinfo);
-	jpeg_memory_src(&cinfo, jpeg, img_filesize);
+	jpeg_memory_src(&cinfo, jpeg, length);
 	
 	r = jpeg_read_header(&cinfo, TRUE);
 	if(r != JPEG_HEADER_OK)
