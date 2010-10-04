@@ -55,7 +55,14 @@ typedef struct
 	uint8_t outlen;    /* Number of bits in the output bit buffer       */
 	
 	/* JPEG decoder state */
-	enum { J_MARKER = 0, J_MARKER_LEN, J_MARKER_DATA, J_HUFF, J_INT } state;
+	enum {
+		S_MARKER = 0,
+		S_MARKER_LEN,
+		S_MARKER_DATA,
+		S_HUFF,
+		S_INT,
+		S_EOI,
+	} state;
 	uint16_t marker;    /* Current marker                               */
 	uint16_t marker_len; /* Length of data following marker             */
 	uint8_t *marker_data; /* Where to copy marker data too              */
@@ -91,11 +98,10 @@ extern char ssdv_enc_feed(ssdv_t *s, uint8_t *buffer, size_t length);
 
 /* Decoding */
 extern char ssdv_dec_init(ssdv_t *s);
-extern char ssdv_dec_set_buffer(ssdv_t *s, uint8_t *buffer, size_t length);
 extern char ssdv_dec_feed(ssdv_t *s, uint8_t *packet);
 extern char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length);
 
-extern char ssdv_dec_is_packet(uint8_t *packet);
+extern char ssdv_dec_is_packet(uint8_t *packet, int *errors);
 extern void ssdv_dec_header(ssdv_packet_info_t *info, uint8_t *packet);
 
 #ifdef __cplusplus

@@ -25,11 +25,6 @@ static uint8_t app0[14] = {
 0x4A,0x46,0x49,0x46,0x00,0x01,0x01,0x01,0x00,0x48,0x00,0x48,0x00,0x00,
 };
 
-/* SOF0 header data */
-static uint8_t sof0[15] = {
-0x08,0x00,0xF0,0x01,0x40,0x03,0x01,0x22,0x00,0x02,0x11,0x01,0x03,0x11,0x01,
-};
-
 /* SOS header data */
 static uint8_t sos[10] = {
 0x03,0x01,0x00,0x02,0x11,0x03,0x11,0x00,0x3F,0x00,
@@ -242,7 +237,7 @@ static char ssdv_out_jpeg_int(ssdv_t *s, uint8_t rle, int value)
 
 static char ssdv_process(ssdv_t *s)
 {
-	if(s->state == J_HUFF)
+	if(s->state == S_HUFF)
 	{
 		uint8_t symbol, width;
 		int r;
@@ -273,7 +268,7 @@ static char ssdv_process(ssdv_t *s)
 			else
 			{
 				/* DC value follows, 'symbol' bits wide */
-				s->state = J_INT;
+				s->state = S_INT;
 				s->needbits = symbol;
 			}
 		}
@@ -288,14 +283,14 @@ static char ssdv_process(ssdv_t *s)
 			}
 			else if(symbol == 0xF0)
 			{
-				/* The next 15 AC parts are zero */
+				/* The next 16 AC parts are zero */
 				ssdv_out_jpeg_int(s, 15, 0);
-				s->acpart += 15;
+				s->acpart += 16;
 			}
 			else
 			{
 				/* Next bits are an integer value */
-				s->state = J_INT;
+				s->state = S_INT;
 				s->acrle = symbol >> 4;
 				s->acpart += s->acrle;
 				s->needbits = symbol & 0x0F;
@@ -306,7 +301,7 @@ static char ssdv_process(ssdv_t *s)
 		s->worklen -= width;
 		s->workbits &= (1 << s->worklen) - 1;
 	}
-	else if(s->state == J_INT)
+	else if(s->state == S_INT)
 	{
 		int i;
 		
@@ -350,7 +345,7 @@ static char ssdv_process(ssdv_t *s)
 		s->acpart++;
 		
 		/* Next bits are a huffman code */
-		s->state = J_HUFF;
+		s->state = S_HUFF;
 		
 		/* Clear processed bits */
 		s->worklen -= s->needbits;
@@ -405,7 +400,7 @@ static char ssdv_have_marker(ssdv_t *s)
 		
 		s->marker_data     = s->hbuff;
 		s->marker_data_len = 0;
-		s->state           = J_MARKER_DATA;
+		s->state           = S_MARKER_DATA;
 		break;
 	
 	case J_DHT:
@@ -413,13 +408,17 @@ static char ssdv_have_marker(ssdv_t *s)
 		/* Copy the tables into memory */
 		s->marker_data     = malloc(s->marker_len);
 		s->marker_data_len = 0;
-		s->state           = J_MARKER_DATA;
+		s->state           = S_MARKER_DATA;
+		break;
+	
+	case J_EOI:
+		s->state = S_EOI;
 		break;
 	
 	default:
 		/* Ignore other marks, skipping any associated data */
 		s->in_skip = s->marker_len;
-		s->state   = J_MARKER;
+		s->state   = S_MARKER;
 		break;
 	}
 	
@@ -497,7 +496,7 @@ static char ssdv_have_marker_data(ssdv_t *s)
 		/* 00 3F 00 */
 		
 		/* The SOS data is followed by the image data */
-		s->state = J_HUFF;
+		s->state = S_HUFF;
 		
 		return(SSDV_OK);
 	
@@ -518,7 +517,7 @@ static char ssdv_have_marker_data(ssdv_t *s)
 		break;
 	}
 	
-	s->state = J_MARKER;
+	s->state = S_MARKER;
 	return(SSDV_OK);
 }
 
@@ -549,6 +548,8 @@ char ssdv_enc_get_packet(ssdv_t *s)
 	int r;
 	uint8_t b;
 	
+	if(s->state == S_EOI) return(SSDV_EOI);
+	
 	/* If the output buffer is empty, re-initialise */
 	if(s->out_len == 0) ssdv_enc_set_buffer(s, s->out);
 	
@@ -562,7 +563,7 @@ char ssdv_enc_get_packet(ssdv_t *s)
 		
 		switch(s->state)
 		{
-		case J_MARKER:
+		case S_MARKER:
 			s->marker = (s->marker << 8) | b;
 			
 			if(s->marker == J_TEM ||
@@ -576,12 +577,12 @@ char ssdv_enc_get_packet(ssdv_t *s)
 			{
 				/* All other markers are followed by data */
 				s->marker_len = 0;
-				s->state = J_MARKER_LEN;
+				s->state = S_MARKER_LEN;
 				s->needbits = 16;
 			}
 			break;
 		
-		case J_MARKER_LEN:
+		case S_MARKER_LEN:
 			s->marker_len = (s->marker_len << 8) | b;
 			if((s->needbits -= 8) == 0)
 			{
@@ -590,7 +591,7 @@ char ssdv_enc_get_packet(ssdv_t *s)
 			}
 			break;
 		
-		case J_MARKER_DATA:
+		case S_MARKER_DATA:
 			s->marker_data[s->marker_data_len++] = b;
 			if(s->marker_data_len == s->marker_len)
 			{
@@ -598,8 +599,8 @@ char ssdv_enc_get_packet(ssdv_t *s)
 			}
 			break;
 		
-		case J_HUFF:
-		case J_INT:
+		case S_HUFF:
+		case S_INT:
 			/* Is the next byte a stuffing byte? Skip it */
 			/* TODO: Test the next byte is actually 0x00 */
 			if(b == 0xFF) s->in_skip++;
@@ -647,7 +648,7 @@ char ssdv_enc_get_packet(ssdv_t *s)
 				s->packet_id++;
 				
 				/* Have we reached the end of the image data? */
-				if(r == SSDV_EOI) s->state = J_MARKER;
+				if(r == SSDV_EOI) s->state = S_EOI;
 				
 				return(SSDV_OK);
 			}
@@ -657,6 +658,10 @@ char ssdv_enc_get_packet(ssdv_t *s)
 				fprintf(stderr, "ssdv_process() failed: %i\n", r);
 				return(SSDV_ERROR);
 			}
+			break;
+		
+		case S_EOI:
+			/* Shouldn't reach this point */
 			break;
 		}
 	}
@@ -686,11 +691,31 @@ static void ssdv_write_marker(ssdv_t *s, uint16_t id, uint16_t length, uint8_t *
 
 static void ssdv_out_headers(ssdv_t *s)
 {
+	uint8_t *b = s->hbuff;
+	
 	ssdv_write_marker(s, J_SOI,    0, 0);
 	ssdv_write_marker(s, J_APP0,  14, app0);
 	ssdv_write_marker(s, J_DQT,   65, dqt0);  /* DQT Luminance       */
 	ssdv_write_marker(s, J_DQT,   65, dqt1);  /* DQT Chrominance     */
-	ssdv_write_marker(s, J_SOF0,  15, sof0);  /* SOF0 (Baseline DCT) */
+	
+	/* Build SOF0 header */
+	b[0]  = 8; /* Precision */
+	b[1]  = s->height >> 8;
+	b[2]  = s->height & 0xFF;
+	b[3]  = s->width >> 8;
+	b[4]  = s->width & 0xFF;
+	b[5]  = 3; /* Components (Y'Cb'Cr) */
+	b[6]  = 1; /* Y */
+	b[7]  = 0x22;
+	b[8]  = 0x00;
+	b[9]  = 2; /* Cb */
+	b[10] = 0x11;
+	b[11] = 0x01;
+	b[12] = 3; /* Cr */
+	b[13] = 0x11;
+	b[14] = 0x01;
+	ssdv_write_marker(s, J_SOF0,  15, b);  /* SOF0 (Baseline DCT) */
+	
 	ssdv_write_marker(s, J_DHT,   29, dht00); /* DHT (DC Luminance)  */
 	ssdv_write_marker(s, J_DHT,  179, dht10); /* DHT (AC Luminance)  */
 	ssdv_write_marker(s, J_DHT,   29, dht01); /* DHT (DC Chrominance */
@@ -740,7 +765,7 @@ char ssdv_dec_init(ssdv_t *s)
 	memset(s, 0, sizeof(ssdv_t));
 	
 	/* The packet data should contain only scan data, no headers */
-	s->state = J_HUFF;
+	s->state = S_HUFF;
 	
 	/* Converting absolute values to relative */
 	s->dcmode = 1;
@@ -756,20 +781,6 @@ char ssdv_dec_init(ssdv_t *s)
 	
 	return(SSDV_OK);
 }
-
-//char ssdv_dec_set_buffer(ssdv_t *s, uint8_t *buffer, size_t length)
-//{
-//	size_t c = s->outp - s->out;
-//	
-//	s->outp = buffer + c;
-//	s->out = buffer;
-//	s->out_len = length - c;
-//	
-//	/* Flush the output bits */
-//	ssdv_outbits(s, 0, 0);
-//	
-//	return(SSDV_OK);
-//}
 
 char ssdv_dec_feed(ssdv_t *s, uint8_t *packet)
 {
@@ -825,7 +836,7 @@ char ssdv_dec_feed(ssdv_t *s, uint8_t *packet)
 		}
 		
 		/* Reset the JPEG decoder state */
-		s->state = J_HUFF;
+		s->state = S_HUFF;
 		s->component = 0;
 		s->mcupart = 0;
 		s->acpart = 0;
@@ -897,7 +908,7 @@ char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length)
 	return(SSDV_OK);
 }
 
-char ssdv_dec_is_packet(uint8_t *packet)
+char ssdv_dec_is_packet(uint8_t *packet, int *errors)
 {
 	int i;
 	
@@ -908,6 +919,8 @@ char ssdv_dec_is_packet(uint8_t *packet)
 	i = decode_rs_8(&packet[1], 0, 0, 0);
 	if(i < 0) return(-1); /* Reed-solomon decoder failed */
 	if(i > 0) fprintf(stderr, "ssdv: %i bytes corrected\n", i);
+	
+	if(errors) *errors = i;
 	
 	/* Appears to be a valid packet */
 	return(0);

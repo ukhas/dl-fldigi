@@ -379,7 +379,10 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	
 	/* Test if this is a packet and is valid */
 	uint8_t *b = &buffer[bc];
-	if(ssdv_dec_is_packet(b) != 0) return;
+	if(ssdv_dec_is_packet(b, &i) != 0) return;
+	
+	/* Make a note of the number of errors */
+	image_errors += i;
 	
 	/* Packet received.. upload to server */
 	if(progdefaults.dl_online) upload_packet();
@@ -398,6 +401,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		image_width          = pkt_info.width;
 		image_height         = pkt_info.height;
 		image_lost_packets   = 0;
+		image_errors         = 0;
 		
 		/* Clear the image buffer */
 		memset(image, 0x80, IMG_SIZE);
@@ -446,19 +450,9 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		habCustom->color(FL_GREEN);
 	}
 	
-	/* TODO: Dynamic allocation */
-	//size_t length = 128 * 1024;
-	//uint8_t *jpeg = (uint8_t *) malloc(length);
-	//if(!jpeg)
-	//{
-	//	perror("malloc");
-	//	return;
-	//}
-	
 	/* Initialise the decoder */
 	ssdv_t dec;
 	ssdv_dec_init(&dec);
-	//ssdv_dec_set_buffer(&dec, jpeg, length);
 	
 	image_lost_packets = 0;
 	for(i = 0; i < packets_len; i++)
@@ -499,8 +493,8 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	snprintf(s, 16, "%d", image_lost_packets);
 	flmissing->copy_label(s);
 	
-	//snprintf(s, 16, "%d", img_errors);
-	//flfixes->copy_label(s);
+	snprintf(s, 16, "%d", image_errors);
+	flfixes->copy_label(s);
 	
 	flprogress->maximum(dec.mcu_count);
 	flprogress->value(mcu_id);

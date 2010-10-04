@@ -44,6 +44,7 @@ private:
 	int image_width;
 	int image_height;
 	int image_lost_packets;
+	int image_errors;
 	
 	/* Private functions */
 	void feed_buffer(uint8_t byte);
