@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Box.H>
-#include <FL/Fl_RGB_Image.H>
+#include <FL/Fl_Image.H>
 #include <FL/Fl_Progress.H>
 #include <setjmp.h>
 #include "ssdv_rx.h"
