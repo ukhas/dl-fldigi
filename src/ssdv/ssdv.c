@@ -389,6 +389,13 @@ static char ssdv_process(ssdv_t *s)
 
 /*****************************************************************************/
 
+static void ssdv_memset_prng(uint8_t *s, size_t n)
+{
+	/* A very simple PRNG for noise whitening only */
+	uint8_t l = 0x00;
+	for(; n > 0; n--) *(s++) = (l = l * 245 + 45);
+}
+
 static char ssdv_have_marker(ssdv_t *s)
 {
 	switch(s->marker)
@@ -645,6 +652,9 @@ char ssdv_enc_get_packet(ssdv_t *s)
 				s->out[8]  = mcu_offset & 0xFF;   /* Next MCU offset LSB */
 				s->out[9]  = mcu_id >> 8;         /* MCU ID MSB */
 				s->out[10] = mcu_id & 0xFF;       /* MCU ID LSB */
+				
+				/* Fill any remaining bytes with noise */
+				if(s->out_len > 0) ssdv_memset_prng(s->outp, s->out_len);
 				
 				/* Generate the RS codes */
 				encode_rs_8(&s->out[1], &s->out[SSDV_PKT_SIZE - SSDV_PKT_SIZE_RSCODES], 0);
