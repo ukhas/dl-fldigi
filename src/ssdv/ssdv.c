@@ -912,6 +912,7 @@ char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length)
 	if(s->mcu_id < s->mcu_count) ssdv_fill_gap(s, s->mcu_count);
 	
 	/* Sync, and final EOI header and return */
+	ssdv_outbits_sync(s);
 	s->out_stuff = 0;
 	ssdv_write_marker(s, J_EOI, 0, 0);
 	
