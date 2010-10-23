@@ -435,6 +435,9 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	/* Copy it into place */
 	memcpy(packets + (pkt_info.packet_id * SSDV_PKT_SIZE), b, SSDV_PKT_SIZE);
 	
+	/* Done with the receive buffer */
+	clear_buffer();	
+	
 	/* Display a message on the fldigi interface */
 	put_status("SSDV: Decoded image packet!", 10);
 	if(bHAB)
