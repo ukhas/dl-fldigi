@@ -924,6 +924,7 @@ char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length)
 
 char ssdv_dec_is_packet(uint8_t *packet, int *errors)
 {
+	ssdv_packet_info_t p;
 	int i;
 	
 	/* Headers present? TODO: Check for fuzzy headers */
@@ -935,6 +936,15 @@ char ssdv_dec_is_packet(uint8_t *packet, int *errors)
 	if(i > 0) fprintf(stderr, "ssdv: %i bytes corrected\n", i);
 	
 	if(errors) *errors = i;
+	
+	/* Decode and test the header */
+	ssdv_dec_header(&p, packet);
+	if(p.width == 0 || p.height == 0) return(-1);
+	if(p.mcu_id != 0xFFFF)
+	{
+		if(p.mcu_id >= p.mcu_count) return(-1);
+		if(p.mcu_offset >= SSDV_PKT_SIZE_PAYLOAD * 8) return(-1);
+	}
 	
 	/* Appears to be a valid packet */
 	return(0);
