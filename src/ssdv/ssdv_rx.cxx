@@ -273,6 +273,8 @@ static void *upload_packet_thread(void *arg)
 	curl_easy_cleanup(curl);
 	curl_formfree(post);
 	
+	free(t);
+	
 	pthread_exit(0);
 }
 
