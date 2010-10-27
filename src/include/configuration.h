@@ -1151,6 +1151,7 @@
 		ELEM_(int, xml_latitude, "", "", 0)							\
 		ELEM_(int, xml_longitude, "", "", 0)							\
 		ELEM_(int, xml_altitude, "", "", 0)							\
+		ELEM_(int, xml_lockstatus, "", "", 0)							\
 		ELEM_(int, xml_stringlimit, "", "", 100)						\
 /* GPS Device Info */											\
 		ELEM_(std::string, gpsDevice, "GPSDEVICE", "", "")					\

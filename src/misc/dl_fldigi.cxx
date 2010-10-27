@@ -69,6 +69,7 @@ struct payload
 	int latitude;
 	int longitude;
 	int altitude;
+	int lockstatus;
 	struct payload *next;
 };
 
@@ -985,6 +986,10 @@ void dl_fldigi_update_payloads()
 				{
 					p->altitude = dbfield_no;
 				}
+				else if (strcmp("lockstatus", r_dbfield) == 0)
+				{
+					p->lockstatus = dbfield_no;
+				}
 
 				dbfield_no++;
 			}
@@ -1276,6 +1281,7 @@ void dl_fldigi_select_payload(const char *name)
 				print_i(latitude);
 				print_i(longitude);
 				print_i(altitude);
+				print_i(lockstatus);
 
 				fprintf(stderr, "dl_fldigi: }\n");
 			#endif
@@ -1344,6 +1350,7 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.xml_latitude = p->latitude;
 			progdefaults.xml_longitude = p->longitude;
 			progdefaults.xml_altitude = p->altitude;
+			progdefaults.xml_lockstatus = p->lockstatus;
 
 			#define update_conf_ui_s(n)  cd_ ## n->value(progdefaults.n.c_str());
 			#define update_conf_ui_i(n)  cd_ ## n->value(progdefaults.n);
