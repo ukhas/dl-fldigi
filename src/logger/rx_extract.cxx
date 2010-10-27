@@ -164,6 +164,7 @@ string tmpfield;
 //
 
 static void rx_extract_update_ui(string rx_buff);
+int test_checksum(string s);
 
 void rx_extract_reset()
 {
@@ -256,10 +257,24 @@ void rx_extract_add(int c)
 
 					/* RJH Post Chase Car information */
 					/* Not yet implemented (TODO) dl_fldigi_post_gps(); */
-
-					/* dl_fldigi_post will put_status as it does its stuff */
-					dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
-
+					int pos, lockstatus = 1;
+					string extractedField, remainingString = rx_buff;
+				
+					for ( int x = 1; x < (number_commas + 1); x++ ) {
+						pos = remainingString.find(progdefaults.xmlField_delimiter.at(0));
+						extractedField = remainingString.substr(0, pos);
+						remainingString.erase(0, (pos + 1));
+						if (x == progdefaults.xml_lockstatus) {
+							lockstatus = atoi(extractedField.c_str());
+							printf("Lockstatus = %d\n", lockstatus);
+						}
+					}
+				
+					if((test_checksum(rx_buff) == true) && (lockstatus > 0)) {
+						/* dl_fldigi_post will put_status as it does its stuff */
+						dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
+					}
+				
 					if(bHAB)
 					{
 						REQ(rx_extract_update_ui, rx_buff);
@@ -358,7 +373,6 @@ void rx_extract_update_ui(string rx_buff)
 			printf("Checksum failed, not displaying\n");
 			return;
 		}
-		habCustom->color(FL_GREEN);
 		
 		asterixPosition = rx_buff.find("*");
 		if (asterixPosition > 0)
@@ -372,7 +386,7 @@ void rx_extract_update_ui(string rx_buff)
 			pos = remainingString.find(progdefaults.xmlField_delimiter.at(0));
 			extractedField = remainingString.substr(0, pos);
 			remainingString.erase(0, (pos + 1));
-			if (x == progdefaults.xml_time) {
+		if (x == progdefaults.xml_time) {
 				habTime->value(extractedField.c_str());
 		}
 		else if (x == progdefaults.xml_latitude) {
@@ -386,6 +400,16 @@ void rx_extract_update_ui(string rx_buff)
 		else if (x == progdefaults.xml_altitude) {
 			habAlt->value(extractedField.c_str());
 		}
+		else if (x == progdefaults.xml_lockstatus) {
+			int lockstatus = atoi(extractedField.c_str());
+			printf("Lockstatus = %d\n", lockstatus);
+			if (lockstatus < 1)
+			{
+				habCustom->color(FL_YELLOW);
+				return;
+			}
+		}
+		habCustom->color(FL_GREEN);
 
 	}
 	if(progdefaults.myLat.length() > 0 && progdefaults.myLon.length() > 0) {
