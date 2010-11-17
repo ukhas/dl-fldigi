@@ -1164,7 +1164,7 @@
 		ELEM_(std::string, server_location, "SERVER_LOC", "Server location", "http://robertharrison.org/listen/")		\
 		ELEM_(bool, ssdv_save_image, "SSDV_SAVE_IMAGES", "", false)								\
 		ELEM_(std::string, ssdv_save_dir, "SSDV_SAVE_DIR", "Save location for received images", "")				\
-		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/ssdv/live.php")	\
+		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/ssdv/data.php")	\
 		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "")					\
 		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")
 
