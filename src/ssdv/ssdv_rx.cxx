@@ -281,6 +281,7 @@ static void *upload_packet_thread(void *arg)
 void ssdv_rx::upload_packet()
 {
 	ssdv_post_data_t *t;
+	pthread_attr_t attr;
 	pthread_t thread;
 	const char *callsign, *payload;
 	char *packet;
@@ -348,14 +349,18 @@ void ssdv_rx::upload_packet()
 	t->curl = curl;
 	t->post = post;
 	
-	if(pthread_create(&thread, NULL, upload_packet_thread, (void *) t) != 0)
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	
+	if(pthread_create(&thread, &attr, upload_packet_thread, (void *) t) != 0)
 	{
 		fprintf(stderr, "ssdv_rx::upload_packet(): failed to start post thread\n");
 		curl_easy_cleanup(curl);
 		curl_formfree(post);
 		free(t);
-		return;
 	}
+	
+	pthread_attr_destroy(&attr);
 	
 	/* All done! */
 	

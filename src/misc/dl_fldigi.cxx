@@ -216,6 +216,7 @@ void dl_fldigi_post(const char *data, const char *identity)
 	char *data_safe, *identity_safe, *post_data;
 	size_t i, data_length, identity_length, post_data_length;
 	struct dl_fldigi_post_threadinfo *t;
+	pthread_attr_t attr;
 	pthread_t thread;
 	CURL *curl;
 	CURLcode r1, r2, r3;
@@ -363,20 +364,26 @@ void dl_fldigi_post(const char *data, const char *identity)
 
 	/* !! */
 	full_memory_barrier();
-
+	
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	
 	/* the 4th argument passes the thread the information it needs */
-	if (pthread_create(&thread, NULL, dl_fldigi_post_thread, (void *) t) != 0)
+	if (pthread_create(&thread, &attr, dl_fldigi_post_thread, (void *) t) != 0)
 	{
 		perror("dl_fldigi: post pthread_create");
 		curl_easy_cleanup(curl);
 		free(post_data);
 		free(t);
-		return;
 	}
-
+	else
+	{
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: created a thread to finish the posting, returning now\n");
 	#endif
+	}
+	
+	pthread_attr_destroy(&attr);
 }
 
 static void *dl_fldigi_post_thread(void *thread_argument)
@@ -422,6 +429,7 @@ static void *dl_fldigi_post_thread(void *thread_argument)
 
 void dl_fldigi_download()
 {
+	pthread_attr_t attr;
 	pthread_t thread;
 	struct dl_fldigi_download_threadinfo *t;
 	CURL *curl;
@@ -517,21 +525,27 @@ void dl_fldigi_download()
 
 	/* !! */
 	full_memory_barrier();
-
+	
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	
 	/* the 4th argument passes the thread the information it needs */
-	if (pthread_create(&thread, NULL, dl_fldigi_download_thread, (void *) t) != 0)
+	if (pthread_create(&thread, &attr, dl_fldigi_download_thread, (void *) t) != 0)
 	{
 		perror("dl_fldigi: download pthread_create");
 		curl_easy_cleanup(curl);
 		flock(fileno(file), LOCK_UN);
 		fclose(file);
 		free(t);
-		return;
 	}
-
+	else
+	{
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: created a thread to perform the download, returning now\n");
 	#endif
+	}
+	
+	pthread_attr_destroy(&attr);
 }
 
 static void *dl_fldigi_download_thread(void *thread_argument)
