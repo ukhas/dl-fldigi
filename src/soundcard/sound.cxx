@@ -990,7 +990,7 @@ size_t SoundPort::Read(float *buf, size_t count)
 			for (size_t i = 0; i < count; i++)
 				buf[i] *= progStatus.RcvMixer;
 		if (!capture) {
-			MilliSleep((long)ceil((1e3 * count) / req_sample_rate));
+			MilliSleep((long)ceil((0.95e3 * count) / req_sample_rate));//note hack by Laurence to enable playback of streams
 			return count;
 		}
 	}
@@ -1780,7 +1780,7 @@ size_t SoundPulse::Read(float *buf, size_t count)
 				buf[i] *= progStatus.RcvMixer;
 		if (!capture) {
 			flush(0);
-			MilliSleep((long)ceil((1e3 * count) / sample_frequency));
+			MilliSleep((long)ceil((0.95e3 * count) / sample_frequency));//note hack by Laurence
 			return count;
 		}
 	}
@@ -1881,7 +1881,7 @@ size_t SoundNull::Read(float *buf, size_t count)
 		write_file(ofCapture, buf, count);
 #endif
 
-	MilliSleep((long)ceil((1e3 * count) / sample_frequency));
+	MilliSleep((long)ceil((0.95e3 * count) / sample_frequency));//note hack by Laurence
 
 	return count;
 
