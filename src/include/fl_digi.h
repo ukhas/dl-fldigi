@@ -280,5 +280,8 @@ void set_rtty_bits(int bits);
 
 void sync_cw_parameters();
 
+void open_recv_folder(const char *fname);
+
 void set_menu_dl_online();
+
 #endif

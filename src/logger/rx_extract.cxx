@@ -128,6 +128,8 @@ void TrimSpaces( string& str)
 } 
 
 const char *end = "\n";
+const char *flmsg = "<flmsg>";
+
 #ifdef __WIN32__
 const char *txtWrapInfo = "\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
@@ -281,6 +283,10 @@ void rx_extract_add(int c)
 						REQ(dl_fldigi_reset_rxtimer);
 					}
 			}
+
+			if ((progdefaults.open_flmsg) && 
+				(rx_buff.find(flmsg) != string::npos))
+				open_recv_folder(WRAP_recv_dir.c_str());
 
 			rx_extract_reset();
 		} else if (rx_buff.length() > 16384) {

@@ -28,7 +28,8 @@ Mode_Browser* mode_browser;
 
 void set_qrz_buttons(Fl_Button* b) {
   Fl_Button* qrzb[] = { btnQRZnotavailable, btnQRZcdrom, btnQRZonline,
-                              btnQRZsub, btnHamcall, btnHAMCALLonline};
+                              btnQRZsub, btnHamcall, btnHAMCALLonline,
+                              btnCALLOOK};
 
 for (size_t i = 0; i < sizeof(qrzb)/sizeof(*qrzb); i++)
 	qrzb[i]->value(b == qrzb[i]);
@@ -1782,6 +1783,14 @@ btnInitRIGCAT->redraw_label();
 rigCAT_restore_defaults();
 }
 
+Fl_Check_Button *chkRigCatVSP=(Fl_Check_Button *)0;
+
+static void cb_chkRigCatVSP(Fl_Check_Button*, void*) {
+  btnInitRIGCAT->labelcolor(FL_RED);
+btnInitRIGCAT->redraw_label();
+btnRevertRIGCAT->activate();
+}
+
 Fl_Group *tabHamlib=(Fl_Group *)0;
 
 Fl_Check_Button *chkUSEHAMLIB=(Fl_Check_Button *)0;
@@ -2500,6 +2509,13 @@ static void cb_chkAutoExtract(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
+Fl_Check_Button *chkStartFlmsg=(Fl_Check_Button *)0;
+
+static void cb_chkStartFlmsg(Fl_Check_Button* o, void*) {
+  progdefaults.open_flmsg = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Check_Button *chkRxStream=(Fl_Check_Button *)0;
 
 static void cb_chkRxStream(Fl_Check_Button* o, void*) {
@@ -2617,19 +2633,19 @@ inpQRZuserpassword->redraw();
 o->label((inpQRZuserpassword->type() & FL_SECRET_INPUT) ? "Show" : "Hide");
 }
 
-Fl_Round_Button *btnQRZonline=(Fl_Round_Button *)0;
-
-static void cb_btnQRZonline(Fl_Round_Button* o, void*) {
-  set_qrz_buttons(o);
-progdefaults.QRZ = QRZHTML;
-progdefaults.changed = true;
-}
-
 Fl_Round_Button *btnQRZnotavailable=(Fl_Round_Button *)0;
 
 static void cb_btnQRZnotavailable(Fl_Round_Button* o, void*) {
   set_qrz_buttons(o);
 progdefaults.QRZ = QRZNONE;
+progdefaults.changed = true;
+}
+
+Fl_Round_Button *btnQRZonline=(Fl_Round_Button *)0;
+
+static void cb_btnQRZonline(Fl_Round_Button* o, void*) {
+  set_qrz_buttons(o);
+progdefaults.QRZ = QRZHTML;
 progdefaults.changed = true;
 }
 
@@ -2804,6 +2820,14 @@ progdefaults.changed = true;
 
 static void cb_Location(Fl_Input* o, void*) {
   progdefaults.waterfall_png_location = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Round_Button *btnCALLOOK=(Fl_Round_Button *)0;
+
+static void cb_btnCALLOOK(Fl_Round_Button* o, void*) {
+  set_qrz_buttons(o);
+progdefaults.QRZ = CALLOOK;
 progdefaults.changed = true;
 }
 
@@ -3339,7 +3363,6 @@ ab and newline are automatically included."));
           tabsWaterfall->color((Fl_Color)FL_LIGHT1);
           tabsWaterfall->selection_color((Fl_Color)FL_LIGHT1);
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Display"));
-            o->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 162, _("Colors and cursors"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -3601,6 +3624,7 @@ an merging"));
             o->end();
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Mouse"));
+            o->hide();
             { Fl_Group* o = new Fl_Group(5, 62, 490, 170);
               o->box(FL_ENGRAVED_FRAME);
               { Fl_Check_Button* o = btnWaterfallHistoryDefault = new Fl_Check_Button(15, 76, 340, 20, _("Left or right click always replays audio history"));
@@ -5083,6 +5107,12 @@ an merging"));
                 btnRevertRIGCAT->callback((Fl_Callback*)cb_btnRevertRIGCAT);
                 btnRevertRIGCAT->deactivate();
               } // Fl_Button* btnRevertRIGCAT
+              { Fl_Check_Button* o = chkRigCatVSP = new Fl_Check_Button(256, 315, 100, 25, _("VSP Enable"));
+                chkRigCatVSP->tooltip(_("Virtual Serial Port Emulator - suppress WARNINGS"));
+                chkRigCatVSP->down_box(FL_DOWN_BOX);
+                chkRigCatVSP->callback((Fl_Callback*)cb_chkRigCatVSP);
+                o->value(progdefaults.RigCatVSP);
+              } // Fl_Check_Button* chkRigCatVSP
               grpRigCAT->end();
             } // Fl_Group* grpRigCAT
             o->end();
@@ -5936,16 +5966,22 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 119, _("Auto Extract files from rx stream"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = chkAutoExtract = new Fl_Check_Button(136, 141, 227, 20, _("Enable detection && extraction"));
+              { Fl_Box* o = new Fl_Box(13, 80, 467, 60, _("0\n1\n2"));
+                o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+                o->label(txtWrapInfo);
+              } // Fl_Box* o
+              { Fl_Check_Button* o = chkAutoExtract = new Fl_Check_Button(19, 145, 227, 20, _("Enable detection && extraction"));
                 chkAutoExtract->tooltip(_("Extract files for use with external \"wrap\" program"));
                 chkAutoExtract->down_box(FL_DOWN_BOX);
                 chkAutoExtract->callback((Fl_Callback*)cb_chkAutoExtract);
                 o->value(progdefaults.autoextract);
               } // Fl_Check_Button* chkAutoExtract
-              { Fl_Box* o = new Fl_Box(13, 85, 467, 62, _("0\n1\n2"));
-                o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-                o->label(txtWrapInfo);
-              } // Fl_Box* o
+              { Fl_Check_Button* o = chkStartFlmsg = new Fl_Check_Button(261, 145, 227, 20, _("auto open wrap folder"));
+                chkStartFlmsg->tooltip(_("Autostart flmsg upon detection of compatible file"));
+                chkStartFlmsg->down_box(FL_DOWN_BOX);
+                chkStartFlmsg->callback((Fl_Callback*)cb_chkStartFlmsg);
+                o->value(progdefaults.open_flmsg);
+              } // Fl_Check_Button* chkStartFlmsg
               o->end();
             } // Fl_Group* o
             { Fl_Group* o = new Fl_Group(5, 180, 490, 109, _("Capture rx text to external file"));
@@ -6170,25 +6206,31 @@ d frequency"));
         { Fl_Group* o = new Fl_Group(5, 35, 490, 140);
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-          { Fl_Round_Button* o = btnQRZonline = new Fl_Round_Button(25, 75, 300, 20, _("QRZ online via default Internet Browser"));
-            btnQRZonline->tooltip(_("Visit QRZ web site"));
-            btnQRZonline->down_box(FL_DOWN_BOX);
-            btnQRZonline->callback((Fl_Callback*)cb_btnQRZonline);
-            o->value(progdefaults.QRZ == QRZHTML);
-          } // Fl_Round_Button* btnQRZonline
-          { Fl_Round_Button* o = btnQRZnotavailable = new Fl_Round_Button(25, 45, 110, 20, _("Not available"));
+          { Fl_Round_Button* o = btnQRZnotavailable = new Fl_Round_Button(25, 45, 337, 20, _("Not available"));
             btnQRZnotavailable->tooltip(_("Do not use callsign database"));
             btnQRZnotavailable->down_box(FL_DOWN_BOX);
             btnQRZnotavailable->value(1);
             btnQRZnotavailable->callback((Fl_Callback*)cb_btnQRZnotavailable);
             o->value(progdefaults.QRZ == QRZNONE);
           } // Fl_Round_Button* btnQRZnotavailable
-          { Fl_Round_Button* o = btnHAMCALLonline = new Fl_Round_Button(25, 105, 300, 20, _("HamCall online via default Internet Browser"));
+          { Fl_Round_Button* o = btnQRZonline = new Fl_Round_Button(25, 75, 337, 20, _("QRZ online via default Internet Browser"));
+            btnQRZonline->tooltip(_("Visit QRZ web site"));
+            btnQRZonline->down_box(FL_DOWN_BOX);
+            btnQRZonline->callback((Fl_Callback*)cb_btnQRZonline);
+            o->value(progdefaults.QRZ == QRZHTML);
+          } // Fl_Round_Button* btnQRZonline
+          { Fl_Round_Button* o = btnHAMCALLonline = new Fl_Round_Button(25, 106, 337, 20, _("HamCall online via default Internet Browser"));
             btnHAMCALLonline->tooltip(_("Vist Hamcall web site"));
             btnHAMCALLonline->down_box(FL_DOWN_BOX);
             btnHAMCALLonline->callback((Fl_Callback*)cb_btnHAMCALLonline);
             o->value(progdefaults.QRZ == HAMCALLHTML);
           } // Fl_Round_Button* btnHAMCALLonline
+          { Fl_Round_Button* o = btnCALLOOK = new Fl_Round_Button(25, 137, 337, 20, _("Callook.info lookup (US callsigns only)"));
+            btnCALLOOK->tooltip(_("Vist Hamcall web site"));
+            btnCALLOOK->down_box(FL_DOWN_BOX);
+            btnCALLOOK->callback((Fl_Callback*)cb_btnCALLOOK);
+            o->value(progdefaults.QRZ == CALLOOK);
+          } // Fl_Round_Button* btnCALLOOK
           o->end();
         } // Fl_Group* o
         tabQRZ->end();
@@ -6455,6 +6497,7 @@ d frequency"));
     { btnResetConfig = new Fl_Button(5, 375, 130, 22, _("Restore defaults"));
       btnResetConfig->callback((Fl_Callback*)cb_btnResetConfig);
     } // Fl_Button* btnResetConfig
+    o->set_non_modal();
     o->end();
   } // Fl_Double_Window* o
   return w;

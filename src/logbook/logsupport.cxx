@@ -27,6 +27,10 @@
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#include <ctime>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
 
 #include "main.h"
 #include "trx.h"
@@ -184,6 +188,7 @@ void cb_mnuOpenLogbook(Fl_Menu_* m, void* d)
 		qsodb.isdirty(0);
 		loadBrowser();
 		dlgLogbook->label(fl_filename_name(logbook_filename.c_str()));
+		activateButtons();
 	}
 }
 
@@ -255,11 +260,12 @@ void cb_mnuShowLogbook(Fl_Menu_* m, void* d)
 enum State {VIEWREC, NEWREC};
 static State logState = VIEWREC;
 
-void activateButtons() {
-
+void activateButtons() 
+{
 	if (logState == NEWREC) {
 		bNewSave->label(_("Save"));
 		bUpdateCancel->label(_("Cancel"));
+		bUpdateCancel->activate();
 		bDelete->deactivate ();
 		bSearchNext->deactivate ();
 		bSearchPrev->deactivate ();
@@ -268,10 +274,18 @@ void activateButtons() {
 	}
 	bNewSave->label(_("New"));
 	bUpdateCancel->label(_("Update"));
-	bDelete->activate();
-	bSearchNext->activate ();
-	bSearchPrev->activate ();
-	wBrowser->take_focus();
+	if (qsodb.nbrRecs() > 0) {
+		bDelete->activate();
+		bUpdateCancel->activate();
+		bSearchNext->activate ();
+		bSearchPrev->activate ();
+		wBrowser->take_focus();
+	} else {
+		bDelete->deactivate();
+		bUpdateCancel->deactivate();
+		bSearchNext->deactivate();
+		bSearchPrev->deactivate();
+	}
 }
 
 void cb_btnNewSave(Fl_Button* b, void* d) {
@@ -470,6 +484,7 @@ void clearRecord() {
 	inpCall_log->value ("");
 	inpName_log->value ("");
 	inpDate_log->value (tdy.szDate(2));
+	inpDateOff_log->value (tdy.szDate(2));
 	inpTimeOn_log->value ("");
 	inpTimeOff_log->value ("");
 	inpRstR_log->value ("");
@@ -503,6 +518,7 @@ cQsoRec rec;
 	rec.putField(CALL, inpCall_log->value());
 	rec.putField(NAME, inpName_log->value());
 	rec.putField(QSO_DATE, inpDate_log->value());
+	rec.putField(QSO_DATE_OFF, inpDateOff_log->value());
 	rec.putField(TIME_ON, inpTimeOn_log->value());
 	rec.putField(TIME_OFF, inpTimeOff_log->value());
 	rec.putField(FREQ, inpFreq_log->value());
@@ -553,6 +569,7 @@ cQsoRec rec;
 	rec.putField(CALL, inpCall_log->value());
 	rec.putField(NAME, inpName_log->value());
 	rec.putField(QSO_DATE, inpDate_log->value());
+	rec.putField(QSO_DATE_OFF, inpDateOff_log->value());
 	rec.putField(TIME_ON, inpTimeOn_log->value());
 	rec.putField(TIME_OFF, inpTimeOff_log->value());
 	rec.putField(FREQ, inpFreq_log->value());
@@ -607,6 +624,7 @@ void EditRecord( int i )
 	inpCall_log->value (editQSO->getField(CALL));
 	inpName_log->value (editQSO->getField(NAME));
 	inpDate_log->value (editQSO->getField(QSO_DATE));
+	inpDateOff_log->value (editQSO->getField(QSO_DATE_OFF));
 	inpTimeOn_log->value (editQSO->getField(TIME_ON));
 	inpTimeOff_log->value (editQSO->getField(TIME_OFF));
 	inpRstR_log->value (editQSO->getField(RST_RCVD));
@@ -635,6 +653,7 @@ void EditRecord( int i )
 }
 
 std::string sDate_on = "";
+std::string sDate_off = "";
 
 void AddRecord ()
 {
@@ -643,6 +662,7 @@ void AddRecord ()
 	inpTimeOn_log->value (inpTimeOn->value());
 	inpTimeOff_log->value (ztime());
     inpDate_log->value(sDate_on.c_str());
+    inpDateOff_log->value(sDate_off.c_str());
 	inpRstR_log->value (inpRstIn->value());
 	inpRstS_log->value (inpRstOut->value());
 	{

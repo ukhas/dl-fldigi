@@ -598,6 +598,9 @@
         ELEM_(bool, autoextract, "AUTOEXTRACT",                                         \
               "Enable detection and extraction of \"wrapped\" text",                    \
               true)                                                                     \
+        ELEM_(bool, open_flmsg, "OPEN_FLMSG",                                           \
+              "Open flmsg upon receipt of an autoextract file",                         \
+              true)                                                                     \
         ELEM_(bool, speak, "SPEAK",                                                     \
               "Capture text to file 'talk/textout.txt'",                                \
               false)                                                                    \
@@ -729,6 +732,9 @@
               50)                                                                       \
         ELEM_(bool, RigCatECHO, "RIGCATECHO",                                           \
               "Commands are echoed",                                                    \
+              false)                                                                    \
+        ELEM_(bool, RigCatVSP, "RIGCATVSP",                                             \
+              "VSP support enabled",                                                    \
               false)                                                                    \
         /* Hamlib parameters */                                                         \
         ELEM_(bool, HamlibRTSplus, "HAMLIBRTSPLUS",                                     \

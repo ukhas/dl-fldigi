@@ -135,6 +135,8 @@
 #include "speak.h"
 #include "flmisc.h"
 
+#include "arq_io.h"
+
 #include "ssdv_rx.h"
 
 using namespace std;
@@ -1494,6 +1496,11 @@ void cb_mnuVisitURL(Fl_Widget*, void* arg)
 #endif
 }
 
+void open_recv_folder(const char *folder)
+{
+	cb_mnuVisitURL(0, (void*)folder);
+}
+
 void cb_mnuVisitPSKRep(Fl_Widget*, void*)
 {
 	cb_mnuVisitURL(0, (void*)string("http://pskreporter.info/pskmap?").append(progdefaults.myCall).c_str());
@@ -1819,7 +1826,6 @@ void ztimer(void* first_call)
 	inpTimeOff1->value(ztbuf + 9);
 	inpTimeOff2->value(ztbuf + 9);
 	inpTimeOff3->value(ztbuf + 9);
-
 }
 
 
@@ -1891,7 +1897,7 @@ void cb_ResetSerNbr()
 void cb_btnTimeOn(Fl_Widget* w, void*)
 {
 	inpTimeOn->value(inpTimeOff->value(), inpTimeOff->size());
-	sDate_on = zdate();
+	sDate_on = sDate_off = zdate();
 	restoreFocus();
 }
 
@@ -1971,7 +1977,7 @@ if (bHAB) return;
 	if (inpTimeOn == inpTimeOn1) inpTimeOn2->value(inpTimeOn->value());
 	else inpTimeOn1->value(inpTimeOn->value());
 
-	sDate_on = zdate();
+	sDate_on = sDate_off = zdate();
 
 	if (progdefaults.EnableDupCheck) {
 		DupCheck();
@@ -2070,6 +2076,7 @@ void qsoSave_cb(Fl_Widget *b, void *)
 		restoreFocus();
 		return;
 	}
+	sDate_off = zdate();
 	submit_log();
 	if (progdefaults.ClearOnSave)
 		clearQSO();
@@ -2084,6 +2091,7 @@ void qso_save_now()
 	if (havecall.empty())
 		return;
 
+	sDate_off = zdate();
 	submit_log();
 	if (progdefaults.ClearOnSave)
 		clearQSO();
@@ -2233,6 +2241,7 @@ int default_handler(int event)
 
 	return 0;
 }
+
 
 bool clean_exit(void) {
 	if (progdefaults.changed) {
@@ -5833,9 +5842,11 @@ void abort_tx()
 	if (trx_state == STATE_TUNE) {
 		btnTune->value(0);
 		btnTune->do_callback();
+		return;
 	}
-	else if (trx_state == STATE_TX)
+	if (trx_state == STATE_TX) {
 		trx_start_modem(active_modem);
+	}
 }
 
 void qsy(long long rfc, int fmid)

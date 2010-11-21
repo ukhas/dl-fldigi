@@ -248,6 +248,7 @@ extern Fl_Check_Button *btnRigCatDTRplus;
 extern Fl_Check_Button *chkRigCatRTSCTSflow;
 #include "rigio.h"
 extern Fl_Button *btnRevertRIGCAT;
+extern Fl_Check_Button *chkRigCatVSP;
 extern Fl_Group *tabHamlib;
 extern Fl_Check_Button *chkUSEHAMLIB;
 extern Fl_Group *grpHamlib;
@@ -350,8 +351,9 @@ extern Fl_Check_Button *btnDisplayMacroFilename;
 extern Fl_Group *tabCPUspeed;
 extern Fl_Check_Button *chkSlowCpu;
 extern Fl_Group *tabFileExtraction;
-extern Fl_Check_Button *chkAutoExtract;
 #include "rx_extract.h"
+extern Fl_Check_Button *chkAutoExtract;
+extern Fl_Check_Button *chkStartFlmsg;
 extern Fl_Check_Button *chkRxStream;
 #include "speak.h"
 extern Fl_Group *grpTalker;
@@ -372,8 +374,8 @@ extern Fl_Round_Button *btnHamcall;
 extern Fl_Input2 *inpQRZusername;
 extern Fl_Input2 *inpQRZuserpassword;
 extern Fl_Button *btnQRZpasswordShow;
-extern Fl_Round_Button *btnQRZonline;
 extern Fl_Round_Button *btnQRZnotavailable;
+extern Fl_Round_Button *btnQRZonline;
 extern Fl_Round_Button *btnHAMCALLonline;
 extern Fl_Group *tabDL;
 extern Fl_Tabs *tabsDL;
@@ -400,6 +402,7 @@ extern Fl_Output *gpsTAlt;
 extern Fl_Input *imagepacketurl;
 extern Fl_Check_Button *imagesave;
 extern Fl_Input *imagesavedir;
+extern Fl_Round_Button *btnCALLOOK;
 extern Fl_Button *btnSaveConfig;
 #include <FL/Fl_Return_Button.H>
 extern Fl_Return_Button *btnCloseConfig;

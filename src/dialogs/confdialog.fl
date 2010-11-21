@@ -76,7 +76,8 @@ decl {Mode_Browser* mode_browser;} {public
 Function {set_qrz_buttons(Fl_Button* b)} {open return_type void
 } {
   code {Fl_Button* qrzb[] = { btnQRZnotavailable, btnQRZcdrom, btnQRZonline,
-                              btnQRZsub, btnHamcall, btnHAMCALLonline};
+                              btnQRZsub, btnHamcall, btnHAMCALLonline,
+                              btnCALLOOK};
 
 for (size_t i = 0; i < sizeof(qrzb)/sizeof(*qrzb); i++)
 	qrzb[i]->value(b == qrzb[i]);} {}
@@ -97,7 +98,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
 static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {100 396 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 visible
+    xywh {740 84 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-3 0 520 435} color 50 selection_color 50
@@ -205,7 +206,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabUI {
-        label UI open
+        label UI
         xywh {-3 25 508 345} hide
       } {
         Fl_Tabs tabsUI {open
@@ -625,7 +626,7 @@ progdefaults.changed = true;}
         } {
           Fl_Group {} {
             label Display open
-            xywh {0 50 500 320} hide
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {
               label {Colors and cursors} open
@@ -880,7 +881,7 @@ progdefaults.changed = true;}
           }
           Fl_Group {} {
             label Mouse open
-            xywh {0 50 500 320}
+            xywh {0 50 500 320} hide
           } {
             Fl_Group {} {open
               xywh {5 62 490 170} box ENGRAVED_FRAME
@@ -930,7 +931,7 @@ behaves inside the waterfall} xywh {15 196 150 22} down_box BORDER_BOX align 8
         }
       }
       Fl_Group tabModems {
-        label Modems open
+        label Modems
         xywh {0 25 517 345} hide
       } {
         Fl_Tabs tabsModems {open
@@ -2287,6 +2288,14 @@ rigCAT_restore_defaults();}
                 tooltip {Initialize hamlib interface} xywh {365 289 113 24} deactivate
                 code0 {\#include "rigio.h"}
               }
+              Fl_Check_Button chkRigCatVSP {
+                label {VSP Enable}
+                callback {btnInitRIGCAT->labelcolor(FL_RED);
+btnInitRIGCAT->redraw_label();
+btnRevertRIGCAT->activate();}
+                tooltip {Virtual Serial Port Emulator - suppress WARNINGS} xywh {256 315 100 25} down_box DOWN_BOX
+                code0 {o->value(progdefaults.RigCatVSP);}
+              }
             }
           }
           Fl_Group tabHamlib {
@@ -2824,7 +2833,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabID {
-        label ID open
+        label ID
         xywh {0 25 500 345} hide
       } {
         Fl_Group {} {
@@ -3007,15 +3016,15 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabMisc {
-        label Misc
+        label Misc open
         xywh {0 25 500 345} hide
       } {
         Fl_Tabs tabsMisc {open
           xywh {0 25 500 345} selection_color 50
         } {
           Fl_Group tabSweetSpot {
-            label {Sweet Spot} open
-            xywh {0 50 500 320} hide
+            label {Sweet Spot}
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {open
               xywh {5 60 490 75} box ENGRAVED_FRAME align 21
@@ -3058,7 +3067,7 @@ OFF - keep current wf cursor position} xywh {15 101 348 20} down_box DOWN_BOX va
             }
           }
           Fl_Group tabSpot {
-            label Spotting open
+            label Spotting
             xywh {0 50 500 320} hide
           } {
             Fl_Group {} {
@@ -3182,20 +3191,27 @@ progdefaults.changed = true;}
               label {Auto Extract files from rx stream} open
               xywh {5 60 490 119} box ENGRAVED_FRAME align 21
             } {
-              Fl_Check_Button chkAutoExtract {
-                label {Enable detection && extraction}
-                callback {progdefaults.autoextract = o->value();
-progdefaults.changed = true;}
-                tooltip {Extract files for use with external "wrap" program} xywh {136 141 227 20} down_box DOWN_BOX
-                code0 {o->value(progdefaults.autoextract);}
-              }
               Fl_Box {} {
                 label {0
 1
 2}
-                xywh {13 85 467 62} align 21
+                xywh {13 80 467 60} align 21
                 code0 {o->label(txtWrapInfo);}
                 code1 {\#include "rx_extract.h"}
+              }
+              Fl_Check_Button chkAutoExtract {
+                label {Enable detection && extraction}
+                callback {progdefaults.autoextract = o->value();
+progdefaults.changed = true;}
+                tooltip {Extract files for use with external "wrap" program} xywh {19 145 227 20} down_box DOWN_BOX
+                code0 {o->value(progdefaults.autoextract);}
+              }
+              Fl_Check_Button chkStartFlmsg {
+                label {auto open wrap folder}
+                callback {progdefaults.open_flmsg = o->value();
+progdefaults.changed = true;}
+                tooltip {Autostart flmsg upon detection of compatible file} xywh {261 145 227 20} down_box DOWN_BOX
+                code0 {o->value(progdefaults.open_flmsg);}
               }
             }
             Fl_Group {} {
@@ -3304,7 +3320,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabQRZ {
-        label {Callsign DB}
+        label {Callsign DB} open
         tooltip {Callsign database} xywh {0 25 500 345} hide
       } {
         Fl_Group {} {
@@ -3383,29 +3399,37 @@ o->label((inpQRZuserpassword->type() & FL_SECRET_INPUT) ? "Show" : "Hide");}
         Fl_Group {} {open
           xywh {5 35 490 140} box ENGRAVED_FRAME align 21
         } {
-          Fl_Round_Button btnQRZonline {
-            label {QRZ online via default Internet Browser}
-            callback {set_qrz_buttons(o);
-progdefaults.QRZ = QRZHTML;
-progdefaults.changed = true;}
-            tooltip {Visit QRZ web site} xywh {25 75 300 20} down_box DOWN_BOX
-            code0 {o->value(progdefaults.QRZ == QRZHTML);}
-          }
           Fl_Round_Button btnQRZnotavailable {
             label {Not available}
             callback {set_qrz_buttons(o);
 progdefaults.QRZ = QRZNONE;
 progdefaults.changed = true;}
-            tooltip {Do not use callsign database} xywh {25 45 110 20} down_box DOWN_BOX value 1
+            tooltip {Do not use callsign database} xywh {25 45 337 20} down_box DOWN_BOX value 1
             code0 {o->value(progdefaults.QRZ == QRZNONE);}
+          }
+          Fl_Round_Button btnQRZonline {
+            label {QRZ online via default Internet Browser}
+            callback {set_qrz_buttons(o);
+progdefaults.QRZ = QRZHTML;
+progdefaults.changed = true;}
+            tooltip {Visit QRZ web site} xywh {25 75 337 20} down_box DOWN_BOX
+            code0 {o->value(progdefaults.QRZ == QRZHTML);}
           }
           Fl_Round_Button btnHAMCALLonline {
             label {HamCall online via default Internet Browser}
             callback {set_qrz_buttons(o);
 progdefaults.QRZ = HAMCALLHTML;
 progdefaults.changed = true;}
-            tooltip {Vist Hamcall web site} xywh {25 105 300 20} down_box DOWN_BOX
+            tooltip {Vist Hamcall web site} xywh {25 106 337 20} down_box DOWN_BOX
             code0 {o->value(progdefaults.QRZ == HAMCALLHTML);}
+          }
+          Fl_Round_Button btnCALLOOK {
+            label {Callook.info lookup (US callsigns only)}
+            callback {set_qrz_buttons(o);
+progdefaults.QRZ = CALLOOK;
+progdefaults.changed = true;}
+            tooltip {Vist Hamcall web site} xywh {25 137 337 20} down_box DOWN_BOX
+            code0 {o->value(progdefaults.QRZ == CALLOOK);}
           }
         }
       }
