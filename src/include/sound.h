@@ -77,6 +77,7 @@ protected:
 #if USE_SNDFILE
 	SNDFILE* ofCapture;
 	SNDFILE* ifPlayback;
+	SNDFILE* ifStream;
 	SNDFILE* ofGenerate;
 	sf_count_t  read_file(SNDFILE* file, float* buf, size_t count);
 	sf_count_t  write_file(SNDFILE* file, float* buf, size_t count);
@@ -87,6 +88,7 @@ protected:
 
 	bool	capture;
 	bool	playback;
+	bool	stream;
 	bool	generate;
 
 public:
@@ -104,6 +106,7 @@ public:
 	void		get_file_params(const char* def_fname, const char** fname, int* format);
 	int		Capture(bool val);
 	int		Playback(bool val);
+	int		Stream(bool val);
 	int		Generate(bool val);
 #endif
 };
