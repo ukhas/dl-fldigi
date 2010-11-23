@@ -1426,6 +1426,28 @@ void cb_mnuPlayback(Fl_Widget *w, void *d)
 		btnAutoSpot->do_callback();
 	}
 }
+void cb_mnuStream(Fl_Widget *w, void *d)
+{
+	if (!scard) {
+	 return;
+	 }
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
+	if (capval || genval) {
+		m->clear();
+		return;
+	}
+	playval = m->value();
+	cout << playval << endl;
+	if(!scard->Stream(playval)) {
+		m->clear();
+		playval = false;
+	}
+	else if (btnAutoSpot->value()) {
+		put_status(_("Spotting disabled"), 3.0);
+		btnAutoSpot->value(0);
+		btnAutoSpot->do_callback();
+	}
+}
 #endif // USE_SNDFILE
 
 void cb_mnuConfigFonts(Fl_Menu_*, void *) {
@@ -2498,6 +2520,7 @@ Fl_Menu_Item menu_[] = {
 {_("RX capture"),  0, (Fl_Callback*)cb_mnuCapture,  0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {_("TX generate"), 0, (Fl_Callback*)cb_mnuGenerate, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {_("Playback"),    0, (Fl_Callback*)cb_mnuPlayback, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("Stream"),    0, (Fl_Callback*)cb_mnuStream, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 #endif
 
