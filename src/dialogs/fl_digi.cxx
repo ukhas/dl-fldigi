@@ -403,7 +403,6 @@ void cb_contestiaE(Fl_Widget *w, void *arg);
 void cb_contestiaF(Fl_Widget *w, void *arg);
 void cb_contestiaG(Fl_Widget *w, void *arg);
 void cb_contestiaH(Fl_Widget *w, void *arg);
-void cb_contestiaI(Fl_Widget *w, void *arg);
 void cb_contestiaCustom(Fl_Widget *w, void *arg);
 
 void cb_rtty45(Fl_Widget *w, void *arg);
@@ -513,7 +512,6 @@ Fl_Menu_Item quick_change_olivia[] = {
 };
 
 Fl_Menu_Item quick_change_contestia[] = {
-	{ "4/125", 0, cb_contestiaI, (void *)MODE_CONTESTIA },
 	{ "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA },
 	{ "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA },
 	{ "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA },
@@ -694,14 +692,6 @@ void cb_contestiaH(Fl_Widget *w, void *arg)
 {
 	progdefaults.contestiatones = 4;
 	progdefaults.contestiabw = 3;
-	set_contestia_tab_widgets();
-	cb_init_mode(w, arg);
-}
-
-void cb_contestiaI(Fl_Widget *w, void *arg)
-{
-	progdefaults.contestiatones = 1;
-	progdefaults.contestiabw = 0;
 	set_contestia_tab_widgets();
 	cb_init_mode(w, arg);
 }
@@ -1355,7 +1345,7 @@ void cb_mnuVisitTracker(Fl_Widget*, void*)
 
 void cb_mnuVisitView(Fl_Widget*, void*)
 {
-	cb_mnuVisitURL(0, (void*)string(progdefaults.server_location.append("listen.php")).c_str());
+	cb_mnuVisitURL(0, (void*)string("http://www.robertharrison.org/listen/view.php").c_str());
 }
 
 //End
@@ -1531,7 +1521,7 @@ void cb_mnuCheckUpdate(Fl_Widget*, void*)
 		string version_str;
 		unsigned long version;
 	} sites[] = {
-		{ PACKAGE_DL, "downloads/fldigi-([0-9.]+).tar.gz", "", 0 },
+		{ PACKAGE_DL, "fldigi-distro/fldigi-([0-9.]+).tar.gz", "", 0 },
 		{ PACKAGE_PROJ, "fldigi/fldigi-([0-9.]+).tar.gz", "", 0 }
 	}, *latest;
 	string reply;
@@ -2077,20 +2067,6 @@ void qsoSave_cb(Fl_Widget *b, void *)
 	restoreFocus();
 }
 
-void qso_save_now()
-{
-	string havecall = inpCall->value();
-	while (!havecall.empty() && havecall[0] == ' ') havecall.erase(0,1);
-	if (havecall.empty())
-		return;
-
-	submit_log();
-	if (progdefaults.ClearOnSave)
-		clearQSO();
-//	ReceiveText->mark(FTextBase::XMIT);
-}
-
-
 void cb_QRZ(Fl_Widget *b, void *)
 {
 	if (!*inpCall->value())
@@ -2554,7 +2530,6 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_CW].name, 0, cb_init_mode, (void *)MODE_CW, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 { CONTESTIA_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "4/125", 0, cb_contestiaI, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3848,8 +3823,7 @@ void create_fl_digi_main_primary() {
 				fl_rgb_color(
 					progdefaults.RxColor.R,
 					progdefaults.RxColor.G,
-					progdefaults.RxColor.B),
-				progdefaults.RxTxSelectcolor);
+					progdefaults.RxColor.B));
 			ReceiveText->setFont(progdefaults.RxFontnbr);
 			ReceiveText->setFontSize(progdefaults.RxFontsize);
 			ReceiveText->setFontColor(progdefaults.RxFontcolor, FTextBase::RECV);
@@ -3866,8 +3840,7 @@ void create_fl_digi_main_primary() {
 				fl_rgb_color(
 					progdefaults.TxColor.R,
 					progdefaults.TxColor.G,
-					progdefaults.TxColor.B),
-				progdefaults.RxTxSelectcolor);
+					progdefaults.TxColor.B));
 			TransmitText->setFont(progdefaults.TxFontnbr);
 			TransmitText->setFontSize(progdefaults.TxFontsize);
 			TransmitText->setFontColor(progdefaults.TxFontcolor, FTextBase::RECV);
@@ -4124,6 +4097,7 @@ void cb_mnuAltDockedscope(Fl_Menu_ *w, void *d);
 void cb_mnuCaptureHAB(Fl_Widget *w, void *d);
 void cb_mnuGenerateHAB(Fl_Widget *w, void *d);
 void cb_mnuPlaybackHAB(Fl_Widget *w, void *d);
+void cb_mnuStreamHAB(Fl_Widget *w, void *d);
 
 Fl_Menu_Item alt_menu_[] = {
 {_("&File"), 0,  0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -4133,6 +4107,7 @@ Fl_Menu_Item alt_menu_[] = {
 {_("RX capture"),  0, (Fl_Callback*)cb_mnuCaptureHAB,  0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {_("TX generate"), 0, (Fl_Callback*)cb_mnuGenerateHAB, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {_("Playback"),    0, (Fl_Callback*)cb_mnuPlaybackHAB, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("Stream"),    0, (Fl_Callback*)cb_mnuStreamHAB, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 #endif
 
@@ -4144,7 +4119,6 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_CW].name, 0, cb_init_mode, (void *)MODE_CW, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 {"Contestia", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "4/125", 0, cb_contestiaI, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/250", 0, cb_contestiaA, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/250", 0, cb_contestiaB, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "4/500", 0, cb_contestiaC, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -4346,6 +4320,28 @@ void cb_mnuPlaybackHAB(Fl_Widget *w, void *d)
 	playval = m->value();
 	cout << playval << endl;
 	if(!scard->Playback(playval)) {
+		m->clear();
+		playval = false;
+	}
+	else if (btnAutoSpot->value()) {
+		put_status(_("Spotting disabled"), 3.0);
+		btnAutoSpot->value(0);
+		btnAutoSpot->do_callback();
+	}
+}
+void cb_mnuStreamHAB(Fl_Widget *w, void *d)
+{
+	if (!scard) {
+	 return;
+	 }
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label(), alt_menu_);
+	if (capval || genval) {
+		m->clear();
+		return;
+	}
+	playval = m->value();
+	cout << playval << endl;
+	if(!scard->Stream(playval)) {
 		m->clear();
 		playval = false;
 	}
@@ -5232,86 +5228,7 @@ void set_zdata(complex *zarray, int len)
 	wf->wfscope->zdata(zarray, len);
 }
 
-// raw buffer functions can ONLY be called by FLMAIN_TID
-
-//======================================================================
-#define RAW_BUFF_LEN 256
-
-static char rxtx_raw_chars[RAW_BUFF_LEN+1] = "";
-static char rxtx_raw_buff[RAW_BUFF_LEN+1] = "";
-static int  rxtx_raw_len = 0;
-
-char *get_rxtx_data()
-{
-	ENSURE_THREAD(FLMAIN_TID);
-	memset(rxtx_raw_chars, 0, RAW_BUFF_LEN+1);
-	strncpy(rxtx_raw_chars, rxtx_raw_buff, RAW_BUFF_LEN);
-	memset(rxtx_raw_buff, 0, RAW_BUFF_LEN+1);
-	rxtx_raw_len = 0;
-	return rxtx_raw_chars;
-}
-
-void add_rxtx_char(int data)
-{
-	if (rxtx_raw_len == RAW_BUFF_LEN) {
-		memset(rxtx_raw_buff, 0, RAW_BUFF_LEN+1);
-		rxtx_raw_len = 0;
-	}
-	rxtx_raw_buff[rxtx_raw_len++] = (unsigned char)data;
-}
-
-//======================================================================
-static char rx_raw_chars[RAW_BUFF_LEN+1] = "";
-static char rx_raw_buff[RAW_BUFF_LEN+1] = "";
-static int  rx_raw_len = 0;
-
-char *get_rx_data()
-{
-	ENSURE_THREAD(FLMAIN_TID);
-	memset(rx_raw_chars, 0, RAW_BUFF_LEN+1);
-	strncpy(rx_raw_chars, rx_raw_buff, RAW_BUFF_LEN);
-	memset(rx_raw_buff, 0, RAW_BUFF_LEN+1);
-	rx_raw_len = 0;
-	return rx_raw_chars;
-}
-
-void add_rx_char(int data)
-{
-	add_rxtx_char(data);
-	if (rx_raw_len == RAW_BUFF_LEN) {
-		memset(rx_raw_buff, 0, RAW_BUFF_LEN+1);
-		rx_raw_len = 0;
-	}
-	rx_raw_buff[rx_raw_len++] = (unsigned char)data;
-}
-
-//======================================================================
-static char tx_raw_chars[RAW_BUFF_LEN+1] = "";
-static char tx_raw_buff[RAW_BUFF_LEN+1] = "";
-static int  tx_raw_len = 0;
-
-char *get_tx_data()
-{
-	ENSURE_THREAD(FLMAIN_TID);
-	memset(tx_raw_chars, 0, RAW_BUFF_LEN+1);
-	strncpy(tx_raw_chars, tx_raw_buff, RAW_BUFF_LEN);
-	memset(tx_raw_buff, 0, RAW_BUFF_LEN+1);
-	tx_raw_len = 0;
-	return tx_raw_chars;
-}
-
-void add_tx_char(int data)
-{
-	add_rxtx_char(data);
-	if (tx_raw_len == RAW_BUFF_LEN) {
-		memset(tx_raw_buff, 0, RAW_BUFF_LEN+1);
-		tx_raw_len = 0;
-	}
-	tx_raw_buff[tx_raw_len++] = (unsigned char)data;
-}
-
-//======================================================================
-static void put_rx_char_flmain(unsigned int data, int style)
+static void put_rx_char_flmain(unsigned int data)
 {
 	ENSURE_THREAD(FLMAIN_TID);
 
@@ -5324,6 +5241,7 @@ static void put_rx_char_flmain(unsigned int data, int style)
 	if (mode == MODE_RTTY || mode == MODE_CW)
 		asc = ascii;
 
+	int style = FTextBase::RECV;
 	if (asc == ascii2 && iscntrl(data))
 		style = FTextBase::CTRL;
 	if (wf->tmp_carrier())
@@ -5331,8 +5249,6 @@ static void put_rx_char_flmain(unsigned int data, int style)
 
 	if (progdefaults.autoextract == true) rx_extract_add(data);
 	speak(data);
-
-	add_rx_char(data);
 
 	switch (data) {
 		case '\n':
@@ -5342,7 +5258,6 @@ static void put_rx_char_flmain(unsigned int data, int style)
 			ReceiveText->add('\n', style);
 			break;
 		default:
-
 			ReceiveText->add(data, style);
 	}
 
@@ -5366,7 +5281,7 @@ static void put_rx_char_flmain(unsigned int data, int style)
 		logfile->log_to_file(cLogfile::LOG_RX, s);
 }
 
-void put_rx_char(unsigned int data, int style)
+void put_rx_char(unsigned int data)
 {
 #if BENCHMARK_MODE
 	if (!benchmark.output.empty()) {
@@ -5375,7 +5290,7 @@ void put_rx_char(unsigned int data, int style)
 		benchmark.buffer += (char)data;
 	}
 #else
-	REQ(put_rx_char_flmain, data, style);
+	REQ(put_rx_char_flmain, data);
 #endif
 }
 
@@ -5534,16 +5449,6 @@ void put_rx_data(int *data, int len)
 }
 
 extern bool macro_idle_on;
-extern string text2repeat;
-extern size_t repeatchar;
-
-bool idling = false;
-
-void get_tx_char_idle(void *)
-{
-	idling = false;
-	progStatus.repeatIdleTime = 0;
-}
 
 char szTestChar[] = "E|I|S|T|M|O|A|V";
 int get_tx_char(void)
@@ -5567,33 +5472,15 @@ int get_tx_char(void)
 	enum { STATE_CHAR, STATE_CTRL };
 	static int state = STATE_CHAR;
 
-	if ( progStatus.repeatMacro && progStatus.repeatIdleTime > 0 &&
-		 !idling ) {
-		Fl::add_timeout(progStatus.repeatIdleTime, get_tx_char_idle);
-		idling = true;
-	}
-	if (idling) return -1;
-
-	if (progStatus.repeatMacro > -1 && text2repeat.length()) {
-		c = text2repeat[repeatchar];
-		repeatchar++;
-		if (repeatchar == text2repeat.length()) {
-			text2repeat.clear();
-			macros.repeat(progStatus.repeatMacro);
-		}
-		return c;
-	}
-
-	c = TransmitText->nextChar();
-	if (c == '^' && state == STATE_CHAR) {
-		state = STATE_CTRL;
-		c = TransmitText->nextChar();
-	}
-	switch (c) {
-	case -1: break; // no character available
+	switch (c = TransmitText->nextChar()) {
 	case '\n':
 		pending = '\n';
 		return '\r';
+	case '^':
+		if (state == STATE_CTRL)
+			break;
+		state = STATE_CTRL;
+		return -1;
 	case 'r':
 		if (state != STATE_CTRL)
 			break;
@@ -5611,15 +5498,7 @@ int get_tx_char(void)
 		} else
 			c = -1;
 		break;
-	case 'L':
-		if (state != STATE_CTRL)
-			break;
-		state = STATE_CHAR;
-		c = -1;
-		REQ(qso_save_now);
-		break;
-	case '^':
-		state = STATE_CHAR;
+	case -1:
 		break;
 	default:
 		if (state == STATE_CTRL) {
@@ -5633,15 +5512,13 @@ int get_tx_char(void)
 	return c;
 }
 
-void put_echo_char(unsigned int data, int style)
+void put_echo_char(unsigned int data)
 {
 //if (bWF_only) return;
     if (progdefaults.QSKadjust) return;
 
 	static unsigned int last = 0;
 	const char **asc = ascii;
-
-	add_tx_char(data);
 
 	if (mailclient || mailserver || arqmode)
 		asc = ascii2;
@@ -5654,6 +5531,7 @@ void put_echo_char(unsigned int data, int style)
 
 	last = data;
 
+	int style = FTextBase::XMIT;
 	if (asc == ascii2 && iscntrl(data))
 		style = FTextBase::CTRL;
 	REQ(&FTextBase::addchr, ReceiveText, data, style);
@@ -6074,5 +5952,4 @@ void set_rtty_bits(int bits)
 		}
 	}
 }
-
 
