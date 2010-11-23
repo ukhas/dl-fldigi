@@ -83,9 +83,9 @@ SoundBase::SoundBase()
           tx_src_state(0), rx_src_state(0),
           wrt_buffer(new double[SND_BUF_LEN]),
 #if USE_SNDFILE
-          ofCapture(0), ifPlayback(0), ofGenerate(0),
+          ofCapture(0), ifPlayback(0), ifStream(0), ofGenerate(0),
 #endif
-	  capture(false), playback(false), generate(false)
+	  capture(false), playback(false), stream(false), generate(false) 
 {
 	memset(wrt_buffer, 0, SND_BUF_LEN * sizeof(*wrt_buffer));
 }
@@ -101,6 +101,8 @@ SoundBase::~SoundBase()
 		sf_close(ofCapture);
 	if (ifPlayback)
 		sf_close(ifPlayback);
+	if (ifStream)
+		sf_close(ifStream);
 #endif
 }
 
@@ -195,6 +197,34 @@ int SoundBase::Playback(bool val)
 	}
 
 	playback = true;
+	return 1;
+}
+
+int SoundBase::Stream(bool val)
+{
+	if (!val) {
+		if (ifStream) {
+			int err;
+			if ((err = sf_close(ifStream)) != 0)
+				LOG_ERROR("sf_close error: %s", sf_error_number(err));
+			ifStream = 0;
+		}
+		stream = false;
+		return 1;
+	}
+	const char* fname;
+	int format;
+	get_file_params("playback.wav", &fname, &format);
+	if (!fname)
+		return 0;
+
+	SF_INFO info = { 0, 0, 0, 0, 0, 0 };
+	if ((ifStream = sf_open(fname, SFM_READ, &info)) == NULL) {
+		LOG_ERROR("Could not read %s", fname);
+		return 0;
+	}
+
+	stream = true;
 	return 1;
 }
 
@@ -542,6 +572,13 @@ size_t SoundOSS::Read(float *buffer, size_t buffersize)
 		write_file(ofCapture, buffer, buffersize);
 	if (playback) {
 		read_file(ifPlayback, buffer, buffersize);
+		if (progdefaults.EnableMixer)
+			for (size_t i = 0; i < buffersize; i++)
+				buffer[i] *= progStatus.RcvMixer;
+		return buffersize;
+	}
+	if (stream) {
+		read_file(ifStream, buffer, buffersize);
 		if (progdefaults.EnableMixer)
 			for (size_t i = 0; i < buffersize; i++)
 				buffer[i] *= progStatus.RcvMixer;
@@ -990,7 +1027,17 @@ size_t SoundPort::Read(float *buf, size_t count)
 			for (size_t i = 0; i < count; i++)
 				buf[i] *= progStatus.RcvMixer;
 		if (!capture) {
-			MilliSleep((long)ceil((0.95e3 * count) / req_sample_rate));//note hack by Laurence to enable playback of streams
+			MilliSleep((long)ceil((1.0e3 * count) / req_sample_rate));//note change by Laurence to enable playback of streams
+			return count;
+		}
+	}
+        if (stream) {
+		read_file(ifStream, buf, count);
+		if (progdefaults.EnableMixer)
+			for (size_t i = 0; i < count; i++)
+				buf[i] *= progStatus.RcvMixer;
+		if (!capture) {
+			//MilliSleep((long)ceil((0.95e3 * count) / req_sample_rate));//note change by Laurence to enable playback of streams
 			return count;
 		}
 	}
@@ -1780,7 +1827,18 @@ size_t SoundPulse::Read(float *buf, size_t count)
 				buf[i] *= progStatus.RcvMixer;
 		if (!capture) {
 			flush(0);
-			MilliSleep((long)ceil((0.95e3 * count) / sample_frequency));//note hack by Laurence
+			MilliSleep((long)ceil((1.0e3 * count) / sample_frequency));//note change by Laurence
+			return count;
+		}
+	}
+	if (stream) {
+		read_file(ifStream, buf, count);
+		if (progdefaults.EnableMixer)
+			for (size_t i = 0; i < count; i++)
+				buf[i] *= progStatus.RcvMixer;
+		if (!capture) {
+			flush(0);
+			//MilliSleep((long)ceil((0.95e3 * count) / sample_frequency));//note change by Laurence
 			return count;
 		}
 	}
@@ -1873,6 +1931,12 @@ size_t SoundNull::Read(float *buf, size_t count)
 			for (size_t i = 0; i < count; i++)
 				buf[i] *= progStatus.RcvMixer;
 	}
+	else if (stream) {
+		read_file(ifStream, buf, count);
+		if (progdefaults.EnableMixer)
+			for (size_t i = 0; i < count; i++)
+				buf[i] *= progStatus.RcvMixer;
+	}
 	else
 #endif
 		memset(buf, 0, count * sizeof(*buf));
@@ -1880,8 +1944,8 @@ size_t SoundNull::Read(float *buf, size_t count)
 	if (capture)
 		write_file(ofCapture, buf, count);
 #endif
-
-	MilliSleep((long)ceil((0.95e3 * count) / sample_frequency));//note hack by Laurence
+	if(!stream)
+		MilliSleep((long)ceil((1.0e3 * count) / sample_frequency));//note change by Laurence
 
 	return count;
 
