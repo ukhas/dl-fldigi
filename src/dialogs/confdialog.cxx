@@ -2657,6 +2657,14 @@ progdefaults.QRZ = HAMCALLHTML;
 progdefaults.changed = true;
 }
 
+Fl_Round_Button *btnCALLOOK=(Fl_Round_Button *)0;
+
+static void cb_btnCALLOOK(Fl_Round_Button* o, void*) {
+  set_qrz_buttons(o);
+progdefaults.QRZ = CALLOOK;
+progdefaults.changed = true;
+}
+
 Fl_Group *tabDL=(Fl_Group *)0;
 
 Fl_Tabs *tabsDL=(Fl_Tabs *)0;
@@ -2820,14 +2828,6 @@ progdefaults.changed = true;
 
 static void cb_Location(Fl_Input* o, void*) {
   progdefaults.waterfall_png_location = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Round_Button *btnCALLOOK=(Fl_Round_Button *)0;
-
-static void cb_btnCALLOOK(Fl_Round_Button* o, void*) {
-  set_qrz_buttons(o);
-progdefaults.QRZ = CALLOOK;
 progdefaults.changed = true;
 }
 
@@ -5789,7 +5789,6 @@ d frequency"));
         { tabsMisc = new Fl_Tabs(0, 25, 500, 345);
           tabsMisc->selection_color((Fl_Color)FL_LIGHT1);
           { tabSweetSpot = new Fl_Group(0, 50, 500, 320, _("Sweet Spot"));
-            tabSweetSpot->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 75);
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
