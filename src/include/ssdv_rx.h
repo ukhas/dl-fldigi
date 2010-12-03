@@ -4,6 +4,12 @@
 #ifndef _SSDV_RX_H
 #define _SSDV_RX_H
 
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Image.H>
+#include <FL/Fl_Progress.H>
+#include <FL/Fl_Scroll.H>
+
 #include "ssdv.h"
 
 class ssdv_rx : public Fl_Double_Window
@@ -11,14 +17,15 @@ class ssdv_rx : public Fl_Double_Window
 private:
 	/* UI */
 	
+	Fl_Scroll *scroll;
 	Fl_Box *box;
 	Fl_RGB_Image *flrgb;
 	
 	Fl_Box *flimageid; /* Current Image ID */
-	Fl_Box *flpacket; /* Last Block ID */
+	Fl_Box *flreceived;
+	Fl_Box *fllast;
 	Fl_Box *flsize;
 	Fl_Box *flmissing;
-	Fl_Box *fltodo;
 	Fl_Box *flfixes;
 	
 	Fl_Progress *flprogress;
@@ -34,6 +41,7 @@ private:
 	uint8_t *packets;
 	int packets_len;
 	uint8_t *image;
+	size_t image_len;
 	
 	/* Last packet details */
 	ssdv_packet_info_t pkt_info;
@@ -43,6 +51,7 @@ private:
 	int image_id;
 	int image_width;
 	int image_height;
+	int image_received_packets;
 	int image_lost_packets;
 	int image_errors;
 	

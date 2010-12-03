@@ -2,10 +2,6 @@
 #include <cstdio>
 #include <cstring>
 #include <stdint.h>
-#include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Image.H>
-#include <FL/Fl_Progress.H>
 #include <setjmp.h>
 #include "ssdv_rx.h"
 
@@ -136,53 +132,52 @@ ssdv_error_exit (j_common_ptr cinfo)
 
 /**** END JPEG STUFF *****/
 
-#define IMG_WIDTH (320)
-#define IMG_HEIGHT (240)
-#define IMG_SIZE (IMG_WIDTH * IMG_HEIGHT * 3)
+#define UI_HEIGHT (60)
 
 ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	: Fl_Double_Window(w, h, title)
 {
-	image = new unsigned char[IMG_SIZE];
 	buffer = new uint8_t[BUFFER_SIZE];
 	
 	/* Empty receive buffer */
 	clear_buffer();
 	
-	/* Clear the image buffer, make it grey */
-	memset(image, 0x80, IMG_SIZE);
-	
 	/* No image yet */
 	packets = NULL;
+	image = NULL;
+	flrgb = NULL;
 	image_id = -1;
 	
 	begin();
 	
-	box = new Fl_Box(0, 0, IMG_WIDTH, IMG_HEIGHT);
-	flrgb = new Fl_RGB_Image(image, IMG_WIDTH, IMG_HEIGHT, 3);
-	box->image(flrgb);
+	scroll = new Fl_Scroll(0, 0, w, h - UI_HEIGHT);
+	scroll->begin();
+	box = new Fl_Box(0, 0, w, h - UI_HEIGHT);
+	box->box(FL_FLAT_BOX);
+	box->color(fl_rgb_color(0x80, 0x80, 0x80));
+	scroll->end();
 	
-	int y = IMG_HEIGHT;
+	int y = h - UI_HEIGHT;
 	int x1 = 0;
-	int x2 = x1 + 95;
-	int x3 = x2 + 95;
+	int x2 = x1 + 75;
+	int x3 = x2 + 100;
 	
 	/* Current Image ID: */
 	{
 		Fl_Box* o = new Fl_Box(x1 + 2, y + 2, 72, 20, "Image ID:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flimageid = new Fl_Box(x1 + 75, y + 2, 60, 20, "");
+		flimageid = new Fl_Box(x1 + 71, y + 2, 60, 20, "");
 		flimageid->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
-	/* Last Packet: */
+	/* Received: */
 	{
-		Fl_Box* o = new Fl_Box(x1 + 2, y + 22, 72, 20, "Last Block:");
+		Fl_Box* o = new Fl_Box(x1 + 2, y + 22, 72, 20, "Received:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flpacket = new Fl_Box(x1 + 75, y + 22, 60, 20, "");
-		flpacket->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+		flreceived = new Fl_Box(x1 + 71, y + 22, 60, 20, "");
+		flreceived->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
 	/* Size: */
@@ -190,35 +185,35 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 		Fl_Box* o = new Fl_Box(x2 + 2, y + 2, 72, 20, "Size:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flsize = new Fl_Box(x2 + 75, y + 2, 60, 20, "");
+		flsize = new Fl_Box(x2 + 71, y + 2, 60, 20, "");
 		flsize->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
-	/* Lost: */
+	/* Last: */
 	{
-		Fl_Box* o = new Fl_Box(x2 + 2, y + 22, 72, 20, "Lost:");
+		Fl_Box* o = new Fl_Box(x2 + 2, y + 22, 72, 20, "Last:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flmissing = new Fl_Box(x2 + 75, y + 22, 60, 20, "");
-		flmissing->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-	}     
-	
-	/* Something: */
-	{     
-		Fl_Box* o = new Fl_Box(x3 + 2, y + 2, 72, 20, "???:");
-		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
-		
-		fltodo = new Fl_Box(x3 + 75, y + 2, 60, 20, "");
-		fltodo->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+		fllast = new Fl_Box(x2 + 71, y + 22, 60, 20, "");
+		fllast->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
 	/* Fixes: */
 	{
-		Fl_Box* o = new Fl_Box(x3 + 2, y + 22, 72, 20, "Fixed:");
+		Fl_Box* o = new Fl_Box(x3 + 2, y + 2, 72, 20, "Fixes:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flfixes = new Fl_Box(x3 + 75, y + 22, 60, 20, "");
+		flfixes = new Fl_Box(x3 + 71, y + 2, 60, 20, "");
 		flfixes->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+	}
+	
+	/* Lost: */
+	{
+		Fl_Box* o = new Fl_Box(x3 + 2, y + 22, 72, 20, "Lost:");
+		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+		
+		flmissing = new Fl_Box(x3 + 71, y + 22, 60, 20, "");
+		flmissing->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
 	/* Progress Bar */
@@ -228,12 +223,16 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	flprogress->value(0);
 	
 	end();
+	
+	size_range(320, 240 + UI_HEIGHT, 0, 0, 0, 0, 0);
+	resizable(scroll);
 }
 
 ssdv_rx::~ssdv_rx()
 {
-	delete image;
-	delete buffer;
+	if(flrgb) delete flrgb;
+	if(image) delete image;
+	if(buffer) delete buffer;
 }
 
 void ssdv_rx::feed_buffer(uint8_t byte)
@@ -410,8 +409,19 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		image_lost_packets   = 0;
 		image_errors         = 0;
 		
-		/* Clear the image buffer */
-		memset(image, 0x80, IMG_SIZE);
+		/* Initialise and clear the image buffer */
+		if(image) delete image;
+		image_len = image_width * image_height * 3;
+		image = new unsigned char[image_len];
+		
+		/* Create the Fl_RGB_Image object */
+		if(flrgb) delete flrgb;
+		flrgb = new Fl_RGB_Image(image, image_width, image_height, 3);
+		box->resize(0, 0, image_width, image_height);
+		box->image(flrgb);
+		
+		/* Snap the window to the new image size */
+		size(image_width, image_height + UI_HEIGHT);
 		
 		/* Clear the packet buffer */
 		if(packets != NULL) free(packets);
@@ -464,11 +474,13 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	ssdv_t dec;
 	ssdv_dec_init(&dec);
 	
+	image_received_packets = 0;
 	image_lost_packets = 0;
 	for(i = 0; i < packets_len; i++)
 	{
 		uint8_t *p = packets + (i * SSDV_PKT_SIZE);
 		if(p[0] != 0x55) { image_lost_packets++; continue; }
+		image_received_packets++;
 		ssdv_dec_feed(&dec, p);
 	}
 	
@@ -494,17 +506,23 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	/* Update values on display */
 	char s[16];
 	
+	snprintf(s, 16, "%d", image_received_packets);
+	flreceived->copy_label(s);
+	
 	snprintf(s, 16, "%d", pkt_info.packet_id + 1);
-	flpacket->copy_label(s);
+	fllast->copy_label(s);
 	
 	snprintf(s, 16, "0x%02X", pkt_info.image_id);
 	flimageid->copy_label(s);
 	
-	snprintf(s, 16, "%d", image_lost_packets);
+	snprintf(s, 16, "%d (%d%%)", image_lost_packets, image_lost_packets * 100 / image_received_packets);
 	flmissing->copy_label(s);
 	
-	snprintf(s, 16, "%d", image_errors);
+	snprintf(s, 16, "%d byte%s", image_errors, (image_errors == 1 ? "" : "s"));
 	flfixes->copy_label(s);
+	
+	snprintf(s, 16, "%ix%i", image_width, image_height);
+	flsize->copy_label(s);
 	
 	flprogress->maximum(dec.mcu_count);
 	flprogress->value(mcu_id);
@@ -594,8 +612,7 @@ void ssdv_rx::render_image(uint8_t *jpeg, size_t length)
 	jpeg_start_decompress(&cinfo);
 	
 	/* Fail if the image doesn't match our requirements */
-	if(cinfo.output_width != IMG_WIDTH && cinfo.output_height != IMG_HEIGHT &&
-	   cinfo.output_components != 3)
+	if(cinfo.output_components != 3)
 	{
 		jpeg_finish_decompress(&cinfo);
 		jpeg_destroy_decompress(&cinfo);
