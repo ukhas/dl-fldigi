@@ -407,6 +407,9 @@ bool rtty::rx(bool bit)
 					lb = (lost - bytelen / 2) / bytelen;
 					put_rx_ssdv(c, lb);
 					
+					/* Replace '#' with '*' when using baudot in HAB mode */
+					if(nbits == 5 && bHAB && c == '#') c = '*';
+					
 					if ( c != 0 )
 						put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c);
 				}
