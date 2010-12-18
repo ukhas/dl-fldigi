@@ -198,8 +198,8 @@ void rx_extract_add(int c)
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
 		put_status("dl_fldigi: detected sentence start; extracting!", 10);
 
+		rx_extract_reset();
 		rx_buff = beg;
-		memset(rx_extract_buff, ' ', bufsize);
 		extracting = true;
 	} else if (extracting) {
 		rx_buff += ch;
