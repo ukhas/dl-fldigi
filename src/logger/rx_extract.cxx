@@ -316,7 +316,6 @@ uint8_t gps_xor_checksum(char *s)
 {
 	uint8_t x;
 	
-	/* Calculate checksum ignoring the first two $s */
 	for(x = 0; *s; s++)
 		x ^= (uint8_t) *s;
 	
@@ -327,7 +326,6 @@ uint16_t gps_CRC16_checksum(char *s)
 {
 	uint16_t x;
 	
-	/* Calculate checksum ignoring the first two $s */
 	for(x = 0xFFFF; *s; s++)
 		x = crc_xmodem_update(x, (uint16_t) *s);
 	
