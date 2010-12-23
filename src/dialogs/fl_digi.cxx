@@ -4718,7 +4718,7 @@ void create_fl_digi_main_dl_fldigi() {
 	fl_font(fnt, freqheight);
 	fl_font(fnt, fsize);
 	
-	int freqwidth = (int)fl_width("999999999") + 10;
+	int freqwidth = (int)fl_width("999999999") + 40;
 
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
@@ -4782,7 +4782,6 @@ void create_fl_digi_main_dl_fldigi() {
 
 	
 		{ habFlightXML = new Fl_Choice(10, (Y + Hentry), w_habFlightXML, Hentry, _("Flight"));
-		//{ habFlightXML = new Fl_Choice((rightof(qsoFreqDisp2) + 2), (Y + Hentry), w_habFlightXML, Hentry, _("Flight"));
 		habFlightXML->tooltip(_("Select flight you are tracking"));
 		habFlightXML->down_box(FL_BORDER_BOX);
 		habFlightXML->align(FL_ALIGN_TOP);
@@ -4907,6 +4906,7 @@ void create_fl_digi_main_dl_fldigi() {
 												 progdefaults.FDbackground.G,
 												 progdefaults.FDbackground.B));
 		qsoFreqDisp2->value(0);
+	
 		{ habCustom = new Fl_Output(rightof(qsoFreqDisp2) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 4 - freqwidth, Hentry);
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
