@@ -65,6 +65,9 @@ protected:
 	bool s2n_valid;
 
 	unsigned cap;
+	
+	double track_freq(double freq);
+
 public:
 	modem();
 	virtual ~modem(){};

@@ -2683,6 +2683,39 @@ static void cb_Server(Fl_Input* o, void*) {
 progdefaults.changed = true;
 }
 
+Fl_Check_Button *btnTrackFreq=(Fl_Check_Button *)0;
+
+static void cb_btnTrackFreq(Fl_Check_Button* o, void*) {
+  progdefaults.track_freq = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Counter2 *cntTrackFreqMin=(Fl_Counter2 *)0;
+
+static void cb_cntTrackFreqMin(Fl_Counter2* o, void*) {
+  int i = o->value();
+progdefaults.track_freq_min = i;
+if(progdefaults.track_freq_max < i)
+{
+  progdefaults.track_freq_max = i;
+  cntTrackFreqMax->value(i);
+}
+progdefaults.changed = true;
+}
+
+Fl_Counter2 *cntTrackFreqMax=(Fl_Counter2 *)0;
+
+static void cb_cntTrackFreqMax(Fl_Counter2* o, void*) {
+  int i = o->value();
+progdefaults.track_freq_max = i;
+if(progdefaults.track_freq_min > i)
+{
+  progdefaults.track_freq_min = i;
+  cntTrackFreqMin->value(i);
+}
+progdefaults.changed = true;
+}
+
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
 Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
@@ -6239,7 +6272,7 @@ d frequency"));
         { tabsDL = new Fl_Tabs(0, 25, 500, 410);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
             tabDLEnable->hide();
-            { Fl_Group* o = new Fl_Group(10, 55, 490, 290, _("Enable"));
+            { Fl_Group* o = new Fl_Group(10, 55, 478, 91, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
               { Fl_Check_Button* o = confdialog_dl_online = new Fl_Check_Button(40, 75, 200, 25, _("Online"));
@@ -6252,6 +6285,57 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Server);
                 o->value(progdefaults.server_location.c_str());
               } // Fl_Input* o
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(10, 156, 478, 177, _("Frequency Tracking"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Check_Button* o = btnTrackFreq = new Fl_Check_Button(40, 182, 90, 15, _("Enabled"));
+                btnTrackFreq->tooltip(_("Adjust the radio frequency to keep the signal inside the specified limits"));
+                btnTrackFreq->down_box(FL_DOWN_BOX);
+                btnTrackFreq->callback((Fl_Callback*)cb_btnTrackFreq);
+                o->value(progdefaults.track_freq);
+              } // Fl_Check_Button* btnTrackFreq
+              { Fl_Counter2* o = cntTrackFreqMin = new Fl_Counter2(26, 208, 105, 20, _("Minimum Waterfall Frequency"));
+                cntTrackFreqMin->tooltip(_("Low frequency limit in Hz"));
+                cntTrackFreqMin->box(FL_UP_BOX);
+                cntTrackFreqMin->color((Fl_Color)FL_BACKGROUND_COLOR);
+                cntTrackFreqMin->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntTrackFreqMin->labeltype(FL_NORMAL_LABEL);
+                cntTrackFreqMin->labelfont(0);
+                cntTrackFreqMin->labelsize(14);
+                cntTrackFreqMin->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntTrackFreqMin->minimum(0);
+                cntTrackFreqMin->maximum(4000);
+                cntTrackFreqMin->step(1);
+                cntTrackFreqMin->value(1000);
+                cntTrackFreqMin->callback((Fl_Callback*)cb_cntTrackFreqMin);
+                cntTrackFreqMin->align(FL_ALIGN_RIGHT);
+                cntTrackFreqMin->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.track_freq_min);
+                o->labelsize(FL_NORMAL_SIZE);
+                o->lstep(10.0);
+              } // Fl_Counter2* cntTrackFreqMin
+              { Fl_Counter2* o = cntTrackFreqMax = new Fl_Counter2(26, 236, 105, 20, _("Maximum Waterfall Frequency"));
+                cntTrackFreqMax->tooltip(_("High frequency limit in Hz"));
+                cntTrackFreqMax->box(FL_UP_BOX);
+                cntTrackFreqMax->color((Fl_Color)FL_BACKGROUND_COLOR);
+                cntTrackFreqMax->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntTrackFreqMax->labeltype(FL_NORMAL_LABEL);
+                cntTrackFreqMax->labelfont(0);
+                cntTrackFreqMax->labelsize(14);
+                cntTrackFreqMax->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntTrackFreqMax->minimum(0);
+                cntTrackFreqMax->maximum(4000);
+                cntTrackFreqMax->step(1);
+                cntTrackFreqMax->value(2000);
+                cntTrackFreqMax->callback((Fl_Callback*)cb_cntTrackFreqMax);
+                cntTrackFreqMax->align(FL_ALIGN_RIGHT);
+                cntTrackFreqMax->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.track_freq_max);
+                o->labelsize(FL_NORMAL_SIZE);
+                o->lstep(10.0);
+              } // Fl_Counter2* cntTrackFreqMax
               o->end();
             } // Fl_Group* o
             tabDLEnable->end();

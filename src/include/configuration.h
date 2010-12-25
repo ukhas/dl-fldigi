@@ -1172,8 +1172,10 @@
 		ELEM_(std::string, ssdv_save_dir, "SSDV_SAVE_DIR", "Save location for received images", "")				\
 		ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL", "Remote URL", "http://www.sanslogic.co.uk/ssdv/data.php")	\
 		ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER", "Username for remote URL", "")					\
-		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")
-
+		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")					\
+		ELEM_(bool, track_freq, "TRACK_FREQ", "Adjust the RF frequency to match frequency drift", false)			\
+		ELEM_(int, track_freq_min, "TRACK_FREQ_MIN", "Minimum waterfall frequency", 1000)					\
+		ELEM_(int, track_freq_max, "TRACK_FREQ_MAX", "Maximum waterfall frequency", 2000)
 
 // declare the struct
 #define ELEM_DECLARE_CONFIGURATION(type_, var_, tag_, ...) type_ var_;
