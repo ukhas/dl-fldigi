@@ -4508,6 +4508,7 @@ void create_fl_digi_main_WF_only() {
 	int freqheight = Hentry + 2 * pad;
 	int Y = 0;
 
+
 	fl_font(fnt, freqheight);
 	fl_font(fnt, fsize);
 
@@ -4716,6 +4717,8 @@ void create_fl_digi_main_dl_fldigi() {
 
 	fl_font(fnt, freqheight);
 	fl_font(fnt, fsize);
+	
+	int freqwidth = (int)fl_width("999999999") + 40;
 
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
@@ -4776,6 +4779,8 @@ void create_fl_digi_main_dl_fldigi() {
 		
 		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
 
+
+	
 		{ habFlightXML = new Fl_Choice(10, (Y + Hentry), w_habFlightXML, Hentry, _("Flight"));
 		habFlightXML->tooltip(_("Select flight you are tracking"));
 		habFlightXML->down_box(FL_BORDER_BOX);
@@ -4882,7 +4887,27 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->callback(cb_dl_fldigi_configure_payload);
 		}
 		
-		{ habCustom = new Fl_Output(10, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 2, Hentry);
+		qsoFreqDisp2 = new cFreqControl(
+										10, below(habFlightXML) + 4,
+										freqwidth, freqheight, "");
+		qsoFreqDisp2->box(FL_DOWN_BOX);
+		qsoFreqDisp2->color(FL_BACKGROUND_COLOR);
+		qsoFreqDisp2->selection_color(FL_BACKGROUND_COLOR);
+		qsoFreqDisp2->labeltype(FL_NORMAL_LABEL);
+		qsoFreqDisp2->align(FL_ALIGN_CENTER);
+		qsoFreqDisp2->when(FL_WHEN_RELEASE);
+		qsoFreqDisp2->callback(qso_movFreq);
+		qsoFreqDisp2->font(progdefaults.FreqControlFontnbr);
+		qsoFreqDisp2->SetONOFFCOLOR(
+									fl_rgb_color(	progdefaults.FDforeground.R,
+												 progdefaults.FDforeground.G,
+												 progdefaults.FDforeground.B),
+									fl_rgb_color(	progdefaults.FDbackground.R,
+												 progdefaults.FDbackground.G,
+												 progdefaults.FDbackground.B));
+		qsoFreqDisp2->value(0);
+	
+		{ habCustom = new Fl_Output(rightof(qsoFreqDisp2) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 6 - freqwidth, Hentry);
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
 		habCustom->color(FL_BACKGROUND2_COLOR);
