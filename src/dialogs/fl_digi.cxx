@@ -1,4 +1,4 @@
-// ----------------------------------------------------------------------------
+	// ----------------------------------------------------------------------------
 //
 //	fl_digi.cxx
 //
@@ -4716,9 +4716,8 @@ void create_fl_digi_main_dl_fldigi() {
 	int Y = 0;
 
 	fl_font(fnt, freqheight);
+	int freqwidth = (int)fl_width("999999999") + 10;
 	fl_font(fnt, fsize);
-	
-	int freqwidth = (int)fl_width("999999999") + 40;
 
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
@@ -4906,6 +4905,7 @@ void create_fl_digi_main_dl_fldigi() {
 												 progdefaults.FDbackground.G,
 												 progdefaults.FDbackground.B));
 		qsoFreqDisp2->value(0);
+		//qsoFreqDisp2->resizable(NULL);
 	
 		{ habCustom = new Fl_Output(rightof(qsoFreqDisp2) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 6 - freqwidth, Hentry);
 		habCustom->tooltip(_("Custom"));
