@@ -4907,7 +4907,7 @@ void create_fl_digi_main_dl_fldigi() {
 												 progdefaults.FDbackground.B));
 		qsoFreqDisp2->value(0);
 	
-		{ habCustom = new Fl_Output(rightof(qsoFreqDisp2) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 4 - freqwidth, Hentry);
+		{ habCustom = new Fl_Output(rightof(qsoFreqDisp2) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 6 - freqwidth, Hentry);
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
 		habCustom->color(FL_BACKGROUND2_COLOR);
