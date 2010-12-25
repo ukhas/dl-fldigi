@@ -3476,7 +3476,13 @@ progdefaults.changed = true;}
               }
               Fl_Counter cntTrackFreqMin {
                 label {Minimum Waterfall Frequency}
-                callback {progdefaults.track_freq_min = o->value();
+                callback {int i = o->value();
+progdefaults.track_freq_min = i;
+if(progdefaults.track_freq_max < i)
+{
+  progdefaults.track_freq_max = i;
+  cntTrackFreqMax->value(i);
+}
 progdefaults.changed = true;}
                 tooltip {Low frequency limit in Hz} xywh {26 208 105 20} align 8 minimum 0 maximum 4000 step 1 value 1000
                 code0 {o->value(progdefaults.track_freq_min);}
@@ -3486,7 +3492,13 @@ progdefaults.changed = true;}
               }
               Fl_Counter cntTrackFreqMax {
                 label {Maximum Waterfall Frequency}
-                callback {progdefaults.track_freq_max = o->value();
+                callback {int i = o->value();
+progdefaults.track_freq_max = i;
+if(progdefaults.track_freq_min > i)
+{
+  progdefaults.track_freq_min = i;
+  cntTrackFreqMin->value(i);
+}
 progdefaults.changed = true;}
                 tooltip {High frequency limit in Hz} xywh {26 236 105 20} align 8 minimum 0 maximum 4000 step 1 value 2000
                 code0 {o->value(progdefaults.track_freq_max);}

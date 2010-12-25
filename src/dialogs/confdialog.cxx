@@ -2693,14 +2693,26 @@ progdefaults.changed = true;
 Fl_Counter2 *cntTrackFreqMin=(Fl_Counter2 *)0;
 
 static void cb_cntTrackFreqMin(Fl_Counter2* o, void*) {
-  progdefaults.track_freq_min = o->value();
+  int i = o->value();
+progdefaults.track_freq_min = i;
+if(progdefaults.track_freq_max < i)
+{
+  progdefaults.track_freq_max = i;
+  cntTrackFreqMax->value(i);
+}
 progdefaults.changed = true;
 }
 
 Fl_Counter2 *cntTrackFreqMax=(Fl_Counter2 *)0;
 
 static void cb_cntTrackFreqMax(Fl_Counter2* o, void*) {
-  progdefaults.track_freq_max = o->value();
+  int i = o->value();
+progdefaults.track_freq_max = i;
+if(progdefaults.track_freq_min > i)
+{
+  progdefaults.track_freq_min = i;
+  cntTrackFreqMin->value(i);
+}
 progdefaults.changed = true;
 }
 
