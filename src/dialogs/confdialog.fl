@@ -98,7 +98,7 @@ static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600
 static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {740 84 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
+    xywh {718 265 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-3 0 520 435} color 50 selection_color 50
@@ -3446,7 +3446,7 @@ progdefaults.changed = true;}
           } {
             Fl_Group {} {
               label Enable open
-              xywh {10 55 490 290} box ENGRAVED_FRAME align 21
+              xywh {10 55 478 91} box ENGRAVED_FRAME align 21
             } {
               Fl_Check_Button confdialog_dl_online {
                 label Online
@@ -3461,6 +3461,38 @@ set_menu_dl_online();}
 progdefaults.changed = true;}
                 tooltip {Tracker Server Address} xywh {90 105 334 20}
                 code0 {o->value(progdefaults.server_location.c_str());}
+              }
+            }
+            Fl_Group {} {
+              label {Frequency Tracking} open
+              xywh {10 156 478 177} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Check_Button btnTrackFreq {
+                label Enabled
+                callback {progdefaults.track_freq = o->value();
+progdefaults.changed = true;}
+                tooltip {Adjust the radio frequency to keep the signal inside the specified limits} xywh {40 182 90 15} down_box DOWN_BOX
+                code0 {o->value(progdefaults.track_freq);}
+              }
+              Fl_Counter cntTrackFreqMin {
+                label {Minimum Waterfall Frequency}
+                callback {progdefaults.track_freq_min = o->value();
+progdefaults.changed = true;}
+                tooltip {Low frequency limit in Hz} xywh {26 208 105 20} align 8 minimum 0 maximum 4000 step 1 value 1000
+                code0 {o->value(progdefaults.track_freq_min);}
+                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code2 {o->lstep(10.0);}
+                class Fl_Counter2
+              }
+              Fl_Counter cntTrackFreqMax {
+                label {Maximum Waterfall Frequency}
+                callback {progdefaults.track_freq_max = o->value();
+progdefaults.changed = true;}
+                tooltip {High frequency limit in Hz} xywh {26 236 105 20} align 8 minimum 0 maximum 4000 step 1 value 2000
+                code0 {o->value(progdefaults.track_freq_max);}
+                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                code2 {o->lstep(10.0);}
+                class Fl_Counter2
               }
             }
           }

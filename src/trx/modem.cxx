@@ -155,8 +155,30 @@ void modem::init()
 	stopflag = false;
 }
 
+double modem::track_freq(double freq)
+{
+	if(freq >= progdefaults.track_freq_min &&
+	   freq <= progdefaults.track_freq_max)
+		return(freq);
+	
+	double rf = wf->rfcarrier();
+	double cf = (progdefaults.track_freq_max + progdefaults.track_freq_min) / 2;
+	
+	if(rf <= 0) return(freq);
+	
+	if(wf->USB()) rf += freq - cf;
+	else rf -= freq - cf;
+	
+	qsy(rf);
+	
+	return(cf);
+}
+
 void modem::set_freq(double freq)
 {
+	if(progdefaults.track_freq)
+		freq = track_freq(freq);
+	
 	frequency = CLAMP(
 		freq,
 		progdefaults.LowFreqCutoff + bandwidth / 2,
