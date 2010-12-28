@@ -4429,7 +4429,9 @@ void noop_controls() // create and then hide all controls not being used
 	inpXchgIn1 = new Fl_Input2(defwidget); inpXchgIn1->hide();
 	outSerNo1 = new Fl_Input2(defwidget); outSerNo1->hide();
 	inpSerNo1 = new Fl_Input2(defwidget); inpSerNo1->hide();
+	if(!bHAB) {
 	qsoFreqDisp1 = new cFreqControl(defwidget); qsoFreqDisp1->hide();
+	}
 
 	inpFreq2 = new Fl_Input2(defwidget); inpFreq2->hide();
 	inpTimeOff2 = new Fl_Input2(defwidget); inpTimeOff2->hide();
@@ -4886,28 +4888,28 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->callback(cb_dl_fldigi_configure_payload);
 		}
 		
-		qsoFreqDisp2 = new cFreqControl(
+		qsoFreqDisp1 = new cFreqControl(
 										10, below(habFlightXML) + 4,
 										freqwidth, freqheight, "");
-		qsoFreqDisp2->box(FL_DOWN_BOX);
-		qsoFreqDisp2->color(FL_BACKGROUND_COLOR);
-		qsoFreqDisp2->selection_color(FL_BACKGROUND_COLOR);
-		qsoFreqDisp2->labeltype(FL_NORMAL_LABEL);
-		qsoFreqDisp2->align(FL_ALIGN_CENTER);
-		qsoFreqDisp2->when(FL_WHEN_RELEASE);
-		qsoFreqDisp2->callback(qso_movFreq);
-		qsoFreqDisp2->font(progdefaults.FreqControlFontnbr);
-		qsoFreqDisp2->SetONOFFCOLOR(
+		qsoFreqDisp1->box(FL_DOWN_BOX);
+		qsoFreqDisp1->color(FL_BACKGROUND_COLOR);
+		qsoFreqDisp1->selection_color(FL_BACKGROUND_COLOR);
+		qsoFreqDisp1->labeltype(FL_NORMAL_LABEL);
+		qsoFreqDisp1->align(FL_ALIGN_CENTER);
+		qsoFreqDisp1->when(FL_WHEN_RELEASE);
+		qsoFreqDisp1->callback(qso_movFreq);
+		qsoFreqDisp1->font(progdefaults.FreqControlFontnbr);
+		qsoFreqDisp1->SetONOFFCOLOR(
 									fl_rgb_color(	progdefaults.FDforeground.R,
 												 progdefaults.FDforeground.G,
 												 progdefaults.FDforeground.B),
 									fl_rgb_color(	progdefaults.FDbackground.R,
 												 progdefaults.FDbackground.G,
 												 progdefaults.FDbackground.B));
-		qsoFreqDisp2->value(0);
+		qsoFreqDisp1->value(0);
 		//qsoFreqDisp2->resizable(NULL);
 	
-		{ habCustom = new Fl_Output(rightof(qsoFreqDisp2) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 6 - freqwidth, Hentry);
+		{ habCustom = new Fl_Output(rightof(qsoFreqDisp1) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 6 - freqwidth, Hentry);
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
 		habCustom->color(FL_BACKGROUND2_COLOR);
@@ -5138,7 +5140,6 @@ void create_fl_digi_main(int argc, char** argv)
 	else if (bHAB)
 	{
 		create_fl_digi_main_dl_fldigi();
-		cout << HAB_height << endl;
 		}
 //
 	else
