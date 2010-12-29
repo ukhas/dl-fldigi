@@ -40,6 +40,8 @@
 #include "main.h"
 //
 
+#include "trx.h"
+
 #include "dl_fldigi.h"
 
 #include <stdio.h>   /* Standard input/output definitions */
@@ -201,6 +203,7 @@ void rx_extract_add(int c)
 		rx_extract_reset();
 		rx_buff = beg;
 		extracting = true;
+		active_modem->track_freq_lock++;
 	} else if (extracting) {
 		rx_buff += ch;
 		if (strstr(rx_extract_buff, end) != NULL) {
@@ -289,9 +292,11 @@ void rx_extract_add(int c)
 				open_recv_folder(WRAP_recv_dir.c_str());
 
 			rx_extract_reset();
+			active_modem->track_freq_lock--;
 		} else if (rx_buff.length() > 16384) {
 			put_status("dl_fldigi: extract buffer exeeded 16384 bytes", 20, STATUS_CLEAR);
 			rx_extract_reset();
+			active_modem->track_freq_lock--;
 		}
 	}
 }

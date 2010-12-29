@@ -134,6 +134,7 @@ modem::modem()
 	frequency = 1000.0;
 	s2n_ncount = s2n_sum = s2n_sum2 = s2n_metric = 0.0;
 	s2n_valid = false;
+	track_freq_lock = 0;
 }
 
 // modem types CW and RTTY do not use the base init()
@@ -157,6 +158,8 @@ void modem::init()
 
 double modem::track_freq(double freq)
 {
+	if(track_freq_lock) return(freq);
+	
 	if(freq >= progdefaults.track_freq_min &&
 	   freq <= progdefaults.track_freq_max)
 		return(freq);
