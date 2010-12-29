@@ -243,7 +243,7 @@ static void dl_fldigi_gps_set_debugpos(float lat, float lon, int alt)
 static void *serial_thread(void *a)
 {
 	char *port, *identity;
-	int baud, got_a_fix,  i, c, s;
+	int baud, got_a_fix, i, c;
 	FILE *f;
 	struct gps_data fix;
 	struct timespec abstime;
