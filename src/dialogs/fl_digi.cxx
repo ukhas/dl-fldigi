@@ -1428,6 +1428,7 @@ void cb_mnuPlayback(Fl_Widget *w, void *d)
 }
 void cb_mnuStream(Fl_Widget *w, void *d)
 {
+	cout << "Stream Selected" << endl;
 	if (!scard) {
 	 return;
 	 }
