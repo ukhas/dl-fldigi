@@ -66,6 +66,7 @@
 #include "ringbuffer.h"
 #include "debug.h"
 
+pthread_mutex_t stream_test_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define	SND_BUF_LEN		65536
 // #define	SRC_BUF_LEN		(8*SND_BUF_LEN)
 
@@ -203,13 +204,15 @@ int SoundBase::Playback(bool val)
 int SoundBase::Stream(bool val)
 {
 	if (!val) {
+		pthread_mutex_lock(&stream_test_mutex);
+		stream = false;
 		if (ifStream) {
 			int err;
 			if ((err = sf_close(ifStream)) != 0)
 				LOG_ERROR("sf_close error: %s", sf_error_number(err));
 			ifStream = 0;
 		}
-		stream = false;
+		pthread_mutex_unlock(&stream_test_mutex);
 		return 1;
 	}
 	const char* fname;
@@ -578,7 +581,9 @@ size_t SoundOSS::Read(float *buffer, size_t buffersize)
 		return buffersize;
 	}
 	if (stream) {
+		pthread_mutex_lock(&stream_test_mutex);
 		read_file(ifStream, buffer, buffersize);
+		pthread_mutex_unlock(&stream_test_mutex);
 		if (progdefaults.EnableMixer)
 			for (size_t i = 0; i < buffersize; i++)
 				buffer[i] *= progStatus.RcvMixer;
@@ -1032,7 +1037,9 @@ size_t SoundPort::Read(float *buf, size_t count)
 		}
 	}
         if (stream) {
+		pthread_mutex_lock(&stream_test_mutex);
 		read_file(ifStream, buf, count);
+		pthread_mutex_unlock(&stream_test_mutex);
 		if (progdefaults.EnableMixer)
 			for (size_t i = 0; i < count; i++)
 				buf[i] *= progStatus.RcvMixer;
@@ -1832,7 +1839,9 @@ size_t SoundPulse::Read(float *buf, size_t count)
 		}
 	}
 	if (stream) {
+		pthread_mutex_lock(&stream_test_mutex);
 		read_file(ifStream, buf, count);
+		pthread_mutex_unlock(&stream_test_mutex);
 		if (progdefaults.EnableMixer)
 			for (size_t i = 0; i < count; i++)
 				buf[i] *= progStatus.RcvMixer;
@@ -1932,7 +1941,9 @@ size_t SoundNull::Read(float *buf, size_t count)
 				buf[i] *= progStatus.RcvMixer;
 	}
 	else if (stream) {
+		pthread_mutex_lock(&stream_test_mutex);
 		read_file(ifStream, buf, count);
+		pthread_mutex_unlock(&stream_test_mutex);
 		if (progdefaults.EnableMixer)
 			for (size_t i = 0; i < count; i++)
 				buf[i] *= progStatus.RcvMixer;
