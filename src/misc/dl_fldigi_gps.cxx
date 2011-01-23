@@ -396,7 +396,7 @@ static void *serial_thread(void *a)
 					chars = 0;
 
 					pthread_mutex_lock(&serial_info_mutex);
-					s = serial_updated;
+					int s = serial_updated;
 					pthread_mutex_unlock(&serial_info_mutex);
 
 					if (s)
