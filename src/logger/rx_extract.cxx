@@ -293,8 +293,8 @@ void rx_extract_add(int c)
 
 			rx_extract_reset();
 			active_modem->track_freq_lock--;
-		} else if (rx_buff.length() > 16384) {
-			put_status("dl_fldigi: extract buffer exeeded 16384 bytes", 20, STATUS_CLEAR);
+		} else if (rx_buff.length() > 200) {
+			put_status("dl_fldigi: extract buffer exeeded 200 bytes", 20, STATUS_CLEAR);
 			rx_extract_reset();
 			active_modem->track_freq_lock--;
 		}
