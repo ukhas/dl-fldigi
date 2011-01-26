@@ -922,23 +922,41 @@ char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length)
 	return(SSDV_OK);
 }
 
-char ssdv_dec_is_packet(uint8_t *packet, int *errors)
+uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
 {
-	ssdv_packet_info_t p;
 	int i;
 	
-	/* Headers present? TODO: Check for fuzzy headers */
-	if(packet[0] != 0x55 || packet[1] != 0x66) return(-1);
+	crc = crc ^ ((uint16_t) data << 8);
+	for(i = 0; i < 8; i++)
+	{
+		if(crc & 0x8000) crc = (crc << 1) ^ 0x1021;
+		else crc <<= 1;
+	}
 	
-	/* Looks like a packet header, try the reed-solomon decoder */
-	i = decode_rs_8(&packet[1], 0, 0, 0);
+	return(crc);
+}
+
+char ssdv_dec_is_packet(uint8_t *packet, int *errors)
+{
+	uint8_t pkt[SSDV_PKT_SIZE];
+	ssdv_packet_info_t p;
+	uint16_t x;
+	int i;
+	
+	/* Testing is destructive, work on a copy */
+	memcpy(pkt, packet, SSDV_PKT_SIZE);
+	pkt[0] = 0x55;
+	pkt[1] = 0x66;
+	
+	/* Run the reed-solomon decoder */
+	i = decode_rs_8(&pkt[1], 0, 0, 0);
 	if(i < 0) return(-1); /* Reed-solomon decoder failed */
-	if(i > 0) fprintf(stderr, "ssdv: %i bytes corrected\n", i);
-	
 	if(errors) *errors = i;
 	
-	/* Decode and test the header */
-	ssdv_dec_header(&p, packet);
+	/* Sanity checks */
+	if(pkt[1] != 0x66) return(-1);
+	
+	ssdv_dec_header(&p, pkt);
 	if(p.width == 0 || p.height == 0) return(-1);
 	if(p.mcu_id != 0xFFFF)
 	{
@@ -946,7 +964,16 @@ char ssdv_dec_is_packet(uint8_t *packet, int *errors)
 		if(p.mcu_offset >= SSDV_PKT_SIZE_PAYLOAD * 8) return(-1);
 	}
 	
-	/* Appears to be a valid packet */
+	/* Test the checksum */
+	for(i = 1, x = 0xFFFF; i < SSDV_PKT_SIZE - SSDV_PKT_SIZE_RSCODES - SSDV_PKT_SIZE_CRC; i++)
+		x = crc_xmodem_update(x, pkt[i]);
+	
+	if(pkt[i++] != (x >> 8)) return(-1);
+	if(pkt[i++] != (x & 0xFF)) return(-1);
+	
+	/* Appears to be a valid packet! Copy it back */
+	memcpy(packet, pkt, SSDV_PKT_SIZE);
+	
 	return(0);
 }
 
