@@ -285,7 +285,7 @@ void trx_trx_receive_loop()
 				cout << date_time << "\n";
 #endif
 //--------------------------------------------------------
-				string dlfldigi_version = "r114"; //Please update with revision number
+				string dlfldigi_version = "r115"; //Please update with revision number
 //-------------------------------------------------------
 				
 				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
