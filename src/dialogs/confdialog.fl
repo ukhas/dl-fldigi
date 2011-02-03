@@ -293,35 +293,50 @@ defined here. Tab and newline are automatically included.} xywh {125 285 75 24} 
                 label {Prompt to save log}
                 callback {progdefaults.NagMe=o->value();
 progdefaults.changed = true;}
-                tooltip {Bug me about saving log entries} xywh {125 139 155 20} down_box DOWN_BOX
+                tooltip {Bug me about saving log entries} xywh {21 158 238 20} down_box DOWN_BOX
                 code0 {o->value(progdefaults.NagMe);}
               }
               Fl_Check_Button btnClearOnSave {
                 label {Clear on save}
                 callback {progdefaults.ClearOnSave=o->value();
 progdefaults.changed = true;}
-                tooltip {Clear log entries after saving or using macro <LOG>} xywh {125 164 125 20} down_box DOWN_BOX
+                tooltip {Clear log entries after saving or using macro <LOG>} xywh {21 183 238 20} down_box DOWN_BOX
                 code0 {o->value(progdefaults.ClearOnSave);}
               }
               Fl_Check_Button btnAutoFillQSO {
                 label {Auto-fill Country and Azimuth}
                 callback {progdefaults.autofill_qso_fields = o->value();
 progdefaults.changed = true;}
-                tooltip {Fill in Country / Azimuth using cty.dat information} xywh {125 189 225 20} down_box DOWN_BOX
+                tooltip {Fill in Country / Azimuth using cty.dat information} xywh {21 208 238 20} down_box DOWN_BOX
                 code0 {o->value(progdefaults.autofill_qso_fields);}
               }
               Fl_Check_Button btnCallUpperCase {
-                label {Convert callsign field to upper case}
+                label {Convert callsign to upper case}
                 callback {progdefaults.calluppercase = o->value();
 progdefaults.changed = true;}
-                tooltip {Force callsign field to UPPERCASE} xywh {125 214 282 20} down_box DOWN_BOX
+                tooltip {Force callsign field to UPPERCASE} xywh {21 233 238 20} down_box DOWN_BOX
                 code0 {o->value(progdefaults.calluppercase);}
+              }
+              Fl_Check_Button btnDateTimeSort {
+                label {Sort by Date/Time OFF}
+                callback {progdefaults.sort_date_time_off = o->value();
+progdefaults.changed = true;
+reload_browser();}
+                tooltip {Sort by date/time OFF - effects all ADIF/Cabrillo reports} xywh {275 183 191 20} down_box DOWN_BOX
+                code0 {o->value(progdefaults.sort_date_time_off);}
+              }
+              Fl_Check_Button btndate_time_force {
+                label {Date time ON == OFF}
+                callback {progdefaults.force_date_time = o->value();
+progdefaults.changed = true;}
+                tooltip {Force date/time ON == date/time OFF} xywh {275 208 191 20} down_box DOWN_BOX
+                code0 {o->value(progdefaults.force_date_time);}
               }
               Fl_Input inpMyPower {
                 label {Transmit Power}
                 callback {progdefaults.mytxpower = o->value();
 progdefaults.changed = true;}
-                tooltip {Tx power used for logbook entries} xywh {125 240 50 24} align 8
+                tooltip {Tx power used for logbook entries} xywh {275 154 50 24} align 8
                 code0 {o->value(progdefaults.mytxpower.c_str());}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Input2
@@ -1996,7 +2011,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabRig {
-        label Rig open
+        label Rig
         tooltip {Transceiver control} xywh {0 25 500 345} hide
       } {
         Fl_Tabs tabsRig {open
@@ -2834,7 +2849,7 @@ progdefaults.changed = true;}
       }
       Fl_Group tabID {
         label ID
-        xywh {0 25 500 345} hide
+        xywh {0 25 500 346} hide
       } {
         Fl_Group {} {
           label {Video Preamble ID} open
@@ -2996,22 +3011,27 @@ progdefaults.changed = true;}
         }
         Fl_Group {} {
           label {Reed-Solomon ID (Tx)} open
-          xywh {300 198 195 167} box ENGRAVED_FRAME align 21
+          xywh {300 198 195 85} box ENGRAVED_FRAME align 21
         } {
-          Fl_Check_Button chkRSidPost {
-            label {Send at EOT}
-            callback {progdefaults.rsid_post = o->value();
-progdefaults.changed = true;}
-            tooltip {Send RSID at end of transmission} xywh {310 247 120 20} down_box DOWN_BOX hide
-            code0 {o->value(progdefaults.rsid_post);}
-          }
           Fl_Button bRSIDTxModes {
             label {Transmit modes}
             callback {mode_browser->label(o->label());
 mode_browser->callback(0);
 mode_browser->show(&progdefaults.rsid_tx_modes);
 progdefaults.changed = true;}
-            xywh {310 224 130 20}
+            xywh {328 233 130 20}
+          }
+        }
+        Fl_Group {} {
+          label {Pre-Signal Tone} open
+          xywh {300 284 195 80} box ENGRAVED_FRAME align 21
+        } {
+          Fl_Counter val_pretone {
+            label Seconds
+            callback {progdefaults.pretone = o->value();
+progdefaults.changed = true;}
+            tooltip {Use for triggering amplifier carrier detect} xywh {323 310 140 21} minimum 0 maximum 10
+            code0 {o->value(progdefaults.pretone);}
           }
         }
       }
@@ -3067,7 +3087,7 @@ OFF - keep current wf cursor position} xywh {15 101 348 20} down_box DOWN_BOX va
             }
           }
           Fl_Group tabSpot {
-            label Spotting
+            label Spotting open
             xywh {0 50 500 320} hide
           } {
             Fl_Group {} {
@@ -3137,13 +3157,13 @@ progdefaults.changed = true;}
               }
               Fl_Box boxPSKRepMsg {
                 label {<PSK Reporter error message>}
-                xywh {30 236 300 24} labelfont 2
+                xywh {15 220 300 48} labelfont 2
                 code0 {boxPSKRepMsg->label(0);}
               }
             }
           }
           Fl_Group tabMacros {
-            label Macros open
+            label Macros
             xywh {0 50 500 320} hide
           } {
             Fl_Group {} {open
@@ -3238,15 +3258,23 @@ progdefaults.changed = true;}
               label {Talker Socket (MS only)} open
               xywh {5 291 490 73} box ENGRAVED_FRAME align 21
             } {
-              Fl_Button btnConnectTalker {
-                label Connect
-                callback {open_talker();}
-                xywh {30 319 70 20}
+              Fl_Light_Button btnConnectTalker {
+                label Talker
+                callback {if (o->value()) open_talker();
+else close_talker();}
+                xywh {31 311 74 20} selection_color 60
                 code0 {extern void open_talker();}
+                code1 {extern void close_talker();}
               }
               Fl_Box {} {
-                label {Connect to external Talker Program}
-                xywh {109 317 368 24} align 20
+                label {Connect/disconnect to Talker sockt server}
+                xywh {110 311 345 20} align 20
+              }
+              Fl_Check_Button btn_auto_talk {
+                label {Auto connect when fldigi opens (server must be up)}
+                callback {progdefaults.auto_talk = o->value();}
+                xywh {30 339 391 15} down_box DOWN_BOX
+                code0 {o->value(progdefaults.auto_talk);}
               }
             }
           }
@@ -3320,7 +3348,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabQRZ {
-        label {Callsign DB} open
+        label {Callsign DB}
         tooltip {Callsign database} xywh {0 25 500 345} hide
       } {
         Fl_Group {} {

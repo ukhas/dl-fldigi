@@ -545,6 +545,9 @@
         ELEM_(std::string, strTextid, "STRTEXTID",                                      \
               "Video ID text for SENDTEXTID (keep short!)",                             \
               "CQ")                                                                     \
+        ELEM_(double, pretone, "PRETONE",                                               \
+              "Single tone at center of modem BW, carrier detect for amplifiers",       \
+              0.0)                                                                      \
         ELEM_(bool, macroCWid, "", "",  false)                                          \
         ELEM_(int, videowidth, "VIDEOWIDTH",                                            \
               "Video ID text width (characters per row)",                               \
@@ -577,6 +580,12 @@
         ELEM_(bool, ClearOnSave, "CLEARONSAVE",                                         \
               "Clear log fields on save",                                               \
               false)                                                                    \
+        ELEM_(bool, sort_date_time_off, "SORTDATEOFF",                                  \
+              "Sort log by date/time off",                                              \
+              true)                                                                     \
+        ELEM_(bool, force_date_time, "FORCEDATETIME",                                   \
+              "Force date/time ON == OFF",                                              \
+              false)                                                                    \
         ELEM_(bool, menuicons, "MENUICONS",                                             \
               "Show menu icons",                                                        \
               true)                                                                     \
@@ -603,6 +612,9 @@
               true)                                                                     \
         ELEM_(bool, speak, "SPEAK",                                                     \
               "Capture text to file 'talk/textout.txt'",                                \
+              false)                                                                    \
+        ELEM_(bool, auto_talk, "AUTO_TALK",                                             \
+              "Connect to Digitalk socket server during program initialization",        \
               false)                                                                    \
         /* QRZ */                                                                       \
         ELEM_(int, QRZ, "QRZTYPE",                                                      \
@@ -776,7 +788,7 @@
               "Operator name",                                                          \
               "")                                                                       \
         ELEM_(std::string, myLocator, "MYLOC",                                          \
-              "Operator IARU locator",                                                  \
+              "Operator Maidenhead locator",                                                  \
               "")                                                                       \
         ELEM_(std::string, myAntenna, "MYANTENNA",                                      \
               "Antenna description (keep short!)",                                      \

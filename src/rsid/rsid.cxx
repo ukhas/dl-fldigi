@@ -143,6 +143,8 @@ LOG_FILE_SOURCE(debug::LOG_MODEM);
         ELEM_(193, CONTESTIA_64_1000, MODE_CONTESTIA)   \
         ELEM_(191, CONTESTIA_64_2000, MODE_CONTESTIA)   \
                                                         \
+        ELEM_(261, CONTESTIA_128_2000, MODE_CONTESTIA)  \
+                                                        \
         ELEM_(56, VOICE, NUM_MODES)                     \
                                                         \
         ELEM_(60, MFSK8, MODE_MFSK8)                    \
@@ -725,6 +727,11 @@ void cRsId::apply(int iSymbol, int iBin)
 		progdefaults.contestiabw = 4;
 		REQ(&set_contestia_tab_widgets);
 		break;
+	case RSID_CONTESTIA_128_2000:
+		progdefaults.contestiatones = 6;
+		progdefaults.contestiabw = 4;
+		REQ(&set_contestia_tab_widgets);
+		break;
 	// mt63
 	case RSID_MT63_500_LG: case RSID_MT63_1000_LG: case RSID_MT63_2000_LG:
 		progdefaults.mt63_interleave = 64;
@@ -970,6 +977,9 @@ void cRsId::send(bool preRSID)
 		else if (progdefaults.contestiatones == 5 && progdefaults.contestiabw == 4)
 			rmode = RSID_CONTESTIA_64_2000;
 
+		else if (progdefaults.contestiatones == 6 && progdefaults.contestiabw == 4)
+			rmode = RSID_CONTESTIA_128_2000;
+
 		else
 			return;
 		break;
@@ -1037,18 +1047,20 @@ void cRsId::send(bool preRSID)
 		outbuf = new double[symlen];
 	}
 
+/*
 	// transmit 6 symbol periods of silence at end of transmission
 	if (!preRSID) {
 		memset(outbuf, 0, symlen * sizeof(*outbuf));
 		for (int i = 0; i < 6; i++)
 			active_modem->ModulateXmtr(outbuf, symlen);
 	}
-
+*/
 	// transmit sequence of 15 symbols (tones)
 	int iTone;
 	double freq, phaseincr;
 	double fr = 1.0 * active_modem->get_txfreq() - (RSID_SAMPLE_RATE * 7 / 1024);
 	double phase = 0.0;
+
 
 	for (int i = 0; i < 15; i++) {
 		iTone = rsid[i];
@@ -1065,12 +1077,16 @@ void cRsId::send(bool preRSID)
 		active_modem->ModulateXmtr(outbuf, symlen);
 
 	}
-
+// one symbol period of silence
+	memset(outbuf, 0, symlen * sizeof(*outbuf));
+	active_modem->ModulateXmtr(outbuf, symlen);
+/*
 	// transmit 6 symbol periods of silence at beginning of transmission
 	if (preRSID) {
 		memset(outbuf, 0, symlen * sizeof(*outbuf));
 		for (int i = 0; i < 6; i++)
 			active_modem->ModulateXmtr(outbuf, symlen);
 	}
+*/
 }
 

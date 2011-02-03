@@ -95,9 +95,15 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(LINE_SEP);
 	w->add(_("<GET>\ttext to NAME/QTH"));
 
+#ifdef __WIN32__
+	w->add(LINE_SEP);
+	w->add(_("<TALK:on|off|t>\tDigitalk On, Off, Toggle"));
+#endif
+
 	w->add(LINE_SEP);
 	w->add(_("<LOG>\tsave QSO data"));
 	w->add(_("<LNW>\tlog at xmt time"));
+	w->add(_("<CLRLOG>\tclear log fields"));
 
 	w->add(LINE_SEP);
 	w->add(_("<QSOTIME>\tQSO time (HHMM))"));

@@ -55,6 +55,10 @@
 #include <string>
 #include <fstream>
 
+#ifdef __WIN32__
+#include "speak.h"
+#endif
+
 using namespace std;
 
 MACROTEXT macros;
@@ -112,6 +116,7 @@ void pXBEG(string &, size_t &);
 void pXEND(string &, size_t &);
 void pLOG(string &, size_t &);
 void pLNW(string &, size_t &);
+void pCLRLOG(string &, size_t &);
 void pTIMER(string &, size_t &);
 void pIDLE(string &, size_t &);
 void pTUNE(string &, size_t &);
@@ -133,6 +138,11 @@ void pAFC(string &, size_t &);
 void pLOCK(string &, size_t &);
 void pRX_RSID(string &, size_t &);
 void pTX_RSID(string &, size_t &);
+
+#ifdef __WIN32__
+void pTALK(string &, size_t &);
+#endif
+
 void pWAIT(string&, size_t &);
 void pSRCHUP(string&, size_t&);
 void pSRCHDN(string&, size_t&);
@@ -184,6 +194,7 @@ MTAGS mtags[] = {
 {"<SAVEXCHG>",	pSAVEXCHG},
 {"<LOG>",		pLOG},
 {"<LNW>",		pLNW},
+{"<CLRLOG>",	pCLRLOG},
 {"<TIMER:",		pTIMER},
 {"<IDLE:",		pIDLE},
 {"<TUNE:",		pTUNE},
@@ -211,6 +222,9 @@ MTAGS mtags[] = {
 {"<MAPIT:",		pMAPIT},
 {"<MAPIT>",		pMAPIT},
 {"<REPEAT>",	pREPEAT},
+#ifdef __WIN32__
+{"<TALK:",		pTALK},
+#endif
 {0, 0}
 };
 
@@ -233,6 +247,7 @@ string cutstring(const char *s)
 		if (cutstr[i] >= '0' && cutstr[i] <= '9')
 			cutstr[i] = cutnumbers[cutstr[i] - '0'];
 	return cutstr;
+
 }
 
 size_t mystrftime( char *s, size_t max, const char *fmt, const struct tm *tm) {
@@ -451,6 +466,7 @@ void pRST(string &s, size_t &i)
 	s.replace( i, 5, cutstring(inpRstOut->value()));
 }
 
+
 void pMYCALL(string &s, size_t &i)
 {
 	s.replace( i, 8, inpMyCallsign->value() );
@@ -573,6 +589,7 @@ void pID(string &s, size_t &i)
 void pTEXT(string &s, size_t &i)
 {
 	progdefaults.macrotextid = true;
+
 	s.replace( i, 6, "");
 }
 
@@ -671,6 +688,11 @@ void pLOG(string &s, size_t &i)
 void pLNW(string &s, size_t &i)
 {
 	s.replace(i, 5, "^L");
+}
+
+void pCLRLOG(string &s, size_t &i)
+{
+	s.replace(i, 10, "^C");
 }
 
 void pMODEM_compat(string &s, size_t &i)
@@ -847,6 +869,24 @@ void pRX_RSID(string &s, size_t &i)
   }
   s.replace(i, endbracket - i + 1, "");
 }
+
+#ifdef __WIN32__
+void pTALK(string &s, size_t &i)
+{
+  size_t endbracket = s.find('>',i);
+  string sVal = s.substr(i+6, endbracket - i - 6);
+  if (sVal.length() > 0) {
+    // sVal = on|off   [ON, OFF]
+    if (sVal.compare(0,2,"on") == 0)
+		open_talker();
+    else if (sVal.compare(0,3,"off") == 0)
+		close_talker();
+    else if (sVal.compare(0,1,"t") == 0)
+		toggle_talker();
+  }
+  s.replace(i, endbracket - i + 1, "");
+}
+#endif
 
 void pSRCHUP(string &s, size_t &i)
 {

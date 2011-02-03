@@ -1538,7 +1538,7 @@ void cb_mnuCheckUpdate(Fl_Widget*, void*)
 		string version_str;
 		unsigned long version;
 	} sites[] = {
-		{ PACKAGE_DL, "downloads/fldigi-([0-9.]+).tar.gz", "", 0 },
+		{ PACKAGE_DL, "downloads/fldigi/fldigi-([0-9.]+).tar.gz", "", 0 },
 		{ PACKAGE_PROJ, "fldigi/fldigi-([0-9.]+).tar.gz", "", 0 }
 	}, *latest;
 	string reply;
@@ -2057,10 +2057,10 @@ void cbClearCall(Fl_Widget *b, void *)
 
 void qsoClear_cb(Fl_Widget *b, void *)
 {
-	bool clearlog = true;
+	bool CLEARLOG = true;
 	if (progdefaults.NagMe && !oktoclear)
-		clearlog = (fl_choice2(_("Clear log fields?"), _("Cancel"), _("OK"), NULL) == 1);
-	if (clearlog) {
+		CLEARLOG = (fl_choice2(_("Clear log fields?"), _("Cancel"), _("OK"), NULL) == 1);
+	if (CLEARLOG) {
 		clearQSO();
 	}
 	clear_Lookup();
@@ -5652,6 +5652,13 @@ int get_tx_char(void)
 		state = STATE_CHAR;
 		c = -1;
 		REQ(qso_save_now);
+		break;
+	case 'C':
+		if (state != STATE_CTRL)
+			break;
+		state = STATE_CHAR;
+		c = -1;
+		REQ(clearQSO);
 		break;
 	case '^':
 		state = STATE_CHAR;

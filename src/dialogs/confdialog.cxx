@@ -214,6 +214,21 @@ static void cb_btnCallUpperCase(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
+Fl_Check_Button *btnDateTimeSort=(Fl_Check_Button *)0;
+
+static void cb_btnDateTimeSort(Fl_Check_Button* o, void*) {
+  progdefaults.sort_date_time_off = o->value();
+progdefaults.changed = true;
+reload_browser();
+}
+
+Fl_Check_Button *btndate_time_force=(Fl_Check_Button *)0;
+
+static void cb_btndate_time_force(Fl_Check_Button* o, void*) {
+  progdefaults.force_date_time = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Input2 *inpMyPower=(Fl_Input2 *)0;
 
 static void cb_inpMyPower(Fl_Input2* o, void*) {
@@ -2362,19 +2377,19 @@ static void cb_sldrRSIDsquelch(Fl_Value_Slider2* o, void*) {
 progdefaults.changed = true;
 }
 
-Fl_Check_Button *chkRSidPost=(Fl_Check_Button *)0;
-
-static void cb_chkRSidPost(Fl_Check_Button* o, void*) {
-  progdefaults.rsid_post = o->value();
-progdefaults.changed = true;
-}
-
 Fl_Button *bRSIDTxModes=(Fl_Button *)0;
 
 static void cb_bRSIDTxModes(Fl_Button* o, void*) {
   mode_browser->label(o->label());
 mode_browser->callback(0);
 mode_browser->show(&progdefaults.rsid_tx_modes);
+progdefaults.changed = true;
+}
+
+Fl_Counter *val_pretone=(Fl_Counter *)0;
+
+static void cb_val_pretone(Fl_Counter* o, void*) {
+  progdefaults.pretone = o->value();
 progdefaults.changed = true;
 }
 
@@ -2525,10 +2540,17 @@ progdefaults.changed = true;
 
 Fl_Group *grpTalker=(Fl_Group *)0;
 
-Fl_Button *btnConnectTalker=(Fl_Button *)0;
+Fl_Light_Button *btnConnectTalker=(Fl_Light_Button *)0;
 
-static void cb_btnConnectTalker(Fl_Button*, void*) {
-  open_talker();
+static void cb_btnConnectTalker(Fl_Light_Button* o, void*) {
+  if (o->value()) open_talker();
+else close_talker();
+}
+
+Fl_Check_Button *btn_auto_talk=(Fl_Check_Button *)0;
+
+static void cb_btn_auto_talk(Fl_Check_Button* o, void*) {
+  progdefaults.auto_talk = o->value();
 }
 
 Fl_Group *tabPskmail=(Fl_Group *)0;
@@ -3101,31 +3123,43 @@ ab and newline are automatically included."));
             { Fl_Group* o = new Fl_Group(8, 130, 484, 146, _("QSO logging"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = btnNagMe = new Fl_Check_Button(125, 139, 155, 20, _("Prompt to save log"));
+              { Fl_Check_Button* o = btnNagMe = new Fl_Check_Button(21, 158, 238, 20, _("Prompt to save log"));
                 btnNagMe->tooltip(_("Bug me about saving log entries"));
                 btnNagMe->down_box(FL_DOWN_BOX);
                 btnNagMe->callback((Fl_Callback*)cb_btnNagMe);
                 o->value(progdefaults.NagMe);
               } // Fl_Check_Button* btnNagMe
-              { Fl_Check_Button* o = btnClearOnSave = new Fl_Check_Button(125, 164, 125, 20, _("Clear on save"));
+              { Fl_Check_Button* o = btnClearOnSave = new Fl_Check_Button(21, 183, 238, 20, _("Clear on save"));
                 btnClearOnSave->tooltip(_("Clear log entries after saving or using macro <LOG>"));
                 btnClearOnSave->down_box(FL_DOWN_BOX);
                 btnClearOnSave->callback((Fl_Callback*)cb_btnClearOnSave);
                 o->value(progdefaults.ClearOnSave);
               } // Fl_Check_Button* btnClearOnSave
-              { Fl_Check_Button* o = btnAutoFillQSO = new Fl_Check_Button(125, 189, 225, 20, _("Auto-fill Country and Azimuth"));
+              { Fl_Check_Button* o = btnAutoFillQSO = new Fl_Check_Button(21, 208, 238, 20, _("Auto-fill Country and Azimuth"));
                 btnAutoFillQSO->tooltip(_("Fill in Country / Azimuth using cty.dat information"));
                 btnAutoFillQSO->down_box(FL_DOWN_BOX);
                 btnAutoFillQSO->callback((Fl_Callback*)cb_btnAutoFillQSO);
                 o->value(progdefaults.autofill_qso_fields);
               } // Fl_Check_Button* btnAutoFillQSO
-              { Fl_Check_Button* o = btnCallUpperCase = new Fl_Check_Button(125, 214, 282, 20, _("Convert callsign field to upper case"));
+              { Fl_Check_Button* o = btnCallUpperCase = new Fl_Check_Button(21, 233, 238, 20, _("Convert callsign to upper case"));
                 btnCallUpperCase->tooltip(_("Force callsign field to UPPERCASE"));
                 btnCallUpperCase->down_box(FL_DOWN_BOX);
                 btnCallUpperCase->callback((Fl_Callback*)cb_btnCallUpperCase);
                 o->value(progdefaults.calluppercase);
               } // Fl_Check_Button* btnCallUpperCase
-              { Fl_Input2* o = inpMyPower = new Fl_Input2(125, 240, 50, 24, _("Transmit Power"));
+              { Fl_Check_Button* o = btnDateTimeSort = new Fl_Check_Button(275, 183, 191, 20, _("Sort by Date/Time OFF"));
+                btnDateTimeSort->tooltip(_("Sort by date/time OFF - effects all ADIF/Cabrillo reports"));
+                btnDateTimeSort->down_box(FL_DOWN_BOX);
+                btnDateTimeSort->callback((Fl_Callback*)cb_btnDateTimeSort);
+                o->value(progdefaults.sort_date_time_off);
+              } // Fl_Check_Button* btnDateTimeSort
+              { Fl_Check_Button* o = btndate_time_force = new Fl_Check_Button(275, 208, 191, 20, _("Date time ON == OFF"));
+                btndate_time_force->tooltip(_("Force date/time ON == date/time OFF"));
+                btndate_time_force->down_box(FL_DOWN_BOX);
+                btndate_time_force->callback((Fl_Callback*)cb_btndate_time_force);
+                o->value(progdefaults.force_date_time);
+              } // Fl_Check_Button* btndate_time_force
+              { Fl_Input2* o = inpMyPower = new Fl_Input2(275, 154, 50, 24, _("Transmit Power"));
                 inpMyPower->tooltip(_("Tx power used for logbook entries"));
                 inpMyPower->box(FL_DOWN_BOX);
                 inpMyPower->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -5637,7 +5671,7 @@ ll with your audio device."));
         } // Fl_Tabs* tabsSoundCard
         tabSoundCard->end();
       } // Fl_Group* tabSoundCard
-      { tabID = new Fl_Group(0, 25, 500, 345, _("ID"));
+      { tabID = new Fl_Group(0, 25, 500, 346, _("ID"));
         tabID->hide();
         { Fl_Group* o = new Fl_Group(5, 35, 490, 103, _("Video Preamble ID"));
           o->box(FL_ENGRAVED_FRAME);
@@ -5800,19 +5834,25 @@ d frequency"));
           } // Fl_Value_Slider2* sldrRSIDsquelch
           o->end();
         } // Fl_Group* o
-        { Fl_Group* o = new Fl_Group(300, 198, 195, 167, _("Reed-Solomon ID (Tx)"));
+        { Fl_Group* o = new Fl_Group(300, 198, 195, 85, _("Reed-Solomon ID (Tx)"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-          { Fl_Check_Button* o = chkRSidPost = new Fl_Check_Button(310, 247, 120, 20, _("Send at EOT"));
-            chkRSidPost->tooltip(_("Send RSID at end of transmission"));
-            chkRSidPost->down_box(FL_DOWN_BOX);
-            chkRSidPost->callback((Fl_Callback*)cb_chkRSidPost);
-            chkRSidPost->hide();
-            o->value(progdefaults.rsid_post);
-          } // Fl_Check_Button* chkRSidPost
-          { bRSIDTxModes = new Fl_Button(310, 224, 130, 20, _("Transmit modes"));
+          { bRSIDTxModes = new Fl_Button(328, 233, 130, 20, _("Transmit modes"));
             bRSIDTxModes->callback((Fl_Callback*)cb_bRSIDTxModes);
           } // Fl_Button* bRSIDTxModes
+          o->end();
+        } // Fl_Group* o
+        { Fl_Group* o = new Fl_Group(300, 284, 195, 80, _("Pre-Signal Tone"));
+          o->box(FL_ENGRAVED_FRAME);
+          o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+          { Fl_Counter* o = val_pretone = new Fl_Counter(323, 310, 140, 21, _("Seconds"));
+            val_pretone->tooltip(_("Use for triggering amplifier carrier detect"));
+            val_pretone->minimum(0);
+            val_pretone->maximum(10);
+            val_pretone->step(0.1);
+            val_pretone->callback((Fl_Callback*)cb_val_pretone);
+            o->value(progdefaults.pretone);
+          } // Fl_Counter* val_pretone
           o->end();
         } // Fl_Group* o
         tabID->end();
@@ -5950,7 +5990,7 @@ d frequency"));
                 btnPSKRepInit->tooltip(_("Initialize the socket client"));
                 btnPSKRepInit->callback((Fl_Callback*)cb_btnPSKRepInit);
               } // Fl_Button* btnPSKRepInit
-              { boxPSKRepMsg = new Fl_Box(30, 236, 300, 24, _("<PSK Reporter error message>"));
+              { boxPSKRepMsg = new Fl_Box(15, 220, 300, 48, _("<PSK Reporter error message>"));
                 boxPSKRepMsg->labelfont(2);
                 boxPSKRepMsg->label(0);
               } // Fl_Box* boxPSKRepMsg
@@ -6034,12 +6074,18 @@ d frequency"));
             { grpTalker = new Fl_Group(5, 291, 490, 73, _("Talker Socket (MS only)"));
               grpTalker->box(FL_ENGRAVED_FRAME);
               grpTalker->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { btnConnectTalker = new Fl_Button(30, 319, 70, 20, _("Connect"));
+              { btnConnectTalker = new Fl_Light_Button(31, 311, 74, 20, _("Talker"));
+                btnConnectTalker->selection_color((Fl_Color)FL_DARK_GREEN);
                 btnConnectTalker->callback((Fl_Callback*)cb_btnConnectTalker);
-              } // Fl_Button* btnConnectTalker
-              { Fl_Box* o = new Fl_Box(109, 317, 368, 24, _("Connect to external Talker Program"));
+              } // Fl_Light_Button* btnConnectTalker
+              { Fl_Box* o = new Fl_Box(110, 311, 345, 20, _("Connect/disconnect to Talker sockt server"));
                 o->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
               } // Fl_Box* o
+              { Fl_Check_Button* o = btn_auto_talk = new Fl_Check_Button(30, 339, 391, 15, _("Auto connect when fldigi opens (server must be up)"));
+                btn_auto_talk->down_box(FL_DOWN_BOX);
+                btn_auto_talk->callback((Fl_Callback*)cb_btn_auto_talk);
+                o->value(progdefaults.auto_talk);
+              } // Fl_Check_Button* btn_auto_talk
               grpTalker->end();
             } // Fl_Group* grpTalker
             tabFileExtraction->end();
