@@ -1375,7 +1375,7 @@ progdefaults.changed = true;}
                 callback {progdefaults.DOMINOEX_BW = o->value();
 resetDOMEX();
 progdefaults.changed = true;}
-                tooltip {Filter bandwidth relative to signal width} xywh {156 141 63 20} type Simple align 8 minimum 1 maximum 2 value 1.5
+                tooltip {Filter bandwidth relative to signal width} xywh {156 141 63 20} type Simple align 8 minimum 1 maximum 5 value 1.5
                 code0 {o->value(progdefaults.DOMINOEX_BW);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Counter2

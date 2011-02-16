@@ -4194,7 +4194,7 @@ an merging"));
                 valDominoEX_BW->labelsize(14);
                 valDominoEX_BW->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
                 valDominoEX_BW->minimum(1);
-                valDominoEX_BW->maximum(2);
+                valDominoEX_BW->maximum(5);
                 valDominoEX_BW->value(1.5);
                 valDominoEX_BW->callback((Fl_Callback*)cb_valDominoEX_BW);
                 valDominoEX_BW->align(FL_ALIGN_RIGHT);
