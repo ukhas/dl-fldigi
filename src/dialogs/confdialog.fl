@@ -1380,6 +1380,16 @@ progdefaults.changed = true;}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Counter2
               }
+              Fl_Counter valDominoEX_ADJ {
+                label {Tone-spacing adjust}
+                callback {progdefaults.DOMINOEX_ADJ = o->value();
+resetDOMEX();
+progdefaults.changed = true;}
+                tooltip {Tone-spacing adjust} xywh {156 166 63 20} type Simple align 8 minimum -100 maximum 100 value 0
+                code0 {o->value(progdefaults.DOMINOEX_ADJ);}
+                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                class Fl_Counter2
+              }
               Fl_Check_Button chkDominoEX_FEC {
                 label FEC
                 callback {progdefaults.DOMINOEX_FEC = o->value();

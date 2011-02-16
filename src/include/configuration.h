@@ -459,6 +459,9 @@
         ELEM_(double, DOMINOEX_BW, "DOMINOEXBW",                                        \
               "Filter bandwidth factor (bandwidth relative to signal width)",           \
               2.0)                                                                      \
+        ELEM_(double, DOMINOEX_ADJ, "DOMINOEXADJ",                                      \
+              "Adjust tone-spacing",                                                    \
+              0.0)                                                                      \
         ELEM_(std::string, secText, "SECONDARYTEXT",                                    \
               "Secondary text (sent during keyboard idle times)",                       \
               "")                                                                       \
