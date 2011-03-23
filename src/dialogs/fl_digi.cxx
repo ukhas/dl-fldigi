@@ -4405,7 +4405,9 @@ void noop_controls() // create and then hide all controls not being used
 
 	txtRigName = new Fl_Box(defwidget); txtRigName->hide();
 	qsoFreqDisp = new cFreqControl(0,0,100,10,""); qsoFreqDisp->hide();
-	qso_opMODE = new Fl_ComboBox(defwidget); qso_opMODE->hide();
+	if(!bHAB) {
+		qso_opMODE = new Fl_ComboBox(defwidget); qso_opMODE->hide();
+	}
 	qso_opBW = new Fl_ComboBox(defwidget); qso_opBW->hide();
 	qso_opPICK = new Fl_Button(defwidget); qso_opPICK->hide();
 
@@ -4908,8 +4910,22 @@ void create_fl_digi_main_dl_fldigi() {
 												 progdefaults.FDbackground.B));
 		qsoFreqDisp1->value(0);
 		//qsoFreqDisp2->resizable(NULL);
-	
-		{ habCustom = new Fl_Output(rightof(qsoFreqDisp1) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 6 - freqwidth, Hentry);
+		
+		int w_pmb = (freqwidth - Wbtn + 2 * pad) / 2;
+		qso_opMODE = new Fl_ComboBox(rightof(qsoFreqDisp1) + 2, below(habFlightXML) + 4, w_pmb, Hentry);
+		qso_opMODE->box(FL_DOWN_BOX);
+		qso_opMODE->color(FL_BACKGROUND2_COLOR);
+		qso_opMODE->selection_color(FL_BACKGROUND_COLOR);
+		qso_opMODE->labeltype(FL_NORMAL_LABEL);
+		qso_opMODE->labelfont(0);
+		qso_opMODE->labelsize(14);
+		qso_opMODE->labelcolor(FL_FOREGROUND_COLOR);
+		qso_opMODE->callback((Fl_Callback*)cb_qso_opMODE);
+		qso_opMODE->align(FL_ALIGN_TOP);
+		qso_opMODE->when(FL_WHEN_RELEASE);
+		qso_opMODE->end();
+		
+		{ habCustom = new Fl_Output(rightof(qso_opMODE) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 8 - freqwidth - w_pmb, Hentry);
 		habCustom->tooltip(_("Custom"));
 		habCustom->box(FL_DOWN_BOX);
 		habCustom->color(FL_BACKGROUND2_COLOR);
