@@ -826,10 +826,13 @@ void dl_fldigi_update_payloads()
 						case 425:
 							p->shift = 8;
 							break;
-						case 850:
+						case 600:
 							p->shift = 9;
 							break;
-				}
+						case 850:
+							p->shift = 10;
+							break;
+						}
 			}
 			
 			else if (strcmp("baud", xml->getNodeName()) == 0)
