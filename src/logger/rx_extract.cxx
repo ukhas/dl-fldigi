@@ -390,9 +390,10 @@ void rx_extract_update_ui(string rx_buff)
 			remainingString.erase(asterixPosition);
 			habChecksum->value(checksumData.c_str());
 		}
-					
-		for ( int x = 1; x < (number_commas + 1); x++ ) {
+		
+		for ( int x = 1; x <= (number_commas + 1); x++ ) {
 			pos = remainingString.find(progdefaults.xmlField_delimiter.at(0));
+			if(pos < 0) pos = remainingString.length();
 			extractedField = remainingString.substr(0, pos);
 			remainingString.erase(0, (pos + 1));
 		if (x == progdefaults.xml_time) {
