@@ -3631,7 +3631,19 @@ dl_fldigi_downloaded_once = 1;}
                   code0 {o->value(progdefaults.xml_altitude);}
                   class Fl_Value_Input2
                 }
+                Fl_Check_Button cd_xml_longitude_nmea {
+                  label NMEA
+                  callback {progdefaults.xml_longitude_nmea = o->value();}
+                  xywh {400 295 64 25} down_box DOWN_BOX
+                  code0 {o->value(progdefaults.xml_longitude_nmea);}
+                }
               }
+            }
+            Fl_Check_Button cd_xml_latitude_nmea {
+              label NMEA
+              callback {progdefaults.xml_latitude_nmea = o->value();}
+              xywh {400 270 64 25} down_box DOWN_BOX
+              code0 {o->value(progdefaults.xml_latitude_nmea);}
             }
           }
           Fl_Group {} {

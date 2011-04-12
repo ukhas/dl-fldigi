@@ -400,12 +400,34 @@ void rx_extract_update_ui(string rx_buff)
 				habTime->value(extractedField.c_str());
 		}
 		else if (x == progdefaults.xml_latitude) {
-			habLat->value(extractedField.c_str());
-			targetCoords.lat = atof(extractedField.c_str());
+			char s[20];
+			double lat;
+			
+			lat = atof(extractedField.c_str());
+			if(progdefaults.xml_latitude_nmea)
+			{
+				double in, fr = modf(lat / 100.0, &in);
+				lat = in + (fr * (100.0 / 60.0));
+			}
+			
+			snprintf(s, 20, "%.4f", lat);
+			habLat->value(s);
+			targetCoords.lat = lat;
 		}
 		else if (x == progdefaults.xml_longitude) {
-			habLon->value(extractedField.c_str());
-			targetCoords.lon = atof(extractedField.c_str());
+			char s[20];
+			double lon;
+			
+			lon = atof(extractedField.c_str());
+			if(progdefaults.xml_longitude_nmea)
+			{
+				double in, fr = modf(lon / 100.0, &in);
+				lon = in + (fr * (100.0 / 60.0));
+			}
+			targetCoords.lon = lon;
+			
+			snprintf(s, 20, "%.4f", lon);
+			habLon->value(s);
 		}
 		else if (x == progdefaults.xml_altitude) {
 			habAlt->value(extractedField.c_str());

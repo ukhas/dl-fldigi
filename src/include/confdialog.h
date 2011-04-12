@@ -398,6 +398,8 @@ extern Fl_Value_Input2 *cd_xml_time;
 extern Fl_Value_Input2 *cd_xml_latitude;
 extern Fl_Value_Input2 *cd_xml_longitude;
 extern Fl_Value_Input2 *cd_xml_altitude;
+extern Fl_Check_Button *cd_xml_longitude_nmea;
+extern Fl_Check_Button *cd_xml_latitude_nmea;
 extern Fl_Choice *inpGPSdev;
 extern Fl_Output *gpsTStatus;
 extern Fl_Output *gpsTPort;

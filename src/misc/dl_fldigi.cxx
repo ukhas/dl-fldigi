@@ -68,6 +68,8 @@ struct payload
 	int time;
 	int latitude;
 	int longitude;
+	int latitude_nmea;
+	int longitude_nmea;
 	int altitude;
 	int lockstatus;
 	struct payload *next;
@@ -639,10 +641,12 @@ void dl_fldigi_update_payloads()
 {
 	FILE *file;
 	int r1, r_shift, r_baud, r_baud1;
-	const char *r_coding, *r_dbfield, *r_parity, *r_stopbits;
+	const char *r_coding, *r_parity, *r_stopbits;
 	IrrXMLReader *xml;
 	struct payload *p, *n;
 	int i, dbfield_no;
+	char *dbfield_name;
+	char *dbfield_format;
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: (thread %li) attempting to update UI...\n", thread_identifier());
@@ -690,6 +694,8 @@ void dl_fldigi_update_payloads()
 	p = payload_list;
 	i = 0;
 	dbfield_no = 1;
+	dbfield_name = NULL;
+	dbfield_format = NULL;
 
 	while (xml->read())
 	{
@@ -735,7 +741,7 @@ void dl_fldigi_update_payloads()
 				habFlightXML_conf->add(p->name);
 
 				dbfield_no = 1;
-
+				
 				#ifdef DL_FLDIGI_DEBUG
 					fprintf(stderr, "dl_fldigi: adding payload %i: '%s'\n", i, p->name);
 				#endif
@@ -985,34 +991,65 @@ void dl_fldigi_update_payloads()
 			else if (strcmp("dbfield", xml->getNodeName()) == 0)
 			{
 				xml->read();
-				r_dbfield = xml->getNodeData();
-
-				if (strcmp("time", r_dbfield) == 0)
+				
+				if(dbfield_name) free(dbfield_name);
+				dbfield_name = strdup(xml->getNodeData());
+			}
+			
+			else if (strcmp("format", xml->getNodeName()) == 0)
+			{
+				xml->read();
+				
+				if(dbfield_format) free(dbfield_format);
+				dbfield_format = strdup(xml->getNodeData());
+			}
+		}
+		
+		else if (xml->getNodeType() == EXN_ELEMENT_END)
+		{
+			if (strcmp("field", xml->getNodeName()) == 0)
+			{
+				if (strcmp("time", dbfield_name) == 0)
 				{
 					p->time = dbfield_no;
 				}
-				else if (strcmp("latitude", r_dbfield) == 0)
+				else if (strcmp("latitude", dbfield_name) == 0)
 				{
 					p->latitude = dbfield_no;
+					p->latitude_nmea = 0;
+					if(dbfield_format && strcmp("ddmm.mm", dbfield_format) == 0)
+						p->latitude_nmea = 1;
 				}
-				else if (strcmp("longitude", r_dbfield) == 0)
+				else if (strcmp("longitude", dbfield_name) == 0)
 				{
 					p->longitude = dbfield_no;
+					p->longitude_nmea = 0;
+					if(dbfield_format && strcmp("dddmm.mm", dbfield_format) == 0)
+						p->longitude_nmea = 1;
 				}
-				else if (strcmp("altitude", r_dbfield) == 0)
+				else if (strcmp("altitude", dbfield_name) == 0)
 				{
 					p->altitude = dbfield_no;
 				}
-				else if (strcmp("lockstatus", r_dbfield) == 0)
+				else if (strcmp("lockstatus", dbfield_name) == 0)
 				{
 					p->lockstatus = dbfield_no;
 				}
-
+				
+				if(dbfield_name) free(dbfield_name);
+				dbfield_name = NULL;
+				
+				if(dbfield_format) free(dbfield_format);
+				dbfield_format = NULL;
+				
 				dbfield_no++;
 			}
 		}
 	}
-
+	
+	if(dbfield_name) free(dbfield_name);
+	if(dbfield_format) free(dbfield_format);
+	
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: UI updated: added %i payloads.\n", i);
 		fprintf(stderr, "dl_fldigi: post UI update: attempting to re-select (but not configure) payload '%s'\n", progdefaults.xmlPayloadname.c_str());
@@ -1297,6 +1334,8 @@ void dl_fldigi_select_payload(const char *name)
 				print_i(time);
 				print_i(latitude);
 				print_i(longitude);
+				print_i(latitude_nmea);
+				print_i(longitude_nmea);
 				print_i(altitude);
 				print_i(lockstatus);
 
@@ -1366,6 +1405,8 @@ void dl_fldigi_select_payload(const char *name)
 			progdefaults.xml_time = p->time;
 			progdefaults.xml_latitude = p->latitude;
 			progdefaults.xml_longitude = p->longitude;
+			progdefaults.xml_latitude_nmea = p->latitude_nmea;
+			progdefaults.xml_longitude_nmea = p->longitude_nmea;
 			progdefaults.xml_altitude = p->altitude;
 			progdefaults.xml_lockstatus = p->lockstatus;
 
@@ -1378,6 +1419,8 @@ void dl_fldigi_select_payload(const char *name)
 			update_conf_ui_i(xml_time);
 			update_conf_ui_i(xml_latitude);
 			update_conf_ui_i(xml_longitude);
+			update_conf_ui_i(xml_latitude_nmea);
+			update_conf_ui_i(xml_longitude_nmea);
 			update_conf_ui_i(xml_altitude);
 
 

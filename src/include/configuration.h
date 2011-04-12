@@ -1171,6 +1171,8 @@
 		ELEM_(int, xml_time, "", "", 0)								\
 		ELEM_(int, xml_latitude, "", "", 0)							\
 		ELEM_(int, xml_longitude, "", "", 0)							\
+		ELEM_(bool, xml_latitude_nmea, "", "", 0)						\
+		ELEM_(bool, xml_longitude_nmea, "", "", 0)						\
 		ELEM_(int, xml_altitude, "", "", 0)							\
 		ELEM_(int, xml_lockstatus, "", "", 0)							\
 		ELEM_(int, xml_stringlimit, "", "", 100)						\

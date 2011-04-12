@@ -2811,6 +2811,18 @@ static void cb_cd_xml_altitude(Fl_Value_Input2* o, void*) {
   progdefaults.xml_altitude = o->value();
 }
 
+Fl_Check_Button *cd_xml_longitude_nmea=(Fl_Check_Button *)0;
+
+static void cb_cd_xml_longitude_nmea(Fl_Check_Button* o, void*) {
+  progdefaults.xml_longitude_nmea = o->value();
+}
+
+Fl_Check_Button *cd_xml_latitude_nmea=(Fl_Check_Button *)0;
+
+static void cb_cd_xml_latitude_nmea(Fl_Check_Button* o, void*) {
+  progdefaults.xml_latitude_nmea = o->value();
+}
+
 static void cb_Baud(Fl_Value_Input2* o, void*) {
   progdefaults.gpsSpeed = o->value();
 progdefaults.changed = true;
@@ -6520,10 +6532,20 @@ d frequency"));
                 cd_xml_altitude->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.xml_altitude);
                 } // Fl_Value_Input2* cd_xml_altitude
+                { Fl_Check_Button* o = cd_xml_longitude_nmea = new Fl_Check_Button(400, 295, 64, 25, _("NMEA"));
+                cd_xml_longitude_nmea->down_box(FL_DOWN_BOX);
+                cd_xml_longitude_nmea->callback((Fl_Callback*)cb_cd_xml_longitude_nmea);
+                o->value(progdefaults.xml_longitude_nmea);
+                } // Fl_Check_Button* cd_xml_longitude_nmea
                 o->end();
               } // Fl_Group* o
               o->end();
             } // Fl_Group* o
+            { Fl_Check_Button* o = cd_xml_latitude_nmea = new Fl_Check_Button(400, 270, 64, 25, _("NMEA"));
+              cd_xml_latitude_nmea->down_box(FL_DOWN_BOX);
+              cd_xml_latitude_nmea->callback((Fl_Callback*)cb_cd_xml_latitude_nmea);
+              o->value(progdefaults.xml_latitude_nmea);
+            } // Fl_Check_Button* cd_xml_latitude_nmea
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
           { Fl_Group* o = new Fl_Group(0, 50, 500, 385, _("GPS"));
