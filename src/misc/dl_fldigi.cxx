@@ -1007,7 +1007,7 @@ void dl_fldigi_update_payloads()
 		
 		else if (xml->getNodeType() == EXN_ELEMENT_END)
 		{
-			if (strcmp("field", xml->getNodeName()) == 0)
+			if (strcmp("field", xml->getNodeName()) == 0 && dbfield_name)
 			{
 				if (strcmp("time", dbfield_name) == 0)
 				{
