@@ -416,13 +416,25 @@ static void *serial_thread(void *a)
 				break;
 			}
 
-			/* $GPGGA,123519.00,4807.0381,N,00056.0002,W,1,08,0.29,00545,M,046,M,,*76 */
-			i = fscanf(f, "GPGGA,%2u%2u%2u%*[^,],%2u%f,%c,%3u%f,%c,%u,%u,%*f,%u,M,%*u,%*c,,*%*2x\n",
-				   &fix.hour, &fix.minute, &fix.second,
-				   &fix.lat_d, &fix.lat_m, &fix.lat_ns,
-				   &fix.lon_d, &fix.lon_m, &fix.lon_we,
-				   &fix.quality, &fix.sats, &fix.alt);
+// fix by SteveRan to work round decimal point seconds, altitude and update time - needed for some GPS devices
+//
+// $GPGGA,hhmmss.ss,llll.lll,a,nnnnn.nnn,b,t,uu,v.v,w.w,M,x.x,M,y.y,zzzz*hh <CR><LF>
+// all the following good GPGGA formats
+// $GPGGA,123519.00,4807.0381,N,00056.0002,W,1,08,0.29,00545,M,046,M,,*76
+// $GPGGA,205546,5158.3789,N,00122.2637,E,1,06,2.1,13.4,M,46.9,M,,*77
+// $GPGGA,000700.000,5216.9727,N,00112.6617,E,1,05,02.4,30.2,M,45.0,M,,*57
 
+			float f_sec, f_alt;
+	
+			i = sscanf(f, "GPGGA,%2u%2u%f,%2u%f,%c,%3u%f,%c,%u,%u,%*f,%f,M,%*f,M,%*f,,*%*2x\n",
+						&fix.hour, &fix.minute, &f_sec,
+						&fix.lat_d, &fix.lat_m, &fix.lat_ns,
+						&fix.lon_d, &fix.lon_m, &fix.lon_we,
+						&fix.quality, &fix.sats, &f_alt);
+	
+			fix.second = (unsigned int)f_sec;
+			fix.alt = (unsigned int)f_alt;
+// end SteveRan fix	
 			if (i == 12 && fix.quality > 0)
 			{
 				fix.lat = fix.lat_d + (fix.lat_m / 60);
