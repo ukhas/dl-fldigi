@@ -426,7 +426,7 @@ static void *serial_thread(void *a)
 
 			float f_sec, f_alt;
 	
-			i = sscanf(f, "GPGGA,%2u%2u%f,%2u%f,%c,%3u%f,%c,%u,%u,%*f,%f,M,%*f,M,%*f,,*%*2x\n",
+			i = fscanf(f, "GPGGA,%2u%2u%f,%2u%f,%c,%3u%f,%c,%u,%u,%*f,%f,M,%*f,M,%*f,,*%*2x\n",
 						&fix.hour, &fix.minute, &f_sec,
 						&fix.lat_d, &fix.lat_m, &fix.lat_ns,
 						&fix.lon_d, &fix.lon_m, &fix.lon_we,
