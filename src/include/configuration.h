@@ -30,7 +30,7 @@
 #include "rtty.h"
 #include "waterfall.h"
 #include "lookupcall.h"
-#include "Viewer.h"
+#include "psk_browser.h"
 
 #if defined(__linux__)
 #  define DEFAULT_PTTDEV "/dev/ttyS0"
@@ -70,7 +70,7 @@
               +20.0)                                                                    \
         ELEM_(bool, rsidWideSearch, "RSIDWIDESEARCH",                                   \
               "RSID detector searches the entire passband",                             \
-              false)                                                                    \
+              true)                                                                     \
         ELEM_(int, rsid_squelch, "RSIDSQUELCH",                                         \
               "RSID detection opens squelch for nn seconds",                            \
               5)                                                                        \
@@ -163,6 +163,9 @@
         ELEM_(bool, StartAtSweetSpot, "STARTATSWEETSPOT",                               \
               "Always start new modems at sweet spot frequencies",                      \
               false)                                                                    \
+        ELEM_(bool, CWIsLSB, "CWISLSB",                                                 \
+              "Select if BFO is injected as LSB instead of USB",                        \
+              false)                                                                    \
         ELEM_(bool, WaterfallHistoryDefault, "WATERFALLHISTORYDEFAULT",                 \
               "Replay audio history when changing frequency by clicking on\n"           \
               "the waterfall",                                                          \
@@ -191,6 +194,9 @@
         ELEM_(int, PSK_filter, "PSKFILTER",                                             \
               "Not configurable; must always be 0",                                     \
               0)                                                                        \
+        ELEM_(bool, pskbrowser_on, "PSKBROWSER_ON",                                     \
+              "Enable psk multi-channel detector - disable for very slow cpus",         \
+              true)                                                                     \
         /* PSK / PSKmail interface */                                                   \
         ELEM_(int, SearchRange, "PSKSEARCHRANGE",                                       \
               "PSK signal acquisition search range (Hz)",                               \
@@ -497,6 +503,9 @@
         ELEM_(int, mt63_tone_duration, "MT63TONEDURATION",                              \
               "Tone duration (seconds)",                                                \
               4)                                                                        \
+        ELEM_(bool, mt63_at500, "MT63AT500",                                            \
+              "Always transmit lowest tone at 500 Hz",                                  \
+              false)                                                                    \
         /* Waterfall & UI */                                                            \
         ELEM_(uchar, red, "", "",  0)                                                   \
         ELEM_(uchar, green, "", "",  255)                                               \
@@ -607,12 +616,24 @@
         ELEM_(bool, calluppercase, "CALLUPPERCASE",                                     \
               "Convert callsign field to upper case",                                   \
               true)                                                                     \
+        ELEM_(bool, RSTdefault, "RSTDEFAULT",                                           \
+              "Default outgoing RST to 599",                                            \
+              false)                                                                    \
         ELEM_(bool, autoextract, "AUTOEXTRACT",                                         \
               "Enable detection and extraction of \"wrapped\" text",                    \
               true)                                                                     \
         ELEM_(bool, open_flmsg, "OPEN_FLMSG",                                           \
-              "Open flmsg upon receipt of an autoextract file",                         \
+              "Open flmsg with the autoextract file",                                   \
               true)                                                                     \
+        ELEM_(bool, open_flmsg_print, "OPEN_FLMSG_PRINT",                               \
+              "Open flmsg with the autoextract file\nprint to browser\nclose flmsg",    \
+              true)                                                                     \
+        ELEM_(bool, open_nbems_folder, "OPEN_NBEMS_FOLDER",                             \
+              "Open NBEMS folder upon receipt of an autoextract file",                  \
+              false)                                                                    \
+        ELEM_(std::string, flmsg_pathname, "FLMSG_PATHNAME",                            \
+              "Full pathname to the flmsg executable",                                  \
+              "")                                                                       \
         ELEM_(bool, speak, "SPEAK",                                                     \
               "Capture text to file 'talk/textout.txt'",                                \
               false)                                                                    \
@@ -874,6 +895,12 @@
         ELEM_(bool, cutnbrs, "CUTNBRS",                                                 \
               "Send CW cut numbers",                                                    \
               false)                                                                    \
+        ELEM_(RGB, bwsrSliderColor, "BWSRSLIDERCOLOR",                                  \
+              "Background color of signal browser detect level",                        \
+              {185, 211, 238})                                                          \
+        ELEM_(RGB, bwsrSldrSelColor,"BWSRSLDRSELCOLOR",                                 \
+              "Button highlight color, signal browser detect level",                    \
+              {54, 100, 139})                                                           \
         ELEM_(RGB, dup_color, "dupcolor",                                               \
               "Callsign background color when duplicate detected",                      \
               {255, 110, 180})                                                          \
@@ -920,6 +947,15 @@
         ELEM_(bool, DisplayMacroFilename, "DISPLAYMACROFILENAME",                       \
               "Display macro filename on startup",                                      \
               false)                                                                    \
+        ELEM_(bool, macro_wheel, "MACROWHEEL",                                          \
+              "Enable mouse wheel rotation to control visible macro set",               \
+              false)                                                                    \
+        ELEM_(bool, mbar1_pos, "MBAR1POS",                                              \
+              "Principal macro bar position, true=above wf, false=below",               \
+              true)                                                                     \
+        ELEM_(int, mbar2_pos, "MBAR2POS",                                               \
+              "Position second macro button above data stream panesl",                  \
+              0)                                                                        \
         /* Mixer */                                                                     \
         ELEM_(std::string, MXdevice, "MXDEVICE",                                        \
               "Mixer device",                                                           \
@@ -936,6 +972,9 @@
         ELEM_(double, PCMvolume, "PCMVOLUME",                                           \
               "PCM channel level",                                                      \
               0.8)                                                                      \
+        ELEM_(double, txlevel, "TXATTEN",                                               \
+              "TX attenuator (db) -30 .. 0",                                            \
+              -3.0)                                                                     \
         ELEM_(bool, MuteInput, "MUTEINPUT",                                             \
               "This setting is currently unused",                                       \
               true)                                                                     \
@@ -1059,6 +1098,9 @@
         ELEM_(std::string, ui_scheme, "UISCHEME",                                       \
               "FLTK UI scheme (none or base, gtk+, plastic)",                           \
               "gtk+")                                                                   \
+        ELEM_(int, ui_language, "UILANGUAGE",                                           \
+              "UI language",                                                            \
+              0)                                                                        \
         ELEM_(bool, wf_audioscale, "WFAUDIOSCALE",                                      \
               "Always show audio frequencies on waterfall",                             \
               true)                                                                     \
@@ -1073,34 +1115,43 @@
         ELEM_(Fl_Color, TabsColor, "TABSCOLOR",                                         \
               "UI tabs color",                                                          \
               FL_BACKGROUND2_COLOR)                                                     \
-        /* PSK Viewer */                                                                \
+        /* Signal Viewer */                                                             \
+        ELEM_(bool, VIEWERascend, "VIEWERASCEND",                                       \
+              "Low frequency on bottom of viewer",                                      \
+              true)                                                                     \
         ELEM_(bool, VIEWERmarquee, "VIEWERMARQUEE",                                     \
-              "PSK Browser text continuous scrolling",                                  \
+              "Signal Viewer text continuous scrolling",                                \
+              true)                                                                     \
+        ELEM_(bool, VIEWERsort, "VIEWERSORT",                                           \
+              "Signal Viewer sort after channel changes- unused",                       \
+              false)                                                                    \
+        ELEM_(bool, VIEWERhistory, "VIEWERHISTORY",                                     \
+              "Signal Viewer playback history on select",                               \
+              false)                                                                    \
+        ELEM_(bool, VIEWERfixed, "VIEWERfixed",                                         \
+              "Signal Viewer data displayed on fixed 100 Hz intervals",                 \
               true)                                                                     \
         ELEM_(int, VIEWERlabeltype, "VIEWERSHOWFREQ",                                   \
-              "PSK Browser row label type.  Values are as follows:\n"                   \
-              "  0: Audio frequency; 1: Radio frequency; 2: Channel number.",           \
+              "Signal Viewer label type.  Values are as follows:\n"                     \
+              "  0: None; 1: Audio freq; 2: Radio freq; 2: Channel #.",                 \
               VIEWER_LABEL_RF)                                                          \
-        ELEM_(int, VIEWERstart, "VIEWERSTART",                                          \
-              "PSK Browser lowest decode frequency",                                    \
-              500)                                                                      \
         ELEM_(int, VIEWERchannels, "VIEWERCHANNELS",                                    \
-              "PSK Browser channels",                                                   \
-              20)                                                                       \
-        ELEM_(double, VIEWERsquelch, "VIEWERSQUELCH",                                   \
-              "PSK Browser squelch level (%)",                                          \
-              10.0)                                                                     \
+              "Number of Signal Viewer Channels",                                       \
+              30)                                                                       \
+        ELEM_(int, VIEWERwidth, "VIEWERWIDTH",                                          \
+              "Width of viewer (% of full panel width)",                                \
+              25)                                                                       \
         ELEM_(int, VIEWERtimeout, "VIEWERTIMEOUT",                                      \
-              "PSK Browser inactivity timeout (to clear text)",                         \
+              "Signal Viewer inactivity timeout (to clear text)",                       \
               15)                                                                       \
         ELEM_(std::string, ViewerFontName, "VIEWERFONTNAME",                            \
-              "PSK Browser font name",                                                  \
+              "Signal Viewer font name",                                                \
               "")                                                                       \
         ELEM_(Fl_Font, ViewerFontnbr, "VIEWERFONTNBR",                                  \
-              "PSK Browser font index",                                                 \
+              "Signal Viewer font index",                                               \
               FL_COURIER)                                                               \
         ELEM_(int, ViewerFontsize, "VIEWERFONTSIZE",                                    \
-              "PSK Browser font size",                                                  \
+              "Signal Viewer font size",                                                \
               FL_NORMAL_SIZE)                                                           \
                                                                                         \
         ELEM_(Fl_Color, Sql1Color, "SQL1COLOR",                                         \
@@ -1133,6 +1184,17 @@
         ELEM_(Fl_Color, TuneColor, "TUNECOLOR",                                         \
               "UI Tune select color",                                                   \
               FL_RED)                                                                   \
+                                                                                        \
+        /* XMLRPC LOGBOOK server */                                                     \
+        ELEM_(bool, xml_logbook, "XML_LOGBOOK",                                         \
+              "Try to open remote xml logbook",                                         \
+              false)                                                                    \
+        ELEM_(std::string, xmllog_address, "XMLLOG_ADDRESS",                            \
+              "Logbook server address",                                                 \
+              "127.0.0.1")                                                              \
+        ELEM_(std::string, xmllog_port, "XMLLOG_PORT",                                  \
+              "Logbook server port",                                                    \
+              "8421")                                                                   \
                                                                                         \
         /* XML-RPC/ARQ servers */                                                       \
         ELEM_(std::string, xmlrpc_address, "", "",  "127.0.0.1")                        \
@@ -1192,7 +1254,21 @@
 		ELEM_(std::string, ssdv_block_pass, "SSDV_BLOCK_PASS", "Password for remote URL", "")					\
 		ELEM_(bool, track_freq, "TRACK_FREQ", "Adjust the RF frequency to match frequency drift", false)			\
 		ELEM_(int, track_freq_min, "TRACK_FREQ_MIN", "Minimum waterfall frequency", 1000)					\
-		ELEM_(int, track_freq_max, "TRACK_FREQ_MAX", "Maximum waterfall frequency", 2000)
+		ELEM_(int, track_freq_max, "TRACK_FREQ_MAX", "Maximum waterfall frequency", 2000)					\
+       /* WEFAX configuration items */                                                  \
+       ELEM_(double, wefax_slant, "WEFAXSLANT",                                         \
+             "Slant correction for wefax Rx",                                           \
+             0.0)                                                                       \
+       ELEM_(std::string, wefax_save_dir, "WEFAXSAVEDIR",                               \
+             "Target directory for storing automatically received images storage",      \
+             "")                                                                        \
+       ELEM_(std::string, wefax_load_dir, "WEFAXLOADDIR",                               \
+             "Source directory for sending images",                                     \
+             "")                                                                        \
+       ELEM_(int, wefax_filter, "WEFAXFILTER",                                          \
+             "Input filter for image reception",                                        \
+             0)
+
 
 // declare the struct
 #define ELEM_DECLARE_CONFIGURATION(type_, var_, tag_, ...) type_ var_;

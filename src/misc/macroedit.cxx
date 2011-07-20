@@ -46,6 +46,7 @@
 #include "main.h"
 #include "gettext.h"
 #include "pixmaps.h"
+#include "configuration.h"
 
 using namespace std;
 
@@ -132,7 +133,12 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<SRCHUP>\tsearch UP for signal"));
 	w->add(_("<SRCHDN>\tsearch DOWN for signal"));
 	w->add(_("<GOHOME>\treturn to sweet spot"));
-	w->add(_("<GOFREQ:NNNN>\tmove to freq NNNN"));
+	w->add(_("<GOFREQ:NNNN>\tmove to freq NNNN Hz"));
+
+	w->add(LINE_SEP);
+	w->add(_("<QSY:FFF.F[:NNNN]>\tqsy to kHz, Hz"));
+	w->add(_("<RIGMODE:mode>\tvalid xcvr mode"));
+	w->add(_("<FILWID:width>\tvalid xcvr filter width"));
 
 	w->add(LINE_SEP);
 	w->add(_("<FILE:>\tinsert text file"));
@@ -222,6 +228,8 @@ void loadBrowser(Fl_Widget *widget) {
 		}
 	}
 	globfree(&gbuf);
+#else
+	w->add("<EXEC>\tlaunch a program");
 #endif
 }
 
@@ -233,10 +241,20 @@ void cbMacroEditOK(Fl_Widget *w, void *)
 	if (iType == MACRO_EDIT_BUTTON) {
 		macros.text[iMacro] = macrotext->value();
 		macros.name[iMacro] = labeltext->value();
-		int n = iMacro;
-		while (n >= 12)
-			n-= 12;
-		btnMacro[n]->label(macros.name[iMacro].c_str());
+
+		if (progdefaults.mbar2_pos) {
+			if (iMacro < NUMMACKEYS) {
+				btnMacro[iMacro % NUMMACKEYS]->label( macros.name[iMacro].c_str() );
+				btnMacro[iMacro % NUMMACKEYS]->redraw_label();
+			} else {
+				btnMacro[(iMacro % NUMMACKEYS) + NUMMACKEYS]->label( macros.name[iMacro].c_str() );
+				btnMacro[(iMacro % NUMMACKEYS) + NUMMACKEYS]->redraw_label();
+			}
+		} else {
+			btnMacro[iMacro % NUMMACKEYS]->label( macros.name[iMacro].c_str() );
+			btnMacro[iMacro % NUMMACKEYS]->redraw_label();
+		}
+
 		macros.changed = true;
 	}
 	else if (iType == MACRO_EDIT_INPUT)
@@ -273,6 +291,19 @@ void cbInsertMacro(Fl_Widget *, void *)
 		} else
 			text = "";
 	}
+#ifdef __MINGW32__
+	else if (text == "<EXEC>") {
+		string filters = "Exe\t*." "exe";
+		const char* p = FSEL::select(_("Executable file to insert"), filters.c_str(),
+					"WordPad.exe");
+		if (p) {
+			string exefile = p;
+			exefile.append("</EXEC>");
+			text.insert(6, exefile);
+		} else
+			text = "";
+	}
+#endif
 	macrotext->insert(text.c_str());
 	macrotext->take_focus();
 }

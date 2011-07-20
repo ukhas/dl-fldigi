@@ -27,7 +27,7 @@
 #include <iostream>
 using namespace std;
 
-#include "rtty.h"
+#include "view_rtty.h"
 #include "fl_digi.h"
 #include "digiscope.h"
 #include "misc.h"
@@ -36,6 +36,9 @@ using namespace std;
 #include "configuration.h"
 #include "status.h"
 #include "digiscope.h"
+#include "trx.h"
+
+view_rtty *rttyviewer = (view_rtty *)0;
 
 //=====================================================================
 // Baudot support
@@ -87,9 +90,9 @@ int dspcnt = 0;
 
 static char msg1[20];
 
-double _SHIFT[] = {23, 85, 160, 170, 182, 200, 240, 350, 425, 600, 850};
-double _BAUD[] = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200};
-int    _BITS[] = {5, 7, 8};
+const double rtty::SHIFT[] = {23, 85, 160, 170, 182, 200, 240, 350, 425, 600, 850};
+const double rtty::BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200};
+const int    rtty::BITS[]  = {5, 7, 8};
 
 void rtty::tx_init(SoundBase *sc)
 {
@@ -154,9 +157,9 @@ void rtty::restart()
 	double stl;
 
 	rtty_shift = shift = (progdefaults.rtty_shift >= 0 ?
-			      _SHIFT[progdefaults.rtty_shift] : progdefaults.rtty_custom_shift);
-	rtty_baud = _BAUD[progdefaults.rtty_baud];
-	nbits = rtty_bits = _BITS[progdefaults.rtty_bits];
+			      SHIFT[progdefaults.rtty_shift] : progdefaults.rtty_custom_shift);
+	rtty_baud = BAUD[progdefaults.rtty_baud];
+	nbits = rtty_bits = BITS[progdefaults.rtty_bits];
 	if (rtty_bits == 5)
 		rtty_parity = RTTY_PARITY_NONE;
 	else
@@ -224,6 +227,9 @@ void rtty::restart()
 	dspcnt = 2*(nbits + 2);
 
 	clear_zdata = true;
+
+	rttyviewer->restart();
+
 }
 
 rtty::rtty(trx_mode tty_mode)
@@ -245,6 +251,8 @@ rtty::rtty(trx_mode tty_mode)
 	dsppipe = new double [MAXPIPE];
 
 	samples = new complex[8];
+
+	::rttyviewer = new view_rtty(mode);
 
 	restart();
 }
@@ -510,6 +518,8 @@ int rtty::rx_process(const double *buf, int len)
 		bpfilt->create_filter(bp_filt_lo, bp_filt_hi);
 		wf->redraw_marker();
 	}
+
+	if (rttyviewer && !bHistory) rttyviewer->rx_process(buf, len);
 
 	Metric();
 

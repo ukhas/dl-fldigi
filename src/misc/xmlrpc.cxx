@@ -2478,6 +2478,7 @@ public:
 	ELEM_(Fldigi_terminate, "fldigi.terminate")						\
 																	\
 	ELEM_(Payload_get_name, "payload.get_name")						\
+	ELEM_(Payload_select_payload, "payload.select_payload")					\
 																	\
 	ELEM_(Modem_get_name, "modem.get_name")							\
 	ELEM_(Modem_get_names, "modem.get_names")						\
@@ -2485,8 +2486,6 @@ public:
 	ELEM_(Modem_get_max_id, "modem.get_max_id")						\
 	ELEM_(Modem_set_by_name, "modem.set_by_name")					\
 	ELEM_(Modem_set_by_id, "modem.set_by_id")						\
-																	\
-	ELEM_(Payload_select_payload, "payload.select_payload")						\
 																	\
 	ELEM_(Modem_set_carrier, "modem.set_carrier")					\
 	ELEM_(Modem_inc_carrier, "modem.inc_carrier")					\

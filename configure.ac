@@ -8,8 +8,8 @@ AC_PREREQ(2.61)
 dnl major and minor must be integers; patch may
 dnl contain other characters or be empty
 m4_define(FLDIGI_MAJOR, [3])
-m4_define(FLDIGI_MINOR, [20])
-m4_define(FLDIGI_PATCH, [.34])
+m4_define(FLDIGI_MINOR, [21])
+m4_define(FLDIGI_PATCH, [.12])
 m4_define(FLARQ_MAJOR,  [4])
 m4_define(FLARQ_MINOR,  [3])
 m4_define(FLARQ_PATCH,  [.1])
@@ -54,7 +54,7 @@ AC_CONFIG_HEADER([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 
-FLDIGI_AUTHORS="Dave Freese, Stelios Bounanos, Leigh Klotz, and others"
+FLDIGI_AUTHORS="Dave Freese, Stelios Bounanos, Leigh Klotz, Remi Chateauneu, and others"
 FLARQ_AUTHORS="Dave Freese"
 PACKAGE_HOME="http://www.w1hkj.com/Fldigi.html"
 PACKAGE_DL="http://www.w1hkj.com/download.html"

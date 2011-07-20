@@ -31,6 +31,7 @@
 #include "globals.h"
 #include "filters.h"
 #include "fftfilt.h"
+#include "digiscope.h"
 
 #define	RTTY_SampleRate	8000
 //#define RTTY_SampleRate 11025
@@ -61,13 +62,15 @@ enum RTTY_PARITY {
 	RTTY_PARITY_ONE
 };
 
-extern double _SHIFT[];
-extern double _BAUD[];
-extern int _BITS[];
 
 //enum TTY_MODE { LETTERS, FIGURES };
 
 class rtty : public modem {
+public:
+	static const double SHIFT[];
+	static const double BAUD[];
+	static const int    BITS[];
+
 private:
 
 	double shift;
@@ -121,7 +124,7 @@ private:
 	complex prevsmpl;
 	complex *samples;
 	
-	complex QI[1024];
+	complex QI[MAX_ZLEN];
 	int QIptr;
 	bool   clear_zdata;
 	double sigpwr;

@@ -42,6 +42,8 @@
 #include "status.h"
 #include "spot.h"
 #include "adif_io.h"
+#include "date.h"
+#include "configuration.h"
 
 #include "logsupport.h"
 
@@ -93,8 +95,9 @@ void submit_ADIF(cQsoRec &rec)
 {
 	adif.erase();
 	
-	putadif(QSO_DATE, rec.getField(QSO_DATE_OFF));
+	putadif(QSO_DATE, rec.getField(QSO_DATE));
 	putadif(TIME_ON, rec.getField(TIME_ON));
+	putadif(QSO_DATE_OFF, rec.getField(QSO_DATE_OFF));
 	putadif(TIME_OFF, rec.getField(TIME_OFF));
 	putadif(CALL, rec.getField(CALL));
 	putadif(FREQ, rec.getField(FREQ));
@@ -141,11 +144,20 @@ static void send_IPC_log(cQsoRec &rec)
 	msgtype msgbuf;
 	const char   LOG_MSEPARATOR[2] = {1,0};
 	int msqid, len;
-	
+
+	int mm, dd, yyyy;
+	char szdate[9];
+	strncpy(szdate, rec.getField(QSO_DATE_OFF), 8);
+	szdate[8] = 0;
+	sscanf(&szdate[6], "%d", &dd); szdate[6] = 0;
+	sscanf(&szdate[4], "%d", &mm); szdate[4] = 0;
+	sscanf(szdate, "%d", &yyyy);
+	Date logdate(mm, dd, yyyy);
+
 	log_msg = "";
 	log_msg = log_msg + "program:"	+ PACKAGE_NAME + " v " 	+ PACKAGE_VERSION + LOG_MSEPARATOR;
 	addtomsg("version:",	LOG_MVERSION);
-	addtomsg("date:",		rec.getField(QSO_DATE_OFF));
+	addtomsg("date:",		logdate.szDate(5));
 	addtomsg("time:", 		rec.getField(TIME_ON));
 	addtomsg("endtime:", 	rec.getField(TIME_OFF));
 	addtomsg("call:",		rec.getField(CALL));
@@ -194,13 +206,19 @@ void submit_record(cQsoRec &rec)
 
 //---------------------------------------------------------------------
 
+extern void xml_add_record();
+
 void submit_log(void)
 {
 	if (progStatus.spot_log)
 		spot_log(inpCall->value(), inpLoc->value());
 
 	logmode = mode_info[active_modem->get_mode()].adif_name;
-	AddRecord();
+
+	if (progdefaults.xml_logbook)
+		xml_add_record();
+	else
+		AddRecord();
 
 }
 

@@ -61,6 +61,8 @@
 #include "logsupport.h"
 #include "qso_db.h"
 
+#include "misc.h"
+
 #define STATUS_FILENAME "status"
 
 status progStatus = {
@@ -75,7 +77,9 @@ status progStatus = {
 	false,				// bool Rig_Log_UI;
 	false,				// bool Rig_Contest_UI;
 	false,				// bool DOCKEDSCOPE;
-	200,				// int RxTextHeight;
+	50,					// int RxTextHeight;
+	WNOM / 2,			// int tiled_group_x;
+	false,				// bool show_channels;
 	50,					// int rigX;
 	50,					// int rigY;
 	560,				// int rigW
@@ -92,7 +96,14 @@ status progStatus = {
 	30,					// uint	VIEWERnchars
 	50,					// uint	VIEWERxpos
 	50,					// uint	VIEWERypos
+	200,				// uint VIEWERwidth
+	400,				// uint VIEDWERheight
+	3.0,				// uint VIEWERsquelch
 	false,				// bool VIEWERvisible
+	100,				// int		tile_x
+	200,				// int		tile_w;
+	50,					// int		tile_y;
+	100,				// int		tile_h;
 	false,				// bool LOGenabled
 	5.0,				// double sldrSquelchValue
 	true,				// bool afconoff
@@ -177,7 +188,7 @@ void status::saveLastState()
     }
 	mainW = fl_digi_main->w();
 	mainH = fl_digi_main->h();
-	RxTextHeight = ReceiveText->h();
+
 	carrier = wf->Carrier();
 	mag = wf->Mag();
 	offset = wf->Offset();
@@ -197,16 +208,28 @@ void status::saveLastState()
 	logbook_col_4 = wBrowser->columnWidth(4);
 	logbook_col_5 = wBrowser->columnWidth(5);
 
-	quick_entry = ReceiveText->get_quick_entry();
-	rx_scroll_hints = ReceiveText->get_scroll_hints();
-	rx_word_wrap = ReceiveText->get_word_wrap();
-	tx_word_wrap = TransmitText->get_word_wrap();
 
-	VIEWERvisible = false;
-	if (dlgViewer && dlgViewer->visible()) {
+	if (!bWF_only) {
+		RxTextHeight = (ReceiveText->h() * 100) / text_panel->h();//VTgroup->h();
+		quick_entry = ReceiveText->get_quick_entry();
+		rx_scroll_hints = ReceiveText->get_scroll_hints();
+		rx_word_wrap = ReceiveText->get_word_wrap();
+		tx_word_wrap = TransmitText->get_word_wrap();
+
+		tile_w = text_panel->w();
+		tile_y = ReceiveText->h();
+		tile_h = text_panel->h();
+		if (text_panel->w() != ReceiveText->w())
+			tile_x = mvgroup->w();
+	}
+
+	VIEWERvisible = dlgViewer->visible();
+	VIEWERnchars = brwsViewer->numchars();
+	if (VIEWERvisible) {
 		VIEWERxpos = dlgViewer->x();
 		VIEWERypos = dlgViewer->y();
-		VIEWERvisible = true;
+		VIEWERwidth = dlgViewer->w();
+		VIEWERheight = dlgViewer->h();
 	}
 
 	scopeVisible = false;
@@ -253,6 +276,7 @@ void status::saveLastState()
 	Fl_Preferences spref(HomeDir.c_str(), "w1hkj.com", PACKAGE_TARNAME);
 
 	spref.set("version", PACKAGE_VERSION);
+	spref.set("dual_channels", "YES");
 
 	spref.set("mode_name", mode_info[lastmode].sname);
 	spref.set("squelch_enabled", sqlonoff);
@@ -279,6 +303,8 @@ void status::saveLastState()
 if (!bWF_only and !bHAB) {
 	spref.set("main_h", mainH);
 	spref.set("rx_text_height", RxTextHeight);
+	spref.set("tiled_group_x", tiled_group_x);
+	spref.set("show_channels", show_channels);
 }
 	spref.set("wf_ui", WF_UI);
 	spref.set("riglog_ui", Rig_Log_UI);
@@ -294,7 +320,15 @@ if (!bWF_only and !bHAB) {
 	spref.set("viewer_visible", VIEWERvisible);
 	spref.set("viewer_x", static_cast<int>(VIEWERxpos));
 	spref.set("viewer_y", static_cast<int>(VIEWERypos));
+	spref.set("viewer_w", static_cast<int>(VIEWERwidth));
+	spref.set("viewer_h", static_cast<int>(VIEWERheight));
+	spref.set("viewer_squelch", VIEWERsquelch);
 	spref.set("viewer_nchars", static_cast<int>(VIEWERnchars));
+
+	spref.set("tile_x", tile_x);
+	spref.set("tile_y", tile_y);
+	spref.set("tile_w", tile_w);
+	spref.set("tile_h", tile_h);
 
 	spref.set("scope_visible", scopeVisible);
 	spref.set("scope_x", scopeX);
@@ -358,6 +392,8 @@ if (!bWF_only and !bHAB) {
 	spref.set("uostx", UOStx);
 
 	spref.set("browser_search", browser_search.c_str());
+
+//	spref.set("xml_logbook", xml_logbook);
 }
 
 void status::loadLastState()
@@ -367,15 +403,15 @@ void status::loadLastState()
 	char version[64]; version[sizeof(version)-1] = '\0';
 	char* defbuffer;
 
-	bLastStateRead = spref.get("version", version, "", sizeof(version)-1);
 	// Skip loading the rest of the status variables if we didn't read a
-	// version name/value pair; also clear everything to avoid creating
-	// entries out of existing file contents.
-	if (!bLastStateRead) {
-//		while (spref.entries())
-//			spref.deleteEntry(spref.entry(0));
+	// version name/value pair; or this is not a file that supports dual
+	// channel browsers.
+	bLastStateRead = spref.get("version", version, "", sizeof(version)-1);
+	if (!bLastStateRead)
 		return;
-	}
+	bLastStateRead = spref.get("dual_channels", version, "", sizeof(version) - 1);
+	if (!bLastStateRead)
+		return;
 
 	int i;
 
@@ -396,6 +432,9 @@ void status::loadLastState()
 	spref.get("tx_mixer_level", XmtMixer, XmtMixer);
 
 	spref.get("rx_text_height", RxTextHeight, RxTextHeight);
+	spref.get("tiled_group_x", tiled_group_x, tiled_group_x);
+	spref.get("show_channels", i, show_channels); show_channels = i;
+
 	spref.get("log_enabled", i, LOGenabled); LOGenabled = i;
 
 	spref.get("wf_carrier", carrier, carrier);
@@ -433,7 +472,15 @@ void status::loadLastState()
 	spref.get("viewer_visible", i, VIEWERvisible); VIEWERvisible = i;
 	spref.get("viewer_x", i, VIEWERxpos); VIEWERxpos = i;
 	spref.get("viewer_y", i, VIEWERypos); VIEWERypos = i;
+	spref.get("viewer_w", i, VIEWERwidth); VIEWERwidth = i;
+	spref.get("viewer_h", i, VIEWERheight); VIEWERheight = i;
+	spref.get("viewer_squelch", VIEWERsquelch, VIEWERsquelch);
 	spref.get("viewer_nchars", i, VIEWERnchars); VIEWERnchars = i;
+
+	spref.get("tile_x", tile_x, tile_x);
+	spref.get("tile_y", tile_y, tile_y);
+	spref.get("tile_w", tile_w, tile_w);
+	spref.get("tile_h", tile_h, tile_h);
 
 	spref.get("scope_visible", i, scopeVisible); scopeVisible = i;
 	spref.get("scope_x", scopeX, scopeX);
@@ -500,7 +547,11 @@ void status::loadLastState()
 
 	spref.get("browser_search", defbuffer, browser_search.c_str());
 	browser_search = defbuffer;
+	seek_re.recompile(browser_search.c_str());
+
 	free(defbuffer);
+
+//	spref.get("xml_logbook", i, xml_logbook); xml_logbook = i;
 }
 
 void status::initLastState()
@@ -576,21 +627,20 @@ void status::initLastState()
 	if (mainH < HMIN || mainH > Fl::h())
 		mainH = MAX(HMIN, Fl::h() / 2);
 
-if (bWF_only) 
-	fl_digi_main->resize(mainX, mainY, mainW, Hmenu + Hwfall + Hstatus + 4);
-else if (bHAB) 
-	fl_digi_main->resize(mainX, mainY, Fl::w(), HAB_height);
-else {
-	fl_digi_main->resize(mainX, mainY, mainW, mainH);
-	if (!(RxTextHeight > 0 && RxTextHeight < TiledGroup->h()))
-		RxTextHeight = TiledGroup->h() / 3 * 2;
-	TiledGroup->position(0, TransmitText->y(), 0, TiledGroup->y() + RxTextHeight);
-}
+	if (bWF_only) 
+		fl_digi_main->resize(mainX, mainY, mainW, Hmenu + Hwfall + Hstatus + 4);
+	else if (bHAB)
+		fl_digi_main->resize(mainX, mainY, Fl::w(), HAB_height);
+	else {
+		fl_digi_main->resize(mainX, mainY, mainW, mainH);
 
-	if (VIEWERvisible && lastmode >= MODE_PSK_FIRST && lastmode <= MODE_PSK_LAST)
+		set_macroLabels();
+
+		UI_select();
+	}
+
+	if (VIEWERvisible)
 		openViewer();
-	else
-		VIEWERvisible = false;
 
 	if (scopeview) {
 		scopeview->resize(scopeX, scopeY, scopeW, scopeH);
@@ -616,5 +666,7 @@ else {
 	ReceiveText->set_scroll_hints(rx_scroll_hints);
 	ReceiveText->set_word_wrap(rx_word_wrap);
 	TransmitText->set_word_wrap(tx_word_wrap);
+
+//	set_server_label(xml_logbook);
 
 }

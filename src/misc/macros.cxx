@@ -43,6 +43,7 @@
 #include "modem.h"
 #include "qrunner.h"
 #include "waterfall.h"
+#include "rigsupport.h"
 
 #include <FL/Fl.H>
 #include <FL/filename.H>
@@ -147,7 +148,12 @@ void pWAIT(string&, size_t &);
 void pSRCHUP(string&, size_t&);
 void pSRCHDN(string&, size_t&);
 void pGOHOME(string&, size_t&);
+
 void pGOFREQ(string&, size_t&);
+void pQSY(string&, size_t&);
+void pRIGMODE(string&, size_t&);
+void pFILWID(string&, size_t&);
+
 void pMAPIT(string&, size_t&);
 void pREPEAT(string&, size_t&);
 
@@ -219,6 +225,9 @@ MTAGS mtags[] = {
 {"<SRCHDN>",	pSRCHDN},
 {"<GOHOME>",	pGOHOME},
 {"<GOFREQ:",	pGOFREQ},
+{"<QSY:",		pQSY},
+{"<RIGMODE:",	pRIGMODE},
+{"<FILWID:",	pFILWID},
 {"<MAPIT:",		pMAPIT},
 {"<MAPIT>",		pMAPIT},
 {"<REPEAT>",	pREPEAT},
@@ -260,14 +269,19 @@ void pFILE(string &s, size_t &i)
 	string fname = s.substr(i+6, endbracket - i - 6);
 	if (fname.length() > 0) {
 		FILE *toadd = fopen(fname.c_str(), "r");
-		string buffer;
-		char c = getc(toadd);
-		while (c && !feof(toadd)) {
-			if (c != '\r') buffer += c; // damn MSDOS txt files
-			c = getc(toadd);
-			}
-		s.replace(i, endbracket - i + 1, buffer);
-		fclose(toadd);
+		if (toadd) {
+			string buffer;
+			char c = getc(toadd);
+			while (c && !feof(toadd)) {
+				if (c != '\r') buffer += c; // damn MSDOS txt files
+				c = getc(toadd);
+				}
+			s.replace(i, endbracket - i + 1, buffer);
+			fclose(toadd);
+		} else {
+			LOG_WARN("%s not found", fname.c_str());
+			s.replace(i, endbracket - i + 1, "");
+		}
 	} else
 		s.replace(i, endbracket - i + 1, "");
 }
@@ -612,7 +626,7 @@ void pTX(string &s, size_t &i)
 
 void pTXRX(string &s, size_t &i)
 {
-	s.erase(i, 6);
+	s.erase(i, 7);
 	ToggleTXRX = true;
 }
 
@@ -791,8 +805,12 @@ void pMODEM(string &s, size_t &i)
 	}
 	catch (const exception& e) { }
 
-	if (active_modem->get_mode() != mode_info[m].mode)
+	if (active_modem->get_mode() != mode_info[m].mode) {
 		init_modem(mode_info[m].mode);
+		int count = 100;
+		while ((active_modem->get_mode() != mode_info[m].mode) && --count)
+			MilliSleep(10);
+	}
 
 	s.erase(i, o[0].rm_eo - i);
 }
@@ -892,12 +910,16 @@ void pSRCHUP(string &s, size_t &i)
 {
 	s.replace( i, 8, "");
 	active_modem->searchUp();
+	if (progdefaults.WaterfallClickInsert)
+	        wf->insert_text(true);
 }
 
 void pSRCHDN(string &s, size_t &i)
 {
 	s.replace( i, 8, "");
 	active_modem->searchDown();
+	if (progdefaults.WaterfallClickInsert)
+	         wf->insert_text(true);
 }
 
 void pGOHOME(string &s, size_t &i)
@@ -927,6 +949,60 @@ void pGOFREQ(string &s, size_t &i)
 	s.replace(i, endbracket - i + 1, "");
 }
 
+void pQSY(string &s, size_t &i)
+{
+	size_t endbracket = s.find('>',i);
+	int rf = 0;
+	int audio = 0;
+	float rfd = 0;
+	string sGoFreq = s.substr(i+5, endbracket - i - 5);
+	// no frequency(s) specified
+	if (sGoFreq.length() == 0) {
+		s.replace(i, endbracket-i+1, "");
+		return;
+	}
+	// rf first value
+	sscanf(sGoFreq.c_str(), "%f", &rfd);
+	if (rfd > 0)
+		rf = (int)(1000*rfd);
+	size_t pos;
+	if ((pos = sGoFreq.find(":")) != string::npos) {
+		// af second value
+		sGoFreq.erase(0, pos+1);
+		if (sGoFreq.length())
+			sscanf(sGoFreq.c_str(), "%d", &audio);
+		if (audio < 0) audio = 0;
+		if (audio < progdefaults.LowFreqCutoff)
+			audio = progdefaults.LowFreqCutoff;
+		if (audio > progdefaults.HighFreqCutoff)
+			audio = progdefaults.HighFreqCutoff;
+	}
+
+	if (rf && rf != wf->rfcarrier())
+		qsy(rf, audio);
+	else
+		active_modem->set_freq(audio);
+
+	s.replace(i, endbracket - i + 1, "");
+}
+
+void pRIGMODE(string& s, size_t& i)
+{
+	size_t endbracket = s.find('>',i);
+	string sMode = s.substr(i+9, endbracket - i - 9);
+	qso_opMODE->value(sMode.c_str());
+	cb_qso_opMODE();
+	s.replace(i, endbracket - i + 1, "");
+}
+
+void pFILWID(string& s, size_t& i)
+{
+	size_t endbracket = s.find('>',i);
+	string sWidth = s.substr(i+8, endbracket - i - 8);
+	qso_opBW->value(sWidth.c_str());
+	cb_qso_opBW();
+	s.replace(i, endbracket - i + 1, "");
+}
 
 void set_macro_env(void)
 {
@@ -1104,10 +1180,27 @@ void pEXEC(string &s, size_t &i)
 #else // !__MINGW32__
 void pEXEC(string& s, size_t& i)
 {
-	size_t end = s.find("</EXEC>", i);
-	if (end != string::npos)
-		s.erase(i, end + strlen("</EXEC>") - i);
-	LOG_WARN("Ignoring unimplemented EXEC macro");
+	size_t start, end;
+	if ((start = s.find('>', i)) == string::npos ||
+	    (end = s.find("</EXEC>", start)) == string::npos) {
+		i++;
+		return;
+	}
+	start++;
+
+	char* cmd = strdup(s.substr(start, end-start).c_str());
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	memset(&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+	memset(&pi, 0, sizeof(pi));
+	if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+		LOG_ERROR("CreateProcess failed with error code %ld", GetLastError());
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+	free(cmd);
+
+	s.erase(i, end + strlen("</EXEC>") - i);
 }
 #endif // !__MINGW32__
 
@@ -1203,12 +1296,12 @@ int MACROTEXT::loadMacros(const string& filename)
 
 	if (!mFile) {
 		create_new_macros();
-		for (int i = 0; i < 12; i++) {
-			btnMacro[i]->label( name[i].c_str());
-			btnMacro[i]->redraw_label();
-		}
-		return 0;
-	}
+//		for (int i = 0; i < 12; i++) {
+//			btnMacro[i]->label( name[i].c_str());
+//			btnMacro[i]->redraw_label();
+//		}
+//		return 0;
+	} else {
 
 	mFile.getline(szLine, 4095);
 	mLine = szLine;
@@ -1238,11 +1331,6 @@ int MACROTEXT::loadMacros(const string& filename)
 				break;
 			if (convert && mNumber > 9) mNumber += 2;
             name[mNumber] = mLine.substr(idx+1);
-			if (mNumber < 12) {
-				FL_LOCK_D();
-				btnMacro[mNumber]->label( (name[mNumber]).c_str());
-				FL_UNLOCK_D();
-			}
 			continue;
 		}
 		while ((crlf = mLine.find("\\n")) != string::npos) {
@@ -1252,9 +1340,8 @@ int MACROTEXT::loadMacros(const string& filename)
 		text[mNumber] = text[mNumber] + mLine;
 	}
 	mFile.close();
-	altMacros = 0;
-	btnAltMacros->label("1");
-	btnAltMacros->redraw_label();
+}
+
 	return 0;
 }
 

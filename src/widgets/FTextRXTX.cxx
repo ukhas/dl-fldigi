@@ -31,6 +31,7 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <map>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -55,6 +56,7 @@
 #include "qrunner.h"
 
 #include "mfsk.h"
+#include "wefax-pic.h"
 #include "icons.h"
 #include "globals.h"
 #include "re.h"
@@ -935,19 +937,34 @@ int FTextTX::handle_key(int key)
 		}
 		return 0;
 	}
-// alt - 1 through alt - 4 changes macro sets
+// alt - 1 / 2 changes macro sets
 	case '1':
 	case '2':
 	case '3':
 	case '4':
 		if (Fl::event_state() & FL_ALT) {
+			static char lbl[2] = "1";
 			altMacros = key - '1';
-			for (int i = 0; i < 12; i++)
-				btnMacro[i]->label(macros.name[i + (altMacros * NUMMACKEYS)].c_str());
-			static char alt_text[4];
-			snprintf(alt_text, sizeof(alt_text), "%d", altMacros + 1);
-			btnAltMacros->label(alt_text);
-			btnAltMacros->redraw_label();
+			if (progdefaults.mbar2_pos) {
+				if (!altMacros) altMacros = 1;
+				for (int i = 0; i < NUMMACKEYS; i++) {
+					btnMacro[NUMMACKEYS + i]->label(
+						macros.name[(altMacros * NUMMACKEYS) + i].c_str());
+					btnMacro[NUMMACKEYS + i]->redraw_label();
+				}
+				lbl[0] = key;
+				btnAltMacros2->label(lbl);
+				btnAltMacros2->redraw_label();
+			} else {
+				for (int i = 0; i < NUMMACKEYS; i++) {
+					btnMacro[i]->label(
+						macros.name[(altMacros * NUMMACKEYS) + i].c_str());
+					btnMacro[i]->redraw_label();
+				}
+				lbl[0] = key;
+				btnAltMacros1->label(lbl);
+				btnAltMacros1->redraw_label();
+			}
 			return 1;
 		}
 		break;
@@ -986,7 +1003,12 @@ int FTextTX::handle_key_macro(int key)
 	if (key > 11)
 		return 0;
 
-	key += altMacros * NUMMACKEYS;
+	if (progdefaults.mbar2_pos) {
+		if (Fl::event_state(FL_SHIFT))
+			key += altMacros * NUMMACKEYS;
+	} else {
+		key += altMacros * NUMMACKEYS;
+	}
 	if (!(macros.text[key]).empty())
 		macros.execute(key);
 
@@ -1029,7 +1051,7 @@ void FTextTX::handle_context_menu(void)
 
 	bool modify_text_ok = insert_position() >= txpos;
 	bool selected = tbuf->selected();
-	set_active(&menu[TX_MENU_MFSK16_IMG], active_modem->get_cap() & modem::CAP_IMG);
+	set_active(&menu[TX_MENU_MFSK16_WEFAX_IMG], active_modem->get_cap() & modem::CAP_IMG);
 	set_active(&menu[TX_MENU_CLEAR], tbuf->length());
 	set_active(&menu[TX_MENU_CUT], selected && modify_text_ok);
 	set_active(&menu[TX_MENU_COPY], selected);
@@ -1069,8 +1091,19 @@ void FTextTX::menu_cb(size_t item)
  		else
  			abort_tx();
   		break;
-  	case TX_MENU_MFSK16_IMG:
-  		showTxViewer(0, 0);
+  	case TX_MENU_MFSK16_WEFAX_IMG:
+		{
+			switch (active_modem->get_mode()) {
+			case MODE_MFSK_FIRST ... MODE_MFSK_LAST:
+				showTxViewer(0, 0);
+				break;
+			case MODE_WEFAX_FIRST ... MODE_WEFAX_LAST:
+				wefax_pic::show_tx_viewer(0, 0);
+				break;
+			default:
+				break;
+			}
+		}
 		break;
 	case TX_MENU_CLEAR:
 		clear();

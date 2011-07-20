@@ -9,6 +9,8 @@
 #include "qso_db.h"
 #include "adif_io.h"
 
+#include "lgbook.h"
+
 #ifdef __WOE32__
 #  define ADIF_SUFFIX "adi"
 #else

@@ -71,11 +71,12 @@ void olivia::tx_init(SoundBase *sc)
 	while (Rx->GetChar(c) > 0)
 		put_rx_char(c);
 
+	double fc_offset = Tx->Bandwidth*(1.0 - 0.5/Tx->Tones)/2.0;
 	if (reverse) { 
-		Tx->FirstCarrierMultiplier = (txbasefreq + (Tx->Bandwidth / 2)) / 500; 
+		Tx->FirstCarrierMultiplier = (txbasefreq + fc_offset)/500.0; 
 		Tx->Reverse = 1; 
 	} else {
-		Tx->FirstCarrierMultiplier = (txbasefreq - (Tx->Bandwidth / 2)) / 500;
+		Tx->FirstCarrierMultiplier = (txbasefreq - fc_offset)/500.0;
 		Tx->Reverse = 0; 
 	}
 
@@ -88,25 +89,26 @@ void olivia::tx_init(SoundBase *sc)
 
 void olivia::send_tones()
 {
-	if (tone_midfreq != txbasefreq || tone_bw != bandwidth) {
-		double freqa, freqb;
-		tone_bw = bandwidth;
-		tone_midfreq = txbasefreq;
-		if (reverse) { 
-			freqa = tone_midfreq + (tone_bw / 2.0); 
-			freqb = tone_midfreq - (tone_bw / 2.0); 
-		} else { 
-			freqa = tone_midfreq - (tone_bw / 2.0); 
-			freqb = tone_midfreq + (tone_bw / 2.0); 
-		}
-		preamblephase = 0;
-		for (int i = 0; i < SR4; i++)
-			tonebuff[2*SR4 + i] = tonebuff[i] = nco(freqa) * ampshape[i];
+	double freqa, freqb;
+	tone_bw = bandwidth;
+	tone_midfreq = txbasefreq;
 
-		preamblephase = 0;
-		for (int i = 0; i < SR4; i++)
-			tonebuff[3*SR4 + i] = tonebuff[SR4 + i] = nco(freqb) * ampshape[i];
+	if (reverse) { 
+		freqa = tone_midfreq + (tone_bw / 2.0); 
+		freqb = tone_midfreq - (tone_bw / 2.0); 
+	} else { 
+		freqa = tone_midfreq - (tone_bw / 2.0); 
+		freqb = tone_midfreq + (tone_bw / 2.0); 
 	}
+
+	preamblephase = 0;
+	for (int i = 0; i < SR4; i++)
+		tonebuff[2*SR4 + i] = tonebuff[i] = nco(freqa) * ampshape[i];
+
+	preamblephase = 0;
+	for (int i = 0; i < SR4; i++)
+		tonebuff[3*SR4 + i] = tonebuff[SR4 + i] = nco(freqb) * ampshape[i];
+
 	for (int j = 0; j < TONE_DURATION; j += SCBLOCKSIZE)
 		ModulateXmtr(&tonebuff[j], SCBLOCKSIZE);
 
@@ -213,14 +215,16 @@ int olivia::rx_process(const double *buf, int len)
 		sinteg	!= progdefaults.oliviasinteg )
 			restart();
 
+	int fc_offset = Tx->Bandwidth*(1.0 - 0.5/Tx->Tones)/2.0;
+
 	if ((lastfreq != frequency || Rx->Reverse) && !reverse) {
-		Rx->FirstCarrierMultiplier = (frequency - (Rx->Bandwidth / 2)) / 500; 
+		Rx->FirstCarrierMultiplier = (frequency - fc_offset)/500.0; 
 		Rx->Reverse = 0;
 		lastfreq = frequency;
 		Rx->Preset();
 	}
 	else if ((lastfreq != frequency || !Rx->Reverse) && reverse) {
-		Rx->FirstCarrierMultiplier = (frequency + (Rx->Bandwidth / 2)) / 500; 
+		Rx->FirstCarrierMultiplier = (frequency + fc_offset)/500.0; 
 		Rx->Reverse = 1;
 		lastfreq = frequency;
 		Rx->Preset();
@@ -231,7 +235,8 @@ int olivia::rx_process(const double *buf, int len)
 
     Rx->Process(buf, len);
 	sp = 0;
-	for (int i = frequency - Rx->Bandwidth/2; i < frequency - 1 + Rx->Bandwidth/2; i++)
+//	for (int i = frequency - Rx->Bandwidth/2; i < frequency - 1 + Rx->Bandwidth/2; i++)
+	for (int i = frequency - fc_offset; i < frequency + fc_offset; i++)
 		if (wf->Pwr(i) > sp)
 			sp = wf->Pwr(i);
 	np = wf->Pwr(static_cast<int>(frequency + Rx->Bandwidth/2 + 2*Rx->Bandwidth/Rx->Tones));
@@ -276,11 +281,12 @@ void olivia::restart()
 	Tx->OutputSampleRate = samplerate;
     txbasefreq = get_txfreq_woffset();
 
+	int fc_offset = Tx->Bandwidth * (1.0 - 0.5/Tx->Tones) / 2.0;
 	if (reverse) { 
-		Tx->FirstCarrierMultiplier = (txbasefreq + (Tx->Bandwidth / 2)) / 500; 
+		Tx->FirstCarrierMultiplier = (txbasefreq + fc_offset)/500.0; 
 		Tx->Reverse = 1; 
 	} else { 
-		Tx->FirstCarrierMultiplier = (txbasefreq - (Tx->Bandwidth / 2)) / 500; 
+		Tx->FirstCarrierMultiplier = (txbasefreq - fc_offset)/500.0; 
 		Tx->Reverse = 0; 
 	}
 
@@ -304,11 +310,12 @@ void olivia::restart()
 	Rx->SampleRate = samplerate;
 	Rx->InputSampleRate = samplerate;
 
+	fc_offset = Rx->Bandwidth * (1.0 - 0.5/Rx->Tones) / 2.0;
 	if (reverse) { 
-		Rx->FirstCarrierMultiplier = (frequency + (Rx->Bandwidth / 2)) / 500; 
+		Rx->FirstCarrierMultiplier = (frequency + fc_offset)/500.0; 
 		Rx->Reverse = 1; 
 	} else { 
-		Rx->FirstCarrierMultiplier = (frequency - (Rx->Bandwidth /2)) / 500; 
+		Rx->FirstCarrierMultiplier = (frequency - fc_offset)/500.0; 
 		Rx->Reverse = 0; 
 	}
 

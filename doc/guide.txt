@@ -414,11 +414,10 @@ information about the program.
 [[ref-rsid]]
 .RSID
 The RxID button turns on the receive RSID (automatic mode detection and tuning)
-feature. When in use, the button turns green.  Decoding on the currently selected
-modem continues until a signal is identified, or the feature is turned off again.
-You can configure the RSID detector to simply alert you to a new signal or it
-can cause the program to immediately move to the RSID signal frequency and change
-to the detected mode.
+feature. When in use, the button turns yellow and no text reception is possible
+until a signal is identified, or the feature is turned off again. If you plan to
+use the RSID feature on receive, you must leave the 'Start New Modem at Sweet
+Spot' item in the menu +Configure->Defaults->Misc+ tab unchecked.
 
 [[ref-tune]]
 .TUNE

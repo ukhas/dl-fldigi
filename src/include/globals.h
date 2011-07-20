@@ -84,6 +84,11 @@ enum {
 	MODE_MFSK_FIRST = MODE_MFSK8,
 	MODE_MFSK_LAST = MODE_MFSK64,
 
+	MODE_WEFAX_576,
+	MODE_WEFAX_288,
+	MODE_WEFAX_FIRST = MODE_WEFAX_576,
+	MODE_WEFAX_LAST = MODE_WEFAX_288,
+
 	MODE_MT63_500,
 	MODE_MT63_1000,
 	MODE_MT63_2000,
@@ -192,5 +197,8 @@ const char* band_name(band_t b);
 const char* band_name(const char* freq_mhz);
 const char* band_freq(band_t b);
 const char* band_freq(const char* band_name);
+
+// psk_browser enums
+enum { VIEWER_LABEL_OFF, VIEWER_LABEL_AF, VIEWER_LABEL_RF, VIEWER_LABEL_CH, VIEWER_LABEL_NTYPES };
 
 #endif

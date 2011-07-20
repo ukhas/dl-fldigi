@@ -60,8 +60,8 @@ static char time[6];
 
 void cTextFile::writeCSVHeader(FILE *txtFile)
 {
-	if (btnSelectQSOdateOn->value())   fprintf (txtFile, "%s", "\"DATE\"");
-	if (btnSelectQSOdateOff->value())  fprintf (txtFile, "%s", "\"DATE_OFF\"");
+	if (btnSelectQSOdateOn->value()) fprintf (txtFile, "%s", "\"DATE_ON\"");
+	if (btnSelectQSOdateOff->value())fprintf (txtFile, "%s", ",\"DATE_OFF\"");
 	if (btnSelectTimeON->value())    fprintf (txtFile, "%s", ",\"ON\"");
 	if (btnSelectTimeOFF->value())   fprintf (txtFile, "%s", ",\"OFF\"");
 	if (btnSelectCall->value())      fprintf (txtFile, "%s", ",\"CALL\"");
@@ -75,11 +75,13 @@ void cTextFile::writeCSVHeader(FILE *txtFile)
 	if (btnSelectQth->value())       fprintf (txtFile, "%s", ",\"QTH\"");
 	if (btnSelectState->value())     fprintf (txtFile, "%s", ",\"ST\"");
 	if (btnSelectProvince->value())  fprintf (txtFile, "%s", ",\"PR\"");
+	if (btnSelectCNTY->value())      fprintf (txtFile, "%s", ",\"CNTY\"");
 	if (btnSelectCountry->value())   fprintf (txtFile, "%s", ",\"CNTRY\"");
 	if (btnSelectDXCC->value())      fprintf (txtFile, "%s", ",\"DXCC\"");
 	if (btnSelectIOTA->value())      fprintf (txtFile, "%s", ",\"IOTA\"");
 	if (btnSelectCONT->value())      fprintf (txtFile, "%s", ",\"CONT\"");
 	if (btnSelectITUZ->value())      fprintf (txtFile, "%s", ",\"ITUZ\"");
+	if (btnSelectLOC->value())       fprintf (txtFile, "%s", ",\"GRIDSQUARE\"");
 	if (btnSelectQSLrcvd->value())   fprintf (txtFile, "%s", ",\"QSL_RCVD\"");
 	if (btnSelectQSLsent->value())   fprintf (txtFile, "%s", ",\"QSL_SENT\"");
 	if (btnSelectNotes->value())     fprintf (txtFile, "%s", ",\"NOTES\"");
@@ -103,7 +105,7 @@ int cTextFile::writeCSVFile (const char *fname, cQsoDb *db) {
 				if (btnSelectQSOdateOn->value())
 					fprintf (txtFile, "\"%s\"", pRec->getField(QSO_DATE));
 				if (btnSelectQSOdateOff->value())
-					fprintf (txtFile, "\"%s\"", pRec->getField(QSO_DATE_OFF));
+					fprintf (txtFile, ",\"%s\"", pRec->getField(QSO_DATE_OFF));
 				if (btnSelectTimeON->value())
 					fprintf (txtFile, ",\"%s\"", pRec->getField(TIME_ON));
 				if (btnSelectTimeOFF->value())
@@ -130,6 +132,8 @@ int cTextFile::writeCSVFile (const char *fname, cQsoDb *db) {
 					fprintf (txtFile, ",\"%s\"", pRec->getField(STATE));
 				if (btnSelectProvince->value())
 					fprintf (txtFile, ",\"%s\"", pRec->getField(VE_PROV));
+				if (btnSelectCNTY->value())
+					fprintf (txtFile, ",\"%s\"", pRec->getField(CNTY));
 				if (btnSelectCountry->value())
 					fprintf (txtFile, ",\"%s\"", pRec->getField(COUNTRY));
 				if (btnSelectDXCC->value())
@@ -140,6 +144,8 @@ int cTextFile::writeCSVFile (const char *fname, cQsoDb *db) {
 					fprintf (txtFile, ",\"%s\"", pRec->getField(CONT));
 				if (btnSelectITUZ->value())
 					fprintf (txtFile, ",\"%s\"", pRec->getField(ITUZ));
+				if (btnSelectLOC->value())
+					fprintf (txtFile, ",\"%s\"", pRec->getField(GRIDSQUARE));
 				if (btnSelectQSLrcvd->value())
 					fprintf (txtFile, ",\"%s\"", pRec->getField(QSL_RCVD));
 				if (btnSelectQSLsent->value())
@@ -171,8 +177,8 @@ int cTextFile::writeCSVFile (const char *fname, cQsoDb *db) {
 // text file in fixed fields
 void cTextFile::writeTXTHeader(FILE *txtFile)
 {
-	if (btnSelectQSOdateOn->value()) fprintf (txtFile, "%-10s", "DATE");
-	if (btnSelectQSOdateOff->value()) fprintf (txtFile, "%-10s", "DATE_OFF");
+	if (btnSelectQSOdateOn->value()) fprintf (txtFile, "%-10s", "DATE_ON");
+	if (btnSelectQSOdateOff->value())fprintf (txtFile, "%-10s", "DATE_OFF");
 	if (btnSelectTimeON->value())    fprintf (txtFile, "%-6s", "ON");
 	if (btnSelectTimeOFF->value())   fprintf (txtFile, "%-6s", "OFF");
 	if (btnSelectCall->value())      fprintf (txtFile, "%-10s", "CALL");
@@ -188,11 +194,13 @@ void cTextFile::writeTXTHeader(FILE *txtFile)
 	if (btnSelectState->value())     fprintf (txtFile, "%-5s", "ST");
 	if (btnSelectProvince->value())  fprintf (txtFile, "%-5s", "PR");
 	if (btnSelectCountry->value())   fprintf (txtFile, "%-15s", "CNTRY");
+	if (btnSelectCNTY->value())      fprintf (txtFile, "%-8s",  "CNTY");
 	if (btnSelectDXCC->value())      fprintf (txtFile, "%-8s",  "DXCC");
 	if (btnSelectIOTA->value())      fprintf (txtFile, "%-8s", "IOTA");
 	if (btnSelectCONT->value())      fprintf (txtFile, "%-8s",  "CONT");
 	if (btnSelectITUZ->value())      fprintf (txtFile, "%-8s",  "ITUZ");
-	
+	if (btnSelectLOC->value())       fprintf (txtFile, "%-15s", "GRIDSQUARE");
+
 	if (btnSelectQSLrcvd->value())   fprintf (txtFile, "%-10s", "QSLR");
 	if (btnSelectQSLsent->value())   fprintf (txtFile, "%-10s", "QSLS");
 	if (btnSelectNotes->value())     fprintf (txtFile, "%-80s", "NOTES");
@@ -245,6 +253,8 @@ int cTextFile::writeTXTFile (const char *fname, cQsoDb *db) {
 					fprintf (txtFile, "%-5s", pRec->getField(VE_PROV));
 				if (btnSelectCountry->value())
 					fprintf (txtFile, "%-15s", pRec->getField(COUNTRY));
+				if (btnSelectCNTY->value())
+					fprintf (txtFile, "%-8s", pRec->getField(CNTY));
 				if (btnSelectDXCC->value())
 					fprintf (txtFile, "%-8s", pRec->getField(DXCC));
 				if (btnSelectIOTA->value())
@@ -253,6 +263,8 @@ int cTextFile::writeTXTFile (const char *fname, cQsoDb *db) {
 					fprintf (txtFile, "%-8s", pRec->getField(CONT));
 				if (btnSelectITUZ->value())
 					fprintf (txtFile, "%-8s", pRec->getField(ITUZ));
+				if (btnSelectLOC->value())
+					fprintf (txtFile, "%-15s", pRec->getField(GRIDSQUARE));
 				if (btnSelectQSLrcvd->value())
 					fprintf (txtFile, "%-10s", pRec->getField(QSL_RCVD));
 				if (btnSelectQSLsent->value())

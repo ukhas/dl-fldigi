@@ -65,6 +65,7 @@ extern waterfall *wf;
 
 char pskmsg[80];
 viewpsk *pskviewer = (viewpsk *)0;
+pskeval *evalpsk = (pskeval *)0;
 
 void psk::tx_init(SoundBase *sc)
 {
@@ -148,11 +149,9 @@ psk::~psk()
 	if (fir2) delete fir2;
 	if (snfilt) delete snfilt;
 	if (imdfilt) delete imdfilt;
-	if (::pskviewer == pskviewer)
-		::pskviewer = 0;
-	delete pskviewer;
-	delete evalpsk;
-
+// delete local reference to global pointer
+	pskviewer = 0;
+	evalpsk = 0;
 	// Interleaver
 	if (Rxinlv) delete Rxinlv;
 	if (Rxinlv2) delete Rxinlv2;
@@ -383,8 +382,11 @@ psk::psk(trx_mode pskmode) : modem()
 	E1 = E2 = E3 = 0.0;
 	acquire = 0;
 
-	evalpsk = new pskeval;
-	::pskviewer = pskviewer = new viewpsk(evalpsk, mode);
+//create global instances of evalpsk and pskviewer if they do not exist
+	if (!::evalpsk) ::evalpsk = new pskeval;
+	if (!::pskviewer) ::pskviewer = new viewpsk(::evalpsk, mode);
+	evalpsk = ::evalpsk;
+	pskviewer = ::pskviewer;
 
 //	init();
 }
@@ -607,7 +609,7 @@ void psk::findsignal()
 				f1 = (int)(frequency - progdefaults.ServerOffset);
 				f2 = (int)(frequency + progdefaults.ServerOffset);
 			}
-			if (evalpsk->sigpeak(ftest, f1, f2) > pow(10, progdefaults.ServerACQsn / 10) ) {
+			if (evalpsk->sigpeak(ftest, f1, f2, bandwidth) > pow(10, progdefaults.ServerACQsn / 10) ) {
 				if (progdefaults.PSKmailSweetSpot) {
 					if (fabs(ftest - progdefaults.ServerCarrier) < progdefaults.ServerOffset) {
 						frequency = ftest;
@@ -631,9 +633,10 @@ void psk::findsignal()
 				}
 			}
 		} else { // normal signal search algorithm
-			f1 = (int)(frequency - progdefaults.SearchRange/2);
-			f2 = (int)(frequency + progdefaults.SearchRange/2);
-			if (evalpsk->sigpeak(ftest, f1, f2) > pow(10, progdefaults.ACQsn / 10.0) ) {
+			ftest = frequency; 
+			f1 = ftest - progdefaults.SearchRange/2;
+			f2 = ftest + progdefaults.SearchRange/2;
+			if (evalpsk->peak(ftest, f1, f2, progdefaults.ACQsn) ) {
 				frequency = ftest;
 				set_freq(frequency);
 				freqerr = 0.0;
@@ -650,19 +653,20 @@ void psk::phaseafc()
 	if (afcmetric < 0.05) return;
 
 	error = (phase - bits * M_PI / 2.0);
-	if (error < -M_PI / 2.0 || error > M_PI / 2.0) return;
-	error *= samplerate / (TWOPI * symbollen);
-	if (fabs(error) < bandwidth ) {
-		freqerr = error / dcdbits;
-		frequency -= freqerr;
-		if (mailserver) {
-			if (frequency < progdefaults.ServerCarrier - progdefaults.ServerAFCrange)
-				frequency = progdefaults.ServerCarrier - progdefaults.ServerAFCrange;
-			if (frequency > progdefaults.ServerCarrier + progdefaults.ServerAFCrange)
-				frequency = progdefaults.ServerCarrier + progdefaults.ServerAFCrange;
-		}
-		set_freq (frequency);
+	if (error < M_PI / 2.0) error += 2 * M_PI;
+	if (error > M_PI / 2.0) error -= 2 * M_PI;
+
+	error *= (samplerate / (TWOPI * symbollen))/16.0; // the count between symbols
+	frequency -= error;
+
+	if (mailserver) {
+		if (frequency < progdefaults.ServerCarrier - progdefaults.ServerAFCrange)
+			frequency = progdefaults.ServerCarrier - progdefaults.ServerAFCrange;
+		if (frequency > progdefaults.ServerCarrier + progdefaults.ServerAFCrange)
+			frequency = progdefaults.ServerCarrier + progdefaults.ServerAFCrange;
 	}
+	set_freq (frequency);
+
 	if (acquire) acquire--;
 }
 
@@ -844,7 +848,8 @@ int psk::rx_process(const double *buf, int len)
 	double delta;
 	complex z, z2;
 
-	if (pskviewer && !bHistory) pskviewer->rx_process(buf, len);
+	if (pskviewer && !bHistory && progdefaults.pskbrowser_on)
+		pskviewer->rx_process(buf, len);
 	if (evalpsk) evalpsk->sigdensity();
 
 	delta = TWOPI * frequency / samplerate;

@@ -25,12 +25,20 @@
 #include <fstream>
 #include <string>
 
+#include <FL/filename.H>
+#include "fileselect.h"
+
+#include "gettext.h"
 #include "rx_extract.h"
 #include "main.h"
 #include "status.h"
 #include "fl_digi.h"
 #include "configuration.h"
-#include "qrunner.h"
+#include "confdialog.h"
+#include "debug.h"
+#include "icons.h"
+
+using namespace std;
 
 //jcoxon
 #include "extra.h"
@@ -129,19 +137,20 @@ void TrimSpaces( string& str)
 		str = str.substr( startpos, endpos-startpos+1 );  
 } 
 
-const char *end = "\n";
+const char *beg = "[WRAP:beg]";
+const char *end = "[WRAP:end]";
 const char *flmsg = "<flmsg>";
 
 #ifdef __WIN32__
-const char *txtWrapInfo = "\
+const char *txtWrapInfo = _("\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
-Save tags and all enclosed text to date-time stamped file, ie:\n\n\
-    NBEMS.files\\WRAP\\recv\\extract-20090127-092515.wrap";
+Save tags and all enclosed text to date-time stamped file, ie:\n\
+    NBEMS.files\\WRAP\\recv\\extract-20090127-092515.wrap");
 #else
-const char *txtWrapInfo = "\
+const char *txtWrapInfo = _("\
 Detect the occurance of [WRAP:beg] and [WRAP:end]\n\
-Save tags and all enclosed text to date-time stamped file, ie:\n\n\
-    ~/.nbems/WRAP/recv/extract-20090127-092515.wrap";
+Save tags and all enclosed text to date-time stamped file, ie:\n\
+    ~/.nbems/WRAP/recv/extract-20090127-092515.wrap");
 #endif
 
 #define   bufsize  16
@@ -291,6 +300,56 @@ void rx_extract_add(int c)
 				(rx_buff.find(flmsg) != string::npos))
 				open_recv_folder(WRAP_recv_dir.c_str());
 
+			if (progdefaults.open_nbems_folder)
+				open_recv_folder(WRAP_recv_dir.c_str());
+
+			if ((progdefaults.open_flmsg || progdefaults.open_flmsg_print) && 
+				(rx_buff.find(flmsg) != string::npos) &&
+				!progdefaults.flmsg_pathname.empty()) {
+				string cmd = progdefaults.flmsg_pathname;
+#ifdef __MINGW32__
+				if (progdefaults.open_flmsg_print && progdefaults.open_flmsg)
+					cmd.append(" --b");
+				else if (progdefaults.open_flmsg_print)
+					cmd.append(" --p");
+				cmd.append(" \"").append(outfilename).append("\"");
+				char *cmdstr = strdup(cmd.c_str());
+				STARTUPINFO si;
+				PROCESS_INFORMATION pi;
+				memset(&si, 0, sizeof(si));
+				si.cb = sizeof(si);
+				memset(&pi, 0, sizeof(pi));
+				if (!CreateProcess( NULL, cmdstr, 
+					NULL, NULL, FALSE, 
+					CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+					LOG_ERROR("CreateProcess failed with error code %ld", GetLastError());
+				CloseHandle(pi.hProcess);
+				CloseHandle(pi.hThread);
+				free (cmdstr);
+#else
+				string params = "";
+				if (progdefaults.open_flmsg_print && progdefaults.open_flmsg)
+					params = " --b";
+				else if (progdefaults.open_flmsg_print)
+					params = " --p";
+				switch (fork()) {
+				case 0:
+#  ifndef NDEBUG
+					unsetenv("MALLOC_CHECK_");
+					unsetenv("MALLOC_PERTURB_");
+#  endif
+					execlp(
+						(char*)cmd.c_str(), 
+						(char*)cmd.c_str(),
+						(char*)params.c_str(),
+						(char*)outfilename.c_str(), 
+						(char*)0);
+					exit(EXIT_FAILURE);
+				case -1:
+					fl_alert2(_("Could not start flmsg"));
+				}
+#endif
+			}
 			rx_extract_reset();
 			active_modem->track_freq_lock--;
 		} else if (rx_buff.length() > 200) {
@@ -457,4 +516,27 @@ void rx_extract_update_ui(string rx_buff)
 		sprintf(target_vector_distance, "%8.1f",target_vector.distance);
 		habDistance->value(target_vector_distance);
 	}
+}
+
+void select_flmsg_pathname()
+{
+#ifdef __APPLE__
+	open_recv_folder("/Applications/");
+	return;
+#else
+	string deffilename = progdefaults.flmsg_pathname;
+	if (deffilename.empty())
+#  ifdef __MINGW32__
+		deffilename = "C:\\Program Files\\";
+		const char *p = FSEL::select(_("Locate flmsg executable"), _("flmsg.exe\t*.exe"), deffilename.c_str());
+#  else
+		deffilename = "/usr/local/bin/";
+		const char *p = FSEL::select(_("Locate flmsg executable"), _("flmsg\t*"), deffilename.c_str());
+# endif
+	if (p) {
+		progdefaults.flmsg_pathname = p;
+		progdefaults.changed = true;
+		txt_flmsg_pathname->value(p);
+	}
+#endif
 }

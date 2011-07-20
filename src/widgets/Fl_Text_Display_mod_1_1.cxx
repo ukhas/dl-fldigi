@@ -94,7 +94,8 @@ Fl_Text_Display_mod::Fl_Text_Display_mod(int X, int Y, int W, int H,  const char
   display_insert_position_hint = 0;
 
   color(FL_BACKGROUND2_COLOR, FL_SELECTION_COLOR);
-  box(FL_DOWN_FRAME);
+//  box(FL_DOWN_FRAME);
+  box(FL_DOWN_BOX);  // DO NOT USE FRAME OR TILED GROUP WILL NOT CORRECTLY DRAW THE BORDERS !!
   textsize((uchar)FL_NORMAL_SIZE);
   textcolor(FL_FOREGROUND_COLOR);
   textfont(FL_HELVETICA);
@@ -1407,16 +1408,19 @@ void Fl_Text_Display_mod::reset_absolute_top_line_number() {
 ** Find the line number of position "pos" relative to the first line of
 ** displayed text. Returns 0 if the line is not displayed.
 */
-int Fl_Text_Display_mod::position_to_line( int pos, int *lineNum ) {
+//int Fl_Text_Display_mod::position_to_line( int pos, int *lineNum ) {
+int Fl_Text_Display_mod::position_to_line( size_t pos, int *lineNum ) {
   int i;
 
   *lineNum = 0;
-  if ( pos < mFirstChar ) return 0;
-  if ( pos > mLastChar ) {
+  if ( pos < (unsigned int)mFirstChar ) return 0;
+  if ( pos > (unsigned int)mLastChar ) {
     if ( empty_vlines() ) {
       if ( mLastChar < mBuffer->length() ) {
         if ( !position_to_line( mLastChar, lineNum ) ) {
+#ifdef DEBUG
           Fl::error("Fl_Text_Display_mod::position_to_line(): Consistency check ptvl failed");
+#endif
           return 0;
         }
         return ++( *lineNum ) <= mNVisibleLines - 1;
@@ -1429,7 +1433,7 @@ int Fl_Text_Display_mod::position_to_line( int pos, int *lineNum ) {
   }
 
   for ( i = mNVisibleLines - 1; i >= 0; i-- ) {
-    if ( mLineStarts[ i ] != -1 && pos >= mLineStarts[ i ] ) {
+    if ( mLineStarts[ i ] != -1 && pos >= (unsigned int)mLineStarts[ i ] ) {
       *lineNum = i;
       return 1;
     }

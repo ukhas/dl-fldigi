@@ -91,6 +91,7 @@
 #include "logbook.h"
 #include "dxcc.h"
 #include "newinstall.h"
+#include "Viewer.h"
 
 #if USE_HAMLIB
 	#include "rigclass.h"
@@ -357,7 +358,7 @@ int main(int argc, char ** argv)
 	make_colorsfonts();
 	setTabColors();
 
-	start_logbook();
+//	start_logbook();
 
 	progdefaults.testCommPorts();
 
@@ -389,8 +390,10 @@ int main(int argc, char ** argv)
 	}
 #endif
 
-//	progdefaults.initInterface();
-//	trx_start();
+	dlgViewer = createViewer();
+	create_logbook_dialogs();
+	connect_to_log_server();
+
 
 // OS X will prevent the main window from being resized if we change its
 // size *after* it has been shown. With some X11 window managers, OTOH,
@@ -432,6 +435,7 @@ int main(int argc, char ** argv)
 	if (!have_config)
 		show_wizard();
 #endif
+//	connect_to_log_server();
 
 	int ret = Fl::run();
 
@@ -637,6 +641,7 @@ int parse_args(int argc, char **argv, int& idx)
 	       OPT_CONFIG_DIR,
 	       OPT_ARQ_ADDRESS, OPT_ARQ_PORT,
 	       OPT_SHOW_CPU_CHECK,
+
 #if USE_XMLRPC
 	       OPT_CONFIG_XMLRPC_ADDRESS, OPT_CONFIG_XMLRPC_PORT,
 	       OPT_CONFIG_XMLRPC_ALLOW, OPT_CONFIG_XMLRPC_DENY, OPT_CONFIG_XMLRPC_LIST,
@@ -1083,7 +1088,10 @@ static void setup_signal_handlers(void)
 
 	// no child stopped notifications, no zombies
 	action.sa_handler = SIG_DFL;
-	action.sa_flags = SA_NOCLDSTOP | SA_NOCLDWAIT;
+	action.sa_flags = SA_NOCLDSTOP;
+#ifdef SA_NOCLDWAIT
+	action.sa_flags |= SA_NOCLDWAIT;
+#endif
 	sigaction(SIGCHLD, &action, NULL);
 	action.sa_flags = 0;
 

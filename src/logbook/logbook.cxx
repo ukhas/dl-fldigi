@@ -1,18 +1,21 @@
 #include <config.h>
 
-#include <string>
+#include <cstring>
 
+#include <FL/Fl.H>
 #include <FL/filename.H>
 
 #include "main.h"
 #include "logbook.h"
 #include "configuration.h"
+#include "debug.h"
+#include "qrunner.h"
 
 using namespace std;
 
 void start_logbook ()
 {
-	create_logbook_dialogs();
+//	create_logbook_dialogs();
 
 	if (progdefaults.logbookfilename.empty()) {
 		logbook_filename = LogsDir;
@@ -21,6 +24,8 @@ void start_logbook ()
 		progdefaults.changed = true;
 	} else
 		logbook_filename = progdefaults.logbookfilename;
+
+	qsodb.deleteRecs();
 
 	adifFile.readFile (logbook_filename.c_str(), &qsodb);
 	if (qsodb.nbrRecs() == 0)
@@ -40,3 +45,4 @@ void close_logbook()
 {
 	saveLogbook();
 }
+

@@ -32,12 +32,15 @@
 #include <cerrno>
 #include <cstdio>
 
+#include "gettext.h"
 #include "globals.h"
 #include "modem.h"
 
 using namespace std;
 
 // Elements are in enum trx_mode order.
+// N.B. it is not valid to use an _("NLS") string in this table!!
+// ... doing so will break the Fl_menu_item table 'menu_'.  -Kamal
 
 const struct mode_info_t mode_info[NUM_MODES] = {
     { MODE_CW, &cw_modem, "CW", "CW", "CW", "CW", "CW" },
@@ -69,6 +72,9 @@ const struct mode_info_t mode_info[NUM_MODES] = {
 	{ MODE_MFSK31, &mfsk31_modem, "MFSK31", "MFSK-31", "MFSK31", "MFSK31", "MK31" },
 	{ MODE_MFSK64, &mfsk64_modem, "MFSK64", "MFSK-64", "MFSK64", "MFSK64", "MK64" },
 
+	{ MODE_WEFAX_576, &wefax576, "WEFAX576", "WEFAX-IOC576", "WEFAXIOC576", "WEFAXIOC576", "FX576" },
+	{ MODE_WEFAX_288, &wefax288, "WEFAX288", "WEFAX-IOC288", "WEFAXIOC288", "WEFAXIOC288", "FX288" },
+
 	{ MODE_MT63_500, &mt63_500_modem, "MT63-500", "MT63-500", "MT63-500", "MT63", "MT63-500" },
 	{ MODE_MT63_1000, &mt63_1000_modem, "MT63-1K", "MT63-1000", "MT63-1XX", "MT63", "MT63 1K" },
 	{ MODE_MT63_2000, &mt63_2000_modem, "MT63-2K", "MT63-2000", "MT63-2XX", "MT63", "MT63 2K" },
@@ -84,9 +90,9 @@ const struct mode_info_t mode_info[NUM_MODES] = {
 	{ MODE_QPSK125, &qpsk125_modem, "QPSK125", "QPSK-125", "QPSK125", "QPSK125", "Q125" },
 	{ MODE_QPSK250, &qpsk250_modem, "QPSK250", "QPSK-250", "QPSK250", "QPSK250", "Q250" },
 	{ MODE_QPSK500, &qpsk500_modem, "QPSK500", "QPSK-500", "QPSK500", "QPSK500", "Q500" },
-	{ MODE_PSK125R, &psk125r_modem, "PSK125R", "PSK-125R", "PSK125R", "PSK125R", "P25R" },
-	{ MODE_PSK250R, &psk250r_modem, "PSK250R", "PSK-250R", "PSK250R", "PSK250R", "P25R" },
-	{ MODE_PSK500R, &psk500r_modem, "PSK500R", "PSK-500R", "PSK500R", "PSK500R", "P25R" },
+	{ MODE_PSK125R, &psk125r_modem, "PSK125R", "PSK-125R", "PSK125R", "PSK125R", "P125R" },
+	{ MODE_PSK250R, &psk250r_modem, "PSK250R", "PSK-250R", "PSK250R", "PSK250R", "P250R" },
+	{ MODE_PSK500R, &psk500r_modem, "PSK500R", "PSK-500R", "PSK500R", "PSK500R", "P500R" },
 
 	{ MODE_OLIVIA, &olivia_modem, "OLIVIA", "Olivia", "", "OLIVIA", "OL" },
 

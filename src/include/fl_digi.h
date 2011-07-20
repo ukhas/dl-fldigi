@@ -26,10 +26,11 @@
 
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Browser.H>
-#include <FL/Fl_Output.H>
+#include <FL/Fl_Pack.H>
 
 #include "combo.h"
-#include "Fl_Tile_Check.h"
+//#include "Fl_Tile_Check.h"
+#include "Panel.h"
 #include "FTextRXTX.h"
 #include "raster.h"
 #include "waterfall.h"
@@ -40,6 +41,10 @@
 #include "FreqControl.h"
 #include "flinput2.h"
 #include "flslider2.h"
+#include "psk_browser.h"
+#include "re.h"
+
+extern fre_t seek_re;
 
 extern Fl_Double_Window *fl_digi_main;
 extern Fl_Double_Window *scopeview;
@@ -47,8 +52,17 @@ extern Fl_Double_Window *scopeview;
 
 extern FTextRX			*ReceiveText;
 extern FTextTX			*TransmitText;
+extern pskBrowser		*mainViewer;
+extern Fl_Input2		*txtInpSeek;
+extern Fl_Box			*hideViewer;
 extern Raster			*FHdisp;
-extern Fl_Tile_Check	*TiledGroup;
+extern Fl_Group			*mvgroup;
+
+extern Panel			*text_panel;
+extern Fl_Box			*minbox;
+extern Fl_Group			*MixerFrame;
+extern int				oix;
+
 extern Fl_Box			*StatusBar;
 extern Fl_Box			*Status2;
 extern Fl_Box			*Status1;
@@ -58,6 +72,10 @@ extern Fl_Button		*MODEstatus;
 extern Fl_Slider2		*sldrSquelch;
 extern Progress			*pgrsSquelch;
 extern Fl_Button 		*btnMacro[];
+extern Fl_Button		*btnAltMacros1;
+extern Fl_Button		*btnAltMacros2;
+extern Fl_Group			*macroFrame1;
+extern Fl_Group			*macroFrame2;
 extern Fl_Input2		*inpFreq;
 extern Fl_Input2		*inpTimeOff;
 extern Fl_Input2		*inpTimeOn;
@@ -110,6 +128,7 @@ extern Fl_Button		*qso_btnSelFreq;
 extern Fl_Button		*qso_btnDelFreq;
 extern Fl_Button		*qso_btnClearList;
 
+extern Fl_Value_Slider2		*mvsquelch;
 extern Fl_Value_Slider2		*valRcvMixer;
 extern Fl_Value_Slider2		*valXmtMixer;
 extern Fl_Button			*btnAFC;
@@ -118,7 +137,6 @@ extern Fl_Light_Button		*btnRSID;
 extern Fl_Light_Button		*btnTxRSID;
 extern Fl_Light_Button		*btnTune;
 
-extern Fl_Button		*btnAltMacros;
 extern Fl_Button		*btnMacroTimer;
 
 extern bool			bWF_only;
@@ -154,7 +172,11 @@ extern void update_main_title();
 extern void activate_rig_menu_item(bool b);
 extern void activate_test_menu_item(bool b);
 extern void activate_mfsk_image_item(bool b);
+extern void activate_wefax_image_item(bool b);
 extern void WF_UI();
+
+extern void set_macroLabels();
+extern void UI_select();
 
 extern void cb_mnuVisitURL(Fl_Widget*, void* arg);
 
@@ -255,6 +277,12 @@ extern void startMacroTimer();
 extern void stopMacroTimer();
 extern void cb_ResetSerNbr();
 extern void updateOutSerNo();
+
+extern void connect_to_log_server();
+extern void set_server_label(bool);
+extern void activate_menu_item(const char *caption, bool val);
+extern bool xml_check_dup();
+extern bool xml_get_record(const char *);
 
 const char* zdate(void);
 const char* ztime(void);

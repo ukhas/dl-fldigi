@@ -43,6 +43,10 @@
 #include <map>
 #include <dirent.h>
 
+#ifndef __WOE32__
+#include <sys/wait.h>
+#endif
+
 #include "gettext.h"
 #include "fl_digi.h"
 
@@ -50,7 +54,7 @@
 #include <FL/fl_ask.H>
 #include <FL/Fl_Pixmap.H>
 #include <FL/Fl_Image.H>
-#include <FL/Fl_Tile.H>
+//#include <FL/Fl_Tile.H>
 #include <FL/x.H>
 #include <FL/Fl_Help_Dialog.H>
 #include <FL/Fl_Progress.H>
@@ -63,6 +67,7 @@
 #include "waterfall.h"
 #include "raster.h"
 #include "progress.h"
+#include "Panel.h"
 
 #include "main.h"
 #include "threads.h"
@@ -75,8 +80,10 @@
 #include "psk.h"
 #include "cw.h"
 #include "mfsk.h"
+#include "wefax.h"
+#include "wefax-pic.h"
 #include "mt63.h"
-#include "rtty.h"
+#include "view_rtty.h"
 #include "olivia.h"
 #include "contestia.h"
 #include "thor.h"
@@ -91,7 +98,7 @@
 #include "globals.h"
 #include "misc.h"
 #include "FTextRXTX.h"
-#include "Fl_Tile_Check.h"
+//#include "Fl_Tile_Check.h"
 
 #include "confdialog.h"
 #include "configuration.h"
@@ -139,13 +146,41 @@
 
 #include "ssdv_rx.h"
 
-using namespace std;
-
 //jcoxon
 #include <iostream>
 #include "dl_fldigi.h"
 bool bHAB = false;
 //
+//
+#define LOG_TO_FILE_MLABEL     _("Log all RX/TX text")
+#define RIGCONTROL_MLABEL      _("Rig control")
+#define OPMODES_MLABEL         _("Op &Mode")
+#define OPMODES_FEWER          _("Show fewer modes")
+#define OPMODES_ALL            _("Show all modes")
+#define OLIVIA_MLABEL            "Olivia"
+#define CONTESTIA_MLABEL         "Contestia"
+#define RTTY_MLABEL              "RTTY"
+#define VIEW_MLABEL            _("&View")
+#define MFSK_IMAGE_MLABEL      _("&MFSK Image")
+#define WEFAX_IMAGE_MLABEL     _("&Weather Fax Image")
+#define CONTEST_MLABEL         _("Contest")
+#define CONTEST_FIELDS_MLABEL  _("&Contest fields")
+#define COUNTRIES_MLABEL       _("C&ountries")
+#define UI_MLABEL              _("&UI")
+#define RIGLOG_FULL_MLABEL     _("Full")
+#define RIGLOG_NONE_MLABEL     _("None")
+#define RIGLOG_MLABEL          _("Rig control and logging")
+#define RIGCONTEST_MLABEL      _("Rig control and contest")
+#define DOCKEDSCOPE_MLABEL     _("Docked scope")
+#define WF_MLABEL              _("Minimal controls")
+#define SHOW_CHANNELS          _("Show channels")
+
+#define LOG_CONNECT_SERVER     _("Connect to server")
+
+using namespace std;
+
+//regular expression parser using by mainViewer (pskbrowser)
+fre_t seek_re("CQ", REG_EXTENDED | REG_ICASE | REG_NOSUB);
 
 bool bWF_only = false;
 bool withnoise = false;
@@ -171,11 +206,21 @@ Fl_Light_Button		*btnRSID = (Fl_Light_Button *)0;
 Fl_Light_Button		*btnTxRSID = (Fl_Light_Button *)0;
 Fl_Button		    *btnMacroTimer = (Fl_Button *)0;
 
-Fl_Tile_Check		*TiledGroup = 0;
-Fl_Box				*macroFrame = 0;
+Panel				*text_panel = 0;
+Fl_Group			*mvgroup = 0;
+
+Fl_Group			*macroFrame1 = 0;
+Fl_Group			*macroFrame2 = 0;
 FTextRX				*ReceiveText = 0;
 FTextTX				*TransmitText = 0;
 Raster				*FHdisp;
+Fl_Box				*minbox;
+int					oix;
+int					minRxHeight;
+
+pskBrowser			*mainViewer = (pskBrowser *)0;
+Fl_Input2			*txtInpSeek = (Fl_Input2 *)0;
+
 Fl_Box				*StatusBar = (Fl_Box *)0;
 Fl_Box				*Status2 = (Fl_Box *)0;
 Fl_Box				*Status1 = (Fl_Box *)0;
@@ -183,8 +228,9 @@ Fl_Counter2			*cntCW_WPM=(Fl_Counter2 *)0;
 Fl_Button			*btnCW_Default=(Fl_Button *)0;
 Fl_Box				*WARNstatus = (Fl_Box *)0;
 Fl_Button			*MODEstatus = (Fl_Button *)0;
-Fl_Button 			*btnMacro[NUMMACKEYS];
-Fl_Button			*btnAltMacros;
+Fl_Button 			*btnMacro[NUMMACKEYS * NUMKEYROWS];
+Fl_Button			*btnAltMacros1 = (Fl_Button *)0;
+Fl_Button			*btnAltMacros2 = (Fl_Button *)0;
 Fl_Button			*btnAFC;
 Fl_Button			*btnSQL;
 Fl_Input2			*inpQth;
@@ -281,8 +327,14 @@ Fl_Button			*qso_btnAct = 0;
 Fl_Input2			*qso_inpAct = 0;
 
 Fl_Group			*MixerFrame;
-Fl_Value_Slider2		*valRcvMixer;
-Fl_Value_Slider2		*valXmtMixer;
+Fl_Value_Slider2	*valRcvMixer = (Fl_Value_Slider2 *)0;
+Fl_Value_Slider2	*valXmtMixer = (Fl_Value_Slider2 *)0;
+
+Fl_Pack 			*wfpack = (Fl_Pack *)0;
+Fl_Pack				*hpack = (Fl_Pack *)0;
+
+Fl_Value_Slider2	*mvsquelch = (Fl_Value_Slider2 *)0;
+Fl_Button			*btnClearMViewer = 0;
 
 //jcoxon
 Fl_Group			*TopFrameHAB = (Fl_Group *)0;
@@ -328,6 +380,7 @@ int w_inpName  	= 90;
 int w_inpRstIn	= 30;
 int w_inpRstOut = 30;
 int w_SerNo		= 40;
+int sw			= 22;
 
 int wf1 = pad + w_inpFreq + pad + 2*w_inpTime +  pad + w_inpCall +
           pad + w_inpName + pad + w_inpRstIn + pad + w_inpRstOut + pad;
@@ -395,6 +448,8 @@ void cb_oliviaB(Fl_Widget *w, void *arg);
 void cb_oliviaC(Fl_Widget *w, void *arg);
 void cb_oliviaD(Fl_Widget *w, void *arg);
 void cb_oliviaE(Fl_Widget *w, void *arg);
+void cb_oliviaF(Fl_Widget *w, void *arg);
+void cb_oliviaG(Fl_Widget *w, void *arg);
 void cb_oliviaCustom(Fl_Widget *w, void *arg);
 
 void cb_contestiaA(Fl_Widget *w, void *arg);
@@ -456,6 +511,12 @@ Fl_Menu_Item quick_change_mfsk[] = {
 	{ 0 }
 };
 
+Fl_Menu_Item quick_change_wefax[] = {
+	{ mode_info[MODE_WEFAX_576].name, 0, cb_init_mode, (void *)MODE_WEFAX_576 },
+	{ mode_info[MODE_WEFAX_288].name, 0, cb_init_mode, (void *)MODE_WEFAX_288 },
+	{ 0 }
+};
+
 Fl_Menu_Item quick_change_mt63[] = {
 	{ mode_info[MODE_MT63_500].name, 0, cb_init_mode, (void *)MODE_MT63_500 },
 	{ mode_info[MODE_MT63_1000].name, 0, cb_init_mode, (void *)MODE_MT63_1000 },
@@ -506,10 +567,12 @@ Fl_Menu_Item quick_change_throb[] = {
 
 Fl_Menu_Item quick_change_olivia[] = {
 	{ "8/250", 0, cb_oliviaA, (void *)MODE_OLIVIA },
+	{ "4/500", 0, cb_oliviaF, (void *)MODE_OLIVIA },
 	{ "8/500", 0, cb_oliviaB, (void *)MODE_OLIVIA },
 	{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA },
 	{ "8/1000", 0, cb_oliviaD, (void *)MODE_OLIVIA },
 	{ "32/1000", 0, cb_oliviaE, (void *)MODE_OLIVIA },
+	{ "64/2000", 0, cb_oliviaG, (void *)MODE_OLIVIA },
 	{ _("Custom..."), 0, cb_oliviaCustom, (void *)MODE_OLIVIA },
 	{ 0 }
 };
@@ -599,6 +662,22 @@ void cb_oliviaE(Fl_Widget *w, void *arg)
 {
 	progdefaults.oliviatones = 4;
 	progdefaults.oliviabw = 3;
+	set_olivia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_oliviaF(Fl_Widget *w, void *arg)
+{
+	progdefaults.oliviatones = 1;
+	progdefaults.oliviabw = 2;
+	set_olivia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_oliviaG(Fl_Widget *w, void *arg)
+{
+	progdefaults.oliviatones = 5;
+	progdefaults.oliviabw = 4;
 	set_olivia_tab_widgets();
 	cb_init_mode(w, arg);
 }
@@ -1001,6 +1080,13 @@ void init_modem(trx_mode mode, int freq)
 		quick_change = quick_change_mfsk;
 		break;
 
+	case MODE_WEFAX_576:
+	case MODE_WEFAX_288:
+		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
+			      *mode_info[mode].modem = new wefax(mode), freq);
+		quick_change = quick_change_wefax;
+		break;
+
 	case MODE_MT63_500: case MODE_MT63_1000: case MODE_MT63_2000 :
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new mt63(mode), freq);
@@ -1123,7 +1209,12 @@ void restoreFocus(Fl_Widget* w)
 void macro_cb(Fl_Widget *w, void *v)
 {
 	int b = (int)(reinterpret_cast<long> (v));
-	b += altMacros * NUMMACKEYS;
+
+	if (progdefaults.mbar2_pos && b >= NUMMACKEYS)
+		b += (altMacros - 1) * NUMMACKEYS;
+	if (!progdefaults.mbar2_pos)
+		b += altMacros * NUMMACKEYS;
+
 	int mouse = Fl::event_button();
 	if (mouse == FL_LEFT_MOUSE && !macros.text[b].empty()) {
 		stopMacroTimer();
@@ -1136,13 +1227,14 @@ void macro_cb(Fl_Widget *w, void *v)
 
 void colorize_macro(int i)
 {
+	int j = i % NUMMACKEYS;
 	if (progdefaults.useGroupColors == true) {
-		if (i < NUMKEYROWS){
+		if (j < 4) {
 			btnMacro[i]->color(fl_rgb_color(
 				progdefaults.btnGroup1.R,
 				progdefaults.btnGroup1.G,
 				progdefaults.btnGroup1.B));
-		} else if (i < 8) {
+		} else if (j < 8) {
 			btnMacro[i]->color(fl_rgb_color(
 				progdefaults.btnGroup2.R,
 				progdefaults.btnGroup2.G,
@@ -1167,7 +1259,7 @@ void colorize_macro(int i)
 void colorize_macros()
 {
 	FL_LOCK_D();
-	for (int i = 0; i < NUMMACKEYS; i++) {
+	for (int i = 0; i < NUMMACKEYS * NUMKEYROWS; i++) {
 		colorize_macro(i);
 		btnMacro[i]->redraw_label();
 	}
@@ -1176,22 +1268,35 @@ void colorize_macros()
 
 void altmacro_cb(Fl_Widget *w, void *v)
 {
-	static char alt_text[NUMKEYROWS];
+	static char alt_text[2] = "1";
 
 	intptr_t arg = reinterpret_cast<intptr_t>(v);
 	if (arg)
 		altMacros += arg;
 	else
 		altMacros = altMacros + (Fl::event_button() == FL_RIGHT_MOUSE ? -1 : 1);
-	altMacros = WCLAMP(altMacros, 0, 3);
 
-	snprintf(alt_text, sizeof(alt_text), "%d", altMacros + 1);
-	FL_LOCK_D();
-	for (int i = 0; i < NUMMACKEYS; i++)
-		btnMacro[i]->label(macros.name[i + (altMacros * NUMMACKEYS)].c_str());
-	btnAltMacros->label(alt_text);
-	btnAltMacros->redraw_label();
-	FL_UNLOCK_D();
+	if (progdefaults.mbar2_pos) {
+// alternate set
+		altMacros = WCLAMP(altMacros, 1, 3);
+		alt_text[0] = '1' + altMacros;
+		for (int i = 0; i < NUMMACKEYS; i++) {
+			btnMacro[i + NUMMACKEYS]->label(macros.name[i + (altMacros * NUMMACKEYS)].c_str());
+			btnMacro[i + NUMMACKEYS]->redraw_label();
+		}
+		btnAltMacros2->label(alt_text);
+		btnAltMacros2->redraw_label();
+	} else {
+// primary set
+		altMacros = WCLAMP(altMacros, 0, 3);
+		alt_text[0] = '1' + altMacros;
+		for (int i = 0; i < NUMMACKEYS; i++) {
+			btnMacro[i]->label(macros.name[i + (altMacros * NUMMACKEYS)].c_str());
+			btnMacro[i]->redraw_label();
+		}
+		btnAltMacros1->label(alt_text);
+		btnAltMacros1->redraw_label();
+	}
 	restoreFocus();
 }
 
@@ -1378,6 +1483,38 @@ void cb_logfile(Fl_Widget* w, void*)
         delete logfile;
         logfile = 0;
     }
+}
+
+
+// LOGBOOK server connect
+void cb_log_server(Fl_Widget* w, void*)
+{
+	progdefaults.xml_logbook = reinterpret_cast<Fl_Menu_*>(w)->mvalue()->value();
+	connect_to_log_server();
+}
+
+void set_server_label(bool val)
+{
+	Fl_Menu_Item *m = getMenuItem(LOG_CONNECT_SERVER);
+	if (val) m->set();
+	else m->clear();
+}
+
+
+void cb_view_hide_channels(Fl_Menu_ *w, void *d)
+{
+	if (text_panel->w() != ReceiveText->w()) {
+		progStatus.tile_x = mvgroup->w();
+		progStatus.tile_w = text_panel->w();
+		progStatus.tile_y = ReceiveText->h();
+		progStatus.tile_h = text_panel->h();
+		if (!progStatus.show_channels) progStatus.show_channels = true;
+	} else
+		if (progStatus.show_channels) progStatus.show_channels = false;
+
+	progStatus.show_channels = !progStatus.show_channels;
+	UI_select();
+	return;
 }
 
 #if USE_SNDFILE
@@ -1785,6 +1922,30 @@ void cb_mnuContest(Fl_Menu_ *m, void *) {
 	progStatus.contest = m->mvalue()->value();
 }
 
+void set_macroLabels()
+{
+	if (progdefaults.mbar2_pos) {
+		altMacros = 1;
+		for (int i = 0; i < NUMMACKEYS; i++) {
+			btnMacro[NUMMACKEYS + i]->label(
+				macros.name[(altMacros * NUMMACKEYS) + i].c_str());
+			btnMacro[NUMMACKEYS + i]->redraw_label();
+		}
+		btnAltMacros1->label("1");
+		btnAltMacros1->redraw_label();
+		btnAltMacros2->label("2");
+		btnAltMacros2->redraw_label();
+	} else {
+		altMacros = 0;
+		btnAltMacros1->label("1");
+		btnAltMacros1->redraw_label();
+	}
+	for (int i = 0; i < NUMMACKEYS; i++) {
+		btnMacro[i]->label(macros.name[i].c_str());
+		btnMacro[i]->redraw_label();
+	}
+}
+
 void cb_mnuPicViewer(Fl_Menu_ *, void *) {
 	if (picRxWin) {
 		picRx->redraw();
@@ -1796,7 +1957,6 @@ void cb_sldrSquelch(Fl_Slider* o, void*) {
 	progStatus.sldrSquelchValue = o->value();
 	restoreFocus();
 }
-
 
 static char ztbuf[14];
 
@@ -1867,10 +2027,11 @@ if (bHAB) return;
 		inpNotes };
 	for (size_t i = 0; i < sizeof(in)/sizeof(*in); i++)
 		in[i]->value("");
-	if (progdefaults.fixed599) {
+	if (progdefaults.fixed599 && progStatus.contest) {
 		inpRstIn1->value("599"); inpRstIn2->value("599");
 		inpRstOut1->value("599"); inpRstOut2->value("599");
-	}
+	} else if (progdefaults.RSTdefault)
+		inpRstOut1->value("599");
 	inpCall1->color(FL_BACKGROUND2_COLOR);
 	inpCall2->color(FL_BACKGROUND2_COLOR);
 	inpCall3->color(FL_BACKGROUND2_COLOR);
@@ -1880,7 +2041,8 @@ if (bHAB) return;
 	inpCall3->redraw();
 	inpCall4->redraw();
 	updateOutSerNo();
-	inpSearchString->value ("");
+	if (inpSearchString)
+		inpSearchString->value ("");
 	old_call.clear();
 	new_call.clear();
 	qso_time.clear();
@@ -2175,6 +2337,7 @@ void stopMacroTimer()
 	ENSURE_THREAD(FLMAIN_TID);
 
 	progStatus.timer = 0;
+	progStatus.repeatMacro = -1;
 	Fl::remove_timeout(macro_timer);
 
 	btnMacroTimer->label(0);
@@ -2214,6 +2377,22 @@ void cb_XmtMixer(Fl_Widget *w, void *d)
 	mixer->setXmtLevel(progStatus.XmtMixer);
 }
 
+void cb_mvsquelch(Fl_Widget *w, void *d)
+{
+	progStatus.VIEWERsquelch = mvsquelch->value();
+	if (sldrViewerSquelch)
+		sldrViewerSquelch->value(progStatus.VIEWERsquelch);
+}
+
+void cb_btnClearMViewer(Fl_Widget *w, void *d)
+{
+	if (brwsViewer)
+		brwsViewer->clear();
+	mainViewer->clear();
+	if (pskviewer) pskviewer->clear();
+	if (rttyviewer) rttyviewer->clear();
+}
+
 int default_handler(int event)
 {
 	if (event != FL_SHORTCUT)
@@ -2229,10 +2408,31 @@ int default_handler(int event)
 
 	if (w == fl_digi_main || w->window() == fl_digi_main) {
 		int key = Fl::event_key();
-		if (key == FL_Escape || (key >= FL_F && key <= FL_F_Last)) {
+		if (key == FL_Escape || (key >= FL_F && key <= FL_F_Last) ||
+			((key == '1' || key == '2' || key == '3' || key == '4') && Fl::event_alt())) {
 			TransmitText->take_focus();
 			TransmitText->handle(FL_KEYBOARD);
 			w->take_focus(); // remove this to leave tx text focused
+			return 1;
+		}
+#ifdef __APPLE__
+		if ((key == '=') && (Fl::event_state() == FL_COMMAND)) {
+#else
+		if (key == '=' && Fl::event_alt()) {
+#endif
+			progdefaults.txlevel += 0.1;
+			if (progdefaults.txlevel > 0) progdefaults.txlevel = 0;
+			valTxLevel->value(progdefaults.txlevel);
+			return 1;
+		}
+#ifdef __APPLE__
+		if ((key == '-') && (Fl::event_state() == FL_COMMAND)) {
+#else
+		if (key == '-' && Fl::event_alt()) {
+#endif
+			progdefaults.txlevel -= 0.1;
+			if (progdefaults.txlevel < -30) progdefaults.txlevel = -30;
+			valTxLevel->value(progdefaults.txlevel);
 			return 1;
 		}
 	}
@@ -2326,30 +2526,6 @@ bool clean_exit(void) {
 	return true;
 }
 
-
-#define LOG_TO_FILE_MLABEL _("Log all RX/TX text")
-#define RIGCONTROL_MLABEL _("Rig control")
-#define OPMODES_MLABEL _("Op &Mode")
-#define OPMODES_FEWER _("Show fewer modes")
-#define OPMODES_ALL _("Show all modes")
-#define OLIVIA_MLABEL "Olivia"
-#define CONTESTIA_MLABEL "Contestia"
-#define RTTY_MLABEL "RTTY"
-#define VIEW_MLABEL _("&View")
-#define MFSK_IMAGE_MLABEL _("&MFSK image")
-#define CONTEST_MLABEL _("Contest")
-#define CONTEST_FIELDS_MLABEL _("&Contest fields")
-#define COUNTRIES_MLABEL _("C&ountries")
-#define UI_MLABEL _("&UI")
-#define RIGLOG_FULL_MLABEL _("Full")
-#define RIGLOG_NONE_MLABEL _("None")
-#define RIGLOG_MLABEL      _("Rig control and logging")
-#define RIGCONTEST_MLABEL  _("Rig control and contest")
-#define DOCKEDSCOPE_MLABEL _("Docked scope")
-#define WF_MLABEL _("Minimal controls")
-// #define DLFLDIGI_ONLINE_LABEL _("Online")
-const char *DLFLDIGI_ONLINE_LABEL = _("Online");
-
 bool restore_minimize = false;
 
 void UI_select()
@@ -2361,6 +2537,7 @@ void UI_select()
 		return;
 //
 	Fl_Menu_Item* cf = getMenuItem(CONTEST_FIELDS_MLABEL);
+
 	if (progStatus.NO_RIGLOG || progStatus.Rig_Contest_UI || progStatus.Rig_Log_UI) {
 		cf->clear();
 		cf->deactivate();
@@ -2372,18 +2549,110 @@ void UI_select()
 		getMenuItem(RIGLOG_FULL_MLABEL)->setonly();
 	}
 
+	int x = macroFrame1->x();
+	int y1 = TopFrame1->y();
+	int w = TopFrame1->w();
+	int HTh = fl_digi_main->h() - wfpack->h() - hpack->h() - Hmacros - Hstatus;
 	if (progStatus.NO_RIGLOG && !restore_minimize) {
-		int y1 = TopFrame1->y();
-		int y2 = macroFrame->y();
-		int w = TopFrame1->w();
-		if (MixerFrame->visible()) {
-			MixerFrame->resize(0, y1, DEFAULT_SW, y2 - y1);
-			MixerFrame->redraw();
-			TiledGroup->resize(DEFAULT_SW, y1, w - DEFAULT_SW, y2 - y1);
-			TiledGroup->redraw();
-		} else {
-			TiledGroup->resize(0, y1, w, y2 - y1);
-			TiledGroup->redraw();
+		switch (progdefaults.mbar2_pos) {
+		case 1:
+			HTh -= Hmacros;
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			btnAltMacros1->deactivate();
+			y1 += Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
+		case 2:
+			HTh -= Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			btnAltMacros1->deactivate();
+			y1 += Hmacros;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
+		case 3:
+			HTh -= Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			y1 += Hmacros;
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			y1 += hpack->h();
+			break;
+		case 0:
+		default:
+			macroFrame2->size(macroFrame2->w(), 0);
+			macroFrame2->hide();
+			btnAltMacros1->activate();
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
 		}
 		TopFrame1->hide();
 		TopFrame2->hide();
@@ -2391,23 +2660,112 @@ void UI_select()
 		Status2->hide();
 		inpCall4->show();
 		inpCall = inpCall4;
-		fl_digi_main->init_sizes();
-		return;
+		goto UI_return;
 	}
 
 	if ((!progStatus.Rig_Log_UI && ! progStatus.Rig_Contest_UI) ||
 			restore_minimize) {
-		int y1 = TopFrame1->y() + Hqsoframe;
-		int y2 = macroFrame->y();
-		int w = TopFrame1->w();
-		if (MixerFrame->visible()) {
-			MixerFrame->resize(0, y1, DEFAULT_SW, y2 - y1);
-			MixerFrame->redraw();
-			TiledGroup->resize(DEFAULT_SW, y1, w - DEFAULT_SW, y2 - y1);
-			TiledGroup->redraw();
-		} else {
-			TiledGroup->resize(0, y1, w, y2 - y1);
-			TiledGroup->redraw();
+		y1 += (TopFrame1->h());
+		HTh -= (TopFrame1->h());
+		switch (progdefaults.mbar2_pos) {
+		case 1:
+			HTh -= Hmacros;
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			btnAltMacros1->deactivate();
+			y1 += Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
+		case 2:
+			HTh -= Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			btnAltMacros1->deactivate();
+			y1 += Hmacros;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
+		case 3:
+			HTh -= Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			y1 += Hmacros;
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			btnAltMacros1->deactivate();
+			break;
+		case 0:
+		default:
+			macroFrame2->size(macroFrame2->w(), 0);
+			macroFrame2->hide();
+			btnAltMacros1->activate();
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
 		}
 		inpNotes->resize(
 			inpNotes->x(), inpNotes->y(),
@@ -2427,19 +2785,110 @@ void UI_select()
 		outSerNo = outSerNo1;
 		inpXchgIn = inpXchgIn1;
 		qsoFreqDisp = qsoFreqDisp1;
-		fl_digi_main->init_sizes();
-	} else if (progStatus.Rig_Log_UI || progStatus.Rig_Contest_UI) {
-		int y1 = TopFrame2->y() + Hentry + 3 * pad;
-		int y2 = macroFrame->y();
-		int w = TopFrame1->w();
-		if (MixerFrame->visible()) {
-			MixerFrame->resize(0, y1, DEFAULT_SW, y2 - y1);
-			MixerFrame->redraw();
-			TiledGroup->resize(DEFAULT_SW, y1, w - DEFAULT_SW, y2 - y1);
-			TiledGroup->redraw();
-		} else {
-			TiledGroup->resize(0, y1, w, y2 - y1);
-			TiledGroup->redraw();
+		goto UI_return;
+
+	}  else if (progStatus.Rig_Log_UI || progStatus.Rig_Contest_UI) {
+		y1 += TopFrame2->h();
+		HTh -= TopFrame2->h();
+		switch (progdefaults.mbar2_pos) {
+		case 1:
+			HTh -= Hmacros;
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			btnAltMacros1->deactivate();
+			y1 += Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += macroFrame1->h();
+			}
+			hpack->position(x, y1);
+			break;
+		case 2:
+			HTh -= Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			btnAltMacros1->deactivate();
+			y1 += Hmacros;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
+		case 3:
+			HTh -= Hmacros;
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			macroFrame2->size(w, Hmacros);
+			macroFrame2->position(x, y1);
+			macroFrame2->show();
+			y1 += Hmacros;
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			btnAltMacros1->deactivate();
+			break;
+		case 0:
+		default:
+			macroFrame2->size(macroFrame2->w(), 0);
+			macroFrame2->hide();
+			btnAltMacros1->activate();
+			if (progdefaults.EnableMixer)
+				MixerFrame->resize(0, y1, sw, HTh);
+			else
+				MixerFrame->resize(0, y1, 0, HTh);
+			text_panel->resize(MixerFrame->x() + MixerFrame->w(), y1, w - MixerFrame->w(), HTh);
+			y1 += HTh;
+			if (progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			wfpack->position(x, y1);
+			y1 += wfpack->h();
+			if (!progdefaults.mbar1_pos) {
+				macroFrame1->position(x, y1);
+				y1 += Hmacros;
+			}
+			hpack->position(x, y1);
+			break;
 		}
 		if (progStatus.Rig_Log_UI) {
 			TopFrame1->hide();
@@ -2469,7 +2918,20 @@ void UI_select()
 	}
 	inpCall4->hide();
 	Status2->show();
+
+UI_return:
+	if (progStatus.show_channels)
+		text_panel->position(
+			text_panel->orgx(), text_panel->orgy(), 
+			text_panel->x() + (int)(1.0*text_panel->w()*progStatus.tile_x/progStatus.tile_w + 0.5), 
+			text_panel->y() + (int)(1.0*text_panel->h()*progStatus.tile_y/progStatus.tile_h + 0.5));
+	 else
+		text_panel->position(
+			text_panel->orgx(), text_panel->orgy(), 
+			text_panel->x(), 
+			text_panel->y() + (int)(1.0*text_panel->h()*progStatus.tile_y/progStatus.tile_h + 0.5));
 	fl_digi_main->init_sizes();
+	fl_digi_main->redraw();
 }
 
 void cb_mnu_wf_all(Fl_Menu_* w, void *d)
@@ -2526,35 +2988,27 @@ static void cb_opmode_show(Fl_Widget* w, void*);
 Fl_Menu_Item menu_[] = {
 {_("&File"), 0,  0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 
-#if USE_SNDFILE
-{ make_icon_label(_("Audio")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
-{_("RX capture"),  0, (Fl_Callback*)cb_mnuCapture,  0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
-{_("TX generate"), 0, (Fl_Callback*)cb_mnuGenerate, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
-{_("Playback"),    0, (Fl_Callback*)cb_mnuPlayback, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
-{0,0,0,0,0,0,0,0,0},
-#endif
-
 { make_icon_label(_("Folders")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Fldigi config..."), folder_open_icon), 0, cb_ShowConfig, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("NBEMS files..."), folder_open_icon), 0, cb_ShowNBEMS, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{0,0,0,0,0,0,0,0,0},
-
-{ make_icon_label(_("Logs")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("New logbook")), 0, (Fl_Callback*)cb_mnuNewLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Open logbook...")), 0, (Fl_Callback*)cb_mnuOpenLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Save logbook")), 0, (Fl_Callback*)cb_mnuSaveLogbook, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Merge ADIF...")), 0, (Fl_Callback*)cb_mnuMergeADIF_log, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Export ADIF")), 0, (Fl_Callback*)cb_mnuExportADIF_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Export Text")), 0, (Fl_Callback*)cb_mnuExportTEXT_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Export CSV")), 0, (Fl_Callback*)cb_mnuExportCSV_log, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Cabrillo Rpt")), 0, (Fl_Callback*)cb_Export_Cabrillo, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ LOG_TO_FILE_MLABEL, 0, cb_logfile, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 { make_icon_label(_("Macros")), 0, 0, 0, FL_MENU_DIVIDER | FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Open ..."), file_open_icon), 0,  (Fl_Callback*)cb_mnuOpenMacro, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Save ..."), save_as_icon), 0,  (Fl_Callback*)cb_mnuSaveMacro, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
+
+{ make_icon_label(_("Text Capture")), 0, 0, 0, FL_MENU_DIVIDER | FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
+{ LOG_TO_FILE_MLABEL, 0, cb_logfile, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
+#if USE_SNDFILE
+{ make_icon_label(_("Audio")), 0, 0, 0, FL_MENU_DIVIDER | FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
+{_("RX capture"),  0, (Fl_Callback*)cb_mnuCapture,  0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("TX generate"), 0, (Fl_Callback*)cb_mnuGenerate, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("Playback"),    0, (Fl_Callback*)cb_mnuPlayback, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+#endif
 
 { make_icon_label(_("Exit"), log_out_icon), 'x',  (Fl_Callback*)cb_E, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
@@ -2612,11 +3066,13 @@ Fl_Menu_Item menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 { OLIVIA_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "8/250", 0, cb_oliviaA, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "8/250", 0, cb_oliviaA, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/500", 0, cb_oliviaF, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/500", 0, cb_oliviaB, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/1000", 0, cb_oliviaD, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "32/1000", 0, cb_oliviaE, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "64/2000", 0, cb_oliviaG, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { _("Custom..."), 0, cb_oliviaCustom, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -2669,6 +3125,11 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_THROBX4].name, 0, cb_init_mode, (void *)MODE_THROBX4, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
+{"WEFAX", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_WEFAX_576].name, 0,  cb_init_mode, (void *)MODE_WEFAX_576, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_WEFAX_288].name, 0,  cb_init_mode, (void *)MODE_WEFAX_288, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
 {"NBEMS modes", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
@@ -2704,11 +3165,14 @@ Fl_Menu_Item menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 { VIEW_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+
+{make_icon_label(_("View/Hide Channels")), 'v', (Fl_Callback*)cb_view_hide_channels, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+
 { make_icon_label(_("Floating scope"), utilities_system_monitor_icon), 'd', (Fl_Callback*)cb_mnuDigiscope, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(MFSK_IMAGE_MLABEL, image_icon), 'm', (Fl_Callback*)cb_mnuPicViewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("PSK browser")), 'p', (Fl_Callback*)cb_mnuViewer, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Logbook")), 'l', (Fl_Callback*)cb_mnuShowLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("SSDV RX")), 's', (Fl_Callback*)cb_mnuShowSSDVRX, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(WEFAX_IMAGE_MLABEL, image_icon), 'w', (Fl_Callback*)wefax_pic::cb_mnu_pic_viewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Signal browser")), 's', (Fl_Callback*)cb_mnuViewer, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(COUNTRIES_MLABEL), 'o', (Fl_Callback*)cb_mnuShowCountries, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 
 { make_icon_label(_("Controls")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
@@ -2726,7 +3190,27 @@ Fl_Menu_Item menu_[] = {
 
 {0,0,0,0,0,0,0,0,0},
 
-// {"     ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
+{_("&Logbook"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ LOG_CONNECT_SERVER, 0, cb_log_server, 0, FL_MENU_TOGGLE | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("View")), 'l', (Fl_Callback*)cb_mnuShowLogbook, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("New")), 0, (Fl_Callback*)cb_mnuNewLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Open...")), 0, (Fl_Callback*)cb_mnuOpenLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Save")), 0, (Fl_Callback*)cb_mnuSaveLogbook, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+
+{"ADIF", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Merge...")), 0, (Fl_Callback*)cb_mnuMergeADIF_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Export...")), 0, (Fl_Callback*)cb_mnuExportADIF_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
+{"Reports", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Text...")), 0, (Fl_Callback*)cb_mnuExportTEXT_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("CSV...")), 0, (Fl_Callback*)cb_mnuExportCSV_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Cabrillo...")), 0, (Fl_Callback*)cb_Export_Cabrillo, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
+{0,0,0,0,0,0,0,0,0},
+
+{"     ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
 {_("&Help"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 #ifndef NDEBUG
 // settle the gmfsk vs fldigi argument once and for all
@@ -2779,21 +3263,22 @@ static void cb_opmode_show(Fl_Widget* w, void*)
 	Fl_Menu_* m = (Fl_Menu_*)w;
 	const char* label = m->mvalue()->label();
 
-	Fl_Menu_Item *item, *opmodes = getMenuItem(OPMODES_MLABEL);
+	Fl_Menu_Item *item = 0, *first = 0, *last = 0;
+	item = first = getMenuItem(OPMODES_MLABEL) + 1;
+
 	if (!strcmp(label, OPMODES_ALL)) {
-		int n = opmodes->size();
-		for (int i = 0; i < n; i++) {
-			item = opmodes + i;
+		last = getMenuItem(OPMODES_ALL);
+		while (item != last) {
 			if (item->label())
 				item->show();
+			item++;
 		}
 		menu_[m->value()].label(OPMODES_FEWER);
 		modes_hidden = false;
 	}
 	else {
-		int n = opmodes->size() - 1;
-		for (int i = 0; i < n; i++) {
-			item = opmodes + i;
+		last = getMenuItem(OPMODES_FEWER);
+		while (item != last) {
 			if (item->label() && item->callback() == cb_init_mode) {
 				intptr_t mode = (intptr_t)item->user_data();
 				if (mode < NUM_RXTX_MODES) {
@@ -2803,15 +3288,17 @@ static void cb_opmode_show(Fl_Widget* w, void*)
 						item->hide();
 				}
 			}
+			item++;
 		}
-		for (int i = 0; i < n; i++) {
-			item = opmodes + i;
+		item = first;
+		while (item != last) {
 			if (item->flags & FL_SUBMENU) {
 				if (count_visible_items(item))
 					item->show();
 				else
 					item->hide();
 			}
+			item++;
 		}
 		if (progdefaults.visible_modes.test(MODE_OLIVIA))
 			getMenuItem("Olivia")->show();
@@ -2852,8 +3339,13 @@ void toggle_visible_modes(Fl_Widget*, void*)
 
 Fl_Menu_Item *getMenuItem(const char *caption, Fl_Menu_Item* submenu)
 {
-	if (submenu == 0 || !(submenu->flags & FL_SUBMENU))
-		submenu = menu_;
+	if (submenu == 0 || !(submenu->flags & FL_SUBMENU)) {
+		if ( menu_->size() != sizeof(menu_)/sizeof(*menu_) ) {
+			LOG_ERROR("FIXME: the menu_ table is corrupt!");
+			abort();
+		}
+ 		submenu = menu_;
+	}
 
 	int size = submenu->size() - 1;
 	Fl_Menu_Item *item = 0;
@@ -2866,9 +3358,17 @@ Fl_Menu_Item *getMenuItem(const char *caption, Fl_Menu_Item* submenu)
 			break;
 		}
 	}
-	if (!item)
-		LOG_ERROR("FIXME: could not find menu \"%s\"", caption);
+	if (!item) {
+		LOG_ERROR("FIXME: could not find menu item \"%s\"", caption);
+		abort();
+	}
 	return item;
+}
+
+void activate_menu_item(const char *caption, bool val)
+{
+	Fl_Menu_Item *m = getMenuItem(caption);
+	set_active(m, val);
 }
 
 void activate_mfsk_image_item(bool b)
@@ -2876,6 +3376,25 @@ void activate_mfsk_image_item(bool b)
 	Fl_Menu_Item *mfsk_item = getMenuItem(MFSK_IMAGE_MLABEL);
 	if (mfsk_item)
 		set_active(mfsk_item, b);
+}
+
+void activate_wefax_image_item(bool b)
+{
+	/// Maybe do not do anything if the new modem has activated this menu item.
+	/// This is necessary because of trx_start_modem_loop which deletes 
+	/// the current modem after the new one is created..
+	if( ( b == false )
+	 && ( active_modem->get_cap() & modem::CAP_IMG )
+	 && ( active_modem->get_mode() >= MODE_WEFAX_FIRST )
+	 && ( active_modem->get_mode() <= MODE_WEFAX_LAST )
+	 )
+	{
+		return ;
+	}
+
+	Fl_Menu_Item *wefax_item = getMenuItem(WEFAX_IMAGE_MLABEL);
+	if (wefax_item)
+		set_active(wefax_item, b);
 }
 
 int rightof(Fl_Widget* w)
@@ -3153,6 +3672,7 @@ void showMacroSet() {
 		Macroset.append(" Loaded =====>>>\n");
 		ReceiveText->add(Macroset.c_str());
 	}
+	set_macroLabels();
 }
 
 void setwfrange() {
@@ -3184,12 +3704,71 @@ void cb_btnCW_Default(Fl_Widget *w, void *v)
 	restoreFocus();
 }
 
+static void cb_mainViewer_Seek(Fl_Input *, void *)
+{
+	static Fl_Color seek_color[2] = { FL_FOREGROUND_COLOR,
+					  adjust_color(FL_RED, FL_BACKGROUND2_COLOR) }; // invalid RE
+	seek_re.recompile(*txtInpSeek->value() ? txtInpSeek->value() : "[invalid");
+	if (txtInpSeek->textcolor() != seek_color[!seek_re]) {
+		txtInpSeek->textcolor(seek_color[!seek_re]);
+		txtInpSeek->redraw();
+	}
+	progStatus.browser_search = txtInpSeek->value();
+	if (viewer_inp_seek)
+		viewer_inp_seek->value(progStatus.browser_search.c_str());
+}
+
+static void cb_mainViewer(Fl_Hold_Browser*, void*) {
+	if (!pskviewer && !rttyviewer) return;
+	int sel = mainViewer->value();
+	if (sel == 0 || sel > progdefaults.VIEWERchannels)
+		return;
+
+	switch (Fl::event_button()) {
+	case FL_LEFT_MOUSE:
+		if (mainViewer->freq(sel) != NULLFREQ) {
+			if (progdefaults.VIEWERhistory){
+				ReceiveText->addchr('\n', FTextBase::RECV);
+				bHistory = true;
+			} else {
+				ReceiveText->addchr('\n', FTextBase::ALTR);
+				ReceiveText->addstr(mainViewer->line(sel).c_str(), FTextBase::ALTR);
+			}
+			active_modem->set_freq(mainViewer->freq(sel));
+			active_modem->set_sigsearch(SIGSEARCH);
+			if (brwsViewer) brwsViewer->select(sel);
+		} else
+			mainViewer->deselect();
+		break;
+	case FL_MIDDLE_MOUSE: // copy from modem
+//		set_freq(sel, active_modem->get_freq());
+		break;
+	case FL_RIGHT_MOUSE: // reset
+		{
+		int ch = progdefaults.VIEWERascend ? progdefaults.VIEWERchannels - sel : sel - 1;
+		if (pskviewer) pskviewer->clearch(ch);
+		if (rttyviewer) rttyviewer->clearch(ch);
+		mainViewer->deselect();
+		if (brwsViewer) brwsViewer->deselect();
+		break;
+		}
+	default:
+		break;
+	}
+}
 
 void create_fl_digi_main_primary() {
+// bx used as a temporary spacer
+	Fl_Box *bx;
+	int Wmacrobtn;
+	int Hmacrobtn;
+	int xpos;
+	int ypos;
+	int wblank;
 
 	int fnt = fl_font();
 	int fsize = fl_size();
-	int freqheight = Hentry + 2 * pad;
+	int freqheight = Hentry;// + 2 * pad;
 	fl_font(fnt, freqheight);
 	int freqwidth = (int)fl_width("999999999") + 10;
 	fl_font(fnt, fsize);
@@ -3263,14 +3842,22 @@ void create_fl_digi_main_primary() {
 			0, Hmenu,
 			rig_control_width, Hqsoframe);
 
-			txtRigName = new Fl_Box(pad, Hmenu, freqwidth, Hentry);
+//			txtRigName = new Fl_Box(pad, Hmenu, freqwidth, Hentry);
+			txtRigName = new Fl_Box(pad, Hmenu + pad, freqwidth - Wbtn - 2 * pad, Hentry);
+			txtRigName->box(FL_FLAT_BOX);
 			txtRigName->align(FL_ALIGN_CENTER);
 			txtRigName->color(FL_BACKGROUND_COLOR);
 			txtRigName->label(_("No rig specified"));
 
+			qso_opPICK = new Fl_Button(pad + freqwidth - Wbtn, Hmenu + pad, Wbtn, Hentry);
+			addrbookpixmap = new Fl_Pixmap(address_book_icon);
+ 			qso_opPICK->image(addrbookpixmap);
+			qso_opPICK->callback(showOpBrowserView, 0);
+			qso_opPICK->tooltip(_("Open List"));
+
 			qsoFreqDisp1 = new cFreqControl(
-				pad, Hmenu + Hentry,
-				freqwidth, freqheight, "");
+				pad, Hmenu + Hentry + 2 * pad, freqwidth, Hentry, "");
+//				freqwidth, freqheight, "");
 
 			qsoFreqDisp1->box(FL_DOWN_BOX);
 			qsoFreqDisp1->color(FL_BACKGROUND_COLOR);
@@ -3291,12 +3878,13 @@ void create_fl_digi_main_primary() {
 								progdefaults.FDbackground.B));
 			qsoFreqDisp1->value(0);
 
-			Y = Hmenu + 2 * (Hentry + pad);
+			Y = Hmenu + 2 * (Hentry + pad) + pad;
 
-				int w_pmb = (freqwidth - Wbtn + 2 * pad) / 2;
+//				int w_pmb = (freqwidth - Wbtn + 2 * pad) / 2;
+				int w_pmb = (freqwidth - 2 * pad) / 2;
 
 				qso_opMODE = new Fl_ComboBox(
-					pad, Hmenu + 2 * (Hentry + pad) + pad,
+					pad, Y,
 					w_pmb, Hentry);
 				qso_opMODE->box(FL_DOWN_BOX);
 				qso_opMODE->color(FL_BACKGROUND2_COLOR);
@@ -3311,8 +3899,9 @@ void create_fl_digi_main_primary() {
 				qso_opMODE->end();
 
 				qso_opBW = new Fl_ComboBox(
-					rightof(qso_opMODE), Hmenu + 2 * (Hentry + pad) + pad,
-					w_pmb, Hentry);
+					rightof(qso_opMODE), Y,
+					rig_control_width - rightof(qso_opMODE) - pad, Hentry);
+//					w_pmb, Hentry);
 				qso_opBW->box(FL_DOWN_BOX);
 				qso_opBW->color(FL_BACKGROUND2_COLOR);
 				qso_opBW->selection_color(FL_BACKGROUND_COLOR);
@@ -3325,13 +3914,6 @@ void create_fl_digi_main_primary() {
 				qso_opBW->when(FL_WHEN_RELEASE);
 				qso_opBW->end();
 
-				qso_opPICK = new Fl_Button(
-					rightof(qso_opBW), Hmenu + 2 * (Hentry + pad) + pad,
-					Wbtn, Hentry);
-				addrbookpixmap = new Fl_Pixmap(address_book_icon);
-	 			qso_opPICK->image(addrbookpixmap);
-				qso_opPICK->callback(showOpBrowserView, 0);
-				qso_opPICK->tooltip(_("Open List"));
 		RigControlFrame->resizable(NULL);
 
 		RigControlFrame->end();
@@ -3573,7 +4155,7 @@ void create_fl_digi_main_primary() {
 			int y = Hmenu + pad;
 			int h = Hentry;
 			qsoFreqDisp2 = new cFreqControl(
-				pad, Hmenu,
+				pad, y,
 				freqwidth, freqheight, "");
 			qsoFreqDisp2->box(FL_DOWN_BOX);
 			qsoFreqDisp2->color(FL_BACKGROUND_COLOR);
@@ -3666,7 +4248,7 @@ void create_fl_digi_main_primary() {
 				w_inpRstOut2, h, "");
 			inpRstOut2->tooltip(_("Sent RST"));
 
-			const char *label5 = _("Nm");//_("Name");
+			const char *label5 = _("Nm");
 			Fl_Box *bx5 = new Fl_Box(pad + rightof(inpRstOut2), y,
 				static_cast<int>(fl_width(label5)), h, label5);
 			int xn = pad + bx5->x() + bx5->w();
@@ -3685,7 +4267,7 @@ void create_fl_digi_main_primary() {
 			int y = Hmenu + pad;
 			int h = Hentry;
 			qsoFreqDisp3 = new cFreqControl(
-				pad, Hmenu,
+				pad, y,
 				freqwidth, freqheight, "");
 			qsoFreqDisp3->box(FL_DOWN_BOX);
 			qsoFreqDisp3->color(FL_BACKGROUND_COLOR);
@@ -3819,40 +4401,135 @@ void create_fl_digi_main_primary() {
 
 		Y = Hmenu + Hqsoframe + pad;
 
-		int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
-		int Hrcvtxt = (Htext) / 2;
-		int Hxmttxt = (Htext - (Hrcvtxt));
-		int sw = DEFAULT_SW;
-		MixerFrame = new Fl_Group(0,Y,sw, Hrcvtxt + Hxmttxt);
-			valRcvMixer = new Fl_Value_Slider2(0, Y, sw, (Htext)/2, "");
+		macroFrame2 = new Fl_Group(0, Y, progStatus.mainW, Hmacros);
+			macroFrame2->box(FL_FLAT_BOX);
+			Fl_Group *btngroup2 = new Fl_Group(0, Y + 1, progStatus.mainW - Hmacros, Hmacros - 1);
+			Wmacrobtn = (btngroup2->w()) / NUMMACKEYS;
+			Hmacrobtn = btngroup2->h() - 1;
+			wblank = (btngroup2->w() - NUMMACKEYS * Wmacrobtn) / 2;
+			xpos = 0;
+			ypos = btngroup2->y();
+			for (int i = 0; i < NUMMACKEYS; i++) {
+				if (i == 4 || i == 8) {
+					bx = new Fl_Box(xpos, ypos, wblank, Hmacrobtn);
+					bx->box(FL_FLAT_BOX);
+					xpos += wblank;
+				}
+				btnMacro[NUMMACKEYS + i] = new Fl_Button(xpos, ypos, Wmacrobtn, Hmacrobtn, 
+					macros.name[NUMMACKEYS + i].c_str());
+				btnMacro[NUMMACKEYS + i]->callback(macro_cb, (void *)(NUMMACKEYS + i));
+				btnMacro[NUMMACKEYS + i]->tooltip(
+					_("Left Click - execute\nShift-Fkey - execute\nRight Click - edit"));
+				colorize_macro(NUMMACKEYS + i);
+				xpos += Wmacrobtn;
+			}
+			btngroup2->end();
+			btnAltMacros2 = new Fl_Button(progStatus.mainW - Hmacrobtn, ypos, Hmacrobtn, Hmacrobtn, "2");
+			btnAltMacros2->callback(altmacro_cb, 0);
+			btnAltMacros2->tooltip(_("Shift-key macro set"));
+			macroFrame2->resizable(btngroup2);
+		macroFrame2->end();
+		Y += Hmacros;
+		int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros*NUMKEYROWS - Hqsoframe - 4;
+		int Hrcvtxt = Htext / 2;
+		int Hxmttxt = Htext - Hrcvtxt;
+
+		MixerFrame = new Fl_Group(0, Y, sw, Htext);
+		{
+			int Hrcvmixer = Htext / 2;
+			int Hxmtmixer = Htext - Hrcvmixer;
+			valRcvMixer = new Fl_Value_Slider2(MixerFrame->x(), Y, sw, Hrcvmixer, "");
 			valRcvMixer->type(FL_VERT_NICE_SLIDER);
 			valRcvMixer->color(fl_rgb_color(0,110,30));
-			valRcvMixer->labeltype(FL_ENGRAVED_LABEL);
 			valRcvMixer->selection_color(fl_rgb_color(255,255,0));
 			valRcvMixer->textcolor(FL_WHITE);
 			valRcvMixer->range(100.0,0.0);
 			valRcvMixer->value(100.0);
 			valRcvMixer->step(1.0);
 			valRcvMixer->callback( (Fl_Callback *)cb_RcvMixer);
-			valXmtMixer = new Fl_Value_Slider2(0, Y + (Htext)/2, sw, (Htext)/2, "");
+			valXmtMixer = new Fl_Value_Slider2(MixerFrame->x(), Y + Hrcvmixer, sw, Hxmtmixer, "");
 			valXmtMixer->type(FL_VERT_NICE_SLIDER);
 			valXmtMixer->color(fl_rgb_color(110,0,30));
-			valXmtMixer->labeltype(FL_ENGRAVED_LABEL);
 			valXmtMixer->selection_color(fl_rgb_color(255,255,0));
 			valXmtMixer->textcolor(FL_WHITE);
 			valXmtMixer->range(100.0,0.0);
 			valXmtMixer->value(100.0);
 			valXmtMixer->step(1.0);
 			valXmtMixer->callback( (Fl_Callback *)cb_XmtMixer);
+		}
 		MixerFrame->end();
 
-		TiledGroup = new Fl_Tile_Check(sw, Y, progStatus.mainW-sw, Htext);
-			int minRxHeight = Hrcvtxt;
-			int minTxHeight;
-			if (minRxHeight < 66) minRxHeight = 66;
-			minTxHeight = Htext - minRxHeight;
+		int HTwidth = progStatus.mainW - sw;
 
-			ReceiveText = new FTextRX(sw, Y, progStatus.mainW-sw, minRxHeight, "");
+		text_panel = new Panel(sw, Y, HTwidth, Htext);
+
+			mvgroup = new Fl_Group(
+				text_panel->x(), text_panel->y(),
+				text_panel->w()/2, Htext, "");
+
+//				mainViewer = new pskBrowser(mvgroup->x(), mvgroup->y(), mvgroup->w(), Htext-22, "");
+				mainViewer = new pskBrowser(mvgroup->x(), mvgroup->y(), mvgroup->w(), Htext-42, "");
+				mainViewer->box(FL_DOWN_BOX);
+				mainViewer->has_scrollbar(Fl_Browser_::VERTICAL);
+				mainViewer->callback((Fl_Callback*)cb_mainViewer);
+				mainViewer->setfont(progdefaults.ViewerFontnbr, progdefaults.ViewerFontsize);
+				mainViewer->tooltip(_("Left click - select\nRight click - clear line"));
+// mainViewer uses same regular expression evaluator as Viewer
+				mainViewer->seek_re = &seek_re;
+
+				Fl_Group* gseek = new Fl_Group(mvgroup->x(), mvgroup->y() + Htext - 42, mvgroup->w(), 20);
+// search field
+//					const char* label = _("Find: ");
+//					fl_font(FL_HELVETICA, FL_NORMAL_SIZE);
+//					int label_w = static_cast<int>(fl_width(label));
+					int seek_x = mvgroup->x() + 2;
+					int seek_y = mvgroup->y() + Htext - 42;
+					int seek_w = mvgroup->w() - 4;
+					txtInpSeek = new Fl_Input2( seek_x, seek_y, seek_w, gseek->h(), "");
+					txtInpSeek->callback((Fl_Callback*)cb_mainViewer_Seek);
+					txtInpSeek->when(FL_WHEN_CHANGED);
+					txtInpSeek->textfont(FL_COURIER);
+					txtInpSeek->value(progStatus.browser_search.c_str());
+					txtInpSeek->do_callback();
+					txtInpSeek->tooltip(_("seek - regular expression"));
+					gseek->resizable(txtInpSeek);
+				gseek->end();
+
+				Fl_Group *g = new Fl_Group(mvgroup->x(), mvgroup->y() + Htext - 22, mvgroup->w(), 22);
+					g->box(FL_DOWN_BOX);
+					// squelch
+					mvsquelch = new Fl_Value_Slider2(g->x()+2, g->y()+1, g->w() - 65 - 2, g->h()-2);
+					mvsquelch->type(FL_HOR_NICE_SLIDER);
+					mvsquelch->range(-6.0, 20.0);
+					mvsquelch->value(progStatus.VIEWERsquelch);
+					mvsquelch->step(0.5);
+					mvsquelch->color( fl_rgb_color(
+						progdefaults.bwsrSliderColor.R, 
+						progdefaults.bwsrSliderColor.G,
+						progdefaults.bwsrSliderColor.B));
+					mvsquelch->selection_color( fl_rgb_color(
+						progdefaults.bwsrSldrSelColor.R, 
+						progdefaults.bwsrSldrSelColor.G,
+						progdefaults.bwsrSldrSelColor.B));
+					mvsquelch->callback( (Fl_Callback *)cb_mvsquelch);
+					mvsquelch->tooltip(_("Set Viewer Squelch"));
+
+					// clear button
+					btnClearMViewer = new Fl_Button(mvsquelch->x() + mvsquelch->w(), g->y()+1, 65, g->h()-2,
+										make_icon_label(_("Clear"), edit_clear_icon));
+					btnClearMViewer->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+					set_icon_label(btnClearMViewer);
+					btnClearMViewer->callback((Fl_Callback*)cb_btnClearMViewer);
+
+					g->resizable(mvsquelch);
+				g->end();
+
+				mvgroup->resizable(mainViewer);
+			mvgroup->end();
+
+			ReceiveText = new FTextRX(
+				text_panel->x() + mvgroup->w(), text_panel->y(), 
+				text_panel->w() - mvgroup->w(), text_panel->h()/2, "");
 			ReceiveText->color(
 				fl_rgb_color(
 					progdefaults.RxColor.R,
@@ -3867,10 +4544,15 @@ void create_fl_digi_main_primary() {
 			ReceiveText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
 			ReceiveText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
 
-			FHdisp = new Raster(sw, Y, progStatus.mainW-sw, minRxHeight);
+			FHdisp = new Raster(
+				text_panel->x() + mvgroup->w(), text_panel->y(), 
+				text_panel->w() - mvgroup->w(), text_panel->h()/2);
+			FHdisp->align(FL_ALIGN_CLIP);
 			FHdisp->hide();
 
-			TransmitText = new FTextTX(sw, Y + minRxHeight, progStatus.mainW-sw, minTxHeight);
+			TransmitText = new FTextTX(
+				text_panel->x() + mvgroup->w(), text_panel->y() + ReceiveText->h(), 
+				text_panel->w() - mvgroup->w(), text_panel->h() - ReceiveText->h());
 			TransmitText->color(
 				fl_rgb_color(
 					progdefaults.TxColor.R,
@@ -3884,46 +4566,50 @@ void create_fl_digi_main_primary() {
 			TransmitText->setFontColor(progdefaults.CTRLcolor, FTextBase::CTRL);
 			TransmitText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
 			TransmitText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
+			TransmitText->align(FL_ALIGN_CLIP);
 
-			Fl_Box *minbox = new Fl_Box(sw,Y + 66, progStatus.mainW-sw, Htext - 66 - 66);
+			Fl_Box *minbox = new Fl_Box(
+				text_panel->x(), text_panel->y() + 66, 
+				text_panel->w() - 100, text_panel->h() - 66 - 80);
 			minbox->hide();
 
-			TiledGroup->resizable(minbox);
+			text_panel->resizable(minbox);
+		text_panel->end();
 
-			Y += Htext;
-
-		TiledGroup->end();
-		Fl_Group::current()->resizable(TiledGroup);
+		Y += Htext;
 
 		Fl::add_handler(default_handler);
 
-		Fl_Box *bx;
-		macroFrame = new Fl_Box(0, Y, progStatus.mainW, Hmacros);
-			macroFrame->box(FL_ENGRAVED_FRAME);
-			int Wbtn = (progStatus.mainW - 30 - 8 - 4)/NUMMACKEYS;
-			int xpos = 2;
+		macroFrame1 = new Fl_Group(0, Y, progStatus.mainW, Hmacros);
+			macroFrame1->box(FL_FLAT_BOX);
+			Fl_Group *btngroup1 = new Fl_Group(0, Y+1, progStatus.mainW - Hmacros, Hmacros-1);
+			Wmacrobtn = (btngroup1->w()) / NUMMACKEYS;
+			Hmacrobtn = btngroup1->h() - 1;
+			wblank = (btngroup1->w() - NUMMACKEYS * Wmacrobtn) / 2;
+			xpos = 0;
+			ypos = btngroup1->y();
 			for (int i = 0; i < NUMMACKEYS; i++) {
 				if (i == 4 || i == 8) {
-					bx = new Fl_Box(xpos, Y+2, 5, Hmacros - 4);
+					bx = new Fl_Box(xpos, ypos, wblank, Hmacrobtn);
 					bx->box(FL_FLAT_BOX);
-					bx->color(FL_BLACK);
-					xpos += 4;
+					xpos += wblank;
 				}
-				btnMacro[i] = new Fl_Button(xpos, Y+2, Wbtn, Hmacros - 4, macros.name[i].c_str());
-				btnMacro[i]->callback(macro_cb, (void *)i);
-				btnMacro[i]->tooltip(_("Left Click - execute\nRight Click - edit"));
+				btnMacro[i] = new Fl_Button(xpos, ypos, Wmacrobtn, Hmacrobtn, 
+					macros.name[i].c_str());
+				btnMacro[i]->callback(macro_cb, (void *)(i));
+				btnMacro[i]->tooltip(_("Left Click - execute\nFkey - execute\nRight Click - edit"));
 				colorize_macro(i);
-				xpos += Wbtn;
+				xpos += Wmacrobtn;
 			}
-			bx = new Fl_Box(xpos, Y+2, progStatus.mainW - 32 - xpos, Hmacros - 4);
-			bx->box(FL_FLAT_BOX);
-			bx->color(FL_BLACK);
-			btnAltMacros = new Fl_Button(progStatus.mainW-32, Y+2, 30, Hmacros - 4, "1");
-			btnAltMacros->callback(altmacro_cb, 0);
-			btnAltMacros->tooltip(_("Change macro set"));
-
+			btngroup1->end();
+			btnAltMacros1 = new Fl_Button(progStatus.mainW - Hmacrobtn, ypos, Hmacrobtn, Hmacrobtn, "1");
+			btnAltMacros1->callback(altmacro_cb, 0);
+			btnAltMacros1->tooltip(_("Primary macro set"));
+			macroFrame1->resizable(btngroup1);
+		macroFrame1->end();
 		Y += Hmacros;
-		Fl_Pack *wfpack = new Fl_Pack(0, Y, progStatus.mainW, Hwfall);
+
+		wfpack = new Fl_Pack(0, Y, progStatus.mainW, Hwfall);
 			wfpack->type(1);
 
 			wf = new waterfall(0, Y, Wwfall, Hwfall);
@@ -3952,7 +4638,7 @@ void create_fl_digi_main_primary() {
 
 		Y += (Hwfall + 2);
 
-		Fl_Pack *hpack = new Fl_Pack(0, Y, progStatus.mainW, Hstatus);
+		hpack = new Fl_Pack(0, Y, progStatus.mainW, Hstatus);
 			hpack->type(1);
 			MODEstatus = new Fl_Button(0,Hmenu+Hrcvtxt+Hxmttxt+Hwfall, Wmode+30, Hstatus, "");
 			MODEstatus->box(FL_DOWN_BOX);
@@ -3991,7 +4677,7 @@ void create_fl_digi_main_primary() {
 
 			inpCall4 = new Fl_Input2(
 				rightof(Status1), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-				Wimd, Hstatus, "");//"Callsign:");
+				Wimd, Hstatus, "");
 			inpCall4->align(FL_ALIGN_LEFT);
 			inpCall4->tooltip(_("Other call"));
 			inpCall4->hide();
@@ -4037,6 +4723,7 @@ void create_fl_digi_main_primary() {
 
 			Fl_Group::current()->resizable(StatusBar);
 		hpack->end();
+		Y += hpack->h();
 
 		showMacroSet();
 
@@ -4071,6 +4758,7 @@ void create_fl_digi_main_primary() {
 		inpNotes->when(FL_WHEN_RELEASE);
 
 	fl_digi_main->end();
+	fl_digi_main->resizable(text_panel);
 	fl_digi_main->callback(cb_wMain);
 
 	scopeview = new Fl_Double_Window(0,0,140,140, _("Scope"));
@@ -4124,9 +4812,26 @@ void create_fl_digi_main_primary() {
 	UI_select();
 	wf->UI_select(progStatus.WF_UI);
 
+	clearQSO(); 
+
 	createConfig();
 	if (withnoise)
 		grpNoise->show();
+
+	if (!progdefaults.mbar2_pos) {
+		if (progdefaults.mbar1_pos)
+			btn_oneA->setonly();
+		else
+			btn_oneB->setonly();
+	}
+	else if (progdefaults.mbar1_pos) {
+		Fl_Button* b[] = { btn_twoA, btn_twoB, btn_twoC, btn_twoD, btn_twoE, btn_twoF };
+		b[progdefaults.mbar2_pos - 1]->setonly();
+	}
+	else {
+		Fl_Button* b[] = { btn_twoD, btn_twoE, btn_twoF };
+		b[progdefaults.mbar2_pos - 1]->setonly();
+	}
 }
 
 void cb_mnuAltDockedscope(Fl_Menu_ *w, void *d);
@@ -4203,10 +4908,12 @@ Fl_Menu_Item alt_menu_[] = {
 
 {"Olivia", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/250", 0, cb_oliviaA, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "4/500", 0, cb_oliviaF, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/500", 0, cb_oliviaB, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/1000", 0, cb_oliviaD, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "32/1000", 0, cb_oliviaE, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "64/2000", 0, cb_oliviaG, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { _("Custom..."), 0, cb_oliviaCustom, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -4260,6 +4967,11 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_THROBX4].name, 0, cb_init_mode, (void *)MODE_THROBX4, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
+{"WEFAX", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_WEFAX_576].name, 0,  cb_init_mode, (void *)MODE_WEFAX_576, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_WEFAX_288].name, 0,  cb_init_mode, (void *)MODE_WEFAX_288, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
 {"NBEMS modes", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
@@ -4290,8 +5002,11 @@ Fl_Menu_Item alt_menu_[] = {
 { VIEW_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 //{ make_icon_label(_("Extern Scope"), utilities_system_monitor_icon), 'd', (Fl_Callback*)cb_mnuDigiscope, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(MFSK_IMAGE_MLABEL, image_icon), 'm', (Fl_Callback*)cb_mnuPicViewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("PSK Browser")), 'p', (Fl_Callback*)cb_mnuViewer, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("SSDV RX")), 's', (Fl_Callback*)cb_mnuShowSSDVRX, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(WEFAX_IMAGE_MLABEL, image_icon), 'm', (Fl_Callback*)wefax_pic::cb_mnu_pic_viewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
+
+{ make_icon_label(_("Signal Browser")), 's', (Fl_Callback*)cb_mnuViewer, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+
 { DOCKEDSCOPE_MLABEL, 0, (Fl_Callback*)cb_mnuAltDockedscope, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -4382,10 +5097,9 @@ void noop_controls() // create and then hide all controls not being used
 	TransmitText = new FTextTX(0,0,100,100); TransmitText->hide();
 	
 
-	for (int i = 0; i < NUMMACKEYS; i++) {
+	for (int i = 0; i < NUMMACKEYS * NUMKEYROWS; i++) {
 		btnMacro[i] = new Fl_Button(defwidget); btnMacro[i]->hide();
 	}
-	btnAltMacros = new Fl_Button(defwidget); btnAltMacros->hide();
 
 	inpQth = new Fl_Input2(defwidget); inpQth->hide();
 	inpLoc = new Fl_Input2(defwidget); inpLoc->hide();
@@ -4494,13 +5208,14 @@ void make_scopeviewer()
 
 void altTabs()
 {
-	tabsConfigure->remove(tabUI);
-	tabsConfigure->remove(tabFeld);
-	//tabsConfigure->remove(tabMisc);
-	tabMisc->remove(tabQRZ);
-	tabMisc->remove(tabMacros);
-	tabMisc->remove(tabSpot);
-	tabMisc->remove(tabPskmail);
+	tabsConfigure->remove(tabMisc);
+	tabsConfigure->remove(tabQRZ);
+	tabsUI->remove(tabUserInterface);
+	tabsUI->remove(tabContest);
+	tabsUI->remove(tabWF_UI);
+	tabsUI->remove(tabRxText);
+	tabsUI->remove(tabMBars);
+	tabsModems->remove(tabFeld);
 }
 
 int WF_only_height = 0;
@@ -4592,7 +5307,7 @@ void create_fl_digi_main_WF_only() {
 
 		Y += (Hwfall + pad);
 
-		Fl_Pack *hpack = new Fl_Pack(0, Y, progStatus.mainW, Hstatus);
+		hpack = new Fl_Pack(0, Y, progStatus.mainW, Hstatus);
 			hpack->type(1);
 			MODEstatus = new Fl_Button(0, Y, Wmode+30, Hstatus, "");
 			MODEstatus->box(FL_DOWN_BOX);
@@ -4645,7 +5360,7 @@ void create_fl_digi_main_WF_only() {
 
 			int sql_width = bwSqlOnOff;
 #ifdef __APPLE__
-			sql_width -= 15; // leave room for resize handle
+			sql_width -= 15; // leave room for resize handleresize
 #endif
 			btnAFC = new Fl_Light_Button(
 				progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
@@ -5406,8 +6121,7 @@ static void put_rx_char_flmain(unsigned int data, int style)
 		s = ascii2[data & 0x7F];
 	else {
 		s += data;
-		bool viewer = (mode >= MODE_PSK_FIRST && mode <= MODE_PSK_LAST && dlgViewer && dlgViewer->visible());
-		if (progStatus.spot_recv && !viewer)
+		if (progStatus.spot_recv)
 			spot_recv(data);
 	}
 	if (Maillogfile)
@@ -5798,28 +6512,6 @@ ret:
 	FL_UNLOCK_D();
 }
 
-void enable_vol_sliders(bool val)
-{
-if (bWF_only) return;
-//jcoxon
-if (bHAB) return;
-//
-        if (MixerFrame->visible()) {
-                if (val)
-                        return;
-		MixerFrame->hide();
-		TiledGroup->resize(TiledGroup->x() - MixerFrame->w(), TiledGroup->y(),
-				   TiledGroup->w() + MixerFrame->w(), TiledGroup->h());
-        }
-        else {
-                if (!val)
-                        return;
-		TiledGroup->resize(TiledGroup->x() + MixerFrame->w(), TiledGroup->y(),
-				   TiledGroup->w() - MixerFrame->w(), TiledGroup->h());
-		MixerFrame->show();
-        }
-}
-
 void resetMixerControls()
 {
 if (bWF_only) return;
@@ -5840,7 +6532,7 @@ if (bHAB) return;
         btnMixer->value(0);
 	    valPCMvolume->deactivate();
     }
-    enable_vol_sliders(progdefaults.EnableMixer);
+    UI_select();
 }
 
 void setPCMvolume(double vol)

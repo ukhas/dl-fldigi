@@ -54,6 +54,9 @@ modem *mfsk22_modem = 0;
 modem *mfsk31_modem = 0;
 modem *mfsk64_modem = 0;
 
+modem *wefax576 = 0;
+modem *wefax288 = 0;
+
 modem *mt63_500_modem = 0;
 modem *mt63_1000_modem = 0;
 modem *mt63_2000_modem = 0;
@@ -398,7 +401,15 @@ void modem::ModulateXmtr(double *buffer, int len)
             ModulateStereo( buffer, PTTchannel, len);
         return;
     }
+
+	if (progdefaults.viewXmtSignal)
+		trx_xmit_wfall_queue(samplerate, buffer, (size_t)len);
+
 	if (withnoise && progdefaults.noise) add_noise(buffer, len);
+
+	double mult = pow(10, progdefaults.txlevel / 20.0);
+	for (int i = 0; i < len; i++) buffer[i] *= mult;
+
 	try {
 		unsigned n = 4;
 		while (scard->Write(buffer, len) == 0 && --n);
@@ -410,15 +421,20 @@ void modem::ModulateXmtr(double *buffer, int len)
 		return;
 	}
 
-	if (progdefaults.viewXmtSignal)
-		trx_xmit_wfall_queue(samplerate, buffer, (size_t)len);
 }
 
 #include <iostream>
 using namespace std;
 void modem::ModulateStereo(double *left, double *right, int len)
 {
+	if (progdefaults.viewXmtSignal)
+		trx_xmit_wfall_queue(samplerate, left, (size_t)len);
+
 	if (withnoise && progdefaults.noise) add_noise(left, len);
+
+	double mult = pow(10, progdefaults.txlevel / 20.0);
+	for (int i = 0; i < len; i++) left[i] *= mult;
+
 	try {
 		unsigned n = 4;
 		while (scard->Write_stereo(left, right, len) == 0 && --n);
@@ -430,8 +446,6 @@ void modem::ModulateStereo(double *left, double *right, int len)
 		return;
 	}
 
-	if (progdefaults.viewXmtSignal)
-		trx_xmit_wfall_queue(samplerate, left, (size_t)len);
 }
 
 
@@ -467,8 +481,8 @@ void modem::videoText()
 			break;
 		case MODE_RTTY:
 			snprintf(idtxt, TLEN, "%s-%d/%d", mode_info[mode].vid_name,
-				(int)_BAUD[progdefaults.rtty_baud],
-				_BITS[progdefaults.rtty_bits]);
+				static_cast<int>(rtty::BAUD[progdefaults.rtty_baud]),
+				rtty::BITS[progdefaults.rtty_bits]);
 			break;
 		case MODE_DOMINOEX4: case MODE_DOMINOEX5: case MODE_DOMINOEX8:
 		case MODE_DOMINOEX11: case MODE_DOMINOEX16: case MODE_DOMINOEX22:
@@ -668,16 +682,17 @@ void modem::wfid_make_tones(int numchars)
 
 void modem::wfid_send(int numchars)
 {
+	int i, j, k;
 	int sym;
 	double val;
 
-	for (int i = 0; i < IDSYMLEN; i++) {
+	for (i = 0; i < IDSYMLEN; i++) {
 		val = 0.0;
-		for (int j = 0; j < numchars; j++) {
-			sym = symbols[numchars - j - 1];
-			for (int k = 0; k < NUMCOLS; k++) {
+		for (k = 0; k < numchars; k++) {
+			sym = symbols[numchars - k - 1];
+			for (j = 0; j < NUMCOLS; j++) {
 				if (sym & 1)
-					val += sin(wfid_w[k + j * NUMCOLS] * i);
+					val += sin(wfid_w[j + k * NUMCOLS] * i);
 				sym = sym >> 1;
 			}
 		}

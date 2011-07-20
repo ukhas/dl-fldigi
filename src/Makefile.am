@@ -32,8 +32,8 @@ LOCATOR_SRC = misc/locator.c
 BENCHMARK_SRC = include/benchmark.h misc/benchmark.cxx
 REGEX_SRC = compat/regex.h compat/regex.c
 STACK_SRC = include/stack.h misc/stack.cxx
-MINGW32_SRC = include/compat.h compat/getsysinfo.c compat/mingw.c compat/mingw.h compat/flock.c compat/flock.h
-NLS_SRC = misc/nls.cxx
+MINGW32_SRC = include/compat.h compat/getsysinfo.c compat/mingw.c compat/mingw.h
+NLS_SRC = misc/nls.cxx include/nls.h
 
 # We distribute these but do not always compile them
 EXTRA_dl_fldigi_SOURCES = $(HAMLIB_SRC) $(XMLRPC_SRC) $(FLDIGI_WIN32_RES_SRC) $(COMMON_WIN32_RES_SRC) \
@@ -211,6 +211,10 @@ nsisinst: $(bin_PROGRAMS)
     CLEANFILES += $(INSTALLER_FILE)
 endif
 
+if USE_NLS
+    CLEAN_LOCAL += share
+endif
+
 if WANT_FLDIGI
 if ENABLE_HAMLIB
 hamlib-static: $(dl_fldigi_OBJECTS)
@@ -244,6 +248,7 @@ dl_fldigi_SOURCES += \
 	cw_rtty/cw.cxx \
 	cw_rtty/morse.cxx \
 	cw_rtty/rtty.cxx \
+	cw_rtty/view_rtty.cxx \
 	contestia/contestia.cxx \
 	dialogs/colorsfonts.cxx \
 	dialogs/confdialog.cxx \
@@ -275,7 +280,7 @@ dl_fldigi_SOURCES += \
 	include/Fl_Text_Buffer_mod.H \
 	include/Fl_Text_Display_mod.H \
 	include/Fl_Text_Editor_mod.H \
-	include/Fl_Tile_Check.h \
+	include/Panel.h \
 	include/FreqControl.h \
 	include/analysis.h \
 	include/ascii.h \
@@ -329,6 +334,8 @@ dl_fldigi_SOURCES += \
 	include/mbuffer.h \
 	include/mfsk.h \
 	include/mfskvaricode.h \
+	include/wefax.h \
+	include/wefax-pic.h \
 	include/misc.h \
 	include/mixer.h \
 	include/modem.h \
@@ -366,6 +373,7 @@ dl_fldigi_SOURCES += \
 	include/rs8.h \
 	include/rsid.h \
 	include/rtty.h \
+	include/view_rtty.h \
 	include/rx_extract.h \
 	include/speak.h \
 	include/serial.h \
@@ -401,6 +409,7 @@ dl_fldigi_SOURCES += \
 	include/qso_db.h \
 	include/table.h \
 	include/textio.h \
+	include/psk_browser.h \
 	irrxml/CXMLReaderImpl.h \
 	irrxml/fast_atof.h \
 	irrxml/heapsort.h \
@@ -425,6 +434,8 @@ dl_fldigi_SOURCES += \
 	mfsk/interleave.cxx \
 	mfsk/mfsk.cxx \
 	mfsk/mfskvaricode.cxx \
+	wefax/wefax.cxx \
+	wefax/wefax-pic.cxx \
 	misc/ascii.cxx \
 	misc/configuration.cxx \
 	misc/debug.cxx \
@@ -492,14 +503,43 @@ dl_fldigi_SOURCES += \
 	widgets/Fl_Text_Buffer_mod.cxx \
 	widgets/Fl_Text_Display_mod.cxx \
 	widgets/Fl_Text_Editor_mod.cxx \
-	widgets/Fl_Tile_Check.cxx \
+	widgets/Panel.cxx \
 	widgets/flinput2.cxx \
 	widgets/flmisc.cxx \
 	widgets/flslider2.cxx \
 	widgets/picture.cxx \
 	widgets/progress.cxx \
+	widgets/psk_browser.cxx \
 	wwv/analysis.cxx \
-	wwv/wwv.cxx
+	wwv/wwv.cxx \
+	logbook/xmlrpc_log.cxx \
+	xmlrpcpp/XmlRpc.h \
+	xmlrpcpp/XmlRpcClient.cpp \
+	xmlrpcpp/XmlRpcClient.h \
+	xmlrpcpp/XmlRpcDispatch.cpp \
+	xmlrpcpp/XmlRpcDispatch.h \
+	xmlrpcpp/XmlRpcException.h \
+	xmlrpcpp/XmlRpcMutex.cpp \
+	xmlrpcpp/XmlRpcMutex.h \
+	xmlrpcpp/XmlRpcServer.cpp \
+	xmlrpcpp/XmlRpcServer.h \
+	xmlrpcpp/XmlRpcServerConnection.cpp \
+	xmlrpcpp/XmlRpcServerConnection.h \
+	xmlrpcpp/XmlRpcServerMethod.cpp \
+	xmlrpcpp/XmlRpcServerMethod.h \
+	xmlrpcpp/XmlRpcSocket.cpp \
+	xmlrpcpp/XmlRpcSocket.h \
+	xmlrpcpp/XmlRpcSource.cpp \
+	xmlrpcpp/XmlRpcSource.h \
+	xmlrpcpp/XmlRpcThread.cpp \
+	xmlrpcpp/XmlRpcThread.h \
+	xmlrpcpp/XmlRpcThreadedServer.cpp \
+	xmlrpcpp/XmlRpcThreadedServer.h \
+	xmlrpcpp/XmlRpcUtil.cpp \
+	xmlrpcpp/XmlRpcUtil.h \
+	xmlrpcpp/XmlRpcValue.cpp \
+	xmlrpcpp/XmlRpcValue.h \
+	xmlrpcpp/base64.h
 
 # Sources that are part of the distribution but are not compiled directly
 EXTRA_dl_fldigi_SOURCES += \
