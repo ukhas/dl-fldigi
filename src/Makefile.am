@@ -503,6 +503,7 @@ dl_fldigi_SOURCES += \
 	widgets/Fl_Text_Buffer_mod.cxx \
 	widgets/Fl_Text_Display_mod.cxx \
 	widgets/Fl_Text_Editor_mod.cxx \
+	widgets/Fl_Tile_Check.cxx \
 	widgets/Panel.cxx \
 	widgets/flinput2.cxx \
 	widgets/flmisc.cxx \

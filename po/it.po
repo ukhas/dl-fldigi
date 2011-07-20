@@ -11,10 +11,10 @@ msgstr ""
 "PO-Revision-Date: 2011-02-18 21:57+0100\n"
 "Last-Translator: Pierfrancesco Caci <pf@tippete.net>\n"
 "Language-Team: Italian\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: src/main.cxx:248
@@ -24,8 +24,8 @@ msgstr "%s log iniziato il %s"
 
 #: src/main.cxx:888
 msgid ""
-"License GPLv3+: GNU GPL version 3 or later <http://www.gnu.org/licenses/gpl-"
-"3.0.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <http://www.gnu.org/licenses/"
+"gpl-3.0.html>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
@@ -953,11 +953,12 @@ msgid "flmsg\t*"
 msgstr ""
 
 #: src/logger/speak.cxx:42
+#, fuzzy
 msgid ""
 "Save all received text, one character at a time to the following file:\n"
 "\n"
-"    fldigi.files\\talk\\textout.txt (Windows)\n"
-"    ~/.fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
+"    dl-fldigi.files\\talk\\textout.txt (Windows)\n"
+"    ~/.dl-fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
 msgstr ""
 "Salva tutto il tesxto ricevuto, un carattere alla volta, su questo file:\n"
 "\n"
@@ -977,11 +978,12 @@ msgid "Always USB"
 msgstr "Sempre USB"
 
 #: src/misc/configuration.cxx:710
+#, fuzzy
 msgid ""
 "Reset all options to their default values?\n"
 "\n"
 "Reset options will take effect at the next start\n"
-"Files: fldigi_def.xml and fldigi.prefs will be deleted!\n"
+"Files: dl-fldigi_def.xml and dl-fldigi.prefs will be deleted!\n"
 msgstr ""
 "Resetta tutte le opzioni ai loro valori predefiniti?\n"
 "\n"
@@ -4361,7 +4363,8 @@ msgid "Connect/disconnect to Talker socket server"
 msgstr "Connetti/disconnetti il socket del server Talker"
 
 #: src/dialogs/confdialog.cxx:6331
-msgid "Auto connect when fldigi opens (server must be up)"
+#, fuzzy
+msgid "Auto connect when dl-fldigi opens (server must be up)"
 msgstr ""
 "Connetti automaticamente all'avvio di fldigi (il server deve essere attivo)"
 

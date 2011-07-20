@@ -98,7 +98,7 @@
 #include "globals.h"
 #include "misc.h"
 #include "FTextRXTX.h"
-//#include "Fl_Tile_Check.h"
+#include "Fl_Tile_Check.h"
 
 #include "confdialog.h"
 #include "configuration.h"
@@ -174,7 +174,7 @@ bool bHAB = false;
 #define DOCKEDSCOPE_MLABEL     _("Docked scope")
 #define WF_MLABEL              _("Minimal controls")
 #define SHOW_CHANNELS          _("Show channels")
-
+#define DLFLDIGI_ONLINE_LABEL  _("Online")
 #define LOG_CONNECT_SERVER     _("Connect to server")
 
 using namespace std;
@@ -206,6 +206,7 @@ Fl_Light_Button		*btnRSID = (Fl_Light_Button *)0;
 Fl_Light_Button		*btnTxRSID = (Fl_Light_Button *)0;
 Fl_Button		    *btnMacroTimer = (Fl_Button *)0;
 
+Fl_Tile_Check			*TiledGroup = 0;
 Panel				*text_panel = 0;
 Fl_Group			*mvgroup = 0;
 

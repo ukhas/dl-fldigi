@@ -26,6 +26,7 @@
 
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Browser.H>
+#include <FL/Fl_Output.H>
 #include <FL/Fl_Pack.H>
 
 #include "combo.h"

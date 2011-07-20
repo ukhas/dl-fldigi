@@ -37,6 +37,7 @@
 #include "confdialog.h"
 #include "debug.h"
 #include "icons.h"
+#include "qrunner.h"
 
 using namespace std;
 
