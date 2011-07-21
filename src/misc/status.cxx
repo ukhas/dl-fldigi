@@ -209,7 +209,7 @@ void status::saveLastState()
 	logbook_col_5 = wBrowser->columnWidth(5);
 
 
-	if (!bWF_only) {
+	if (!bWF_only && !bHAB) {
 		RxTextHeight = (ReceiveText->h() * 100) / text_panel->h();//VTgroup->h();
 		quick_entry = ReceiveText->get_quick_entry();
 		rx_scroll_hints = ReceiveText->get_scroll_hints();
