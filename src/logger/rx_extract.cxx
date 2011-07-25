@@ -161,8 +161,6 @@ string rx_extract_msg;
 bool extracting = false;
 bool bInit = false;
 
-char dttm[64];
-
 //jcoxon
 //Default rules
 unsigned int total_string_length = 100;
@@ -216,26 +214,8 @@ void rx_extract_add(int c)
 		active_modem->track_freq_lock++;
 	} else if (extracting) {
 		rx_buff += ch;
-		if (strstr(rx_extract_buff, end) != NULL) {
-			struct tm tim;
-			time_t t;
-			time(&t);
-	        gmtime_r(&t, &tim);
-			strftime(dttm, sizeof(dttm), "%Y%m%d-%H%M%S", &tim);
-
-			string outfilename = WRAP_recv_dir;
-			outfilename.append("extract-");
-			outfilename.append(dttm);
-			outfilename.append(".wrap");
-			ofstream extractstream(outfilename.c_str(), ios::binary);
-			if (extractstream) {
-				extractstream << rx_buff;
-				extractstream.close();
-			}
-			//rx_extract_msg = "File saved in ";
-			//rx_extract_msg.append(WRAP_recv_dir);
-			//put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
-
+		if (strstr(rx_extract_buff, "\n") != NULL) {
+			
 //jcoxon
 			//Trim Spaces
 			TrimSpaces(rx_buff);
@@ -296,61 +276,7 @@ void rx_extract_add(int c)
 						REQ(dl_fldigi_reset_rxtimer);
 					}
 			}
-
-			if ((progdefaults.open_flmsg) && 
-				(rx_buff.find(flmsg) != string::npos))
-				open_recv_folder(WRAP_recv_dir.c_str());
-
-			if (progdefaults.open_nbems_folder)
-				open_recv_folder(WRAP_recv_dir.c_str());
-
-			if ((progdefaults.open_flmsg || progdefaults.open_flmsg_print) && 
-				(rx_buff.find(flmsg) != string::npos) &&
-				!progdefaults.flmsg_pathname.empty()) {
-				string cmd = progdefaults.flmsg_pathname;
-#ifdef __MINGW32__
-				if (progdefaults.open_flmsg_print && progdefaults.open_flmsg)
-					cmd.append(" --b");
-				else if (progdefaults.open_flmsg_print)
-					cmd.append(" --p");
-				cmd.append(" \"").append(outfilename).append("\"");
-				char *cmdstr = strdup(cmd.c_str());
-				STARTUPINFO si;
-				PROCESS_INFORMATION pi;
-				memset(&si, 0, sizeof(si));
-				si.cb = sizeof(si);
-				memset(&pi, 0, sizeof(pi));
-				if (!CreateProcess( NULL, cmdstr, 
-					NULL, NULL, FALSE, 
-					CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
-					LOG_ERROR("CreateProcess failed with error code %ld", GetLastError());
-				CloseHandle(pi.hProcess);
-				CloseHandle(pi.hThread);
-				free (cmdstr);
-#else
-				string params = "";
-				if (progdefaults.open_flmsg_print && progdefaults.open_flmsg)
-					params = " --b";
-				else if (progdefaults.open_flmsg_print)
-					params = " --p";
-				switch (fork()) {
-				case 0:
-#  ifndef NDEBUG
-					unsetenv("MALLOC_CHECK_");
-					unsetenv("MALLOC_PERTURB_");
-#  endif
-					execlp(
-						(char*)cmd.c_str(), 
-						(char*)cmd.c_str(),
-						(char*)params.c_str(),
-						(char*)outfilename.c_str(), 
-						(char*)0);
-					exit(EXIT_FAILURE);
-				case -1:
-					fl_alert2(_("Could not start flmsg"));
-				}
-#endif
-			}
+			
 			rx_extract_reset();
 			active_modem->track_freq_lock--;
 		} else if (rx_buff.length() > 200) {
