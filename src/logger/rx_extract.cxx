@@ -207,16 +207,12 @@ void rx_extract_add(int c)
 //
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
 		put_status("dl_fldigi: detected sentence start; extracting!", 10);
-		if(extracting)
-		{
-			/* Was already extracting... reset */
-			rx_extract_reset();
-			active_modem->track_freq_lock--;
-		}
 		
+		if(!extracting) active_modem->track_freq_lock++;
+		
+		rx_extract_reset();
 		rx_buff = beg;
 		extracting = true;
-		active_modem->track_freq_lock++;
 	} else if (extracting) {
 		rx_buff += ch;
 		if (strstr(rx_extract_buff, "\n") != NULL) {
