@@ -802,43 +802,10 @@ void dl_fldigi_update_payloads()
 				xml->read();
 				r_shift = atoi(xml->getNodeData());
 				xml->read();
-
-				switch ( r_shift )
-				{
-						case 23:
-							p->shift = 0;
-							break;
-						case 85:
-							p->shift = 1;
-							break;
-						case 160:
-							p->shift = 2;
-							break;
-						case 170:
-							p->shift = 3;
-							break;
-						case 182:
-							p->shift = 4;
-							break;
-						case 200:
-							p->shift = 5;
-							break;
-						case 240:
-							p->shift = 6;
-							break;
-						case 350:
-							p->shift = 7;
-							break;
-						case 425:
-							p->shift = 8;
-							break;
-						case 600:
-							p->shift = 9;
-							break;
-						case 850:
-							p->shift = 10;
-							break;
-						}
+				
+				if(r_shift > 1000) r_shift = 1000;
+				if(r_shift < 10) r_shift = 10;
+				p->shift = r_shift;
 			}
 			
 			else if (strcmp("baud", xml->getNodeName()) == 0)
@@ -1355,7 +1322,8 @@ void dl_fldigi_select_payload(const char *name)
 
 			if (p->rtty_enabled == 1)
 			{
-				progdefaults.rtty_shift = p->shift;
+				progdefaults.rtty_shift = -1;
+				progdefaults.rtty_custom_shift = p->shift;
 				progdefaults.rtty_baud = p->baud;
 				if(p->baud1 > 0) {
 					p->baud0 = p->baud;
@@ -1367,6 +1335,8 @@ void dl_fldigi_select_payload(const char *name)
 				progdefaults.rtty_stop = p->stopbits;
 
 				selShift->value(progdefaults.rtty_shift);
+				selCustomShift->activate();
+				selCustomShift->value(progdefaults.rtty_custom_shift);
 				selBaud->value(progdefaults.rtty_baud);
 				selBits->value(progdefaults.rtty_bits);
 				selParity->value(progdefaults.rtty_parity);
