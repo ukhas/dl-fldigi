@@ -595,6 +595,17 @@ static void *dl_fldigi_download_thread(void *thread_argument)
 	pthread_exit(0);
 }
 
+static void dl_fldigi_delete_payload(struct payload *d)
+{
+	#define auto_free(x)   do { void *a = (x); if (a != NULL) { free(a); } } while (0)
+	
+	auto_free(d->name);
+	auto_free(d->sentence_delimiter);
+	auto_free(d->field_delimiter);
+	auto_free(d->callsign);
+	free(d);
+}
+
 static void dl_fldigi_delete_payloads()
 {
 	struct payload *d, *n;
@@ -616,15 +627,8 @@ static void dl_fldigi_delete_payloads()
 
 	while (d != NULL)
 	{
-		#define auto_free(x)   do { void *a = (x); if (a != NULL) { free(a); } } while (0)
-
-		auto_free(d->name);
-		auto_free(d->sentence_delimiter);
-		auto_free(d->field_delimiter);
-		auto_free(d->callsign);
-
 		n = d->next;
-		free(d);
+		dl_fldigi_delete_payload(d);
 		d = n;
 
 		i++;
@@ -732,13 +736,6 @@ void dl_fldigi_update_payloads()
 				xml->read();
 				p->name = strdup(xml->getNodeData());
 				xml->read();
-
-				if (bHAB)
-				{
-					habFlightXML->add(p->name);
-				}
-
-				habFlightXML_conf->add(p->name);
 
 				dbfield_no = 1;
 				
@@ -1017,11 +1014,54 @@ void dl_fldigi_update_payloads()
 	if(dbfield_name) free(dbfield_name);
 	if(dbfield_format) free(dbfield_format);
 	
+	/* Add payloads to the UI, after a quick sanity test */
+	i = 0;
+	n = NULL;
+	p = payload_list;
+	while(p)
+	{
+		bool sane = true;
+		
+		/* Test the strings */
+		if(p->name == NULL ||
+		   p->sentence_delimiter == NULL ||
+		   p->field_delimiter == NULL ||
+		   p->callsign == NULL)
+		{
+			#ifdef DL_FLDIGI_DEBUG
+			fprintf(stderr, "dl_fldigi: removing payload '%s'... missing data from XML\n", (p->name ? p->name : "NULL"));
+			#endif
+			sane = false;
+		}
+		
+		if(sane)
+		{
+			/* Looks OK, add to the UI */
+			if(bHAB) habFlightXML->add(p->name);
+			habFlightXML_conf->add(p->name);
+			i++;
+			n = p;
+			p = p->next;
+		}
+		else
+		{
+			struct payload *t = p;
+			
+			/* Payload data is invalid or incomplete; remove it from the list */
+			/* Point p to next entry, n == previous entry */
+			p = p->next;
+			if(n) n->next = p;
+			else payload_list = p;
+			
+			dl_fldigi_delete_payload(t);
+		}
+	}
+	
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: UI updated: added %i payloads.\n", i);
 		fprintf(stderr, "dl_fldigi: post UI update: attempting to re-select (but not configure) payload '%s'\n", progdefaults.xmlPayloadname.c_str());
 	#endif
-
+	
 	if (bHAB && progdefaults.xmlPayloadname.length() != 0)
 	{
 		const Fl_Menu_Item *item = habFlightXML->find_item(progdefaults.xmlPayloadname.c_str());
