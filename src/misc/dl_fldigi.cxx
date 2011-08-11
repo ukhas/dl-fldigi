@@ -784,7 +784,6 @@ void dl_fldigi_update_payloads()
 			else if (strcmp("rtty", xml->getNodeName()) == 0)
 			{
 				p->rtty_enabled = 1;
-				xml->read();
 			}
 			
 			else if (strcmp("dominoex", xml->getNodeName()) == 0)
