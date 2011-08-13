@@ -33,7 +33,6 @@
 #include <getopt.h>
 #include <sys/types.h>
 
-
 #if !defined(__WOE32__) && !defined(__APPLE__)
 #  include <sys/ipc.h>
 #  include <sys/msg.h>

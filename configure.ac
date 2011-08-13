@@ -9,7 +9,7 @@ dnl major and minor must be integers; patch may
 dnl contain other characters or be empty
 m4_define(FLDIGI_MAJOR, [3])
 m4_define(FLDIGI_MINOR, [21])
-m4_define(FLDIGI_PATCH, [.12])
+m4_define(FLDIGI_PATCH, [.13])
 m4_define(FLARQ_MAJOR,  [4])
 m4_define(FLARQ_MINOR,  [3])
 m4_define(FLARQ_PATCH,  [.1])
@@ -219,7 +219,7 @@ fi
 # Define USE_PNG in config.h (as above)
 # Substitute PNG_CFLAGS and PNG_LIBS in Makefile
 if test "x$ac_cv_want_fldigi" = "xyes"; then
-    AC_FLDIGI_PKG_CHECK([png], [libpng >= 1.2.0], [no], [no])
+    AC_FLDIGI_PKG_CHECK([png], [libpng >= 1.2.8], [no], [no])
 fi
 
 ### libsamplerate

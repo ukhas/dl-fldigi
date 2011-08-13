@@ -1554,18 +1554,13 @@ void cb_mnuGenerate(Fl_Widget *w, void *d)
 
 void cb_mnuPlayback(Fl_Widget *w, void *d)
 {
-	cout << "Playback Selected" << endl;
-	if (!scard) {
-	 return;
-	 }
-		Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
-
+	if (!scard) return;
+	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
 	if (capval || genval) {
 		m->clear();
 		return;
 	}
 	playval = m->value();
-	cout << playval << endl;
 	if(!scard->Playback(playval)) {
 		m->clear();
 		playval = false;
@@ -4880,16 +4875,6 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"Hell", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_FELDHELL].name, 0, cb_init_mode, (void *)MODE_FELDHELL, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_SLOWHELL].name, 0,  cb_init_mode, (void *)MODE_SLOWHELL, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_HELLX5].name, 0,  cb_init_mode, (void *)MODE_HELLX5, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_HELLX9].name, 0,  cb_init_mode, (void *)MODE_HELLX9, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_FSKHELL].name, 0, cb_init_mode, (void *)MODE_FSKHELL, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_FSKH105].name, 0, cb_init_mode, (void *)MODE_FSKH105, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_HELL80].name, 0, cb_init_mode, (void *)MODE_HELL80, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{0,0,0,0,0,0,0,0,0},
-
 {"MFSK", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK4].name, 0,  cb_init_mode, (void *)MODE_MFSK4, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK8].name, 0,  cb_init_mode, (void *)MODE_MFSK8, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -5227,7 +5212,6 @@ void create_fl_digi_main_WF_only() {
 	int fsize = fl_size();
 	int freqheight = Hentry + 2 * pad;
 	int Y = 0;
-
 
 	fl_font(fnt, freqheight);
 	fl_font(fnt, fsize);

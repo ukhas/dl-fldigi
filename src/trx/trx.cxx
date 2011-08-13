@@ -214,7 +214,6 @@ void trx_trx_receive_loop()
 {
 	size_t  numread;
 	int  current_samplerate;
-	
 	assert(powerof2(SCBLOCKSIZE));
 
 	if (unlikely(!active_modem)) {

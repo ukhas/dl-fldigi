@@ -111,6 +111,7 @@ void pVER(string &, size_t &);
 void pCNTR(string &, size_t &);
 void pDECR(string &, size_t &);
 void pINCR(string &, size_t &);
+void pXIN(string &, size_t &);
 void pXOUT(string &, size_t &);
 void pSAVEXCHG(string &, size_t &);
 void pXBEG(string &, size_t &);
@@ -130,6 +131,7 @@ void pGET(string &, size_t &);
 void pINFO1(string &, size_t &);
 void pINFO2(string &, size_t &);
 void pCLRRX(string &, size_t &);
+void pCLRTX(string &, size_t &);
 void pFILE(string &, size_t &);
 void pWPM(string &, size_t &);
 void pRISETIME(string &, size_t &);
@@ -151,6 +153,8 @@ void pGOHOME(string&, size_t&);
 
 void pGOFREQ(string&, size_t&);
 void pQSY(string&, size_t&);
+void pQSYTO(string &, size_t&);
+void pQSYFM(string &, size_t&);
 void pRIGMODE(string&, size_t&);
 void pFILWID(string&, size_t&);
 
@@ -194,6 +198,7 @@ MTAGS mtags[] = {
 {"<DECR>",		pDECR},
 {"<INCR>",		pINCR},
 {"<X1>",		pXOUT},
+{"<XIN>",		pXIN},
 {"<XOUT>",		pXOUT},
 {"<XBEG>",		pXBEG},
 {"<XEND>",		pXEND},
@@ -212,6 +217,7 @@ MTAGS mtags[] = {
 {"<CONT>",		pCONT},
 {"<GET>",		pGET},
 {"<CLRRX>",		pCLRRX},
+{"<CLRTX>",		pCLRTX},
 {"<FILE:",		pFILE},
 {"<WPM:",		pWPM},
 {"<RISE:",		pRISETIME},
@@ -226,6 +232,8 @@ MTAGS mtags[] = {
 {"<GOHOME>",	pGOHOME},
 {"<GOFREQ:",	pGOFREQ},
 {"<QSY:",		pQSY},
+{"<QSYTO>",		pQSYTO},
+{"<QSYFM>",		pQSYFM},
 {"<RIGMODE:",	pRIGMODE},
 {"<FILWID:",	pFILWID},
 {"<MAPIT:",		pMAPIT},
@@ -431,6 +439,12 @@ void pCLRRX(string &s, size_t &i)
 {
 	s.replace( i, 7, "" );
 	ReceiveText->clear();
+}
+
+void pCLRTX(string &s, size_t &i)
+{
+	s.replace( i, 7, "" );
+	TransmitText->clear();
 }
 
 void pCALL(string &s, size_t &i)
@@ -668,6 +682,11 @@ void pINCR(string &s, size_t &i)
 	contestval = contest_count.count;
 	s.replace (i, 6, "");
 	updateOutSerNo();
+}
+
+void pXIN(string &s, size_t &i)
+{
+	s.replace( i, 5, inpXchgIn->value() );
 }
 
 void pXOUT(string &s, size_t &i)
@@ -947,6 +966,18 @@ void pGOFREQ(string &s, size_t &i)
 		active_modem->set_freq(number);
 	}
 	s.replace(i, endbracket - i + 1, "");
+}
+
+void pQSYTO(string &s, size_t &i)
+{
+	s.replace( i, 7, "");
+	do_qsy(true);
+}
+
+void pQSYFM(string &s, size_t &i)
+{
+	s.replace( i, 7, "");
+	do_qsy(false);
 }
 
 void pQSY(string &s, size_t &i)

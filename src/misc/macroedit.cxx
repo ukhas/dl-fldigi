@@ -92,6 +92,7 @@ void loadBrowser(Fl_Widget *widget) {
  
 	w->add(LINE_SEP);
 	w->add(_("<CLRRX>\tclear RX pane"));
+	w->add(_("<CLRTX>\tclear TX pane"));
 
 	w->add(LINE_SEP);
 	w->add(_("<GET>\ttext to NAME/QTH"));
@@ -121,6 +122,7 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<CNTR>\tcontest counter"));
 	w->add(_("<DECR>\tdecrement counter"));
 	w->add(_("<INCR>\tincrement counter"));
+	w->add(_("<XIN>\texchange in"));
 	w->add(_("<XOUT>\texchange out"));
 	w->add(_("<XBEG>\texchange begin"));
 	w->add(_("<XEND>\texchange end"));
@@ -134,6 +136,8 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<SRCHDN>\tsearch DOWN for signal"));
 	w->add(_("<GOHOME>\treturn to sweet spot"));
 	w->add(_("<GOFREQ:NNNN>\tmove to freq NNNN Hz"));
+	w->add(_("<QSYTO>\tleft-clk QSY button"));
+	w->add(_("<QSYFM>\tright-clk QSY button"));
 
 	w->add(LINE_SEP);
 	w->add(_("<QSY:FFF.F[:NNNN]>\tqsy to kHz, Hz"));

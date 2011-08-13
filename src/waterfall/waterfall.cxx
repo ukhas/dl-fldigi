@@ -595,16 +595,24 @@ void WFdisp::sig_data( double *sig, int len, int sr )
 update_freq:
 	static char szFrequency[14];
 	if (rfc != 0) { // use a boolean for the waterfall
-	    int cwoffset = 0;
-	    string testmode = qso_opMODE->value();
-	    if (testmode == "CW" or testmode == "CWR") {
-		cwoffset = progdefaults.CWsweetspot;
-		usb = ! (progdefaults.CWIsLSB ^ (testmode == "CWR"));
-	    }
+		int cwoffset = 0;
+		int rttyoffset = 0;
+		trx_mode mode = active_modem->get_mode();
+		if (mode == MODE_RTTY && progdefaults.useMARKfreq) {
+			rttyoffset = (progdefaults.rtty_shift >= 0 ?
+				rtty::SHIFT[progdefaults.rtty_shift] : progdefaults.rtty_custom_shift);
+			rttyoffset /= 2;
+			if (active_modem->get_reverse()) rttyoffset *= -1;
+		}
+		string testmode = qso_opMODE->value();
+		if (testmode == "CW" or testmode == "CWR") {
+			cwoffset = progdefaults.CWsweetspot;
+			usb = ! (progdefaults.CWIsLSB ^ (testmode == "CWR"));
+		}
 		if (usb)
-			dfreq = rfc + active_modem->get_txfreq() -cwoffset;
+			dfreq = rfc + active_modem->get_txfreq() - cwoffset + rttyoffset;
 		else
-			dfreq = rfc - active_modem->get_txfreq() +cwoffset;
+			dfreq = rfc - active_modem->get_txfreq() + cwoffset - rttyoffset;
 		snprintf(szFrequency, sizeof(szFrequency), "%-.3f", dfreq / 1000.0);
 	} else {
 		dfreq = active_modem->get_txfreq();
@@ -845,7 +853,18 @@ void WFdisp::update_waterfall() {
 			pos2--;
 		if (likely(pos1 >= fft_img && pos2 < fft_img + disp_width)) {
 			for (int y = 0; y < image_height; y ++) {
-				*pos1 = *pos2 = progdefaults.bwTrackRGBI;
+				if (mode == MODE_RTTY && progdefaults.useMARKfreq) {
+					if (active_modem->get_reverse()) {
+						*pos1 = progdefaults.rttymarkRGBI;
+						*pos2 = progdefaults.bwTrackRGBI;
+					} else {
+						*pos1 = progdefaults.bwTrackRGBI;
+						*pos2 = progdefaults.rttymarkRGBI;
+					}
+				} else {
+					*pos1 = progdefaults.bwTrackRGBI;
+					*pos2 = progdefaults.bwTrackRGBI;
+				}
 				pos1 += disp_width;
 				pos2 += disp_width;
 			}
@@ -1151,7 +1170,7 @@ void carrier_cb(Fl_Widget *w, void *v) {
 	restoreFocus();
 }
 
-void qsy_cb(Fl_Widget *w, void *v)
+void do_qsy(bool dir)
 {
 	static vector<qrg_mode_t> qsy_stack;
 	qrg_mode_t m;
@@ -1159,7 +1178,7 @@ void qsy_cb(Fl_Widget *w, void *v)
 	wf->xmtlock->value(0);
 	wf->xmtlock->do_callback();
 
-	if (Fl::event_button() != FL_RIGHT_MOUSE) {
+	if (dir) {
 // store
 		m.rfcarrier = wf->rfcarrier();
 		m.carrier = active_modem->get_freq();
@@ -1191,6 +1210,14 @@ void qsy_cb(Fl_Widget *w, void *v)
 
 	if (m.carrier > 0)
 		qsy(m.rfcarrier, m.carrier);
+}
+
+void qsy_cb(Fl_Widget *w, void *v)
+{
+	if (Fl::event_button() != FL_RIGHT_MOUSE)
+		do_qsy(true);
+	else
+		do_qsy(false);
 	restoreFocus();
 }
 
