@@ -133,6 +133,10 @@ ssdv_error_exit (j_common_ptr cinfo)
 /**** END JPEG STUFF *****/
 
 #define UI_HEIGHT (60)
+#define WIN_MIN_WIDTH (320)
+#define WIN_MIN_HEIGHT (32 + UI_HEIGHT)
+#define WIN_MAX_WIDTH (800)
+#define WIN_MAX_HEIGHT (600 + UI_HEIGHT)
 
 ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	: Fl_Double_Window(w, h, title)
@@ -224,7 +228,7 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	
 	end();
 	
-	size_range(320, 240 + UI_HEIGHT, 0, 0, 0, 0, 0);
+	size_range(WIN_MIN_WIDTH, WIN_MIN_HEIGHT, 0, 0, 0, 0, 0);
 	resizable(scroll);
 }
 
@@ -417,11 +421,14 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		/* Create the Fl_RGB_Image object */
 		if(flrgb) delete flrgb;
 		flrgb = new Fl_RGB_Image(image, image_width, image_height, 3);
-		box->resize(0, 0, image_width, image_height);
+		box->size(image_width, image_height);
 		box->image(flrgb);
 		
 		/* Snap the window to the new image size */
-		size(image_width, image_height + UI_HEIGHT);
+		size(
+			CLAMP(image_width, WIN_MIN_WIDTH, WIN_MAX_WIDTH),
+			CLAMP(image_height + UI_HEIGHT, WIN_MIN_HEIGHT, WIN_MAX_HEIGHT)
+		);
 		
 		/* Clear the packet buffer */
 		if(packets != NULL) free(packets);
