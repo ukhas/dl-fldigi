@@ -3220,7 +3220,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
         tabOperator->hide();
-        { Fl_Group* o = new Fl_Group(5, 35, 490, 165, _("Station"));
+        { Fl_Group* o = new Fl_Group(5, 35, 490, 275, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
           { inpMyCallsign = new Fl_Input2(110, 64, 110, 24, _("Callsign:"));
