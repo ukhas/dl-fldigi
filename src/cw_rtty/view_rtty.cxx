@@ -57,8 +57,8 @@ static unsigned char figures[32] = {
 	'9',	'?',	'&',	'·',	'.',	'/',	';',	'·'
 };
 
-const double view_rtty::SHIFT[] = {23, 85, 160, 170, 182, 200, 240, 350, 425, 850};
-const double view_rtty::BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300};
+const double view_rtty::SHIFT[] = {23, 85, 160, 170, 182, 200, 240, 350, 425, 600, 850};
+const double view_rtty::BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200};
 const int    view_rtty::BITS[]  = {5, 7, 8};
 
 void view_rtty::rx_init()
