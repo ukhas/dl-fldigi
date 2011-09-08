@@ -841,6 +841,12 @@ void dl_fldigi_update_payloads()
 						case 300:
 							p->baud = 9;
 							break;
+						case 600:
+							p->baud = 10;
+							break;
+						case 1200:
+							p->baud = 11;
+							break;
 				}
 			}
 			
@@ -880,6 +886,12 @@ void dl_fldigi_update_payloads()
 						break;
 					case 300:
 						p->baud1 = 9;
+						break;
+					case 600:
+						p->baud1 = 10;
+						break;
+					case 1200:
+						p->baud1 = 11;
 						break;
 				}
 			}
