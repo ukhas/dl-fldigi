@@ -1,0 +1,3 @@
+[submodule "habitat_extensions"]
+	path = habitat_extensions
+	url = git://github.com/ukhas/habitat_extensions.git

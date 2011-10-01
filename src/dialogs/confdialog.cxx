@@ -7,8 +7,8 @@
 #include <FL/filename.H>
 #include "main.h"
 #include "fl_digi.h"
-#include "dl_fldigi.h"
-#include "dl_fldigi_gps.h"
+//#include "dl_fldigi.h"
+#include "dl_fldigi/gps.h"
 #include "soundconf.h"
 #include "colorsfonts.h"
 #include "waterfall.h"
@@ -2972,13 +2972,13 @@ Fl_Group *tabDLEnable=(Fl_Group *)0;
 Fl_Check_Button *confdialog_dl_online=(Fl_Check_Button *)0;
 
 static void cb_confdialog_dl_online(Fl_Check_Button*, void*) {
-  cb_dl_fldigi_toggle_dl_online();
-set_menu_dl_online();
+  //cb_dl_fldigi_toggle_dl_online();
+//set_menu_dl_online();
 }
 
 static void cb_Server(Fl_Input* o, void*) {
-  progdefaults.server_location = o->value();
-progdefaults.changed = true;
+  //progdefaults.server_location = o->value();
+//progdefaults.changed = true;
 }
 
 Fl_Check_Button *btnTrackFreq=(Fl_Check_Button *)0;
@@ -3019,86 +3019,86 @@ Fl_Group *tabDLPayload=(Fl_Group *)0;
 Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
 
 static void cb_habFlightXML_conf(Fl_Choice* o, void*) {
-  cb_dl_fldigi_select_payload(o, NULL);
+  //cb_dl_fldigi_select_payload(o, NULL);
 }
 
 static void cb_Autoconfigure(Fl_Button*, void*) {
-  cb_dl_fldigi_configure_payload(NULL, NULL);
+  //cb_dl_fldigi_configure_payload(NULL, NULL);
 }
 
 static void cb_Redownload(Fl_Button*, void*) {
-  dl_fldigi_download();
-dl_fldigi_downloaded_once = 1;
+//  dl_fldigi_download();
+//dl_fldigi_downloaded_once = 1;
 }
 
 Fl_Input *cd_xmlSentence_delimiter=(Fl_Input *)0;
 
 static void cb_cd_xmlSentence_delimiter(Fl_Input* o, void*) {
-  progdefaults.xmlSentence_delimiter = o->value();
+  //progdefaults.xmlSentence_delimiter = o->value();
 }
 
 Fl_Input *cd_xmlField_delimiter=(Fl_Input *)0;
 
 static void cb_cd_xmlField_delimiter(Fl_Input* o, void*) {
-  progdefaults.xmlField_delimiter = o->value();
+//  progdefaults.xmlField_delimiter = o->value();
 }
 
 Fl_Input *cd_xmlCallsign=(Fl_Input *)0;
 
 static void cb_cd_xmlCallsign(Fl_Input* o, void*) {
-  progdefaults.xmlCallsign = o->value();
+  //progdefaults.xmlCallsign = o->value();
 }
 
 Fl_Value_Input2 *cd_xmlFields=(Fl_Value_Input2 *)0;
 
 static void cb_cd_xmlFields(Fl_Value_Input2* o, void*) {
-  progdefaults.xmlFields = o->value();
+//  progdefaults.xmlFields = o->value();
 }
 
 Fl_Value_Input2 *cd_xml_time=(Fl_Value_Input2 *)0;
 
 static void cb_cd_xml_time(Fl_Value_Input2* o, void*) {
-  progdefaults.xml_time = o->value();
+  //progdefaults.xml_time = o->value();
 }
 
 Fl_Value_Input2 *cd_xml_latitude=(Fl_Value_Input2 *)0;
 
 static void cb_cd_xml_latitude(Fl_Value_Input2* o, void*) {
-  progdefaults.xml_latitude = o->value();
+//  progdefaults.xml_latitude = o->value();
 }
 
 Fl_Value_Input2 *cd_xml_longitude=(Fl_Value_Input2 *)0;
 
 static void cb_cd_xml_longitude(Fl_Value_Input2* o, void*) {
-  progdefaults.xml_longitude = o->value();
+//  progdefaults.xml_longitude = o->value();
 }
 
 Fl_Value_Input2 *cd_xml_altitude=(Fl_Value_Input2 *)0;
 
 static void cb_cd_xml_altitude(Fl_Value_Input2* o, void*) {
-  progdefaults.xml_altitude = o->value();
+  //progdefaults.xml_altitude = o->value();
 }
 
 Fl_Check_Button *cd_xml_longitude_nmea=(Fl_Check_Button *)0;
 
 static void cb_cd_xml_longitude_nmea(Fl_Check_Button* o, void*) {
-  progdefaults.xml_longitude_nmea = o->value();
+//  progdefaults.xml_longitude_nmea = o->value();
 }
 
 Fl_Check_Button *cd_xml_latitude_nmea=(Fl_Check_Button *)0;
 
 static void cb_cd_xml_latitude_nmea(Fl_Check_Button* o, void*) {
-  progdefaults.xml_latitude_nmea = o->value();
+//  progdefaults.xml_latitude_nmea = o->value();
 }
 
 static void cb_Baud(Fl_Value_Input2* o, void*) {
-  progdefaults.gpsSpeed = o->value();
+  progdefaults.gps_speed = o->value();
 progdefaults.changed = true;
 dl_fldigi_gps_setup_fromprogdefaults();
 }
 
 static void cb_Identity(Fl_Input* o, void*) {
-  progdefaults.gpsIdentity = o->value();
+ // progdefaults.gps_identity = o->value();
 progdefaults.changed = true;
 dl_fldigi_gps_setup_fromprogdefaults();
 }
@@ -3111,7 +3111,7 @@ dl_fldigi_gps_update_ports(1, 1);
 Fl_Choice *inpGPSdev=(Fl_Choice *)0;
 
 static void cb_inpGPSdev(Fl_Choice* o, void*) {
-  progdefaults.gpsDevice = o->text();
+  progdefaults.gps_device = o->text();
 progdefaults.changed = true;
 dl_fldigi_gps_setup_fromprogdefaults();
 }
@@ -3140,7 +3140,7 @@ Fl_Output *gpsTAlt=(Fl_Output *)0;
 
 static void cb_Save(Fl_Button*, void*) {
   /* Copy coordinates to the operator form */
-dl_fldigi_gps_save_position();
+//dl_fldigi_gps_save_position();
 }
 
 Fl_Input *imagepacketurl=(Fl_Input *)0;
@@ -6830,12 +6830,12 @@ d frequency"));
               { Fl_Check_Button* o = confdialog_dl_online = new Fl_Check_Button(40, 75, 200, 25, _("Online"));
                 confdialog_dl_online->down_box(FL_DOWN_BOX);
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
-                o->value(progdefaults.dl_online);
+                //o->value(progdefaults.dl_online);
               } // Fl_Check_Button* confdialog_dl_online
               { Fl_Input* o = new Fl_Input(90, 105, 334, 20, _("Server:"));
                 o->tooltip(_("Tracker Server Address"));
                 o->callback((Fl_Callback*)cb_Server);
-                o->value(progdefaults.server_location.c_str());
+//                o->value(progdefaults.server_location.c_str());
               } // Fl_Input* o
               o->end();
             } // Fl_Group* o
@@ -6916,15 +6916,15 @@ d frequency"));
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
               { Fl_Input* o = cd_xmlSentence_delimiter = new Fl_Input(195, 169, 35, 25, _("Sentence Delimiter"));
                 cd_xmlSentence_delimiter->callback((Fl_Callback*)cb_cd_xmlSentence_delimiter);
-                o->value(progdefaults.xmlSentence_delimiter.c_str());
+//                o->value(progdefaults.xmlSentence_delimiter.c_str());
               } // Fl_Input* cd_xmlSentence_delimiter
               { Fl_Input* o = cd_xmlField_delimiter = new Fl_Input(390, 169, 25, 25, _("Field Delimiter"));
                 cd_xmlField_delimiter->callback((Fl_Callback*)cb_cd_xmlField_delimiter);
-                o->value(progdefaults.xmlField_delimiter.c_str());
+//                o->value(progdefaults.xmlField_delimiter.c_str());
               } // Fl_Input* cd_xmlField_delimiter
               { Fl_Input* o = cd_xmlCallsign = new Fl_Input(195, 200, 105, 25, _("Callsign"));
                 cd_xmlCallsign->callback((Fl_Callback*)cb_cd_xmlCallsign);
-                o->value(progdefaults.xmlCallsign.c_str());
+//                o->value(progdefaults.xmlCallsign.c_str());
               } // Fl_Input* cd_xmlCallsign
               { Fl_Group* o = new Fl_Group(10, 230, 480, 125, _("Fields"));
                 o->box(FL_ENGRAVED_FRAME);
@@ -6941,7 +6941,7 @@ d frequency"));
                 cd_xmlFields->callback((Fl_Callback*)cb_cd_xmlFields);
                 cd_xmlFields->align(FL_ALIGN_LEFT);
                 cd_xmlFields->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.xmlFields);
+//                o->value(progdefaults.xmlFields);
                 } // Fl_Value_Input2* cd_xmlFields
                 { Fl_Value_Input2* o = cd_xml_time = new Fl_Value_Input2(370, 245, 25, 25, _("Time Field ID"));
                 cd_xml_time->type(2);
@@ -6955,7 +6955,7 @@ d frequency"));
                 cd_xml_time->callback((Fl_Callback*)cb_cd_xml_time);
                 cd_xml_time->align(FL_ALIGN_LEFT);
                 cd_xml_time->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.xml_time);
+//                o->value(progdefaults.xml_time);
                 } // Fl_Value_Input2* cd_xml_time
                 { Fl_Value_Input2* o = cd_xml_latitude = new Fl_Value_Input2(370, 270, 25, 25, _("Latitude Field ID"));
                 cd_xml_latitude->type(2);
@@ -6969,7 +6969,7 @@ d frequency"));
                 cd_xml_latitude->callback((Fl_Callback*)cb_cd_xml_latitude);
                 cd_xml_latitude->align(FL_ALIGN_LEFT);
                 cd_xml_latitude->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.xml_latitude);
+ //               o->value(progdefaults.xml_latitude);
                 } // Fl_Value_Input2* cd_xml_latitude
                 { Fl_Value_Input2* o = cd_xml_longitude = new Fl_Value_Input2(370, 295, 25, 25, _("Longitude Field ID"));
                 cd_xml_longitude->type(2);
@@ -6983,7 +6983,7 @@ d frequency"));
                 cd_xml_longitude->callback((Fl_Callback*)cb_cd_xml_longitude);
                 cd_xml_longitude->align(FL_ALIGN_LEFT);
                 cd_xml_longitude->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.xml_longitude);
+//                o->value(progdefaults.xml_longitude);
                 } // Fl_Value_Input2* cd_xml_longitude
                 { Fl_Value_Input2* o = cd_xml_altitude = new Fl_Value_Input2(370, 320, 25, 25, _("Altitude Field ID"));
                 cd_xml_altitude->type(2);
@@ -6997,12 +6997,12 @@ d frequency"));
                 cd_xml_altitude->callback((Fl_Callback*)cb_cd_xml_altitude);
                 cd_xml_altitude->align(FL_ALIGN_LEFT);
                 cd_xml_altitude->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.xml_altitude);
+ //               o->value(progdefaults.xml_altitude);
                 } // Fl_Value_Input2* cd_xml_altitude
                 { Fl_Check_Button* o = cd_xml_longitude_nmea = new Fl_Check_Button(400, 295, 64, 25, _("NMEA"));
                 cd_xml_longitude_nmea->down_box(FL_DOWN_BOX);
                 cd_xml_longitude_nmea->callback((Fl_Callback*)cb_cd_xml_longitude_nmea);
-                o->value(progdefaults.xml_longitude_nmea);
+//                o->value(progdefaults.xml_longitude_nmea);
                 } // Fl_Check_Button* cd_xml_longitude_nmea
                 o->end();
               } // Fl_Group* o
@@ -7011,7 +7011,7 @@ d frequency"));
             { Fl_Check_Button* o = cd_xml_latitude_nmea = new Fl_Check_Button(400, 270, 64, 25, _("NMEA"));
               cd_xml_latitude_nmea->down_box(FL_DOWN_BOX);
               cd_xml_latitude_nmea->callback((Fl_Callback*)cb_cd_xml_latitude_nmea);
-              o->value(progdefaults.xml_latitude_nmea);
+  //            o->value(progdefaults.xml_latitude_nmea);
             } // Fl_Check_Button* cd_xml_latitude_nmea
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
@@ -7031,11 +7031,11 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Baud);
                 o->align(FL_ALIGN_LEFT);
                 o->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.gpsSpeed);
+                //o->value(progdefaults.gpsSpeed);
               } // Fl_Value_Input2* o
               { Fl_Input* o = new Fl_Input(315, 110, 140, 25, _("Identity"));
                 o->callback((Fl_Callback*)cb_Identity);
-                o->value(progdefaults.gpsIdentity.c_str());
+                //o->value(progdefaults.gpsIdentity.c_str());
               } // Fl_Input* o
               { Fl_Button* o = new Fl_Button(285, 80, 170, 25, _("Refresh Device List"));
                 o->callback((Fl_Callback*)cb_Refresh);

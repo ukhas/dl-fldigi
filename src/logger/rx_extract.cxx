@@ -37,106 +37,8 @@
 #include "confdialog.h"
 #include "debug.h"
 #include "icons.h"
-#include "qrunner.h"
 
 using namespace std;
-
-//jcoxon
-#include "extra.h"
-#include <algorithm>
-
-#include "confdialog.h"
-#include "main.h"
-//
-
-#include "trx.h"
-
-#include "dl_fldigi.h"
-
-#include <stdio.h>   /* Standard input/output definitions */
-#include <stdlib.h>  /* Standard stuff like exit */
-#include <math.h>
-#include <time.h>
- 
-#include <fcntl.h>   /* File control definitions */
-#include <errno.h>   /* Error number definitions */
- 
-#include <unistd.h>  /* UNIX standard function definitions */
-
-using namespace std;
-
-//****************************************
-//Taken from Steve Randall's Navsoft code.
-
- 
-typedef struct {
-	float lat;
-	float lon;
-} coordinate;
-
-typedef struct {
-	float bearing;
-	float distance;
-} balloonvector;
- 
-#define DEG2KM(a)	(a * (float)111.226306)	// Degrees (of latitude) to Kilometers multiplier
-#define DEG2RAD(a)	(a * (float)0.0174532925)	// Degrees to Radian multiplier
-#define RAD2DEG(a) 	(a * (float)57.2957795)	// Radian to Degrees multiplier
-
-float targetLat;
-float targetLon;
-float presentLat;
-float presentLon;
-
-balloonvector Coords_to_bearing_and_distance(coordinate posn, coordinate dest)
-{
- 
-	float delta_lat, delta_lon;
-	balloonvector result;
- 
-	delta_lat = dest.lat - posn.lat;
-	delta_lon = (dest.lon - posn.lon) * (float)cos(DEG2RAD((dest.lat + posn.lat)/2));
- 
-	result.distance = DEG2KM((float)sqrt(((delta_lat) * (delta_lat)) + ((delta_lon) * (delta_lon)))); // pythagerious
- 
-	// calcualte compass bearing degrees clockwise from north (0 - 360)
-	// atan2(y,x) produces the euclidean angle (+ve = counter-clockwise from x axis in radians)
-	// atan2(d_lon,d_lat) produces the compass angle (+ve = clockwise from N /-ve counter-clockwise)
- 
-	result.bearing = RAD2DEG((float)atan2(delta_lon,delta_lat)); // atan2 argument inversion to get compass N based co-ordinates
- 
-	if (result.bearing < 0.0)
-		result.bearing += 360; // convert to 0-360
- 
-	return(result);
-}
-//****************************************
-//jcoxon
-void UpperCase(string& str)
-{
-	for(unsigned int i = 0; i < str.length(); i++)
-	{
-		str[i] = toupper(str[i]);
-	}
-	return;
-}
-//
-
-void TrimSpaces( string& str)  
-{  
-	
-	// Trim Both leading and trailing spaces  
-	size_t startpos = str.find_first_not_of(" "); // Find the first character position after excluding leading blank spaces  
-	size_t endpos = str.find_last_not_of("\r\n");  // Find the first character position from reverse af  
-
-	// if all spaces or empty return an empty string  
-	if(( string::npos == startpos ) || ( string::npos == endpos))  
-	{  
-		str = "";  
-	}  
-	else  
-		str = str.substr( startpos, endpos-startpos+1 );  
-} 
 
 const char *beg = "[WRAP:beg]";
 const char *end = "[WRAP:end]";
@@ -161,22 +63,7 @@ string rx_extract_msg;
 bool extracting = false;
 bool bInit = false;
 
-//jcoxon
-//Default rules
-unsigned int total_string_length = 100;
-int min_number_fields = 10;
-int field_length = 10;
-
-int dodge_data = 0;
-bool validate_output;
-int number_commas;
-int old_i = 0, field_number = 0;
-string rx_buff_edit;
-string tmpfield;
-//
-
-static void rx_extract_update_ui(string rx_buff);
-int test_checksum(string s);
+char dttm[64];
 
 void rx_extract_reset()
 {
@@ -199,250 +86,93 @@ void rx_extract_add(int c)
 
 	memmove(rx_extract_buff, &rx_extract_buff[1], bufsize - 1);
 	rx_extract_buff[bufsize - 1] = ch;
-//jcoxon
-	//Reads the stentence delimter previously read from the xml file.
-	//const char* beg = (progdefaults.xmlSentence_delimiter.empty() ? "UNKNOWN" : progdefaults.xmlSentence_delimiter.c_str());
-	string beg_s = "$$" + progdefaults.xmlCallsign;
-	const char* beg = beg_s.c_str();
-//
+
 	if ( strstr(rx_extract_buff, beg) != NULL ) {
-		put_status("dl_fldigi: detected sentence start; extracting!", 10);
-		
-		if(!extracting) active_modem->track_freq_lock++;
-		
-		rx_extract_reset();
 		rx_buff = beg;
+		rx_extract_msg = "Extracting";
+
+		put_status(rx_extract_msg.c_str(), 60, STATUS_CLEAR);
+
+		memset(rx_extract_buff, ' ', bufsize);
 		extracting = true;
 	} else if (extracting) {
 		rx_buff += ch;
-		if (strstr(rx_extract_buff, "\n") != NULL) {
-			
-//jcoxon
-			//Trim Spaces
-			TrimSpaces(rx_buff);
-			
-			// Find the sentence start marker and remove up to the end of it
-			// dkjhdskdkfdakhd $$icarus,...   -> icarus,...
+		if (strstr(rx_extract_buff, end) != NULL) {
+			struct tm tim;
+			time_t t;
+			time(&t);
+	        gmtime_r(&t, &tim);
+			strftime(dttm, sizeof(dttm), "%Y%m%d-%H%M%S", &tim);
 
-			rx_buff = rx_buff.substr(
-				rx_buff.find(progdefaults.xmlSentence_delimiter)+
-				progdefaults.xmlSentence_delimiter.length());
-			//I've removed the old swap callsign function as its not needed any longer.
-
-			//Counts number of fields
-			number_commas = count(rx_buff.begin(), rx_buff.end(), progdefaults.xmlField_delimiter.at(0));
-			
-			//Gets info for number of fields
-			min_number_fields = progdefaults.xmlFields;
-			
-			//Check rules - telem string length and number of fields and whether each field has been validated
-
-			// Old copy:
-			// if ((rx_buff.length() < total_string_length) and (number_commas == min_number_fields - 1)) { 
-
-			
-			if (progdefaults.xml_stringlimit > (int) total_string_length)
-			{
-				total_string_length = progdefaults.xml_stringlimit;
+			string outfilename = WRAP_recv_dir;
+			outfilename.append("extract-");
+			outfilename.append(dttm);
+			outfilename.append(".wrap");
+			ofstream extractstream(outfilename.c_str(), ios::binary);
+			if (extractstream) {
+				extractstream << rx_buff;
+				extractstream.close();
 			}
-			
-			// FIXME: For the purposes of testing we won't check min_number_fields
-			if (rx_buff.length() < total_string_length) {
-					string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
-					UpperCase (identity_callsign);
+			rx_extract_msg = "File saved in ";
+			rx_extract_msg.append(WRAP_recv_dir);
+			put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 
-					/* RJH Post Chase Car information */
-					/* Not yet implemented (TODO) dl_fldigi_post_gps(); */
-					int pos, lockstatus = 1;
-					string extractedField, remainingString = rx_buff;
-				
-					for ( int x = 1; x < (number_commas + 1); x++ ) {
-						pos = remainingString.find(progdefaults.xmlField_delimiter.at(0));
-						extractedField = remainingString.substr(0, pos);
-						remainingString.erase(0, (pos + 1));
-						if (x == progdefaults.xml_lockstatus) {
-							lockstatus = atoi(extractedField.c_str());
-							printf("Lockstatus = %d\n", lockstatus);
-						}
-					}
-				
-					if((test_checksum(rx_buff) == true) && (lockstatus > 0)) {
-						/* dl_fldigi_post will put_status as it does its stuff */
-						dl_fldigi_post(rx_buff.c_str(), identity_callsign.c_str());
-					}
-				
-					if(bHAB)
-					{
-						REQ(rx_extract_update_ui, rx_buff);
-						REQ(dl_fldigi_reset_rxtimer);
-					}
+			if (progdefaults.open_nbems_folder)
+				open_recv_folder(WRAP_recv_dir.c_str());
+
+			if ((progdefaults.open_flmsg || progdefaults.open_flmsg_print) && 
+				(rx_buff.find(flmsg) != string::npos) &&
+				!progdefaults.flmsg_pathname.empty()) {
+				string cmd = progdefaults.flmsg_pathname;
+#ifdef __MINGW32__
+				if (progdefaults.open_flmsg_print && progdefaults.open_flmsg)
+					cmd.append(" --b");
+				else if (progdefaults.open_flmsg_print)
+					cmd.append(" --p");
+				cmd.append(" \"").append(outfilename).append("\"");
+				char *cmdstr = strdup(cmd.c_str());
+				STARTUPINFO si;
+				PROCESS_INFORMATION pi;
+				memset(&si, 0, sizeof(si));
+				si.cb = sizeof(si);
+				memset(&pi, 0, sizeof(pi));
+				if (!CreateProcess( NULL, cmdstr, 
+					NULL, NULL, FALSE, 
+					CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+					LOG_ERROR("CreateProcess failed with error code %ld", GetLastError());
+				CloseHandle(pi.hProcess);
+				CloseHandle(pi.hThread);
+				free (cmdstr);
+#else
+				string params = "";
+				if (progdefaults.open_flmsg_print && progdefaults.open_flmsg)
+					params = " --b";
+				else if (progdefaults.open_flmsg_print)
+					params = " --p";
+				switch (fork()) {
+				case 0:
+#  ifndef NDEBUG
+					unsetenv("MALLOC_CHECK_");
+					unsetenv("MALLOC_PERTURB_");
+#  endif
+					execlp(
+						(char*)cmd.c_str(), 
+						(char*)cmd.c_str(),
+						(char*)params.c_str(),
+						(char*)outfilename.c_str(), 
+						(char*)0);
+					exit(EXIT_FAILURE);
+				case -1:
+					fl_alert2(_("Could not start flmsg"));
+				}
+#endif
 			}
-			
 			rx_extract_reset();
-			active_modem->track_freq_lock--;
-		} else if (rx_buff.length() > 200) {
-			put_status("dl_fldigi: extract buffer exeeded 200 bytes", 20, STATUS_CLEAR);
+		} else if (rx_buff.length() > 16384) {
+			rx_extract_msg = "Extract length exceeded 16384 bytes";
+			put_status(rx_extract_msg.c_str(), 20, STATUS_CLEAR);
 			rx_extract_reset();
-			active_modem->track_freq_lock--;
 		}
-	}
-}
-
-/* CRC and checksum calculators -- these should really be separated out into
- * their own file. */
-uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
-{
-	int i;
-	
-	crc = crc ^ ((uint16_t) data << 8);
-	for(i = 0; i < 8; i++)
-	{
-		if(crc & 0x8000) crc = (crc << 1) ^ 0x1021;
-		else crc <<= 1;
-	}
-	
-	return(crc);
-}
-
-uint8_t gps_xor_checksum(char *s)
-{
-	uint8_t x;
-	
-	for(x = 0; *s; s++)
-		x ^= (uint8_t) *s;
-	
-	return(x);
-}
-
-uint16_t gps_CRC16_checksum(char *s)
-{
-	uint16_t x;
-	
-	for(x = 0xFFFF; *s; s++)
-		x = crc_xmodem_update(x, (uint8_t) *s);
-	
-	return(x);
-}
-
-int test_checksum(string s)
-{
-	size_t i;
-	uint16_t checksum, x;
-	string checkstr;
-	
-	/* Test both the ukhas checksum formats */
-	/* See: http://ukhas.org.uk/communication:protocol */
-	
-	i = s.find("*");
-	if(i == string::npos) return(false);
-	
-	checkstr = s.substr(i + 1);
-	checksum = strtol(checkstr.c_str(), NULL, 16);
-	
-	/* Remove the checksum from the string to be tested */
-	s.resize(i);
-	
-	if(checkstr.length() == 4) x = gps_CRC16_checksum((char *) s.c_str());
-	else if(checkstr.length() == 2) x = gps_xor_checksum((char *) s.c_str());
-	else return(false);
-	
-	if(x != checksum) return(false);
-	
-	return(true);
-}
-
-void rx_extract_update_ui(string rx_buff)
-{
-		int pos, asterixPosition = 0;
-		string extractedField, remainingString = rx_buff, checksumData, customData;
-		
-		balloonvector target_vector;
-		coordinate presentCoords;
-		coordinate targetCoords = {0, 0};
-		
-		habCustom->value(rx_buff.c_str());
-		
-		/* Don't display bad data */
-		if(test_checksum(rx_buff) == false)
-		{
-			habCustom->color(FL_RED);
-			printf("Checksum failed, not displaying\n");
-			return;
-		}
-		
-		asterixPosition = rx_buff.find("*");
-		if (asterixPosition > 0)
-		{
-			checksumData = remainingString.substr(asterixPosition);
-			remainingString.erase(asterixPosition);
-			habChecksum->value(checksumData.c_str());
-		}
-		
-		for ( int x = 1; x <= (number_commas + 1); x++ ) {
-			pos = remainingString.find(progdefaults.xmlField_delimiter.at(0));
-			if(pos < 0) pos = remainingString.length();
-			extractedField = remainingString.substr(0, pos);
-			remainingString.erase(0, (pos + 1));
-		if (x == progdefaults.xml_time) {
-				habTime->value(extractedField.c_str());
-		}
-		else if (x == progdefaults.xml_latitude) {
-			char s[20];
-			double lat;
-			
-			lat = atof(extractedField.c_str());
-			if(progdefaults.xml_latitude_nmea)
-			{
-				double in, fr = modf(lat / 100.0, &in);
-				lat = in + (fr * (100.0 / 60.0));
-			}
-			
-			snprintf(s, 20, "%.4f", lat);
-			habLat->value(s);
-			targetCoords.lat = lat;
-		}
-		else if (x == progdefaults.xml_longitude) {
-			char s[20];
-			double lon;
-			
-			lon = atof(extractedField.c_str());
-			if(progdefaults.xml_longitude_nmea)
-			{
-				double in, fr = modf(lon / 100.0, &in);
-				lon = in + (fr * (100.0 / 60.0));
-			}
-			targetCoords.lon = lon;
-			
-			snprintf(s, 20, "%.4f", lon);
-			habLon->value(s);
-		}
-		else if (x == progdefaults.xml_altitude) {
-			habAlt->value(extractedField.c_str());
-		}
-		else if (x == progdefaults.xml_lockstatus) {
-			int lockstatus = atoi(extractedField.c_str());
-			printf("Lockstatus = %d\n", lockstatus);
-			if (lockstatus < 1)
-			{
-				habCustom->color(FL_YELLOW);
-				return;
-			}
-		}
-		habCustom->color(FL_GREEN);
-
-	}
-	if(progdefaults.myLat.length() > 0 && progdefaults.myLon.length() > 0) {
-		presentCoords.lat = dl_fldigi_geotod((char *) progdefaults.myLat.c_str());
-		presentCoords.lon = dl_fldigi_geotod((char *) progdefaults.myLon.c_str());
-		target_vector = Coords_to_bearing_and_distance(presentCoords, targetCoords);
-
-		printf("Target bearing = %fdeg, distance %fKm\n",target_vector.bearing,target_vector.distance);
-		char target_vector_bearing[10];
-		char target_vector_distance[10];
-		sprintf(target_vector_bearing, "%8.1f",target_vector.bearing);
-		habBearing->value(target_vector_bearing);
-		sprintf(target_vector_distance, "%8.1f",target_vector.distance);
-		habDistance->value(target_vector_distance);
 	}
 }
 

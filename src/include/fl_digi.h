@@ -194,7 +194,7 @@ extern void set_video(double *, int, bool = true);
 extern void set_zdata(complex *, int);
 
 extern void set_CWwpm();
-extern void put_rx_char(unsigned int data, int style = FTextBase::RECV);
+extern void put_rx_char(unsigned int data, int style = FTextBase::RECV, bool extracted = false);
 extern void put_rx_ssdv(unsigned int data, int lost);
 extern void put_sec_char( char chr );
 

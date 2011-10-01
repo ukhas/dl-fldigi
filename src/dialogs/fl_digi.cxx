@@ -146,12 +146,10 @@
 
 #include "ssdv_rx.h"
 
-//jcoxon
 #include <iostream>
-#include "dl_fldigi.h"
+#include "dl_fldigi/dl_fldigi.h"
 bool bHAB = false;
-//
-//
+
 #define LOG_TO_FILE_MLABEL     _("Log all RX/TX text")
 #define RIGCONTROL_MLABEL      _("Rig control")
 #define OPMODES_MLABEL         _("Op &Mode")
@@ -1432,15 +1430,15 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 void cb_dl_fldigi_refresh(Fl_Widget *, void *)
 {
 	/* Force refresh */
-	dl_fldigi_download();
-	dl_fldigi_downloaded_once = 1;
+	// TODO dl_fldigi_download();
+	// TODO dl_fldigi_downloaded_once = 1;
 }
 
 void cb_toggle_dl_online(Fl_Widget *, void *)
 {
 	progdefaults.loadDefaults();
-	cb_dl_fldigi_toggle_dl_online();
-	confdialog_dl_online->value(progdefaults.dl_online);
+	// TODO cb_dl_fldigi_toggle_dl_online();
+	// TODO confdialog_dl_online->value(progdefaults.dl_online);
 }
 
 //jcoxon added 21/3/10
@@ -1463,7 +1461,7 @@ void cb_mnuVisitTracker(Fl_Widget*, void*)
 
 void cb_mnuVisitView(Fl_Widget*, void*)
 {
-	cb_mnuVisitURL(0, (void*)string(progdefaults.server_location).append("view.php").c_str());
+	// TODO cb_mnuVisitURL(0, (void*)string(progdefaults.server_location).append("view.php").c_str());
 }
 
 //End
@@ -5498,7 +5496,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habFlightXML->down_box(FL_BORDER_BOX);
 		habFlightXML->align(FL_ALIGN_TOP);
 		habFlightXML->when(FL_WHEN_CHANGED);
-		habFlightXML->callback(cb_dl_fldigi_select_payload);
+		// TODO habFlightXML->callback(cb_dl_fldigi_select_payload);
 		}
 
 		{ habTime = new Fl_Output((rightof(habFlightXML) + 2), (Y + Hentry), w_habTime, Hentry, "Time");
@@ -5596,7 +5594,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->labelsize(13);
 		habConfigureButton->when(FL_WHEN_RELEASE);
 		habConfigureButton->align(FL_ALIGN_INSIDE);
-		habConfigureButton->callback(cb_dl_fldigi_configure_payload);
+		// TODO habConfigureButton->callback(cb_dl_fldigi_configure_payload);
 		}
 		
 		qsoFreqDisp1 = new cFreqControl(
@@ -5648,10 +5646,7 @@ void create_fl_digi_main_dl_fldigi() {
 			habSwitchModes->labelsize(13);
 			habSwitchModes->when(FL_WHEN_RELEASE);
 			habSwitchModes->align(FL_ALIGN_INSIDE);
-			habSwitchModes->callback(cb_dl_fldigi_switch_modes);
-//			if (active_modem->get_mode() == MODE_RTTY) {
-//				habSwitchModes->label("RTTY");
-//			}
+			// TODO habSwitchModes->callback(cb_dl_fldigi_switch_modes);
 		}
 		Fl_Group::current()->resizable(TopFrameHAB);
 		//TopFrameHAB->resizable(TopFrameHAB);
@@ -5845,15 +5840,6 @@ void set_menu_dl_online()
 	else
 	{
 		i = getMenuItem(DLFLDIGI_ONLINE_LABEL);
-	}
-
-	if (progdefaults.dl_online)
-	{
-		i->set();
-	}
-	else
-	{
-		i->clear();
 	}
 }
 
@@ -6125,7 +6111,7 @@ static void put_rx_char_flmain(unsigned int data, int style)
 		logfile->log_to_file(cLogfile::LOG_RX, s);
 }
 
-void put_rx_char(unsigned int data, int style)
+void put_rx_char(unsigned int data, int style, bool extracted)
 {
 #if BENCHMARK_MODE
 	if (!benchmark.output.empty()) {
@@ -6136,6 +6122,11 @@ void put_rx_char(unsigned int data, int style)
 #else
 	REQ(put_rx_char_flmain, data, style);
 #endif
+
+    if (!extracted)
+    {
+        dl_fldigi::extrmgr->push(data);
+    }
 }
 
 static void put_rx_ssdv_flmain(unsigned int data, int lost)

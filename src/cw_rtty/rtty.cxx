@@ -38,6 +38,8 @@ using namespace std;
 #include "digiscope.h"
 #include "trx.h"
 
+#include "dl_fldigi/dl_fldigi.h"
+
 view_rtty *rttyviewer = (view_rtty *)0;
 
 //=====================================================================
@@ -410,16 +412,23 @@ bool rtty::rx(bool bit)
 			if (bit) {
 				if ((metric >= progStatus.sldrSquelchValue && progStatus.sqlonoff)|| !progStatus.sqlonoff) {
 					c = decode_char();
-					
+
 					/* lb = estimated bytes lost */
 					lb = (lost - bytelen / 2) / bytelen;
+
+					/* HOOKS */
 					put_rx_ssdv(c, lb);
-					
-					/* Replace '#' with '*' when using baudot in HAB mode */
-					if(nbits == 5 && bHAB && c == '#') c = '*';
-					
+
+					if (lb != 0)
+						dl_fldigi::extrmgr->skipped(lb);
+
+					if (nbits == 5)
+						dl_fldigi::extrmgr->push(c, habitat::PUSH_BAUDOT_HACK);
+					else
+						dl_fldigi::extrmgr->push(c);
+
 					if ( c != 0 )
-						put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c);
+						put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c, FTextBase::RECV, true);
 				}
 				flag = true;
 				lost = 0;
@@ -443,7 +452,7 @@ char snrmsg[80];
 void rtty::Metric()
 {
 	double delta = rtty_baud/2.0;
-	double np = 
+	double np =
 		wf->powerDensity(frequency - shift * 1.5, delta) +
 	 	wf->powerDensity(frequency + shift * 1.5, delta) + 1e-10;
 	double sp =

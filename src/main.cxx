@@ -112,8 +112,8 @@
 
 #include "icons.h"
 
-#include "dl_fldigi.h"
-#include "dl_fldigi_gps.h"
+#include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/gps.h"
 
 using namespace std;
 
@@ -143,9 +143,6 @@ string WRAP_auto_dir;
 string ICS_dir;
 string ICS_msg_dir;
 string ICS_tmp_dir;
-//jcoxon
-string FlightXMLDir; //added by jcoxon to store xml files
-//
 string PskMailFile;
 string ArqFilename;
 string xmlfname;
@@ -238,10 +235,7 @@ int main(int argc, char ** argv)
 #endif
 	}
 
-	/* Needs to be run once, at the start of the program (calls curl_global_init) when there are no threads,
-	 * since it is the only thread-unsafe/global-modifying function of the library 
-	 * dl_fldigi_init requires the "HomeDir" global above. */
-	dl_fldigi_init();
+    dl_fldigi::init();
 
 	generate_option_help();
 	generate_version_text();
@@ -295,21 +289,13 @@ int main(int argc, char ** argv)
 
 	progStatus.loadLastState();
 
-	/* if --hab was specified, default dl_online to true */
-	progdefaults.dl_online = bHAB;
-
 	create_fl_digi_main(argc, argv);
 
-	/* Attempt regardless to load the cache of payload information */
-	dl_fldigi_update_payloads();
+    /* TODO: dl_fldigi.uthr->settings() */
+    dl_fldigi::flights_init();
 
-	/* Only if we're online, go ahead and automatically download new payload info. */
-	if (progdefaults.dl_online)
-	{
-		/* This must be called after the UI is created */
-		dl_fldigi_download();
-		dl_fldigi_downloaded_once = 1;
-	}
+	/* if --hab was specified, default online to true */
+    dl_fldigi::set_online(bHAB);
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
@@ -1131,8 +1117,7 @@ static void checkdirectories(void)
 		{ MacrosDir, "macros", create_new_macros },
 		{ WrapDir, "wrap", 0 },
 		{ TalkDir, "talk", 0 },
-		{ TempDir, "temp", 0 },
-		{ FlightXMLDir, "flightxml", 0}
+		{ TempDir, "temp", 0 }
 	};
 
 	int r;

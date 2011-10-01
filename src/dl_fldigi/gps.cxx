@@ -18,8 +18,8 @@
 #include "configuration.h"
 #include "util.h"
 #include "fl_digi.h"
-#include "dl_fldigi.h"
-#include "dl_fldigi_gps.h"
+#include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/gps.h"
 #include "util.h"
 #include "confdialog.h"
 #include "fl_digi.h"
@@ -115,7 +115,7 @@ void dl_fldigi_gps_update_ports(int rescan, int update)
 	if (rescan)
 		progdefaults.testCommPorts();
 
-	item = inpGPSdev->find_item(progdefaults.gpsDevice.c_str());
+	item = inpGPSdev->find_item(progdefaults.gps_device.c_str());
 
 	#ifdef DL_FLDIGI_DEBUG
 		fprintf(stderr, "dl_fldigi: dl_fldigi_gps update ports: item = %p\n", item);
@@ -131,9 +131,9 @@ void dl_fldigi_gps_update_ports(int rescan, int update)
 
 void dl_fldigi_gps_setup_fromprogdefaults()
 {
-        dl_fldigi_gps_setup(progdefaults.gpsDevice.c_str(),
-	                    progdefaults.gpsSpeed,
-                            progdefaults.gpsIdentity.c_str());
+        dl_fldigi_gps_setup(progdefaults.gps_device.c_str(),
+	                    progdefaults.gps_speed,
+                            progdefaults.myCall.c_str());
 }
 
 void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
@@ -166,7 +166,7 @@ void dl_fldigi_gps_setup(const char *port, int baud, const char *identity)
 
 void dl_fldigi_gps_stop()
 {
-	dl_fldigi_gps_setup(NULL, progdefaults.gpsSpeed, progdefaults.gpsIdentity.c_str());
+	dl_fldigi_gps_setup(NULL, progdefaults.gps_speed, progdefaults.myCall.c_str());
 }
 
 static void dl_fldigi_gps_set_status_safe(char *port, int baud, char *identity, enum gps_status s)
@@ -497,7 +497,8 @@ static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity)
 	#endif
 
 	/* XXX is progdefaults thread safe? */
-	dl_fldigi_post(rx_chase, progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
+	/* dl_fldigi_post(rx_chase, progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str()); */
+    /* TODO habitat */
 }
 
 /**

@@ -37,7 +37,6 @@ extern std::string		WRAP_auto_dir;
 extern std::string		ICS_dir;
 extern std::string		ICS_msg_dir;
 extern std::string		ICS_tmp_dir;
-extern std::string		FlightXMLDir;
 
 extern std::string		xmlfname;
 

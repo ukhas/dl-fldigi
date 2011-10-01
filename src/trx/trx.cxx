@@ -47,26 +47,9 @@
 #  include "benchmark.h"
 #endif
 
-//New stuff added by jcoxon
-#include <iostream>
-#include "extra.h"
-
-#include "dl_fldigi.h"
-
 LOG_FILE_SOURCE(debug::LOG_MODEM);
 
 using namespace std;
-
-time_t rawtime;
-struct tm * timeinfo;
-time_t seconds;
-
-int status_count = 901; //Why 1001? well as it'll trigger the status update to be sent when fldigi starts
-int old_seconds = 0;
-int timerCount = 0;
-
-char date_time [80];
-//
 
 void	trx_reset_loop();
 void	trx_start_modem_loop();
@@ -201,15 +184,6 @@ void trx_xmit_wfall_queue(int samplerate, const double* buf, size_t len)
 
 //=============================================================================
 
-static string get_coordinate(std::string str)
-{
-	if(str.empty()) return("UNKNOWN");
-	
-	char s[20];
-	snprintf(s, 20, "%f", dl_fldigi_geotod((char *) str.c_str()));
-	return(s);
-}
-
 void trx_trx_receive_loop()
 {
 	size_t  numread;
@@ -254,75 +228,6 @@ void trx_trx_receive_loop()
 	rbvec[0].buf = rbvec[1].buf = 0;
 
 	while (1) {
-		//New stuff added by jcoxon
-		if (timerCount >= 50 ) {
-				REQ(dl_fldigi_update_rxtimer);
-				timerCount = 0;
-			}
-			else { 
-				timerCount++;
-			}
-		if (status_count >= 1000) {
-			seconds = time (NULL);
-#if !defined(__CYGWIN__)
-			cout << seconds << "\n";
-#endif
-			if (int(seconds) > old_seconds + 900) {
-				//Send status update
-#if !defined(__CYGWIN__)
-				cout << "Send status update\n";
-#endif
-			
-				string identity_callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
-				UpperCase (identity_callsign);
-				string string_lat = get_coordinate(progdefaults.myLat);
-				string string_lon = get_coordinate(progdefaults.myLon);
-				string string_radio = (progdefaults.myRadio.empty() ? "UNKNOWN" : progdefaults.myRadio.c_str());
-				UpperCase (string_radio);
-				string string_antenna = (progdefaults.myAntenna.empty() ? "UNKNOWN" : progdefaults.myAntenna.c_str());
-				UpperCase (string_antenna);
-				string string_payload = (progdefaults.xmlPayloadname.empty() ? "UNKNOWN" : progdefaults.xmlPayloadname.c_str());
-				UpperCase (string_payload);
-
-				time ( &rawtime );
-				timeinfo = gmtime ( &rawtime );
-				strftime(date_time,80,"%Y-%m-%d %H:%M:%S",timeinfo);
-#if !defined(__CYGWIN__)
-				cout << date_time << "\n";
-#endif
-//--------------------------------------------------------
-				string dlfldigi_version = "r115"; //Please update with revision number
-//-------------------------------------------------------
-				
-				//We really don't want people sending status updates from UNKNOWN - somehow need to remind people to change their callsign
-				if (identity_callsign != "UNKNOWN") { 
-
-					//ZZ,Callsign,Date Time,Lat,Lon,Radio,Antenna
-					string rx_data ="ZZ," + 
-						identity_callsign + "," + 
-						date_time + "," + 
-						string_lat + "," + 
-						string_lon + "," + 
-						string_radio + "," + 
-						string_antenna + "," + 
-						dlfldigi_version + "," + 
-						string_payload;
-					
-					dl_fldigi_post(rx_data.c_str(), identity_callsign.c_str());
-				}
-				else {
-#if !defined(__CYGWIN__)
-					cout << "Need to enter a callsign, please go to 'Configure' then 'Operator' and add a callsign/nickname.\n";
-#endif
-				}
-				old_seconds = seconds;
-			}
-			status_count = 0;
-		}
-		else {
-			status_count++;
-		}
-		//--------------------------
 		try {
 			numread = 0;
 			while (numread < SCBLOCKSIZE && trx_state == STATE_RX)

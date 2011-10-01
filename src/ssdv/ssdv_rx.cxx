@@ -13,6 +13,9 @@
 /* For progdefaults */
 #include "configuration.h"
 
+/* For is_online() */
+#include "dl_fldigi/dl_fldigi.h"
+
 /* Used for passing curl data to post thread */
 typedef struct {
 	CURL *curl;
@@ -281,6 +284,7 @@ static void *upload_packet_thread(void *arg)
 	pthread_exit(0);
 }
 
+/* TODO: upload using habitat */
 void ssdv_rx::upload_packet()
 {
 	ssdv_post_data_t *t;
@@ -301,7 +305,7 @@ void ssdv_rx::upload_packet()
 		CURLFORM_COPYCONTENTS, callsign, CURLFORM_END);
 	
 	/* Get the payload name */
-	payload = (progdefaults.xmlPayloadname.empty() ? "UNKNOWN" : progdefaults.xmlPayloadname.c_str());
+	payload = (progdefaults.tracking_payload.empty() ? "UNKNOWN" : progdefaults.tracking_payload.c_str());
 	curl_formadd(&post, &last, CURLFORM_COPYNAME, "payload",
 		CURLFORM_COPYCONTENTS, payload, CURLFORM_END);
 	
@@ -395,7 +399,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	image_errors += i;
 	
 	/* Packet received.. upload to server */
-	if(progdefaults.dl_online) upload_packet();
+	if (dl_fldigi::is_online()) upload_packet();
 	
 	/* Read the header */
 	ssdv_dec_header(&pkt_info, b);
@@ -553,8 +557,8 @@ void ssdv_rx::save_image(uint8_t *jpeg, size_t length)
 		"." : progdefaults.ssdv_save_dir.c_str());
 	
 	/* Get the payload name */
-	payload = (progdefaults.xmlPayloadname.empty() ?
-		"UNKNOWN" : progdefaults.xmlPayloadname.c_str());
+	payload = (progdefaults.tracking_payload.empty() ?
+		"UNKNOWN" : progdefaults.tracking_payload.c_str());
 	
 	/* Construct the filename */
 	gmtime_r(&image_timestamp, &tm);

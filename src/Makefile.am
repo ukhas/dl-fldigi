@@ -303,8 +303,6 @@ dl_fldigi_SOURCES += \
 	include/fftfilt.h \
 	include/filters.h \
 	include/fl_digi.h \
-	include/dl_fldigi.h \
-	include/dl_fldigi_gps.h \
 	include/fl_lock.h \
 	include/fldigi-config.h \
 	include/flinput2.h \
@@ -410,6 +408,14 @@ dl_fldigi_SOURCES += \
 	include/table.h \
 	include/textio.h \
 	include/psk_browser.h \
+	include/dl_fldigi/dl_fldigi.h \
+	include/dl_fldigi/gps.h \
+	include/habitat/CouchDB.h \
+	include/habitat/UploaderThread.h \
+	include/habitat/Uploader.h \
+	include/habitat/Extractor.h \
+	include/habitat/UKHASExtractor.h \
+	include/habitat/EZ.h \
 	irrxml/CXMLReaderImpl.h \
 	irrxml/fast_atof.h \
 	irrxml/heapsort.h \
@@ -460,8 +466,6 @@ dl_fldigi_SOURCES += \
 	misc/threads.cxx \
 	misc/timeops.cxx \
 	misc/util.cxx \
-	misc/dl_fldigi.cxx \
-	misc/dl_fldigi_gps.cxx \
 	mt63/dsp.cxx \
 	mt63/mt63.cxx \
 	mt63/mt63base.cxx \
@@ -540,7 +544,15 @@ dl_fldigi_SOURCES += \
 	xmlrpcpp/XmlRpcUtil.h \
 	xmlrpcpp/XmlRpcValue.cpp \
 	xmlrpcpp/XmlRpcValue.h \
-	xmlrpcpp/base64.h
+	xmlrpcpp/base64.h \
+	habitat/CouchDB.cxx \
+	habitat/Extractor.cxx \
+	habitat/EZ.cxx \
+	habitat/UKHASExtractor.cxx \
+	habitat/UploaderThread.cxx \
+	habitat/Uploader.cxx \
+	dl_fldigi/dl_fldigi.cxx \
+	dl_fldigi/gps.cxx
 
 # Sources that are part of the distribution but are not compiled directly
 EXTRA_dl_fldigi_SOURCES += \

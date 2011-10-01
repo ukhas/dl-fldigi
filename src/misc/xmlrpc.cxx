@@ -57,7 +57,6 @@
 #include "waterfall.h"
 #include "macros.h"
 #include "qrunner.h"
-#include "dl_fldigi.h"
 
 #if USE_HAMLIB
         #include "hamlib.h"
@@ -425,7 +424,7 @@ public:
 	}
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
 	{
-		*retval = xmlrpc_c::value_string(progdefaults.xmlPayloadname.c_str());
+		*retval = xmlrpc_c::value_string(progdefaults.tracking_payload);
 	}
 };
 
@@ -511,7 +510,7 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
 	{
 		XMLRPC_LOCK;
-		REQ(cb_dl_fldigi_select_payload_manual, strdup(params.getString(0).c_str()));
+		/* TODO REQ(cb_dl_fldigi_select_payload_manual, strdup(params.getString(0).c_str())); */
 		*retval = xmlrpc_c::value_string(params.getString(0).c_str());
 	}
 };
@@ -2477,8 +2476,9 @@ public:
 	ELEM_(Fldigi_config_dir, "fldigi.config_dir")					\
 	ELEM_(Fldigi_terminate, "fldigi.terminate")						\
 																	\
+	/* TODO: add flight doc id get/set */							\
 	ELEM_(Payload_get_name, "payload.get_name")						\
-	ELEM_(Payload_select_payload, "payload.select_payload")					\
+	ELEM_(Payload_select_payload, "payload.select_payload")			\
 																	\
 	ELEM_(Modem_get_name, "modem.get_name")							\
 	ELEM_(Modem_get_names, "modem.get_names")						\
