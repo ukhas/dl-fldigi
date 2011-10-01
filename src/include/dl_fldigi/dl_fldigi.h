@@ -12,6 +12,22 @@ using namespace std;
 
 namespace dl_fldigi {
 
+enum changed_groups
+{
+    CH_NONE = 0x00,
+    CH_UTHR_SETTINGS = 0x01,
+    CH_INFO = 0x02,
+    CH_LOCATION_MODE = 0x04,
+    CH_STATIONARY_LOCATION = 0x08,
+    CH_GPS_SETTINGS = 0x10
+};
+
+enum location_mode
+{
+    LOC_STATIONARY,
+    LOC_GPS
+};
+
 class DExtractorManager : public habitat::ExtractorManager
 {
 public:
@@ -32,11 +48,14 @@ public:
 extern DExtractorManager *extrmgr;
 extern DUploaderThread *uthr;
 extern vector<Json::Value> flights;
+extern enum location_mode new_location_mode;
 
-void init();
-void set_online(bool online);
-bool is_online();
-void flights_init();
+void init();    /* Create globals and stuff; before UI init */
+void ready();   /* After UI init, start stuff */
+void online(bool value);
+bool online();
+void changed(enum changed_groups thing);
+void commit();
 
 } /* namespace dl_fldigi */
 

@@ -291,11 +291,7 @@ int main(int argc, char ** argv)
 
 	create_fl_digi_main(argc, argv);
 
-    /* TODO: dl_fldigi.uthr->settings() */
-    dl_fldigi::flights_init();
-
-	/* if --hab was specified, default online to true */
-    dl_fldigi::set_online(bHAB);
+    dl_fldigi::ready();
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
@@ -364,7 +360,7 @@ int main(int argc, char ** argv)
 	trx_start();
 
 	/* Needs to be initialised once we have progdefaults AND testCommPorts */
-	dl_fldigi_gps_init();
+	/* TODO (re)move */ dl_fldigi_gps_init();
 
 #if SHOW_WIZARD_BEFORE_MAIN_WINDOW
 	if (!have_config) {

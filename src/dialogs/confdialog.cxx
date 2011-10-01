@@ -7,8 +7,7 @@
 #include <FL/filename.H>
 #include "main.h"
 #include "fl_digi.h"
-//#include "dl_fldigi.h"
-#include "dl_fldigi/gps.h"
+#include "dl_fldigi/dl_fldigi.h"
 #include "soundconf.h"
 #include "colorsfonts.h"
 #include "waterfall.h"
@@ -62,6 +61,9 @@ progdefaults.myCall = o->value();
 update_main_title();
 notify_change_callsign();
 progdefaults.changed = true;
+
+dl_fldigi::changed(dl_fldigi::UTHR_SETTINGS);
+btnApplyConfig->activate(true);
 }
 
 Fl_Input2 *inpMyName=(Fl_Input2 *)0;
@@ -69,6 +71,8 @@ Fl_Input2 *inpMyName=(Fl_Input2 *)0;
 static void cb_inpMyName(Fl_Input2* o, void*) {
   progdefaults.myName = o->value();
 progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::INFO);
+btnApplyConfig->activate(true);
 }
 
 Fl_Input2 *inpMyQth=(Fl_Input2 *)0;
@@ -76,6 +80,8 @@ Fl_Input2 *inpMyQth=(Fl_Input2 *)0;
 static void cb_inpMyQth(Fl_Input2* o, void*) {
   progdefaults.myQth = o->value();
 progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::INFO);
+btnApplyConfig->activate(true);
 }
 
 Fl_Input2 *inpMyLocator=(Fl_Input2 *)0;
@@ -90,6 +96,8 @@ Fl_Input2 *inpMyAntenna=(Fl_Input2 *)0;
 static void cb_inpMyAntenna(Fl_Input2* o, void*) {
   progdefaults.myAntenna = o->value();
 progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::INFO);
+btnApplyConfig->activate(true);
 }
 
 Fl_Input *MyRadio=(Fl_Input *)0;
@@ -97,20 +105,8 @@ Fl_Input *MyRadio=(Fl_Input *)0;
 static void cb_MyRadio(Fl_Input* o, void*) {
   progdefaults.myRadio = o->value();
 progdefaults.changed = true;
-}
-
-Fl_Input *MyLat=(Fl_Input *)0;
-
-static void cb_MyLat(Fl_Input* o, void*) {
-  progdefaults.myLat = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Input *MyLon=(Fl_Input *)0;
-
-static void cb_MyLon(Fl_Input* o, void*) {
-  progdefaults.myLon = o->value();
-progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::INFO);
+btnApplyConfig->activate(true);
 }
 
 Fl_Group *grpNoise=(Fl_Group *)0;
@@ -2844,6 +2840,20 @@ static void cb_btnStartAtSweetSpot(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
+Fl_Check_Button *chkAutoExtract=(Fl_Check_Button *)0;
+
+static void cb_chkAutoExtract1(Fl_Check_Button* o, void*) {
+  progdefaults.autoextract = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkStartFlmsg=(Fl_Check_Button *)0;
+
+static void cb_chkStartFlmsg(Fl_Check_Button* o, void*) {
+  progdefaults.open_flmsg = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Check_Button *btnCWIsLSB=(Fl_Check_Button *)0;
 
 static void cb_btnCWIsLSB(Fl_Check_Button* o, void*) {
@@ -2971,14 +2981,28 @@ Fl_Group *tabDLEnable=(Fl_Group *)0;
 
 Fl_Check_Button *confdialog_dl_online=(Fl_Check_Button *)0;
 
-static void cb_confdialog_dl_online(Fl_Check_Button*, void*) {
-  //cb_dl_fldigi_toggle_dl_online();
-//set_menu_dl_online();
+static void cb_confdialog_dl_online(Fl_Check_Button* o, void*) {
+  if (o->value())
+{
+    dl_fldigi::commit();
+    btnApplyConfig->deactivate(true);
 }
 
-static void cb_Server(Fl_Input* o, void*) {
-  //progdefaults.server_location = o->value();
-//progdefaults.changed = true;
+dl_fldigi::online(o->value());
+}
+
+static void cb_Couch(Fl_Input* o, void*) {
+  progdefaults.habitat_uri = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
+btnApplyConfig->activate();
+}
+
+static void cb_Couch1(Fl_Input* o, void*) {
+  progdefaults.habitat_db = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
+btnApplyConfig->activate();
 }
 
 Fl_Check_Button *btnTrackFreq=(Fl_Check_Button *)0;
@@ -3014,98 +3038,17 @@ if(progdefaults.track_freq_min > i)
 progdefaults.changed = true;
 }
 
-Fl_Group *tabDLPayload=(Fl_Group *)0;
-
-Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
-
-static void cb_habFlightXML_conf(Fl_Choice* o, void*) {
-  //cb_dl_fldigi_select_payload(o, NULL);
-}
-
-static void cb_Autoconfigure(Fl_Button*, void*) {
-  //cb_dl_fldigi_configure_payload(NULL, NULL);
-}
-
-static void cb_Redownload(Fl_Button*, void*) {
-//  dl_fldigi_download();
-//dl_fldigi_downloaded_once = 1;
-}
-
-Fl_Input *cd_xmlSentence_delimiter=(Fl_Input *)0;
-
-static void cb_cd_xmlSentence_delimiter(Fl_Input* o, void*) {
-  //progdefaults.xmlSentence_delimiter = o->value();
-}
-
-Fl_Input *cd_xmlField_delimiter=(Fl_Input *)0;
-
-static void cb_cd_xmlField_delimiter(Fl_Input* o, void*) {
-//  progdefaults.xmlField_delimiter = o->value();
-}
-
-Fl_Input *cd_xmlCallsign=(Fl_Input *)0;
-
-static void cb_cd_xmlCallsign(Fl_Input* o, void*) {
-  //progdefaults.xmlCallsign = o->value();
-}
-
-Fl_Value_Input2 *cd_xmlFields=(Fl_Value_Input2 *)0;
-
-static void cb_cd_xmlFields(Fl_Value_Input2* o, void*) {
-//  progdefaults.xmlFields = o->value();
-}
-
-Fl_Value_Input2 *cd_xml_time=(Fl_Value_Input2 *)0;
-
-static void cb_cd_xml_time(Fl_Value_Input2* o, void*) {
-  //progdefaults.xml_time = o->value();
-}
-
-Fl_Value_Input2 *cd_xml_latitude=(Fl_Value_Input2 *)0;
-
-static void cb_cd_xml_latitude(Fl_Value_Input2* o, void*) {
-//  progdefaults.xml_latitude = o->value();
-}
-
-Fl_Value_Input2 *cd_xml_longitude=(Fl_Value_Input2 *)0;
-
-static void cb_cd_xml_longitude(Fl_Value_Input2* o, void*) {
-//  progdefaults.xml_longitude = o->value();
-}
-
-Fl_Value_Input2 *cd_xml_altitude=(Fl_Value_Input2 *)0;
-
-static void cb_cd_xml_altitude(Fl_Value_Input2* o, void*) {
-  //progdefaults.xml_altitude = o->value();
-}
-
-Fl_Check_Button *cd_xml_longitude_nmea=(Fl_Check_Button *)0;
-
-static void cb_cd_xml_longitude_nmea(Fl_Check_Button* o, void*) {
-//  progdefaults.xml_longitude_nmea = o->value();
-}
-
-Fl_Check_Button *cd_xml_latitude_nmea=(Fl_Check_Button *)0;
-
-static void cb_cd_xml_latitude_nmea(Fl_Check_Button* o, void*) {
-//  progdefaults.xml_latitude_nmea = o->value();
-}
-
 static void cb_Baud(Fl_Value_Input2* o, void*) {
   progdefaults.gps_speed = o->value();
 progdefaults.changed = true;
-dl_fldigi_gps_setup_fromprogdefaults();
-}
-
-static void cb_Identity(Fl_Input* o, void*) {
- // progdefaults.gps_identity = o->value();
-progdefaults.changed = true;
-dl_fldigi_gps_setup_fromprogdefaults();
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
+btnApplyConfig->activate();
 }
 
 static void cb_Refresh(Fl_Button*, void*) {
-  /* As far as I can tell running this again is harmless. */
+  /* As far as I can tell, running this again is harmless. */
 dl_fldigi_gps_update_ports(1, 1);
+/* TODO: update this */;
 }
 
 Fl_Choice *inpGPSdev=(Fl_Choice *)0;
@@ -3113,34 +3056,135 @@ Fl_Choice *inpGPSdev=(Fl_Choice *)0;
 static void cb_inpGPSdev(Fl_Choice* o, void*) {
   progdefaults.gps_device = o->text();
 progdefaults.changed = true;
-dl_fldigi_gps_setup_fromprogdefaults();
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
+btnApplyConfig->activate();
 }
 
-Fl_Output *gpsTStatus=(Fl_Output *)0;
-
-Fl_Output *gpsTPort=(Fl_Output *)0;
-
-Fl_Output *gpsTIdentity=(Fl_Output *)0;
-
-Fl_Output *gpsTBaud=(Fl_Output *)0;
-
-static void cb_Restart(Fl_Button*, void*) {
-  dl_fldigi_gps_setup_fromprogdefaults();
+static void cb_Stationary(Fl_Round_Button* o, void*) {
+  if (o->value())
+{
+    dl_fldigi::new_location_mode = dl_fldigi::LOC_STATIONARY;
+    dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
+    btnApplyConfig->activate();
+};
 }
 
-static void cb_Stop(Fl_Button*, void*) {
-  dl_fldigi_gps_stop();
+static void cb_Upload(Fl_Round_Button* o, void*) {
+  if (o->value())
+{
+    dl_fldigi::new_location_mode = dl_fldigi::LOC_GPS;
+    dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
+    btnApplyConfig->activate();
+};
 }
 
-Fl_Output *gpsTLat=(Fl_Output *)0;
+static void cb_Lat(Fl_Input* o, void*) {
+  progdefaults.myLat = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::STATIONARY_LOCATION);
+btnApplyConfig->activate();
+}
 
-Fl_Output *gpsTLon=(Fl_Output *)0;
+static void cb_Lon(Fl_Input* o, void*) {
+  progdefaults.myLon = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::STATIONARY_LOCATION);
+btnApplyConfig->activate();
+}
 
-Fl_Output *gpsTAlt=(Fl_Output *)0;
+static void cb_Always(Fl_Check_Button* o, void*) {
+  progdefaults.gps_start_enabled = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Output *gps_pos_lat=(Fl_Output *)0;
+
+Fl_Output *gps_pos_altitude=(Fl_Output *)0;
 
 static void cb_Save(Fl_Button*, void*) {
   /* Copy coordinates to the operator form */
-//dl_fldigi_gps_save_position();
+dl_fldigi_gps_save_position();
+}
+
+Fl_Output *gps_pos_location=(Fl_Output *)0;
+
+Fl_Output *gps_pos_lon=(Fl_Output *)0;
+
+Fl_Group *tabDLPayload=(Fl_Group *)0;
+
+Fl_Choice *habFlightXML_conf=(Fl_Choice *)0;
+
+static void cb_habFlightXML_conf(Fl_Choice* o, void*) {
+  // cb_dl_fldigi_select_payload(o, NULL);
+}
+
+static void cb_Autoconfigure(Fl_Button*, void*) {
+  // cb_dl_fldigi_configure_payload(NULL, NULL);
+}
+
+static void cb_Redownload(Fl_Button*, void*) {
+  // dl_fldigi_download();
+// dl_fldigi_downloaded_once = 1;
+}
+
+Fl_Input *cd_xmlSentence_delimiter=(Fl_Input *)0;
+
+static void cb_cd_xmlSentence_delimiter(Fl_Input* o, void*) {
+  // progdefaults.xmlSentence_delimiter = o->value();
+}
+
+Fl_Input *cd_xmlField_delimiter=(Fl_Input *)0;
+
+static void cb_cd_xmlField_delimiter(Fl_Input* o, void*) {
+  // progdefaults.xmlField_delimiter = o->value();
+}
+
+Fl_Input *cd_xmlCallsign=(Fl_Input *)0;
+
+static void cb_cd_xmlCallsign(Fl_Input* o, void*) {
+  // progdefaults.xmlCallsign = o->value();
+}
+
+Fl_Value_Input2 *cd_xmlFields=(Fl_Value_Input2 *)0;
+
+static void cb_cd_xmlFields(Fl_Value_Input2* o, void*) {
+  // progdefaults.xmlFields = o->value();
+}
+
+Fl_Value_Input2 *cd_xml_time=(Fl_Value_Input2 *)0;
+
+static void cb_cd_xml_time(Fl_Value_Input2* o, void*) {
+  // progdefaults.xml_time = o->value();
+}
+
+Fl_Value_Input2 *cd_xml_latitude=(Fl_Value_Input2 *)0;
+
+static void cb_cd_xml_latitude(Fl_Value_Input2* o, void*) {
+  // progdefaults.xml_latitude = o->value();
+}
+
+Fl_Value_Input2 *cd_xml_longitude=(Fl_Value_Input2 *)0;
+
+static void cb_cd_xml_longitude(Fl_Value_Input2* o, void*) {
+  // progdefaults.xml_longitude = o->value();
+}
+
+Fl_Value_Input2 *cd_xml_altitude=(Fl_Value_Input2 *)0;
+
+static void cb_cd_xml_altitude(Fl_Value_Input2* o, void*) {
+  // progdefaults.xml_altitude = o->value();
+}
+
+Fl_Check_Button *cd_xml_longitude_nmea=(Fl_Check_Button *)0;
+
+static void cb_cd_xml_longitude_nmea(Fl_Check_Button* o, void*) {
+  // progdefaults.xml_longitude_nmea = o->value();
+}
+
+Fl_Check_Button *cd_xml_latitude_nmea=(Fl_Check_Button *)0;
+
+static void cb_cd_xml_latitude_nmea(Fl_Check_Button* o, void*) {
+  // progdefaults.xml_latitude_nmea = o->value();
 }
 
 Fl_Input *imagepacketurl=(Fl_Input *)0;
@@ -3178,12 +3222,16 @@ Fl_Button *btnSaveConfig=(Fl_Button *)0;
 
 static void cb_btnSaveConfig(Fl_Button*, void*) {
   progdefaults.saveDefaults();
+dl_fldigi::commit();
+btnApplyConfig->deactivate(true);
 }
 
 Fl_Return_Button *btnCloseConfig=(Fl_Return_Button *)0;
 
 static void cb_btnCloseConfig(Fl_Return_Button*, void*) {
   closeDialog();
+dl_fldigi::commit();
+btnApplyConfig->deactivate(true);
 }
 
 Fl_Button *btnResetConfig=(Fl_Button *)0;
@@ -3191,6 +3239,13 @@ Fl_Button *btnResetConfig=(Fl_Button *)0;
 static void cb_btnResetConfig(Fl_Button*, void*) {
   progdefaults.resetDefaults();
 progdefaults.changed = false;
+}
+
+Fl_Button *btnApplyConfig=(Fl_Button *)0;
+
+static void cb_btnApplyConfig(Fl_Button*, void*) {
+  dl_fldigi::commit();
+btnApplyConfig->deactivate(true);
 }
 
 Fl_Double_Window* ConfigureDialog() {
@@ -3212,7 +3267,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE);
-    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 372);
+    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 435);
       tabsConfigure->color((Fl_Color)FL_LIGHT1);
       tabsConfigure->selection_color((Fl_Color)FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
@@ -3220,7 +3275,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
         tabOperator->hide();
-        { Fl_Group* o = new Fl_Group(5, 35, 490, 275, _("Station"));
+        { Fl_Group* o = new Fl_Group(5, 35, 490, 210, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
           { inpMyCallsign = new Fl_Input2(110, 64, 110, 24, _("Callsign:"));
@@ -3279,7 +3334,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
             inpMyLocator->when(FL_WHEN_RELEASE);
             inpMyLocator->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyLocator
-          { inpMyAntenna = new Fl_Input2(110, 172, 320, 24, _("Antenna:"));
+          { inpMyAntenna = new Fl_Input2(110, 166, 320, 24, _("Antenna:"));
             inpMyAntenna->tooltip(_("Short description of antenna"));
             inpMyAntenna->box(FL_DOWN_BOX);
             inpMyAntenna->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -3293,20 +3348,10 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
             inpMyAntenna->when(FL_WHEN_RELEASE);
             inpMyAntenna->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyAntenna
-          { Fl_Input* o = MyRadio = new Fl_Input(115, 205, 320, 25, _("Radio:"));
+          { Fl_Input* o = MyRadio = new Fl_Input(110, 200, 320, 25, _("Radio:"));
             MyRadio->callback((Fl_Callback*)cb_MyRadio);
             o->value(progdefaults.myRadio.c_str());
           } // Fl_Input* MyRadio
-          { Fl_Input* o = MyLat = new Fl_Input(110, 240, 320, 25, _("Lat (DD):"));
-            MyLat->tooltip(_("DD.DDDD"));
-            MyLat->callback((Fl_Callback*)cb_MyLat);
-            o->value(progdefaults.myLat.c_str());
-          } // Fl_Input* MyLat
-          { Fl_Input* o = MyLon = new Fl_Input(110, 275, 320, 25, _("Long (DD):"));
-            MyLon->tooltip(_("DD.DDDD"));
-            MyLon->callback((Fl_Callback*)cb_MyLon);
-            o->value(progdefaults.myLon.c_str());
-          } // Fl_Input* MyLon
           o->end();
         } // Fl_Group* o
         { grpNoise = new Fl_Group(5, 203, 490, 165, _("Test Signal - Do NOT use with transmitter"));
@@ -4240,6 +4285,7 @@ an merging"));
         tabWaterfall->end();
       } // Fl_Group* tabWaterfall
       { tabModems = new Fl_Group(-4, 25, 521, 347, _("Modems"));
+        tabModems->hide();
         { tabsModems = new Fl_Tabs(-4, 25, 521, 347);
           tabsModems->selection_color((Fl_Color)FL_LIGHT1);
           tabsModems->align(FL_ALIGN_TOP_RIGHT);
@@ -4697,7 +4743,6 @@ an merging"));
                 valDominoEX_ADJ->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
                 valDominoEX_ADJ->minimum(-100);
                 valDominoEX_ADJ->maximum(100);
-                valDominoEX_ADJ->value(0);
                 valDominoEX_ADJ->callback((Fl_Callback*)cb_valDominoEX_ADJ);
                 valDominoEX_ADJ->align(FL_ALIGN_RIGHT);
                 valDominoEX_ADJ->when(FL_WHEN_CHANGED);
@@ -4902,6 +4947,7 @@ an merging"));
             tabMT63->end();
           } // Fl_Group* tabMT63
           { tabOlivia = new Fl_Group(0, 50, 500, 320, _("Olivia"));
+            tabOlivia->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 200);
               o->box(FL_ENGRAVED_FRAME);
               { Fl_Choice* o = mnuOlivia_Bandwidth = new Fl_Choice(60, 80, 85, 20, _("Bandwidth"));
@@ -5492,6 +5538,7 @@ an merging"));
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("RigCAT"));
             o->tooltip(_("Rig Control using xml spec file"));
+            o->hide();
             { chkUSERIGCAT = new Fl_Check_Button(195, 60, 110, 20, _("Use RigCAT"));
               chkUSERIGCAT->tooltip(_("RigCAT used for rig control"));
               chkUSERIGCAT->down_box(FL_DOWN_BOX);
@@ -6417,6 +6464,7 @@ d frequency"));
           } // Fl_Group* tabNBEMS
           { tabPskmail = new Fl_Group(0, 50, 500, 320, _("Pskmail"));
             tabPskmail->align(FL_ALIGN_TOP_LEFT);
+            tabPskmail->hide();
             { Fl_Group* o = new Fl_Group(5, 58, 490, 174, _("Mail Server Attributes"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6588,7 +6636,7 @@ d frequency"));
           } // Fl_Group* tabSpot
           { tabSweetSpot = new Fl_Group(0, 50, 500, 320, _("Sweet Spot"));
             tabSweetSpot->hide();
-            { Fl_Group* o = new Fl_Group(5, 60, 490, 75);
+            { Fl_Group* o = new Fl_Group(5, 60, 490, 105);
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
               { Fl_Value_Input2* o = valCWsweetspot = new Fl_Value_Input2(42, 71, 65, 20, _("CW"));
@@ -6655,6 +6703,18 @@ d frequency"));
                 btnStartAtSweetSpot->callback((Fl_Callback*)cb_btnStartAtSweetSpot);
                 o->value(progdefaults.StartAtSweetSpot);
               } // Fl_Check_Button* btnStartAtSweetSpot
+              { Fl_Check_Button* o = chkAutoExtract = new Fl_Check_Button(19, 145, 227, 20, _("Enable detection && extraction"));
+                chkAutoExtract->tooltip(_("Extract files for use with external \"wrap\" program"));
+                chkAutoExtract->down_box(FL_DOWN_BOX);
+                chkAutoExtract->callback((Fl_Callback*)cb_chkAutoExtract1);
+                o->value(progdefaults.autoextract);
+              } // Fl_Check_Button* chkAutoExtract
+              { Fl_Check_Button* o = chkStartFlmsg = new Fl_Check_Button(261, 145, 227, 20, _("auto open wrap folder"));
+                chkStartFlmsg->tooltip(_("Autostart flmsg upon detection of compatible file"));
+                chkStartFlmsg->down_box(FL_DOWN_BOX);
+                chkStartFlmsg->callback((Fl_Callback*)cb_chkStartFlmsg);
+                o->value(progdefaults.open_flmsg);
+              } // Fl_Check_Button* chkStartFlmsg
               o->end();
             } // Fl_Group* o
             { Fl_Group* o = new Fl_Group(5, 140, 490, 60, _("K3 A1A configuation"));
@@ -6809,11 +6869,9 @@ d frequency"));
             btnHAMCALLonline->callback((Fl_Callback*)cb_btnHAMCALLonline);
             o->value(progdefaults.QRZ == HAMCALLHTML);
           } // Fl_Round_Button* btnHAMCALLonline
-          { Fl_Round_Button* o = btnCALLOOK = new Fl_Round_Button(25, 137, 337, 20, _("Callook.info lookup (US callsigns only)"));
-            btnCALLOOK->tooltip(_("Visit Hamcall web site"));
-            btnCALLOOK->down_box(FL_DOWN_BOX);
+          { btnCALLOOK = new Fl_Round_Button(30, 60, 25, 25, _("Callook.info lookup (US callsigns only)"));
+            btnCALLOOK->down_box(FL_ROUND_DOWN_BOX);
             btnCALLOOK->callback((Fl_Callback*)cb_btnCALLOOK);
-            o->value(progdefaults.QRZ == CALLOOK);
           } // Fl_Round_Button* btnCALLOOK
           o->end();
         } // Fl_Group* o
@@ -6823,32 +6881,35 @@ d frequency"));
         tabDL->labelsize(12);
         { tabsDL = new Fl_Tabs(0, 25, 500, 410);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
-            tabDLEnable->hide();
-            { Fl_Group* o = new Fl_Group(10, 55, 478, 91, _("Enable"));
+            { Fl_Group* o = new Fl_Group(10, 55, 478, 111, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = confdialog_dl_online = new Fl_Check_Button(40, 75, 200, 25, _("Online"));
+              { confdialog_dl_online = new Fl_Check_Button(40, 75, 200, 25, _("Online"));
                 confdialog_dl_online->down_box(FL_DOWN_BOX);
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
-                //o->value(progdefaults.dl_online);
               } // Fl_Check_Button* confdialog_dl_online
-              { Fl_Input* o = new Fl_Input(90, 105, 334, 20, _("Server:"));
-                o->tooltip(_("Tracker Server Address"));
-                o->callback((Fl_Callback*)cb_Server);
-//                o->value(progdefaults.server_location.c_str());
+              { Fl_Input* o = new Fl_Input(100, 105, 334, 20, _("Couch URI"));
+                o->tooltip(_("Address of the CouchDB server"));
+                o->callback((Fl_Callback*)cb_Couch);
+                o->value(progdefaults.habitat_uri)
+              } // Fl_Input* o
+              { Fl_Input* o = new Fl_Input(100, 130, 334, 20, _("Couch DB"));
+                o->tooltip(_("CouchDB database name"));
+                o->callback((Fl_Callback*)cb_Couch1);
+                o->value(progdefaults.habitat_db)
               } // Fl_Input* o
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(10, 156, 478, 177, _("Frequency Tracking"));
+            { Fl_Group* o = new Fl_Group(10, 179, 478, 116, _("Frequency Tracking"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = btnTrackFreq = new Fl_Check_Button(40, 182, 90, 15, _("Enabled"));
+              { Fl_Check_Button* o = btnTrackFreq = new Fl_Check_Button(40, 205, 90, 15, _("Enabled"));
                 btnTrackFreq->tooltip(_("Adjust the radio frequency to keep the signal inside the specified limits"));
                 btnTrackFreq->down_box(FL_DOWN_BOX);
                 btnTrackFreq->callback((Fl_Callback*)cb_btnTrackFreq);
                 o->value(progdefaults.track_freq);
               } // Fl_Check_Button* btnTrackFreq
-              { Fl_Counter2* o = cntTrackFreqMin = new Fl_Counter2(26, 208, 105, 20, _("Minimum Waterfall Frequency"));
+              { Fl_Counter2* o = cntTrackFreqMin = new Fl_Counter2(26, 231, 105, 20, _("Minimum Waterfall Frequency"));
                 cntTrackFreqMin->tooltip(_("Low frequency limit in Hz"));
                 cntTrackFreqMin->box(FL_UP_BOX);
                 cntTrackFreqMin->color((Fl_Color)FL_BACKGROUND_COLOR);
@@ -6868,7 +6929,7 @@ d frequency"));
                 o->labelsize(FL_NORMAL_SIZE);
                 o->lstep(10.0);
               } // Fl_Counter2* cntTrackFreqMin
-              { Fl_Counter2* o = cntTrackFreqMax = new Fl_Counter2(26, 236, 105, 20, _("Maximum Waterfall Frequency"));
+              { Fl_Counter2* o = cntTrackFreqMax = new Fl_Counter2(26, 259, 105, 20, _("Maximum Waterfall Frequency"));
                 cntTrackFreqMax->tooltip(_("High frequency limit in Hz"));
                 cntTrackFreqMax->box(FL_UP_BOX);
                 cntTrackFreqMax->color((Fl_Color)FL_BACKGROUND_COLOR);
@@ -6892,6 +6953,77 @@ d frequency"));
             } // Fl_Group* o
             tabDLEnable->end();
           } // Fl_Group* tabDLEnable
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 325, _("Location"));
+            o->hide();
+            { Fl_Group* o = new Fl_Group(5, 55, 490, 285, _("Listener Location"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 195, 150, 25, _("Baud"));
+                o->type(2);
+                o->box(FL_DOWN_BOX);
+                o->color((Fl_Color)FL_BACKGROUND2_COLOR);
+                o->selection_color((Fl_Color)FL_SELECTION_COLOR);
+                o->labeltype(FL_NORMAL_LABEL);
+                o->labelfont(0);
+                o->labelsize(14);
+                o->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                o->callback((Fl_Callback*)cb_Baud);
+                o->align(FL_ALIGN_LEFT);
+                o->when(FL_WHEN_RELEASE);
+                o->value(progdefaults.gpsSpeed);
+              } // Fl_Value_Input2* o
+              { Fl_Button* o = new Fl_Button(290, 165, 170, 25, _("Refresh Device List"));
+                o->callback((Fl_Callback*)cb_Refresh);
+              } // Fl_Button* o
+              { inpGPSdev = new Fl_Choice(100, 165, 180, 25, _("Device"));
+                inpGPSdev->down_box(FL_BORDER_BOX);
+                inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
+              } // Fl_Choice* inpGPSdev
+              { Fl_Round_Button* o = new Fl_Round_Button(30, 80, 190, 25, _("Stationary Listener"));
+                o->type(102);
+                o->down_box(FL_ROUND_DOWN_BOX);
+                o->callback((Fl_Callback*)cb_Stationary);
+                o->value(!progdefaults.gps_start_enabled);
+              } // Fl_Round_Button* o
+              { Fl_Round_Button* o = new Fl_Round_Button(30, 135, 190, 25, _("Upload GPS Position"));
+                o->type(102);
+                o->down_box(FL_ROUND_DOWN_BOX);
+                o->callback((Fl_Callback*)cb_Upload);
+                o->value(progdefaults.gps_start_enabled);
+              } // Fl_Round_Button* o
+              { Fl_Input* o = new Fl_Input(130, 105, 125, 25, _("Lat (DD)"));
+                o->callback((Fl_Callback*)cb_Lat);
+                o->value(progdefaults.myLat);
+              } // Fl_Input* o
+              { Fl_Input* o = new Fl_Input(330, 105, 125, 25, _("Lon (DD)"));
+                o->callback((Fl_Callback*)cb_Lon);
+                o->value(progdefaults.myLon);
+              } // Fl_Input* o
+              { Fl_Check_Button* o = new Fl_Check_Button(220, 135, 240, 25, _("Always enable GPS on startup"));
+                o->down_box(FL_DOWN_BOX);
+                o->callback((Fl_Callback*)cb_Always);
+                o->value(progdefaults.gps_start_enabled);
+              } // Fl_Check_Button* o
+              { Fl_Group* o = new Fl_Group(10, 240, 475, 90, _("Last GPS Position"));
+                o->box(FL_ENGRAVED_BOX);
+                o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+                { gps_pos_lat = new Fl_Output(200, 265, 105, 25, _("Lat"));
+                } // Fl_Output* gps_pos_lat
+                { gps_pos_altitude = new Fl_Output(60, 295, 105, 25, _("Alt"));
+                } // Fl_Output* gps_pos_altitude
+                { Fl_Button* o = new Fl_Button(200, 295, 250, 25, _("Save as stationary location"));
+                o->callback((Fl_Callback*)cb_Save);
+                } // Fl_Button* o
+                { gps_pos_location = new Fl_Output(60, 265, 105, 25, _("Time"));
+                } // Fl_Output* gps_pos_location
+                { gps_pos_lon = new Fl_Output(345, 265, 105, 25, _("Lon"));
+                } // Fl_Output* gps_pos_lon
+                o->end();
+              } // Fl_Group* o
+              o->end();
+            } // Fl_Group* o
+            o->end();
+          } // Fl_Group* o
           { tabDLPayload = new Fl_Group(0, 50, 500, 322, _("Payload"));
             tabDLPayload->hide();
             { Fl_Group* o = new Fl_Group(5, 54, 490, 88, _("Payload Autoconfig"));
@@ -6916,15 +7048,15 @@ d frequency"));
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
               { Fl_Input* o = cd_xmlSentence_delimiter = new Fl_Input(195, 169, 35, 25, _("Sentence Delimiter"));
                 cd_xmlSentence_delimiter->callback((Fl_Callback*)cb_cd_xmlSentence_delimiter);
-//                o->value(progdefaults.xmlSentence_delimiter.c_str());
+                // o->value(progdefaults.xmlSentence_delimiter.c_str());
               } // Fl_Input* cd_xmlSentence_delimiter
               { Fl_Input* o = cd_xmlField_delimiter = new Fl_Input(390, 169, 25, 25, _("Field Delimiter"));
                 cd_xmlField_delimiter->callback((Fl_Callback*)cb_cd_xmlField_delimiter);
-//                o->value(progdefaults.xmlField_delimiter.c_str());
+                // o->value(progdefaults.xmlField_delimiter.c_str());
               } // Fl_Input* cd_xmlField_delimiter
               { Fl_Input* o = cd_xmlCallsign = new Fl_Input(195, 200, 105, 25, _("Callsign"));
                 cd_xmlCallsign->callback((Fl_Callback*)cb_cd_xmlCallsign);
-//                o->value(progdefaults.xmlCallsign.c_str());
+                // o->value(progdefaults.xmlCallsign.c_str());
               } // Fl_Input* cd_xmlCallsign
               { Fl_Group* o = new Fl_Group(10, 230, 480, 125, _("Fields"));
                 o->box(FL_ENGRAVED_FRAME);
@@ -6941,7 +7073,7 @@ d frequency"));
                 cd_xmlFields->callback((Fl_Callback*)cb_cd_xmlFields);
                 cd_xmlFields->align(FL_ALIGN_LEFT);
                 cd_xmlFields->when(FL_WHEN_RELEASE);
-//                o->value(progdefaults.xmlFields);
+                // o->value(progdefaults.xmlFields);
                 } // Fl_Value_Input2* cd_xmlFields
                 { Fl_Value_Input2* o = cd_xml_time = new Fl_Value_Input2(370, 245, 25, 25, _("Time Field ID"));
                 cd_xml_time->type(2);
@@ -6955,7 +7087,7 @@ d frequency"));
                 cd_xml_time->callback((Fl_Callback*)cb_cd_xml_time);
                 cd_xml_time->align(FL_ALIGN_LEFT);
                 cd_xml_time->when(FL_WHEN_RELEASE);
-//                o->value(progdefaults.xml_time);
+                // o->value(progdefaults.xml_time);
                 } // Fl_Value_Input2* cd_xml_time
                 { Fl_Value_Input2* o = cd_xml_latitude = new Fl_Value_Input2(370, 270, 25, 25, _("Latitude Field ID"));
                 cd_xml_latitude->type(2);
@@ -6969,7 +7101,7 @@ d frequency"));
                 cd_xml_latitude->callback((Fl_Callback*)cb_cd_xml_latitude);
                 cd_xml_latitude->align(FL_ALIGN_LEFT);
                 cd_xml_latitude->when(FL_WHEN_RELEASE);
- //               o->value(progdefaults.xml_latitude);
+                // o->value(progdefaults.xml_latitude);
                 } // Fl_Value_Input2* cd_xml_latitude
                 { Fl_Value_Input2* o = cd_xml_longitude = new Fl_Value_Input2(370, 295, 25, 25, _("Longitude Field ID"));
                 cd_xml_longitude->type(2);
@@ -6983,7 +7115,7 @@ d frequency"));
                 cd_xml_longitude->callback((Fl_Callback*)cb_cd_xml_longitude);
                 cd_xml_longitude->align(FL_ALIGN_LEFT);
                 cd_xml_longitude->when(FL_WHEN_RELEASE);
-//                o->value(progdefaults.xml_longitude);
+                // o->value(progdefaults.xml_longitude);
                 } // Fl_Value_Input2* cd_xml_longitude
                 { Fl_Value_Input2* o = cd_xml_altitude = new Fl_Value_Input2(370, 320, 25, 25, _("Altitude Field ID"));
                 cd_xml_altitude->type(2);
@@ -6997,12 +7129,12 @@ d frequency"));
                 cd_xml_altitude->callback((Fl_Callback*)cb_cd_xml_altitude);
                 cd_xml_altitude->align(FL_ALIGN_LEFT);
                 cd_xml_altitude->when(FL_WHEN_RELEASE);
- //               o->value(progdefaults.xml_altitude);
+                // o->value(progdefaults.xml_altitude);
                 } // Fl_Value_Input2* cd_xml_altitude
                 { Fl_Check_Button* o = cd_xml_longitude_nmea = new Fl_Check_Button(400, 295, 64, 25, _("NMEA"));
                 cd_xml_longitude_nmea->down_box(FL_DOWN_BOX);
                 cd_xml_longitude_nmea->callback((Fl_Callback*)cb_cd_xml_longitude_nmea);
-//                o->value(progdefaults.xml_longitude_nmea);
+                // o->value(progdefaults.xml_longitude_nmea);
                 } // Fl_Check_Button* cd_xml_longitude_nmea
                 o->end();
               } // Fl_Group* o
@@ -7011,79 +7143,13 @@ d frequency"));
             { Fl_Check_Button* o = cd_xml_latitude_nmea = new Fl_Check_Button(400, 270, 64, 25, _("NMEA"));
               cd_xml_latitude_nmea->down_box(FL_DOWN_BOX);
               cd_xml_latitude_nmea->callback((Fl_Callback*)cb_cd_xml_latitude_nmea);
-  //            o->value(progdefaults.xml_latitude_nmea);
+              // o->value(progdefaults.xml_latitude_nmea);
             } // Fl_Check_Button* cd_xml_latitude_nmea
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 385, _("GPS"));
-            { Fl_Group* o = new Fl_Group(5, 55, 490, 90, _("GPS Upload Configuration"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 110, 150, 25, _("Baud"));
-                o->type(2);
-                o->box(FL_DOWN_BOX);
-                o->color((Fl_Color)FL_BACKGROUND2_COLOR);
-                o->selection_color((Fl_Color)FL_SELECTION_COLOR);
-                o->labeltype(FL_NORMAL_LABEL);
-                o->labelfont(0);
-                o->labelsize(14);
-                o->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
-                o->callback((Fl_Callback*)cb_Baud);
-                o->align(FL_ALIGN_LEFT);
-                o->when(FL_WHEN_RELEASE);
-                //o->value(progdefaults.gpsSpeed);
-              } // Fl_Value_Input2* o
-              { Fl_Input* o = new Fl_Input(315, 110, 140, 25, _("Identity"));
-                o->callback((Fl_Callback*)cb_Identity);
-                //o->value(progdefaults.gpsIdentity.c_str());
-              } // Fl_Input* o
-              { Fl_Button* o = new Fl_Button(285, 80, 170, 25, _("Refresh Device List"));
-                o->callback((Fl_Callback*)cb_Refresh);
-              } // Fl_Button* o
-              { inpGPSdev = new Fl_Choice(100, 80, 180, 25, _("Device"));
-                inpGPSdev->down_box(FL_BORDER_BOX);
-                inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
-              } // Fl_Choice* inpGPSdev
-              o->end();
-            } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(5, 150, 490, 120, _("GPS Thread Status"));
-              o->box(FL_ENGRAVED_BOX);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { gpsTStatus = new Fl_Output(100, 175, 105, 25, _("Status"));
-              } // Fl_Output* gpsTStatus
-              { gpsTPort = new Fl_Output(100, 205, 105, 25, _("Port"));
-              } // Fl_Output* gpsTPort
-              { gpsTIdentity = new Fl_Output(315, 175, 105, 25, _("Identity"));
-              } // Fl_Output* gpsTIdentity
-              { gpsTBaud = new Fl_Output(315, 205, 105, 25, _("Baud"));
-              } // Fl_Output* gpsTBaud
-              { Fl_Button* o = new Fl_Button(100, 235, 155, 25, _("Restart Thread"));
-                o->callback((Fl_Callback*)cb_Restart);
-              } // Fl_Button* o
-              { Fl_Button* o = new Fl_Button(260, 235, 160, 25, _("Stop Thread"));
-                o->callback((Fl_Callback*)cb_Stop);
-              } // Fl_Button* o
-              o->end();
-            } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(5, 275, 490, 90, _("GPS Last Known Position"));
-              o->box(FL_ENGRAVED_BOX);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { gpsTLat = new Fl_Output(100, 300, 105, 25, _("Latitude"));
-              } // Fl_Output* gpsTLat
-              { gpsTLon = new Fl_Output(315, 300, 105, 25, _("Longitude"));
-              } // Fl_Output* gpsTLon
-              { gpsTAlt = new Fl_Output(100, 330, 105, 25, _("Altitude"));
-              } // Fl_Output* gpsTAlt
-              { Fl_Button* o = new Fl_Button(225, 330, 196, 25, _("Save as operator position"));
-                o->callback((Fl_Callback*)cb_Save);
-              } // Fl_Button* o
-              o->end();
-            } // Fl_Group* o
-            o->end();
-          } // Fl_Group* o
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 322, _("Image"));
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 322, _("Misc"));
             o->hide();
-            { Fl_Group* o = new Fl_Group(4, 54, 492, 116, _("Image Configuration"));
+            { Fl_Group* o = new Fl_Group(4, 54, 492, 116, _("SSDV Image Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
               { Fl_Input* o = imagepacketurl = new Fl_Input(100, 81, 330, 20, _("Packet URL:"));
@@ -7106,19 +7172,15 @@ d frequency"));
               imagesavedir->callback((Fl_Callback*)cb_imagesavedir);
               o->value(progdefaults.ssdv_save_dir.c_str());
             } // Fl_Input* imagesavedir
-            o->end();
-          } // Fl_Group* o
-          { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("Remote"));
-            o->hide();
-            { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("Waterfall PNG"));
+            { Fl_Group* o = new Fl_Group(5, 180, 492, 105, _("Waterfall PNG"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = new Fl_Check_Button(45, 75, 200, 25, _("Waterfall PNG Export"));
+              { Fl_Check_Button* o = new Fl_Check_Button(45, 200, 200, 25, _("Waterfall PNG Export"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Waterfall);
                 o->value(progdefaults.png_wfall);
               } // Fl_Check_Button* o
-              { Fl_Input* o = new Fl_Input(110, 115, 334, 20, _("Location:"));
+              { Fl_Input* o = new Fl_Input(110, 240, 334, 20, _("Location:"));
                 o->tooltip(_("Please use full path including filename"));
                 o->callback((Fl_Callback*)cb_Location);
                 o->value(progdefaults.waterfall_png_location.c_str());
@@ -7127,21 +7189,33 @@ d frequency"));
             } // Fl_Group* o
             o->end();
           } // Fl_Group* o
+          { Fl_Group* o = new Fl_Group(5, 55, 492, 105, _("delete_me"));
+            o->hide();
+            o->end();
+          } // Fl_Group* o
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 385, _("delete_me"));
+            o->hide();
+            o->end();
+          } // Fl_Group* o
           tabsDL->end();
         } // Fl_Tabs* tabsDL
         tabDL->end();
       } // Fl_Group* tabDL
       tabsConfigure->end();
     } // Fl_Tabs* tabsConfigure
-    { btnSaveConfig = new Fl_Button(235, 375, 130, 22, _("Save"));
+    { btnSaveConfig = new Fl_Button(270, 375, 105, 22, _("Save"));
       btnSaveConfig->callback((Fl_Callback*)cb_btnSaveConfig);
     } // Fl_Button* btnSaveConfig
-    { btnCloseConfig = new Fl_Return_Button(367, 375, 130, 22, _("Close"));
+    { btnCloseConfig = new Fl_Return_Button(390, 375, 107, 22, _("Close"));
       btnCloseConfig->callback((Fl_Callback*)cb_btnCloseConfig);
     } // Fl_Return_Button* btnCloseConfig
     { btnResetConfig = new Fl_Button(5, 375, 130, 22, _("Restore defaults"));
       btnResetConfig->callback((Fl_Callback*)cb_btnResetConfig);
     } // Fl_Button* btnResetConfig
+    { btnApplyConfig = new Fl_Button(150, 375, 105, 22, _("Apply (dl)"));
+      btnApplyConfig->callback((Fl_Callback*)cb_btnApplyConfig);
+      btnApplyConfig->deactivate();
+    } // Fl_Button* btnApplyConfig
     o->set_non_modal();
     o->end();
   } // Fl_Double_Window* o

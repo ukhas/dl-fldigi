@@ -3222,9 +3222,6 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(_("&About"), help_about_icon), 'a', cb_mnuAboutURL, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-/* TODO: Remove this. As a debug/temporary measure, I'm adding in the DL Client menu to non --hab mode,
- * since we don't yet have any other UI as complete as this to configure online/offline, etc. */
-/* When you remove this; also remove the toggles entry on line TODO: 3791 */
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -4799,10 +4796,6 @@ void create_fl_digi_main_primary() {
 	if (!dxcc_is_open())
 		getMenuItem(COUNTRIES_MLABEL)->hide();
 
-        /* TODO: REMOVE ME: SEE LINE 2471 */ 
-	  set_menu_dl_online();
-	/* TODO */
-
 	UI_select();
 	wf->UI_select(progStatus.WF_UI);
 
@@ -5799,8 +5792,6 @@ void create_fl_digi_main_dl_fldigi() {
 		}
 	}
 
-	set_menu_dl_online();
-
 	make_scopeviewer();
 	noop_controls();
 
@@ -5828,20 +5819,6 @@ void create_fl_digi_main_dl_fldigi() {
 
 }
 //
-
-void set_menu_dl_online()
-{
-	Fl_Menu_Item *i;
-
-	if (bHAB)
-	{
-		i = getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_);
-	}
-	else
-	{
-		i = getMenuItem(DLFLDIGI_ONLINE_LABEL);
-	}
-}
 
 void create_fl_digi_main(int argc, char** argv)
 {

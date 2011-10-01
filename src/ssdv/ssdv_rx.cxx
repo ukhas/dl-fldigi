@@ -13,7 +13,7 @@
 /* For progdefaults */
 #include "configuration.h"
 
-/* For is_online() */
+/* For online() getter */
 #include "dl_fldigi/dl_fldigi.h"
 
 /* Used for passing curl data to post thread */
@@ -399,7 +399,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	image_errors += i;
 	
 	/* Packet received.. upload to server */
-	if (dl_fldigi::is_online()) upload_packet();
+	if (dl_fldigi::online()) upload_packet();
 	
 	/* Read the header */
 	ssdv_dec_header(&pkt_info, b);
