@@ -4,6 +4,7 @@
 #include <string>
 #include <stdexcept>
 #include <json/json.h>
+#include <time.h>
 #include "habitat/UKHASExtractor.h"
 
 using namespace std;
@@ -158,6 +159,50 @@ void DExtractorManager::data(const Json::Value &d)
         return;
 
     /* TODO: Data to fill out HAB UI */
+}
+
+void DUploaderThread::settings()
+{
+    UploaderThread::settings(progdefaults.myCall, progdefaults.habitat_uri,
+                             progdefaults.habitat_db);
+}
+
+void DUploaderThread::listener_telemetry()
+{
+    Json::Value data(Json::objectValue);
+
+    /* TODO: is it really a good idea to upload time like this? */
+    struct tm tm;
+    time_t now;
+
+    now = time(NULL);
+    if (now < 0)
+        throw runtime_error("time() failed");
+
+    struct tm *tm_p = gmtime_r(&now, &tm);
+    if (tm_p != &tm)
+        throw runtime_error("gmtime() failed");
+
+    data["time"] = Json::Value(Json::objectValue);
+    Json::Value &time = data["time"];
+    time["hour"] = tm.tm_hour;
+    time["minute"] = tm.tm_min;
+    time["second"] = tm.tm_sec;
+
+    data["latitude"] = progdefaults.myLat;
+    data["longitude"] = progdefaults.myLon;
+
+    UploaderThread::listener_telemetry(data);
+}
+
+void DUploaderThread::listener_info()
+{
+    Json::Value data(Json::objectValue);
+    data["name"] = progdefaults.myName;
+    data["location"] = progdefaults.myQth;
+    data["radio"] = progdefaults.myRadio;
+    data["antenna"] = progdefaults.myAntenna;
+    UploaderThread::listener_info(data);
 }
 
 void DUploaderThread::log(const string &message)

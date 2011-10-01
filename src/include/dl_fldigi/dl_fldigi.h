@@ -41,7 +41,16 @@ public:
 class DUploaderThread : public habitat::UploaderThread
 {
 public:
+    /* These functions call super() functions, but with data grabbed from
+     * progdefaults and other globals. */
+    void settings();
+    void listener_telemetry();
+    void listener_info();
+
+    /* Forward data to fldigi debug/log macros */
     void log(const string &message);
+
+    /* Update UI */
     void got_flights(const vector<Json::Value> &flights);
 };
 

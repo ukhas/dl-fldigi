@@ -3929,7 +3929,7 @@ btnApplyConfig->activate();} open
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {130 105 125 25}
+                xywh {130 105 125 25} type Float
                 code0 {o->value(progdefaults.myLat);}
               }
               Fl_Input {} {
@@ -3938,7 +3938,7 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {330 105 125 25}
+                xywh {330 105 125 25} type Float
                 code0 {o->value(progdefaults.myLon);}
               }
               Fl_Check_Button {} {
