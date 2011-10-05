@@ -216,10 +216,10 @@ static void dl_fldigi_gps_set_status(char *port_f, int baud, char *identity_f, e
 
 	snprintf(buf, sizeof(buf), "%i", baud);
 
-	gpsTStatus->value(status_str);
-	gpsTBaud->value(buf);
-	gpsTPort->value(port);
-	gpsTIdentity->value(identity);
+	//gpsTStatus->value(status_str);
+	//gpsTBaud->value(buf);
+	//gpsTPort->value(port);
+	//gpsTIdentity->value(identity);
 
 	if (port_f != NULL)	free(port_f);
 	if (identity_f != NULL)	free(identity_f);
@@ -230,13 +230,13 @@ static void dl_fldigi_gps_set_debugpos(float lat, float lon, int alt)
 	char buf[40];
 
 	snprintf(buf, sizeof(buf), "%6f", lat);
-	gpsTLat->value(buf);
+	gps_pos_lat->value(buf);
 
 	snprintf(buf, sizeof(buf), "%6f", lon);
-	gpsTLon->value(buf);
+	gps_pos_lon->value(buf);
 
 	snprintf(buf, sizeof(buf), "%i", alt);
-	gpsTAlt->value(buf);
+	gps_pos_altitude->value(buf);
 }
 
 

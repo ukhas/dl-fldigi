@@ -6,6 +6,8 @@
 #include <json/json.h>
 #include <time.h>
 #include "habitat/UKHASExtractor.h"
+#include "configuration.h"
+#include "debug.h"
 
 using namespace std;
 
@@ -28,7 +30,7 @@ vector<Json::Value> flights;
 enum location_mode new_location_mode;
 
 static bool dl_online, downloaded_once, hab_ui_exists;
-static enum changed_groups dirty;
+static int dirty;
 static enum location_mode current_location_mode;
 static habitat::UKHASExtractor *ukhas;
 
@@ -104,7 +106,7 @@ static void reset_gps_settings()
     }
 }
 
-void changed(enum changed_type thing)
+void changed(enum changed_groups thing)
 {
     dirty |= thing;
 }
@@ -207,7 +209,7 @@ void DUploaderThread::listener_info()
 
 void DUploaderThread::log(const string &message)
 {
-    LOG_DEBUG("habitat UploaderThread: %s", msg.c_str());
+    LOG_DEBUG("habitat UploaderThread: %s", message.c_str());
     /* TODO: Log message from UploaderThread */
     /* TODO: put_status */
 }

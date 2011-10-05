@@ -291,7 +291,7 @@ int main(int argc, char ** argv)
 
 	create_fl_digi_main(argc, argv);
 
-    dl_fldigi::ready();
+    dl_fldigi::ready(bHAB);
 
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);

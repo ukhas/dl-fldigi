@@ -1214,8 +1214,8 @@
                                                                                         \
         /* Extra dl-fldigi operator information */                                      \
         ELEM_(std::string, myRadio, "MYRADIO", "Short radio description", "")           \
-        ELEM_(double, myLat, "MYLAT", "Stationary listener latitude", "")               \
-        ELEM_(double, myLon, "MYLON", "Stationary listener longitude", "")              \
+        ELEM_(double, myLat, "MYLAT", "Stationary listener latitude", 51.5)             \
+        ELEM_(double, myLon, "MYLON", "Stationary listener longitude", 0.0)             \
                                                                                         \
         /* habitat Flight selection stuff */                                            \
         ELEM_(std::string, tracking_flight, "FLIGHT_DOCID", "The selected flight", "")  \

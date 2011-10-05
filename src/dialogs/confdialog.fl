@@ -11,6 +11,8 @@ decl {\#include <FL/Fl_Tooltip.H>} {}
 
 decl {\#include <FL/filename.H>} {} 
 
+decl {\#include <sstream>} {} 
+
 decl {\#include "main.h"} {} 
 
 decl {\#include "fl_digi.h"} {} 
@@ -131,8 +133,8 @@ update_main_title();
 notify_change_callsign();
 progdefaults.changed = true;
 
-dl_fldigi::changed(dl_fldigi::UTHR_SETTINGS);
-btnApplyConfig->activate(true);}
+dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
+btnApplyConfig->activate();}
             tooltip {Operators callsign} xywh {110 64 110 24}
             code0 {inpMyCallsign->labelsize(FL_NORMAL_SIZE);}
             class Fl_Input2
@@ -141,8 +143,8 @@ btnApplyConfig->activate(true);}
             label {Name:}
             callback {progdefaults.myName = o->value();
 progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::INFO);
-btnApplyConfig->activate(true);}
+dl_fldigi::changed(dl_fldigi::CH_INFO);
+btnApplyConfig->activate();}
             tooltip {Operators name} xywh {290 64 140 24}
             code0 {inpMyName->labelsize(FL_NORMAL_SIZE);}
             class Fl_Input2
@@ -151,8 +153,8 @@ btnApplyConfig->activate(true);}
             label {QTH:}
             callback {progdefaults.myQth = o->value();
 progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::INFO);
-btnApplyConfig->activate(true);}
+dl_fldigi::changed(dl_fldigi::CH_INFO);
+btnApplyConfig->activate();}
             tooltip {Operators QTH} xywh {110 98 320 24}
             code0 {inpMyQth->labelsize(FL_NORMAL_SIZE);}
             class Fl_Input2
@@ -169,8 +171,8 @@ progdefaults.changed = true;}
             label {Antenna:}
             callback {progdefaults.myAntenna = o->value();
 progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::INFO);
-btnApplyConfig->activate(true);}
+dl_fldigi::changed(dl_fldigi::CH_INFO);
+btnApplyConfig->activate();}
             tooltip {Short description of antenna} xywh {110 166 320 24}
             code0 {inpMyAntenna->labelsize(FL_NORMAL_SIZE);}
             class Fl_Input2
@@ -179,8 +181,8 @@ btnApplyConfig->activate(true);}
             label {Radio:}
             callback {progdefaults.myRadio = o->value();
 progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::INFO);
-btnApplyConfig->activate(true);}
+dl_fldigi::changed(dl_fldigi::CH_INFO);
+btnApplyConfig->activate();}
             xywh {110 200 320 25}
             code0 {o->value(progdefaults.myRadio.c_str());}
           }
@@ -3772,7 +3774,7 @@ progdefaults.changed = true;}
           xywh {0 25 500 346}
         } {
           Fl_Group tabDLEnable {
-            label Enable open
+            label Enable open selected
             xywh {0 50 500 295} hide
           } {
             Fl_Group {} {
@@ -3784,7 +3786,7 @@ progdefaults.changed = true;}
                 callback {if (o->value())
 {
     dl_fldigi::commit();
-    btnApplyConfig->deactivate(true);
+    btnApplyConfig->deactivate();
 }
 
 dl_fldigi::online(o->value());}
@@ -3797,7 +3799,7 @@ progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
 btnApplyConfig->activate();}
                 tooltip {Address of the CouchDB server} xywh {100 105 334 20}
-                code0 {o->value(progdefaults.habitat_uri)}
+                code0 {o->value(progdefaults.habitat_uri.c_str());}
               }
               Fl_Input {} {
                 label {Couch DB}
@@ -3806,7 +3808,7 @@ progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
 btnApplyConfig->activate();}
                 tooltip {CouchDB database name} xywh {100 130 334 20}
-                code0 {o->value(progdefaults.habitat_db)}
+                code0 {o->value(progdefaults.habitat_db.c_str());}
               }
             }
             Fl_Group {} {
@@ -3856,7 +3858,7 @@ progdefaults.changed = true;}
           }
           Fl_Group {} {
             label Location open
-            xywh {0 50 500 307} hide
+            xywh {0 50 500 307}
           } {
             Fl_Group {} {
               label {Listener Location} open
@@ -3869,13 +3871,13 @@ progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
                 xywh {100 195 150 25} type Int
-                code0 {o->value(progdefaults.gpsSpeed);}
+                code0 {o->value(progdefaults.gps_speed);}
                 class Fl_Value_Input2
               }
               Fl_Button {} {
                 label {Refresh Device List}
                 callback {/* As far as I can tell, running this again is harmless. */
-dl_fldigi_gps_update_ports(1, 1);
+/* dl_fldigi_gps_update_ports(1, 1); */
 /* TODO: update this */}
                 xywh {290 165 170 25}
               }
@@ -3911,21 +3913,23 @@ btnApplyConfig->activate();} open
               }
               Fl_Input {} {
                 label {Lat (DD)}
-                callback {progdefaults.myLat = o->value();
+                callback {std::istringstream is(o->value());
+is >> progdefaults.myLat;
 progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::STATIONARY_LOCATION);
+dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
                 xywh {130 105 125 25} type Float
-                code0 {o->value(progdefaults.myLat);}
+                code0 {std::ostringstream os; os << progdefaults.myLat; o->value(os.str().c_str());}
               }
               Fl_Input {} {
                 label {Lon (DD)}
-                callback {progdefaults.myLon = o->value();
+                callback {std::istringstream is(o->value());
+is >> progdefaults.myLon;
 progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::STATIONARY_LOCATION);
+dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
                 xywh {330 105 125 25} type Float
-                code0 {o->value(progdefaults.myLon);}
+                code0 {std::ostringstream os; os << progdefaults.myLon; o->value(os.str().c_str());}
               }
               Fl_Check_Button {} {
                 label {Always enable GPS on startup}
@@ -3949,10 +3953,10 @@ progdefaults.changed = true;}
                 Fl_Button {} {
                   label {Save as stationary location}
                   callback {/* Copy coordinates to the operator form */
-dl_fldigi_gps_save_position();}
+/* dl_fldigi_gps_save_position(); */}
                   xywh {200 295 250 25}
                 }
-                Fl_Output gps_pos_location {
+                Fl_Output gps_pos_time {
                   label Time
                   xywh {60 265 105 25}
                 }
@@ -3965,7 +3969,7 @@ dl_fldigi_gps_save_position();}
           }
           Fl_Group tabDLPayload {
             label {Radio auto config} open
-            xywh {0 50 500 323}
+            xywh {0 50 500 323} hide
           } {
             Fl_Group {} {open
               xywh {5 290 490 75} box ENGRAVED_BOX align 21
@@ -3979,7 +3983,7 @@ dl_fldigi_gps_save_position();}
                 xywh {335 300 155 25} down_box DOWN_BOX
               }
               Fl_Input {} {
-                label {Jump to:} selected
+                label {Jump to:}
                 xywh {75 300 190 25} when 1
               }
               Fl_Button {} {
@@ -4056,14 +4060,14 @@ progdefaults.changed = true;}
       label Save
       callback {progdefaults.saveDefaults();
 dl_fldigi::commit();
-btnApplyConfig->deactivate(true);}
+btnApplyConfig->deactivate();}
       xywh {270 375 105 22}
     }
     Fl_Return_Button btnCloseConfig {
       label Close
       callback {closeDialog();
 dl_fldigi::commit();
-btnApplyConfig->deactivate(true);}
+btnApplyConfig->deactivate();}
       xywh {390 375 107 22}
     }
     Fl_Button btnResetConfig {
@@ -4075,7 +4079,7 @@ progdefaults.changed = false;}
     Fl_Button btnApplyConfig {
       label {Apply (dl)}
       callback {dl_fldigi::commit();
-btnApplyConfig->deactivate(true);}
+btnApplyConfig->deactivate();}
       xywh {150 375 105 22} deactivate
     }
   }
