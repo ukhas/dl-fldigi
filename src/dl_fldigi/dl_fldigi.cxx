@@ -21,8 +21,8 @@ namespace dl_fldigi {
  * uthr->payload_telemetry, but that is not overridden by DUploaderThread and
  * is safe. */
 
-/* TODO override methods of UploaderThread (in DUp..) to pick data from
- * progdefaults and abort if data is empty. */
+/* TODO: maybe upload the git commit when compiled as the 'version' */
+/* TODO: update the submodule */
 
 DExtractorManager *extrmgr;
 DUploaderThread *uthr;
@@ -132,11 +132,6 @@ void commit()
         uthr->flights();
     }
     
-    if (dirty & CH_INFO)
-    {
-        uthr->listener_info();
-    }
-
     if (dirty & CH_LOCATION_MODE)
     {
         current_location_mode = new_location_mode;
@@ -147,11 +142,17 @@ void commit()
         reset_gps_settings();
     }
 
-    /* what is this mess?:
-     * if stationary and settings changed, or if we just switched to
-     * stationary mode from gps mode, send a telemetry. */
+    /* If the info has been updated, or the upload settings changed... */
+    if (dirty & (CH_UTHR_SETTINGS | CH_INFO))
+    {
+        uthr->listener_info();
+    }
+
+    /* if stationary and (settings changed, or if we just switched to
+     * stationary mode from gps mode, or if the upload settings changed) */
     if (current_location_mode == LOC_STATIONARY &&
-        (dirty & (CH_STATIONARY_LOCATION || CH_LOCATION_MODE)))
+        (dirty & (CH_STATIONARY_LOCATION | CH_LOCATION_MODE |
+                  CH_UTHR_SETTINGS)))
     {
         uthr->listener_telemetry();
     }
@@ -173,6 +174,13 @@ void DExtractorManager::data(const Json::Value &d)
 
     /* TODO: Data to fill out HAB UI */
 }
+
+/* TODO: abort these if critical settings are missing and don't upload
+ * empty string values (e.g., "antenna": "").
+ * Add a deinitialise method to cpp_uploader (i.e., reverse settings())
+ * so that it can be called if critical values are missing when settings()
+ * is called, in order to destroy the uploader thread, preventing uploads
+ * with incomplete settings. */
 
 void DUploaderThread::settings()
 {
