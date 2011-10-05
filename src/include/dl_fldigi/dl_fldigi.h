@@ -61,6 +61,7 @@ extern enum location_mode new_location_mode;
 
 void init();                 /* Create globals and stuff; before UI init */
 void ready(bool hab_mode);   /* After UI init, start stuff */
+void cleanup();
 void online(bool value);
 bool online();
 void changed(enum changed_groups thing);

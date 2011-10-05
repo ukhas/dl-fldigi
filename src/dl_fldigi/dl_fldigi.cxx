@@ -49,6 +49,7 @@ void init()
 
 void ready(bool hab_mode)
 {
+    uthr->start();
     uthr->settings();
     flights_init();
 
@@ -57,6 +58,16 @@ void ready(bool hab_mode)
     /* if --hab was specified, default online to true, and update ui */
     online(hab_mode);
     hab_ui_exists = hab_mode;
+}
+
+void cleanup()
+{
+    delete extrmgr;
+    extrmgr = 0;
+
+    uthr->shutdown();
+    delete uthr;
+    uthr = 0;
 }
 
 static void periodically()
