@@ -21,6 +21,9 @@ namespace dl_fldigi {
  * uthr->payload_telemetry, but that is not overridden by DUploaderThread and
  * is safe. */
 
+/* How does online/offline work? if online() is false, uthr->settings() will
+ * reset the UploaderThread, leaving it unintialised */
+
 /* TODO: maybe upload the git commit when compiled as the 'version' */
 /* TODO: update the submodule */
 
@@ -50,14 +53,18 @@ void init()
 void ready(bool hab_mode)
 {
     uthr->start();
-    uthr->settings();
     flights_init();
-
-    location_mode(progdefaults.gps_start_enabled);
 
     /* if --hab was specified, default online to true, and update ui */
     online(hab_mode);
     hab_ui_exists = hab_mode;
+
+    if (progdefaults.gps_start_enabled)
+        current_location_mode = LOC_STATIONARY;
+    else
+        current_location_mode = LOC_GPS;
+
+    reset_gps_settings();
 }
 
 void cleanup()
@@ -74,18 +81,25 @@ static void periodically()
 {
     /* TODO: arrange for this to be called periodically by fltk */
 
-    if (online())
-    {
-        uthr->listener_info();
+    uthr->listener_info();
+
+    if (current_location_mode == LOC_STATIONARY)
         uthr->listener_telemetry();
-    }
 }
 
 void online(bool val)
 {
+    bool changed;
+
+    changed = (dl_online != val);
     dl_online = val;
 
-    if (dl_online)
+    if (changed)
+    {
+        uthr->settings();
+    }
+
+    if (changed && dl_online)
     {
         if (!downloaded_once)
             uthr->flights();
@@ -128,6 +142,7 @@ void commit()
     if (dirty & CH_UTHR_SETTINGS)
     {
         downloaded_once = false;
+
         uthr->settings();
         uthr->flights();
     }
@@ -176,14 +191,29 @@ void DExtractorManager::data(const Json::Value &d)
 }
 
 /* TODO: abort these if critical settings are missing and don't upload
- * empty string values (e.g., "antenna": "").
- * Add a deinitialise method to cpp_uploader (i.e., reverse settings())
- * so that it can be called if critical values are missing when settings()
- * is called, in order to destroy the uploader thread, preventing uploads
- * with incomplete settings. */
+ * empty string values (e.g., "antenna": ""). */
+
+/* All these functions are called via a DUploaderThread pointer so
+ * the fact that they are non virtual is OK. Having a different set of
+ * arguments prevents the wrong function from being called except in the
+ * case of flights() */
 
 void DUploaderThread::settings()
 {
+    UploaderThread::reset();
+
+    if (!online())
+    {
+        warning("upload disabled: offline");
+        return;
+    }
+
+    if (!progdefaults.myCall.size() || !progdefaults.habitat_uri.size() ||
+        !progdefaults.habitat_db.size())
+    {
+        warning("upload disabled: settings missing");
+    }
+
     UploaderThread::settings(progdefaults.myCall, progdefaults.habitat_uri,
                              progdefaults.habitat_db);
 }
@@ -229,8 +259,13 @@ void DUploaderThread::listener_info()
 void DUploaderThread::log(const string &message)
 {
     LOG_DEBUG("habitat UploaderThread: %s", message.c_str());
-    /* TODO: Log message from UploaderThread */
     /* TODO: put_status */
+}
+
+void DUploaderThread::warning(const string &message)
+{
+    LOG_WARN("habitat UploaderThread: WARNING %s", message.c_str());
+    /* TODO: put_status & kick up a fuss */
 }
 
 void DUploaderThread::got_flights(const vector<Json::Value> &flights)

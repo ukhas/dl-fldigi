@@ -3913,23 +3913,21 @@ btnApplyConfig->activate();} open
               }
               Fl_Input {} {
                 label {Lat (DD)}
-                callback {std::istringstream is(o->value());
-is >> progdefaults.myLat;
+                callback {progdefaults.myLat = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
                 xywh {130 105 125 25} type Float
-                code0 {std::ostringstream os; os << progdefaults.myLat; o->value(os.str().c_str());}
+                code0 {o->value(progdefaults.myLat.c_str());}
               }
               Fl_Input {} {
                 label {Lon (DD)}
-                callback {std::istringstream is(o->value());
-is >> progdefaults.myLon;
+                callback {o->value(progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
                 xywh {330 105 125 25} type Float
-                code0 {std::ostringstream os; os << progdefaults.myLon; o->value(os.str().c_str());}
+                code0 {o->value(progdefaults.myLon.c_str());}
               }
               Fl_Check_Button {} {
                 label {Always enable GPS on startup}

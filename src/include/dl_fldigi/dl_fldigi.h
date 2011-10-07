@@ -49,6 +49,7 @@ public:
 
     /* Forward data to fldigi debug/log macros */
     void log(const string &message);
+    void warning(const string &message);
 
     /* Update UI */
     void got_flights(const vector<Json::Value> &flights);
