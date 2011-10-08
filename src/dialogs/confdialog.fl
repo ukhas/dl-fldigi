@@ -105,12 +105,12 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
     xywh {812 216 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
-      xywh {-4 0 521 371} color 50 selection_color 50
+      xywh {-4 0 521 373} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;}
-        tooltip {Operator information} xywh {0 25 500 345} labelsize 12 when 1 hide
+        callback {progdefaults.changed = true;} selected
+        tooltip {Operator information} xywh {0 25 500 345} labelsize 12 when 1
       } {
         Fl_Group {} {
           label Station open
@@ -3768,14 +3768,14 @@ progdefaults.changed = true;}
       }
       Fl_Group tabDL {
         label {DL Client} open
-        xywh {0 25 500 348} labelsize 12
+        xywh {0 25 500 348} labelsize 12 hide
       } {
         Fl_Tabs tabsDL {open
-          xywh {0 25 500 346}
+          xywh {0 25 500 348}
         } {
           Fl_Group tabDLEnable {
-            label Enable open selected
-            xywh {0 50 500 295} hide
+            label Enable open
+            xywh {0 50 500 295}
           } {
             Fl_Group {} {
               label Enable open
@@ -3858,7 +3858,7 @@ progdefaults.changed = true;}
           }
           Fl_Group {} {
             label Location open
-            xywh {0 50 500 307}
+            xywh {0 50 500 307} hide
           } {
             Fl_Group {} {
               label {Listener Location} open
@@ -3922,7 +3922,7 @@ btnApplyConfig->activate();}
               }
               Fl_Input {} {
                 label {Lon (DD)}
-                callback {o->value(progdefaults.myLon = o->value();
+                callback {progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
@@ -3969,36 +3969,39 @@ progdefaults.changed = true;}
             label {Radio auto config} open
             xywh {0 50 500 323} hide
           } {
+            Fl_Browser flight_browser {
+              xywh {5 55 490 230} type Hold
+            }
             Fl_Group {} {open
               xywh {5 290 490 75} box ENGRAVED_BOX align 21
             } {
               Fl_Button {} {
-                label {Refresh flight list}
-                xywh {345 330 145 25}
+                label Refresh
+                xywh {400 300 85 25}
               }
               Fl_Check_Button {} {
-                label {Show testing docs}
-                xywh {335 300 155 25} down_box DOWN_BOX
+                label {Show test docs}
+                xywh {265 300 130 25} down_box DOWN_BOX
               }
               Fl_Input {} {
                 label {Jump to:}
-                xywh {75 300 190 25} when 1
+                xywh {75 300 120 25} when 1
               }
               Fl_Button {} {
                 label Next
-                xywh {270 300 60 25}
+                xywh {200 300 60 25}
               }
-              Fl_Choice payload_callsign_list {
-                label {Callsign:} open
-                xywh {75 330 135 25} down_box BORDER_BOX
+              Fl_Choice payload_list {
+                label {Payload:} open
+                xywh {75 330 160 25} down_box BORDER_BOX
               } {}
               Fl_Button {} {
                 label Autoconfigure
-                xywh {215 330 125 25}
+                xywh {330 330 155 25}
               }
-            }
-            Fl_Browser flight_browser {
-              xywh {5 55 490 230} type Hold
+              Fl_Choice payload_sub_list {open
+                xywh {240 330 85 25} down_box BORDER_BOX
+              } {}
             }
           }
           Fl_Group {} {

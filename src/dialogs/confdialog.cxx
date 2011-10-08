@@ -3066,16 +3066,14 @@ static void cb_Upload(Fl_Round_Button* o, void*) {
 }
 
 static void cb_Lat(Fl_Input* o, void*) {
-  std::istringstream is(o->value());
-is >> progdefaults.myLat;
+  progdefaults.myLat = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();
 }
 
 static void cb_Lon(Fl_Input* o, void*) {
-  std::istringstream is(o->value());
-is >> progdefaults.myLon;
+  progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();
@@ -3101,9 +3099,11 @@ Fl_Output *gps_pos_lon=(Fl_Output *)0;
 
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
-Fl_Choice *payload_callsign_list=(Fl_Choice *)0;
-
 Fl_Browser *flight_browser=(Fl_Browser *)0;
+
+Fl_Choice *payload_list=(Fl_Choice *)0;
+
+Fl_Choice *payload_sub_list=(Fl_Choice *)0;
 
 Fl_Input *imagepacketurl=(Fl_Input *)0;
 
@@ -3185,7 +3185,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE);
-    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 371);
+    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 373);
       tabsConfigure->color((Fl_Color)FL_LIGHT1);
       tabsConfigure->selection_color((Fl_Color)FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
@@ -3193,7 +3193,6 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
         tabOperator->labelsize(12);
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
-        tabOperator->hide();
         { Fl_Group* o = new Fl_Group(5, 35, 490, 210, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6794,9 +6793,9 @@ d frequency"));
       } // Fl_Group* tabQRZ
       { tabDL = new Fl_Group(0, 25, 500, 348, _("DL Client"));
         tabDL->labelsize(12);
-        { tabsDL = new Fl_Tabs(0, 25, 500, 346);
+        tabDL->hide();
+        { tabsDL = new Fl_Tabs(0, 25, 500, 348);
           { tabDLEnable = new Fl_Group(0, 50, 500, 295, _("Enable"));
-            tabDLEnable->hide();
             { Fl_Group* o = new Fl_Group(10, 55, 478, 111, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6870,6 +6869,7 @@ d frequency"));
             tabDLEnable->end();
           } // Fl_Group* tabDLEnable
           { Fl_Group* o = new Fl_Group(0, 50, 500, 307, _("Location"));
+            o->hide();
             { Fl_Group* o = new Fl_Group(5, 55, 490, 285, _("Listener Location"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6909,12 +6909,12 @@ d frequency"));
               { Fl_Input* o = new Fl_Input(130, 105, 125, 25, _("Lat (DD)"));
                 o->type(1);
                 o->callback((Fl_Callback*)cb_Lat);
-                std::ostringstream os; os << progdefaults.myLat; o->value(os.str().c_str());
+                o->value(progdefaults.myLat.c_str());
               } // Fl_Input* o
               { Fl_Input* o = new Fl_Input(330, 105, 125, 25, _("Lon (DD)"));
                 o->type(1);
                 o->callback((Fl_Callback*)cb_Lon);
-                std::ostringstream os; os << progdefaults.myLon; o->value(os.str().c_str());
+                o->value(progdefaults.myLon.c_str());
               } // Fl_Input* o
               { Fl_Check_Button* o = new Fl_Check_Button(220, 135, 240, 25, _("Always enable GPS on startup"));
                 o->down_box(FL_DOWN_BOX);
@@ -6943,29 +6943,32 @@ d frequency"));
           } // Fl_Group* o
           { tabDLPayload = new Fl_Group(0, 50, 500, 323, _("Radio auto config"));
             tabDLPayload->hide();
-            { Fl_Group* o = new Fl_Group(5, 290, 490, 75);
-              o->box(FL_ENGRAVED_BOX);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { new Fl_Button(345, 330, 145, 25, _("Refresh flight list"));
-              } // Fl_Button* o
-              { Fl_Check_Button* o = new Fl_Check_Button(335, 300, 155, 25, _("Show testing docs"));
-                o->down_box(FL_DOWN_BOX);
-              } // Fl_Check_Button* o
-              { Fl_Input* o = new Fl_Input(75, 300, 190, 25, _("Jump to:"));
-                o->when(FL_WHEN_CHANGED);
-              } // Fl_Input* o
-              { new Fl_Button(270, 300, 60, 25, _("Next"));
-              } // Fl_Button* o
-              { payload_callsign_list = new Fl_Choice(75, 330, 135, 25, _("Callsign:"));
-                payload_callsign_list->down_box(FL_BORDER_BOX);
-              } // Fl_Choice* payload_callsign_list
-              { new Fl_Button(215, 330, 125, 25, _("Autoconfigure"));
-              } // Fl_Button* o
-              o->end();
-            } // Fl_Group* o
             { flight_browser = new Fl_Browser(5, 55, 490, 230);
               flight_browser->type(2);
             } // Fl_Browser* flight_browser
+            { Fl_Group* o = new Fl_Group(5, 290, 490, 75);
+              o->box(FL_ENGRAVED_BOX);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { new Fl_Button(400, 300, 85, 25, _("Refresh"));
+              } // Fl_Button* o
+              { Fl_Check_Button* o = new Fl_Check_Button(265, 300, 130, 25, _("Show test docs"));
+                o->down_box(FL_DOWN_BOX);
+              } // Fl_Check_Button* o
+              { Fl_Input* o = new Fl_Input(75, 300, 120, 25, _("Jump to:"));
+                o->when(FL_WHEN_CHANGED);
+              } // Fl_Input* o
+              { new Fl_Button(200, 300, 60, 25, _("Next"));
+              } // Fl_Button* o
+              { payload_list = new Fl_Choice(75, 330, 160, 25, _("Payload:"));
+                payload_list->down_box(FL_BORDER_BOX);
+              } // Fl_Choice* payload_list
+              { new Fl_Button(330, 330, 155, 25, _("Autoconfigure"));
+              } // Fl_Button* o
+              { payload_sub_list = new Fl_Choice(240, 330, 85, 25);
+                payload_sub_list->down_box(FL_BORDER_BOX);
+              } // Fl_Choice* payload_sub_list
+              o->end();
+            } // Fl_Group* o
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
           { Fl_Group* o = new Fl_Group(0, 50, 500, 307, _("Misc"));

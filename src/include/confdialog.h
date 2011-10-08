@@ -425,9 +425,10 @@ extern Fl_Output *gps_pos_altitude;
 extern Fl_Output *gps_pos_time;
 extern Fl_Output *gps_pos_lon;
 extern Fl_Group *tabDLPayload;
-extern Fl_Choice *payload_callsign_list;
 #include <FL/Fl_Browser.H>
 extern Fl_Browser *flight_browser;
+extern Fl_Choice *payload_list;
+extern Fl_Choice *payload_sub_list;
 extern Fl_Input *imagepacketurl;
 extern Fl_Check_Button *imagesave;
 extern Fl_Input *imagesavedir;
