@@ -1429,16 +1429,28 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 
 void cb_dl_fldigi_refresh(Fl_Widget *, void *)
 {
-	/* Force refresh */
-	// TODO dl_fldigi_download();
-	// TODO dl_fldigi_downloaded_once = 1;
+    dl_fldigi::uthr->flights();
 }
 
-void cb_toggle_dl_online(Fl_Widget *, void *)
+void cb_toggle_dl_online(Fl_Widget *w, void *)
 {
-	progdefaults.loadDefaults();
-	// TODO cb_dl_fldigi_toggle_dl_online();
-	// TODO confdialog_dl_online->value(progdefaults.dl_online);
+    bool val = ((Fl_Menu_*) w)->mvalue()->value();
+    dl_fldigi::online(val);
+}
+
+void set_menu_dl_online(bool val)
+{
+    Fl_Menu_Item *m;
+
+    if (bHAB)
+        m = getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_);
+    else
+        m = getMenuItem(DLFLDIGI_ONLINE_LABEL);
+
+    if (val)
+        m->set();
+    else
+        m->clear();
 }
 
 //jcoxon added 21/3/10
@@ -1451,12 +1463,13 @@ void cb_mnuConfigDLClient(Fl_Menu_*, void*) {
 
 void cb_mnuVisitDLClient(Fl_Widget*, void*)
 {
-	cb_mnuVisitURL(0, (void*)string("http://ukhas.org.uk/guides:tracking_guide").c_str());
+	cb_mnuVisitURL(0, (void *) "http://ukhas.org.uk/guides:tracking_guide");
 }
 
 void cb_mnuVisitTracker(Fl_Widget*, void*)
 {
-	cb_mnuVisitURL(0, (void*)string("http://spacenear.us/tracker").c_str());
+    /* TODO: update with habitat ui address */
+	cb_mnuVisitURL(0, (void *) "http://spacenear.us/tracker");
 }
 
 void cb_mnuVisitView(Fl_Widget*, void*)

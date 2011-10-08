@@ -4,38 +4,49 @@
 #include <string>
 #include <stdexcept>
 #include <json/json.h>
+#include <fstream>
+#include <sstream>
 #include <time.h>
 #include "habitat/UKHASExtractor.h"
+#include "habitat/EZ.h"
 #include "configuration.h"
 #include "debug.h"
+#include "fl_digi.h"
+#include "confdialog.h"
+#include "main.h"
 
 using namespace std;
 
 namespace dl_fldigi {
 
-/* A short note on thread safety.
+/*
+ * A short note on thread safety.
  * The embedded habitat submodule, cpp_uploader, is thread safe.
- * fldigi in general, however, is not at all. All of the dl_fldigi functions
- * are intended to be called by the main gui thread. The only ones that arn't
- * are the extractor manager methods (extrmgr.push etc). These call
- * uthr->payload_telemetry, but that is not overridden by DUploaderThread and
- * is safe. */
+ * fldigi in general, however, is not at all. Most of the dl_fldigi functions
+ * are intended to be called by the main gui thread. The functions that are
+ * not called by the main thread that we need to worry about are:
+ *  - extrmgr->status and extrmgr->data
+ *  - uthr->payload_telemetry (called by extrmgr)
+ *  - uthr->log and uthr->warning
+ *  - uthr->got_flights
+ */
 
 /* How does online/offline work? if online() is false, uthr->settings() will
  * reset the UploaderThread, leaving it unintialised */
 
 /* TODO: maybe upload the git commit when compiled as the 'version' */
-/* TODO: update the submodule */
 
 DExtractorManager *extrmgr;
 DUploaderThread *uthr;
-vector<Json::Value> flights;
 enum location_mode new_location_mode;
 
+static EZ::Mutex flights_lock;
+static vector<Json::Value> flights;
 static bool dl_online, downloaded_once, hab_ui_exists;
 static int dirty;
 static enum location_mode current_location_mode;
 static habitat::UKHASExtractor *ukhas;
+static string cache_file;
 
 static void flights_init();
 static void reset_gps_settings();
@@ -48,15 +59,13 @@ void init()
 
     ukhas = new habitat::UKHASExtractor();
     extrmgr->add(*ukhas);
+
+    cache_file = HomeDir + "flights.json";
 }
 
 void ready(bool hab_mode)
 {
-    uthr->start();
-    flights_init();
-
     /* if --hab was specified, default online to true, and update ui */
-    online(hab_mode);
     hab_ui_exists = hab_mode;
 
     if (progdefaults.gps_start_enabled)
@@ -64,7 +73,13 @@ void ready(bool hab_mode)
     else
         current_location_mode = LOC_GPS;
 
+    flights_init();
+    uthr->start();
     reset_gps_settings();
+    online(hab_mode);
+
+    /* online will call uthr->settings() if hab_mode since it online will
+     * "change" from false to true) */
 }
 
 void cleanup()
@@ -108,7 +123,8 @@ void online(bool val)
         uthr->listener_telemetry();
     }
 
-    /* TODO: update UI checkboxes if necessary */
+    confdialog_dl_online->value(val);
+    set_menu_dl_online(val);
 }
 
 bool online()
@@ -118,12 +134,29 @@ bool online()
 
 static void flights_init()
 {
-    /* TODO: Load flights from file */
+    EZ::MutexLock lock(flights_lock);
+
+    ifstream cf(cache_file);
+
+    while (cf.good())
+    {
+        string line;
+        getline(cf, line, '\n');
+
+        Json::Reader reader;
+        Json::Value root;
+        if (!reader.parse(line, root, false))
+            false;
+
+        flights.push_back(root);
+    }
+
+    cf.close();
 }
 
 static void reset_gps_settings()
 {
-    /* if (gps_thread != NULL)  gps_thread.join(); delete gps_thread; */
+    /* if (gps_thread != NULL)  gps_thread->join(); delete gps_thread; */
 
     if (current_location_mode == LOC_GPS)
     {
@@ -179,7 +212,7 @@ void DExtractorManager::status(const string &msg)
 {
     LOG_DEBUG("habitat Extractor: %s", msg.c_str());
     /* TODO: Log message from extractor */
-    /* TODO: put_status */
+    /* TODO: put_status safely */
 }
 
 void DExtractorManager::data(const Json::Value &d)
@@ -203,23 +236,38 @@ void DUploaderThread::settings()
     UploaderThread::reset();
 
     if (!online())
-    {
-        warning("upload disabled: offline");
-        return;
-    }
+        throw runtime_error("upload disabled: offline");
 
     if (!progdefaults.myCall.size() || !progdefaults.habitat_uri.size() ||
         !progdefaults.habitat_db.size())
-    {
-        warning("upload disabled: settings missing");
-    }
+        throw runtime_error("upload disabled: settings missing");
 
     UploaderThread::settings(progdefaults.myCall, progdefaults.habitat_uri,
                              progdefaults.habitat_db);
 }
 
+/* This function is used for stationary listener telemetry */
 void DUploaderThread::listener_telemetry()
 {
+    if (current_location_mode != LOC_STATIONARY)
+        throw runtime_error("attempted to upload stationary listener "
+                            "telemetry while in GPS telemetry mode");
+
+    if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
+        throw runtime_error("unable to upload stationary listener telemetry: "
+                            "latitude or longitude missing");
+
+    double latitude, longitude;
+    istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon);
+    lat_strm >> latitude;
+    lon_strm >> longitude;
+
+    if (lat_strm.fail())
+        throw runtime_error("unable to parse stationary latitude");
+
+    if (lon_strm.fail())
+        throw runtime_error("unable to parse stationary longitude");
+
     Json::Value data(Json::objectValue);
 
     /* TODO: is it really a good idea to upload time like this? */
@@ -240,38 +288,73 @@ void DUploaderThread::listener_telemetry()
     time["minute"] = tm.tm_min;
     time["second"] = tm.tm_sec;
 
-    data["latitude"] = progdefaults.myLat;
-    data["longitude"] = progdefaults.myLon;
+    data["latitude"] = latitude
+    data["longitude"] = longitude
 
     UploaderThread::listener_telemetry(data);
+}
+
+static void info_add(Json::Value &data, const string &key, const string &value)
+{
+    if (value.size())
+        data[key] = value;
 }
 
 void DUploaderThread::listener_info()
 {
     Json::Value data(Json::objectValue);
-    data["name"] = progdefaults.myName;
-    data["location"] = progdefaults.myQth;
-    data["radio"] = progdefaults.myRadio;
-    data["antenna"] = progdefaults.myAntenna;
+    info_add(data, "name", progdefaults.myName);
+    info_add(data, "location", progdefaults.myQth);
+    info_add(data, "radio", progdefaults.myRadio);
+    info_add(data, "antenna", progdefaults.myAntenna);
+
+    if (!data.size())
+        throw runtime_error("not uploading empty listener info");
+
     UploaderThread::listener_info(data);
 }
 
+/* These functions must try to be thread safe. */
 void DUploaderThread::log(const string &message)
 {
     LOG_DEBUG("habitat UploaderThread: %s", message.c_str());
-    /* TODO: put_status */
+    /* TODO: put_status safely */
 }
 
 void DUploaderThread::warning(const string &message)
 {
     LOG_WARN("habitat UploaderThread: WARNING %s", message.c_str());
-    /* TODO: put_status & kick up a fuss */
+    /* TODO: put_status safely & kick up a fuss */
 }
 
-void DUploaderThread::got_flights(const vector<Json::Value> &flights)
+void DUploaderThread::got_flights(const vector<Json::Value> &new_flights)
 {
-    /* TODO: Save stuff */
+    EZ::MutexLock lock(flights_lock);
+
+    flights = new_flights;
     downloaded_once = true;
+
+    ofstream cf(cache_file, ios_base::out | ios_base::trunc);
+
+    for (vector<Json::Value>::const_iterator it = flights.begin();
+         it != flights.end() && cf.good();
+         it++)
+    {
+        Json::FastWriter writer;
+        cf << writer.write(*it);
+    }
+
+    bool success = cf.good();
+
+    cf.close();
+
+    if (!success)
+    {
+        warning("unable to save flights data");
+        unlink(cache_file);
+    }
+
+    /* TODO: REQ(update flights list). */
 }
 
 } /* namespace dl_fldigi */

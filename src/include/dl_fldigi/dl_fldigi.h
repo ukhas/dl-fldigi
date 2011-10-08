@@ -57,7 +57,6 @@ public:
 
 extern DExtractorManager *extrmgr;
 extern DUploaderThread *uthr;
-extern vector<Json::Value> flights;
 extern enum location_mode new_location_mode;
 
 void init();                 /* Create globals and stuff; before UI init */
