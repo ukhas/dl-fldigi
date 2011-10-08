@@ -40,6 +40,8 @@ DExtractorManager *extrmgr;
 DUploaderThread *uthr;
 enum location_mode new_location_mode;
 
+static EZ::cURLGlobal *cgl;
+
 static EZ::Mutex flight_docs_lock;
 static vector<Json::Value> flight_docs;
 static bool dl_online, downloaded_once, hab_ui_exists;
@@ -54,6 +56,8 @@ static void periodically();
 
 void init()
 {
+    cgl = new EZ::cURLGlobal();
+
     uthr = new DUploaderThread();
     extrmgr = new DExtractorManager(*uthr);
 
@@ -87,9 +91,13 @@ void cleanup()
     delete extrmgr;
     extrmgr = 0;
 
-    uthr->shutdown();
+    if (uthr)
+        uthr->shutdown();
     delete uthr;
     uthr = 0;
+
+    delete cgl;
+    cgl = 0;
 }
 
 static void periodically()
