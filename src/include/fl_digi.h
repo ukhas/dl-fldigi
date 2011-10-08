@@ -28,6 +28,7 @@
 #include <FL/Fl_Browser.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Pack.H>
+#include <FL/Fl_Choice.H>
 
 #include "combo.h"
 //#include "Fl_Tile_Check.h"
@@ -141,20 +142,27 @@ extern Fl_Light_Button		*btnTune;
 extern Fl_Button		*btnMacroTimer;
 
 extern bool			bWF_only;
-//jcoxon
-extern bool			bHAB;
+
+/* dl_fldigi */
+extern bool					bHAB;
+extern Fl_Group				*TopFrameHAB;
+extern Fl_Choice			*habFlight;
+extern Fl_Choice			*habCHPayload;
+extern Fl_Choice			*habCHMode;
+extern Fl_Button			*habConfigureButton;
+extern Fl_Button			*habSwitchModes;
+extern Fl_Output			*habRXPayload;
 extern Fl_Output			*habTime;
 extern Fl_Output			*habLat;
 extern Fl_Output			*habLon;
 extern Fl_Output			*habAlt;
-extern Fl_Output			*habTimeSinceLastRx;
-extern Fl_Output			*habCustom;
 extern Fl_Output			*habChecksum;
 extern Fl_Output			*habBearing;
 extern Fl_Output			*habDistance;
+extern Fl_Output			*habTimeSinceLastRx;
+extern Fl_Output			*habString;
+/* end */
 
-
-//
 extern bool			withnoise;
 extern int			altMacros;
 
@@ -311,6 +319,7 @@ void sync_cw_parameters();
 
 void open_recv_folder(const char *fname);
 
+// dl-fldigi
 void set_menu_dl_online(bool val);
 
 #endif

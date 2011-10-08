@@ -336,32 +336,40 @@ Fl_Value_Slider2	*mvsquelch = (Fl_Value_Slider2 *)0;
 Fl_Button			*btnClearMViewer = 0;
 
 //jcoxon
-Fl_Group			*TopFrameHAB = (Fl_Group *)0;
+Fl_Group			*TopFrameHAB;
+Fl_Choice			*habFlight;
+Fl_Choice			*habCHPayload;
+Fl_Choice			*habCHMode;
+Fl_Button			*habConfigureButton;
+Fl_Button			*habSwitchModes;
+Fl_Output			*habRXPayload;
 Fl_Output			*habTime;
 Fl_Output			*habLat;
 Fl_Output			*habLon;
 Fl_Output			*habAlt;
-Fl_Output			*habCustom=(Fl_Output *)0;
-Fl_Choice			*habFlightXML = 0;
 Fl_Output			*habChecksum;
 Fl_Output			*habBearing;
 Fl_Output			*habDistance;
-Fl_Button			*habConfigureButton = 0;
 Fl_Output			*habTimeSinceLastRx;
-Fl_Button			*habSwitchModes = 0;
+Fl_Output			*habString;
 
+int w_TopFrameHAB = 800;
+
+int w_habFlight = 300;
+int w_habCHPayload = 100;
+int w_habConfigureButton = 120;
+int w_habSwitchModes = 120;
+int w_habCHMode = 100;
+int w_habRXPayload = 100;
 int w_habTime = 90;
 int w_habLat = 90;
 int w_habLon = 90;
 int w_habAlt = 90;
-int w_habCustom = 430;
-int w_habFlightXML = 100;
-int w_habConfigureButton = 120;
 int w_habChecksum = 70;
 int w_habBearing = 70;
 int w_habDistance = 70;
 int w_habTimeSinceLastRx = 100;
-int w_habSwitchModes = 70;
+int w_habString = 430;
 int HAB_height = 0;
 
 int pad = 1;
@@ -3202,6 +3210,15 @@ Fl_Menu_Item menu_[] = {
 
 {0,0,0,0,0,0,0,0,0},
 
+{_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
 {"     ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
 {_("&Help"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 #ifndef NDEBUG
@@ -3218,15 +3235,6 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(_("Event log"), dialog_information_icon), 0, cb_mnuDebug, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Check for updates..."), system_software_update_icon), 0, cb_mnuCheckUpdate, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("&About"), help_about_icon), 'a', cb_mnuAboutURL, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{0,0,0,0,0,0,0,0,0},
-
-{_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
-{ make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"  ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
@@ -4995,6 +5003,23 @@ Fl_Menu_Item alt_menu_[] = {
 { DOCKEDSCOPE_MLABEL, 0, (Fl_Callback*)cb_mnuAltDockedscope, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
+{_("&Help"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+#ifndef NDEBUG
+// settle the gmfsk vs fldigi argument once and for all
+{ make_icon_label(_("Create sunspots"), weather_clear_icon), 0, cb_mnuFun, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+#endif
+{ make_icon_label(_("Beginners' Guide"), start_here_icon), 0, cb_mnuBeginnersURL, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Online documentation..."), help_browser_icon), 0, cb_mnuVisitURL, (void *)PACKAGE_DOCS, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Fldigi web site..."), net_icon), 0, cb_mnuVisitURL, (void *)PACKAGE_HOME, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Reception reports..."), pskr_icon), 0, cb_mnuVisitPSKRep, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Command line options"), utilities_terminal_icon), 0, cb_mnuCmdLineHelp, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Audio device info"), audio_card_icon), 0, cb_mnuAudioInfo, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Build info"), executable_icon), 0, cb_mnuBuildInfo, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Event log"), dialog_information_icon), 0, cb_mnuDebug, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Check for updates..."), system_software_update_icon), 0, cb_mnuCheckUpdate, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("&About"), help_about_icon), 'a', cb_mnuAboutURL, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
+
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -5424,22 +5449,22 @@ void create_fl_digi_main_dl_fldigi() {
 //jcoxon
 	int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros - Hqsoframe - 4;
 	int minRxHeight = 100;
-	int TopFrameHABheight = 80;
+	int TopFrameHABheight = 120;
 
 
 	IMAGE_WIDTH = 4000;//progdefaults.HighFreqCutoff;
 	Hwfall = progdefaults.wfheight;
-	Wwfall = progStatus.mainW - 2 * DEFAULT_SW - 2 * pad;
-	w_habCustom = Wwfall;
+	Wwfall = WNOM - 2 * DEFAULT_SW - 2 * pad;
+	w_habString = Wwfall;
 //jcoxon
 //	HAB_height = Hmenu + Hwfall + Hstatus + 4 * pad;
 	HAB_height = Hmenu + Hwfall + minRxHeight + TopFrameHABheight + Hstatus + 4 * pad;
 
-	fl_digi_main = new Fl_Double_Window(progStatus.mainW, HAB_height);
+	fl_digi_main = new Fl_Double_Window(WNOM, HAB_height);
 
-		mnuFrame = new Fl_Group(0,0,progStatus.mainW, Hmenu);
+		mnuFrame = new Fl_Group(0,0,WNOM, Hmenu);
 
-			mnu = new Fl_Menu_Bar(0, 0, progStatus.mainW - 200 - pad, Hmenu);
+			mnu = new Fl_Menu_Bar(0, 0, WNOM - 200 - pad, Hmenu);
 // do some more work on the menu
 			for (size_t i = 0; i < sizeof(alt_menu_)/sizeof(alt_menu_[0]); i++) {
 // FL_NORMAL_SIZE may have changed; update the menu items
@@ -5452,22 +5477,22 @@ void create_fl_digi_main_dl_fldigi() {
 			}
 			mnu->menu(alt_menu_);
 
-			btnAutoSpot = new Fl_Light_Button(progStatus.mainW - 200 - pad, 0, 50, Hmenu, "Spot");
+			btnAutoSpot = new Fl_Light_Button(WNOM - 200 - pad, 0, 50, Hmenu, "Spot");
 			btnAutoSpot->selection_color(FL_YELLOW);
 			btnAutoSpot->callback(cbAutoSpot, 0);
 			btnAutoSpot->deactivate();
 
-			btnRSID = new Fl_Light_Button(progStatus.mainW - 150 - pad, 0, 50, Hmenu, "RxID");
+			btnRSID = new Fl_Light_Button(WNOM - 150 - pad, 0, 50, Hmenu, "RxID");
 			btnRSID->selection_color(FL_GREEN);
 			btnRSID->tooltip("Receive RSID");
 			btnRSID->callback(cbRSID, 0);
 
-			btnTxRSID = new Fl_Light_Button(progStatus.mainW - 100 - pad, 0, 50, Hmenu, "TxID");
+			btnTxRSID = new Fl_Light_Button(WNOM - 100 - pad, 0, 50, Hmenu, "TxID");
 			btnTxRSID->selection_color(FL_BLUE);
 			btnTxRSID->tooltip("Transmit RSID");
 			btnTxRSID->callback(cbTxRSID, 0);
 
-			btnTune = new Fl_Light_Button(progStatus.mainW - 50 - pad, 0, 50, Hmenu, "TUNE");
+			btnTune = new Fl_Light_Button(WNOM - 50 - pad, 0, 50, Hmenu, "TUNE");
 			btnTune->selection_color(FL_RED);
 			btnTune->callback(cbTune, 0);
 
@@ -5478,19 +5503,77 @@ void create_fl_digi_main_dl_fldigi() {
 
 		Y = Hmenu + pad;
 		
-		TopFrameHAB = new Fl_Group(0, Y, progStatus.mainW, TopFrameHABheight);
+		TopFrameHAB = new Fl_Group(0, Y, WNOM, TopFrameHABheight - 1);
+		TopFrameHAB->box(FL_UP_BOX);
 
+		/* Row one: [flight] [payload] [mode] [autoconfigure] [autoswitch] */
 
-	
-		{ habFlightXML = new Fl_Choice(10, (Y + Hentry), w_habFlightXML, Hentry, _("Flight"));
-		habFlightXML->tooltip(_("Select flight you are tracking"));
-		habFlightXML->down_box(FL_BORDER_BOX);
-		habFlightXML->align(FL_ALIGN_TOP);
-		habFlightXML->when(FL_WHEN_CHANGED);
-		// TODO habFlightXML->callback(cb_dl_fldigi_select_payload);
+		int habRowOneY = Y + 18;
+
+		{ habFlight = new Fl_Choice(10, habRowOneY, w_habFlight, Hentry, _("Flight"));
+		habFlight->tooltip(_("Select the flight you are tracking"));
+		habFlight->down_box(FL_BORDER_BOX);
+		habFlight->align(FL_ALIGN_TOP);
+		habFlight->when(FL_WHEN_CHANGED);
+		// TODO habFlight->callback(func);
 		}
 
-		{ habTime = new Fl_Output((rightof(habFlightXML) + 2), (Y + Hentry), w_habTime, Hentry, "Time");
+		{ habCHPayload = new Fl_Choice(rightof(habFlight) + 2, habRowOneY, w_habCHPayload, Hentry, _("Payload"));
+		habCHPayload->tooltip(_("If applicable, select the payload to track from this flight"));
+		habCHPayload->down_box(FL_BORDER_BOX);
+		habCHPayload->align(FL_ALIGN_TOP);
+		habCHPayload->when(FL_WHEN_CHANGED);
+		habCHPayload->deactivate();
+		// TODO habCHPayload->callback(func);
+		}
+
+		{ habCHMode = new Fl_Choice(rightof(habCHPayload) + 2, habRowOneY, w_habCHMode, Hentry, _("Multi mode"));
+		habCHMode->tooltip(_("If applicable, select from the available transmission modes for this payload"));
+		habCHMode->down_box(FL_BORDER_BOX);
+		habCHMode->align(FL_ALIGN_TOP);
+		habCHMode->when(FL_WHEN_CHANGED);
+		habCHMode->deactivate();
+		// TODO habCHMode->callback(func);
+		}
+
+		{ habConfigureButton = new Fl_Button(rightof(habCHMode) + 2, habRowOneY, w_habConfigureButton, Hentry, _("Auto-configure"));
+		habConfigureButton->tooltip(_("Automatically set the fldigi modem settings for the chosen payload"));
+		habConfigureButton->labeltype(FL_NORMAL_LABEL);
+		habConfigureButton->labelfont(0);
+		habConfigureButton->labelsize(13);
+		habConfigureButton->when(FL_WHEN_RELEASE);
+		habConfigureButton->align(FL_ALIGN_INSIDE);
+		habConfigureButton->deactivate();
+		// TODO habConfigureButton->callback(func);
+		}
+
+		{ habSwitchModes = new Fl_Button(rightof(habConfigureButton) + 2, habRowOneY, w_habSwitchModes, Hentry, _("Auto-mode-switch"));
+		habSwitchModes->tooltip(_("Automatically switch to the next telemetry mode"));
+		habSwitchModes->labeltype(FL_NORMAL_LABEL);
+		habSwitchModes->labelfont(0);
+		habSwitchModes->labelsize(13);
+		habSwitchModes->when(FL_WHEN_RELEASE);
+		habSwitchModes->align(FL_ALIGN_INSIDE);
+		habSwitchModes->deactivate();
+		// TODO habSwitchModes->callback(func);
+		}
+
+		/* Row two: [callsign] [time] [lat] [lon] [alt] [checksum] [bearing] [distance] [time since last rx] */
+
+		int habRowTwoY = below(habFlight) + 4 + 13;
+
+		{ habRXPayload = new Fl_Output(10, habRowTwoY, w_habRXPayload, Hentry, _("Callsign"));
+		habRXPayload->tooltip(_("Callsign"));
+		habRXPayload->box(FL_DOWN_BOX);
+		habRXPayload->color(FL_BACKGROUND2_COLOR);
+		habRXPayload->selection_color(FL_SELECTION_COLOR);
+		habRXPayload->labeltype(FL_NORMAL_LABEL);
+		habRXPayload->labelfont(0);
+		habRXPayload->labelsize(13);
+		habRXPayload->labelcolor(FL_FOREGROUND_COLOR);
+		habRXPayload->align(FL_ALIGN_TOP); }
+
+		{ habTime = new Fl_Output(rightof(habRXPayload) + 2, habRowTwoY, w_habTime, Hentry, _("Time"));
 		habTime->tooltip(_("Time"));
 		habTime->box(FL_DOWN_BOX);
 		habTime->color(FL_BACKGROUND2_COLOR);
@@ -5501,7 +5584,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habTime->labelcolor(FL_FOREGROUND_COLOR);
 		habTime->align(FL_ALIGN_TOP); }
 
-		{ habLat = new Fl_Output((rightof(habTime) + 2), (Y + Hentry) , w_habLat, Hentry, "Latitude");
+		{ habLat = new Fl_Output((rightof(habTime) + 2), habRowTwoY, w_habLat, Hentry, _("Latitude"));
 		habLat->tooltip(_("Latitude"));
 		habLat->box(FL_DOWN_BOX);
 		habLat->color(FL_BACKGROUND2_COLOR);
@@ -5512,7 +5595,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habLat->labelcolor(FL_FOREGROUND_COLOR);
 		habLat->align(FL_ALIGN_TOP); }
 
-		{ habLon = new Fl_Output((rightof(habLat) + 2), (Y + Hentry) , w_habLon, Hentry, "Longitude");
+		{ habLon = new Fl_Output((rightof(habLat) + 2), habRowTwoY, w_habLon, Hentry, _("Longitude"));
 		habLon->tooltip(_("Longitude"));
 		habLon->box(FL_DOWN_BOX);
 		habLon->color(FL_BACKGROUND2_COLOR);
@@ -5523,7 +5606,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habLon->labelcolor(FL_FOREGROUND_COLOR);
 		habLon->align(FL_ALIGN_TOP); }
 
-		{ habAlt = new Fl_Output((rightof(habLon) + 2), (Y + Hentry) , w_habAlt, Hentry, "Altitude");
+		{ habAlt = new Fl_Output((rightof(habLon) + 2), habRowTwoY, w_habAlt, Hentry, _("Altitude"));
 		habAlt->tooltip(_("Altitude"));
 		habAlt->box(FL_DOWN_BOX);
 		habAlt->color(FL_BACKGROUND2_COLOR);
@@ -5534,7 +5617,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habAlt->labelcolor(FL_FOREGROUND_COLOR);
 		habAlt->align(FL_ALIGN_TOP); }
 		
-		{ habChecksum = new Fl_Output((rightof(habAlt) + 2), (Y + Hentry) , w_habChecksum, Hentry, "Checksum");
+		{ habChecksum = new Fl_Output((rightof(habAlt) + 2), habRowTwoY, w_habChecksum, Hentry, _("Checksum"));
 		habChecksum->tooltip(_("Checksum"));
 		habChecksum->box(FL_DOWN_BOX);
 		habChecksum->color(FL_BACKGROUND2_COLOR);
@@ -5545,7 +5628,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
 		habChecksum->align(FL_ALIGN_TOP); }
 
-		{ habBearing = new Fl_Output((rightof(habChecksum) + 2), (Y + Hentry) , w_habBearing, Hentry, "Bearing");
+		{ habBearing = new Fl_Output((rightof(habChecksum) + 2), habRowTwoY, w_habBearing, Hentry, _("Bearing"));
 		habBearing->tooltip(_("Bearing from Rx Station to Payload"));
 		habBearing->box(FL_DOWN_BOX);
 		habBearing->color(FL_BACKGROUND2_COLOR);
@@ -5556,7 +5639,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habBearing->labelcolor(FL_FOREGROUND_COLOR);
 		habBearing->align(FL_ALIGN_TOP); }
 		
-		{ habDistance = new Fl_Output((rightof(habBearing) + 2), (Y + Hentry) , w_habDistance, Hentry, "Distance");
+		{ habDistance = new Fl_Output((rightof(habBearing) + 2), habRowTwoY, w_habDistance, Hentry, _("Distance"));
 		habDistance->tooltip(_("Distance from Rx Station to Payload"));
 		habDistance->box(FL_DOWN_BOX);
 		habDistance->color(FL_BACKGROUND2_COLOR);
@@ -5567,7 +5650,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habDistance->labelcolor(FL_FOREGROUND_COLOR);
 		habDistance->align(FL_ALIGN_TOP); }
 	
-		{ habTimeSinceLastRx = new Fl_Output(progStatus.mainW - w_habTimeSinceLastRx - 2 * DEFAULT_SW, (Y + Hentry) , w_habTimeSinceLastRx, Hentry, "Time since Rx");
+		{ habTimeSinceLastRx = new Fl_Output(rightof(habDistance) + 2, habRowTwoY, w_habTimeSinceLastRx, Hentry, _("Time since Rx"));
 		habTimeSinceLastRx->tooltip(_("Elapsed time since last line of telemetry received"));
 		habTimeSinceLastRx->box(FL_DOWN_BOX);
 		habTimeSinceLastRx->color(FL_BACKGROUND2_COLOR);
@@ -5578,18 +5661,9 @@ void create_fl_digi_main_dl_fldigi() {
 		habTimeSinceLastRx->labelcolor(FL_FOREGROUND_COLOR);
 		habTimeSinceLastRx->align(FL_ALIGN_TOP); }
 
-		{ habConfigureButton = new Fl_Button((leftof(habTimeSinceLastRx) - 2 - w_habConfigureButton), (Y + Hentry), w_habConfigureButton, Hentry, "Autoconfigure");
-		habConfigureButton->tooltip("Automatically set the fldigi modem settings for the chosen payload.");
-		habConfigureButton->labeltype(FL_NORMAL_LABEL);
-		habConfigureButton->labelfont(0);
-		habConfigureButton->labelsize(13);
-		habConfigureButton->when(FL_WHEN_RELEASE);
-		habConfigureButton->align(FL_ALIGN_INSIDE);
-		// TODO habConfigureButton->callback(cb_dl_fldigi_configure_payload);
-		}
-		
-		qsoFreqDisp1 = new cFreqControl(
-										10, below(habFlightXML) + 4,
+		/* Row three: frequency control, mode control, received string */
+
+		qsoFreqDisp1 = new cFreqControl(10, below(habRXPayload) + 4,
 										freqwidth, freqheight, "");
 		qsoFreqDisp1->box(FL_DOWN_BOX);
 		qsoFreqDisp1->color(FL_BACKGROUND_COLOR);
@@ -5599,18 +5673,17 @@ void create_fl_digi_main_dl_fldigi() {
 		qsoFreqDisp1->when(FL_WHEN_RELEASE);
 		qsoFreqDisp1->callback(qso_movFreq);
 		qsoFreqDisp1->font(progdefaults.FreqControlFontnbr);
-		qsoFreqDisp1->SetONOFFCOLOR(
-									fl_rgb_color(	progdefaults.FDforeground.R,
-												 progdefaults.FDforeground.G,
-												 progdefaults.FDforeground.B),
+		qsoFreqDisp1->SetONOFFCOLOR(fl_rgb_color(	progdefaults.FDforeground.R,
+													progdefaults.FDforeground.G,
+													progdefaults.FDforeground.B),
 									fl_rgb_color(	progdefaults.FDbackground.R,
-												 progdefaults.FDbackground.G,
-												 progdefaults.FDbackground.B));
+													progdefaults.FDbackground.G,
+													progdefaults.FDbackground.B));
 		qsoFreqDisp1->value(0);
 		//qsoFreqDisp2->resizable(NULL);
 		
 		int w_pmb = (freqwidth - Wbtn + 2 * pad) / 2;
-		qso_opMODE = new Fl_ComboBox(rightof(qsoFreqDisp1) + 2, below(habFlightXML) + 4, w_pmb, Hentry);
+		qso_opMODE = new Fl_ComboBox(rightof(qsoFreqDisp1) + 2, below(habRXPayload) + 4, w_pmb, Hentry);
 		qso_opMODE->box(FL_DOWN_BOX);
 		qso_opMODE->color(FL_BACKGROUND2_COLOR);
 		qso_opMODE->selection_color(FL_BACKGROUND_COLOR);
@@ -5623,30 +5696,20 @@ void create_fl_digi_main_dl_fldigi() {
 		qso_opMODE->when(FL_WHEN_RELEASE);
 		qso_opMODE->end();
 		
-		{ habCustom = new Fl_Output(rightof(qso_opMODE) + 2, below(habFlightXML) + 4, w_habCustom - w_habSwitchModes - 8 - freqwidth - w_pmb, Hentry);
-		habCustom->tooltip(_("Custom"));
-		habCustom->box(FL_DOWN_BOX);
-		habCustom->color(FL_BACKGROUND2_COLOR);
-		habCustom->selection_color(FL_SELECTION_COLOR);
-		habCustom->when(FL_WHEN_RELEASE);}
+		{ habString = new Fl_Output(rightof(qso_opMODE) + 2, below(habRXPayload) + 4, w_habString - 8 - freqwidth - w_pmb, Hentry);
+		habString->tooltip(_("Custom"));
+		habString->box(FL_DOWN_BOX);
+		habString->color(FL_BACKGROUND2_COLOR);
+		habString->selection_color(FL_SELECTION_COLOR);
+		habString->when(FL_WHEN_RELEASE);}
 
-		{ habSwitchModes = new Fl_Button(rightof(habCustom), below(habFlightXML) + 4, w_habSwitchModes, Hentry, "Switch");
-			habSwitchModes->tooltip("Switches Telemetry Modes");
-			habSwitchModes->labeltype(FL_NORMAL_LABEL);
-			habSwitchModes->labelfont(0);
-			habSwitchModes->labelsize(13);
-			habSwitchModes->when(FL_WHEN_RELEASE);
-			habSwitchModes->align(FL_ALIGN_INSIDE);
-			// TODO habSwitchModes->callback(cb_dl_fldigi_switch_modes);
-		}
-		Fl_Group::current()->resizable(TopFrameHAB);
-		//TopFrameHAB->resizable(TopFrameHAB);
 		TopFrameHAB->end();
+		Fl_Group::current()->resizable(TopFrameHAB);
 		
 		Y = Hmenu + pad + TopFrameHABheight;
 		
-		TiledGroup = new Fl_Tile_Check(0, Y, progStatus.mainW, Htext);
-			ReceiveText = new FTextRX(0, Y, progStatus.mainW, minRxHeight, "");
+		TiledGroup = new Fl_Tile_Check(0, Y, WNOM, Htext);
+			ReceiveText = new FTextRX(0, Y, WNOM, minRxHeight, "");
 			ReceiveText->color(
 				fl_rgb_color(
 					progdefaults.RxColor.R,
@@ -5660,11 +5723,11 @@ void create_fl_digi_main_dl_fldigi() {
 			ReceiveText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
 			ReceiveText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
 	
-			FHdisp = new Raster(0, Y, progStatus.mainW, minRxHeight);
+			FHdisp = new Raster(0, Y, WNOM, minRxHeight);
 			FHdisp->hide();
 			
 
-			Fl_Box *minbox = new Fl_Box(0,Y + minRxHeight + 1, progStatus.mainW, minRxHeight);
+			Fl_Box *minbox = new Fl_Box(0,Y + minRxHeight + 1, WNOM, minRxHeight);
 			//Fl_Box *minbox = new Fl_Box(sw,Y + 66, progStatus.mainW-sw, Htext - 66 - 66);
 			minbox->hide();
 
@@ -5676,7 +5739,7 @@ void create_fl_digi_main_dl_fldigi() {
 
 		Y = Hmenu + pad + TopFrameHABheight + minRxHeight;
 
-		Fl_Pack *wfpack = new Fl_Pack(0, Y, progStatus.mainW, Hwfall);
+		Fl_Pack *wfpack = new Fl_Pack(0, Y, WNOM, Hwfall);
 			wfpack->type(1);
 			wf = new waterfall(0, Y, Wwfall, Hwfall);
 			wf->end();
@@ -5705,7 +5768,7 @@ void create_fl_digi_main_dl_fldigi() {
 
 		Y += (Hwfall + pad);
 
-		Fl_Pack *hpack = new Fl_Pack(0, Y, progStatus.mainW, Hstatus);
+		Fl_Pack *hpack = new Fl_Pack(0, Y, WNOM, Hstatus);
 			hpack->type(1);
 			MODEstatus = new Fl_Button(0, Y, Wmode+30, Hstatus, "");
 			MODEstatus->box(FL_DOWN_BOX);
@@ -5727,7 +5790,7 @@ void create_fl_digi_main_dl_fldigi() {
 
 			StatusBar = new Fl_Box(
 				rightof(Status2), Y,
-				progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - rightof(Status2) - 2 * pad,// - 60,
+				WNOM - bwSqlOnOff - bwAfcOnOff - Wwarn - rightof(Status2) - 2 * pad,// - 60,
 				Hstatus, "");
 			StatusBar->box(FL_DOWN_BOX);
 			StatusBar->color(FL_BACKGROUND2_COLOR);
@@ -5746,12 +5809,12 @@ void create_fl_digi_main_dl_fldigi() {
 			sql_width -= 15; // leave room for resize handle
 #endif
 			btnAFC = new Fl_Light_Button(
-				progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
+				WNOM - bwSqlOnOff - bwAfcOnOff,
 				Y,
 				bwAfcOnOff, Hstatus, "AFC");
 			btnAFC->selection_color(progdefaults.AfcColor);
 			btnSQL = new Fl_Light_Button(
-				progStatus.mainW - bwSqlOnOff,
+				WNOM - bwSqlOnOff,
 				Y,
 				sql_width, Hstatus, "SQL");
 			btnSQL->selection_color(progdefaults.Sql1Color);

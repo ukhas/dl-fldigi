@@ -477,8 +477,8 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 			pkt_info.height,
 			pkt_info.packet_id);
 		
-		habCustom->value(msg);
-		habCustom->color(FL_GREEN);
+		habString->value(msg);
+		habString->color(FL_GREEN);
 	}
 	
 	/* Initialise the decoder */
