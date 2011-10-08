@@ -40,15 +40,15 @@ DExtractorManager *extrmgr;
 DUploaderThread *uthr;
 enum location_mode new_location_mode;
 
-static EZ::Mutex flights_lock;
-static vector<Json::Value> flights;
+static EZ::Mutex flight_docs_lock;
+static vector<Json::Value> flight_docs;
 static bool dl_online, downloaded_once, hab_ui_exists;
 static int dirty;
 static enum location_mode current_location_mode;
 static habitat::UKHASExtractor *ukhas;
-static string cache_file;
+static string fldocs_cache_file;
 
-static void flights_init();
+static void flight_docs_init();
 static void reset_gps_settings();
 static void periodically();
 
@@ -60,7 +60,7 @@ void init()
     ukhas = new habitat::UKHASExtractor();
     extrmgr->add(*ukhas);
 
-    cache_file = HomeDir + "flights.json";
+    fldocs_cache_file = HomeDir + "flight_docs.json";
 }
 
 void ready(bool hab_mode)
@@ -69,11 +69,11 @@ void ready(bool hab_mode)
     hab_ui_exists = hab_mode;
 
     if (progdefaults.gps_start_enabled)
-        current_location_mode = LOC_STATIONARY;
-    else
         current_location_mode = LOC_GPS;
+    else
+        current_location_mode = LOC_STATIONARY;
 
-    flights_init();
+    flight_docs_init();
     uthr->start();
     reset_gps_settings();
     online(hab_mode);
@@ -132,11 +132,19 @@ bool online()
     return dl_online;
 }
 
-static void flights_init()
+static void flight_docs_init()
 {
-    EZ::MutexLock lock(flights_lock);
+    EZ::MutexLock lock(flight_docs_lock);
 
-    ifstream cf(cache_file);
+    ifstream cf(fldocs_cache_file.c_str());
+
+    if (cf.fail())
+    {
+        LOG_DEBUG("Failed to open cache file");
+        return;
+    }
+
+    flight_docs.clear();
 
     while (cf.good())
     {
@@ -146,12 +154,24 @@ static void flights_init()
         Json::Reader reader;
         Json::Value root;
         if (!reader.parse(line, root, false))
-            false;
+            break;
 
-        flights.push_back(root);
+        flight_docs.push_back(root);
     }
 
+    bool failed = cf.fail() || !cf.eof();
+
     cf.close();
+
+    if (failed)
+    {
+        flight_docs.clear();
+        LOG_WARN("Failed to load flight doc cache from file");
+    }
+    else
+    {
+        LOG_DEBUG("Loaded %li flight docs from file", flight_docs.size());
+    }
 }
 
 static void reset_gps_settings()
@@ -210,7 +230,7 @@ void commit()
 
 void DExtractorManager::status(const string &msg)
 {
-    LOG_DEBUG("habitat Extractor: %s", msg.c_str());
+    LOG_DEBUG("hbtE %s", msg.c_str());
     /* TODO: Log message from extractor */
     /* TODO: put_status safely */
 }
@@ -236,11 +256,17 @@ void DUploaderThread::settings()
     UploaderThread::reset();
 
     if (!online())
-        throw runtime_error("upload disabled: offline");
+    {
+        warning("upload disabled: offline");
+        return;
+    }
 
     if (!progdefaults.myCall.size() || !progdefaults.habitat_uri.size() ||
         !progdefaults.habitat_db.size())
-        throw runtime_error("upload disabled: settings missing");
+    {
+        warning("upload disabled: settings missing");
+        return;
+    }
 
     UploaderThread::settings(progdefaults.myCall, progdefaults.habitat_uri,
                              progdefaults.habitat_db);
@@ -250,12 +276,18 @@ void DUploaderThread::settings()
 void DUploaderThread::listener_telemetry()
 {
     if (current_location_mode != LOC_STATIONARY)
-        throw runtime_error("attempted to upload stationary listener "
-                            "telemetry while in GPS telemetry mode");
+    {
+        warning("attempted to upload stationary listener "
+                "telemetry while in GPS telemetry mode");
+        return;
+    }
 
     if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
-        throw runtime_error("unable to upload stationary listener telemetry: "
-                            "latitude or longitude missing");
+    {
+        warning("unable to upload stationary listener telemetry: "
+                "latitude or longitude missing");
+        return;
+    }
 
     double latitude, longitude;
     istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon);
@@ -263,10 +295,16 @@ void DUploaderThread::listener_telemetry()
     lon_strm >> longitude;
 
     if (lat_strm.fail())
-        throw runtime_error("unable to parse stationary latitude");
+    {
+        warning("unable to parse stationary latitude");
+        return;
+    }
 
     if (lon_strm.fail())
-        throw runtime_error("unable to parse stationary longitude");
+    {
+        warning("unable to parse stationary longitude");
+        return;
+    }
 
     Json::Value data(Json::objectValue);
 
@@ -288,8 +326,8 @@ void DUploaderThread::listener_telemetry()
     time["minute"] = tm.tm_min;
     time["second"] = tm.tm_sec;
 
-    data["latitude"] = latitude
-    data["longitude"] = longitude
+    data["latitude"] = latitude;
+    data["longitude"] = longitude;
 
     UploaderThread::listener_telemetry(data);
 }
@@ -309,7 +347,10 @@ void DUploaderThread::listener_info()
     info_add(data, "antenna", progdefaults.myAntenna);
 
     if (!data.size())
-        throw runtime_error("not uploading empty listener info");
+    {
+        warning("not uploading empty listener info");
+        return;
+    }
 
     UploaderThread::listener_info(data);
 }
@@ -317,27 +358,31 @@ void DUploaderThread::listener_info()
 /* These functions must try to be thread safe. */
 void DUploaderThread::log(const string &message)
 {
-    LOG_DEBUG("habitat UploaderThread: %s", message.c_str());
+    LOG_DEBUG("hbtUT %s", message.c_str());
     /* TODO: put_status safely */
 }
 
 void DUploaderThread::warning(const string &message)
 {
-    LOG_WARN("habitat UploaderThread: WARNING %s", message.c_str());
+    LOG_WARN("hbtUT %s", message.c_str());
     /* TODO: put_status safely & kick up a fuss */
 }
 
 void DUploaderThread::got_flights(const vector<Json::Value> &new_flights)
 {
-    EZ::MutexLock lock(flights_lock);
+    EZ::MutexLock lock(flight_docs_lock);
 
-    flights = new_flights;
+    ostringstream ltmp;
+    ltmp << "Downloaded " << new_flights.size() << " flight docs";
+    log(ltmp.str());
+
+    flight_docs = new_flights;
     downloaded_once = true;
 
-    ofstream cf(cache_file, ios_base::out | ios_base::trunc);
+    ofstream cf(fldocs_cache_file.c_str(), ios_base::out | ios_base::trunc);
 
-    for (vector<Json::Value>::const_iterator it = flights.begin();
-         it != flights.end() && cf.good();
+    for (vector<Json::Value>::const_iterator it = flight_docs.begin();
+         it != flight_docs.end() && cf.good();
          it++)
     {
         Json::FastWriter writer;
@@ -351,7 +396,7 @@ void DUploaderThread::got_flights(const vector<Json::Value> &new_flights)
     if (!success)
     {
         warning("unable to save flights data");
-        unlink(cache_file);
+        unlink(fldocs_cache_file.c_str());
     }
 
     /* TODO: REQ(update flights list). */

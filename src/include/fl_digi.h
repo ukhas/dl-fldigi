@@ -311,6 +311,6 @@ void sync_cw_parameters();
 
 void open_recv_folder(const char *fname);
 
-void set_menu_dl_online(bool val)
+void set_menu_dl_online(bool val);
 
 #endif

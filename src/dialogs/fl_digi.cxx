@@ -1438,21 +1438,6 @@ void cb_toggle_dl_online(Fl_Widget *w, void *)
     dl_fldigi::online(val);
 }
 
-void set_menu_dl_online(bool val)
-{
-    Fl_Menu_Item *m;
-
-    if (bHAB)
-        m = getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_);
-    else
-        m = getMenuItem(DLFLDIGI_ONLINE_LABEL);
-
-    if (val)
-        m->set();
-    else
-        m->clear();
-}
-
 //jcoxon added 21/3/10
 
 void cb_mnuConfigDLClient(Fl_Menu_*, void*) {
@@ -6800,6 +6785,21 @@ void set_rtty_bits(int bits)
 			break;
 		}
 	}
+}
+
+void set_menu_dl_online(bool val)
+{
+    Fl_Menu_Item *m;
+
+    if (bHAB)
+        m = getMenuItem(DLFLDIGI_ONLINE_LABEL, alt_menu_);
+    else
+        m = getMenuItem(DLFLDIGI_ONLINE_LABEL);
+
+    if (val)
+        m->set();
+    else
+        m->clear();
 }
 
 
