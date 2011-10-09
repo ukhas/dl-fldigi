@@ -9,7 +9,7 @@
 #include <set>
 #include <json/json.h>
 #include <time.h>
-#include <Fl/Fl.h>
+#include <Fl/Fl.H>
 #include "habitat/UKHASExtractor.h"
 #include "habitat/EZ.h"
 #include "configuration.h"
@@ -35,6 +35,7 @@ bool show_testing_flights;
 static EZ::cURLGlobal *cgl;
 
 static vector<Json::Value> flight_docs;
+static vector<string> payload_index;
 static bool dl_online, downloaded_once, hab_ui_exists;
 static int dirty;
 static enum location_mode current_location_mode;
@@ -84,7 +85,14 @@ void cleanup()
     extrmgr = 0;
 
     if (uthr)
+    {
+        /* When cleaning up the main thread (that executes this function)
+         * will hold the lock. Don't deadlock: */
+        Fl::unlock();
         uthr->shutdown();
+        Fl::lock();
+    }
+
     delete uthr;
     uthr = 0;
 
@@ -138,7 +146,7 @@ bool online()
     bool val = dl_online;
     Fl::unlock();
 
-    return val
+    return val;
 }
 
 static void flight_docs_init()
@@ -157,6 +165,10 @@ static void flight_docs_init()
     {
         string line;
         getline(cf, line, '\n');
+
+        char discard;
+        while (cf.good() && cf.peek() == '\n')
+            cf.get(discard);
 
         Json::Reader reader;
         Json::Value root;
@@ -226,15 +238,13 @@ static string get_payload_list(const Json::Value &flight)
     if (!payloads.isObject() || !payloads.size())
         return "";
 
-    const vector<string> payloads = payloads.getMemberNames();
-
+    const vector<string> payload_names = payloads.getMemberNames();
     ostringstream payload_list;
+    vector<string>::const_iterator it;
 
-    for (vector<string::const_iterator it = payloads.begin();
-        it != payloads.end();
-        it++)
+    for (it = payload_names.begin(); it != payload_names.end(); it++)
     {
-        if (it != payloads.begin())
+        if (it != payload_names.begin())
             payload_list << ',';
         payload_list << (*it);
     }
@@ -244,9 +254,12 @@ static string get_payload_list(const Json::Value &flight)
 
 static string flight_launch_date(const Json::Value &flight)
 {
-    const Json::Value &launch = root["launch"];
+    const Json::Value &launch = flight["launch"];
 
-    if (!launch.isObject() || !launch.size() || !launch.isMember("time"))
+    if (!launch.isObject() || !launch.size())
+        return "";
+
+    if (!launch.isMember("time") || !launch["time"].isInt())
         return "";
 
     time_t date = launch["time"].asInt();
@@ -256,7 +269,7 @@ static string flight_launch_date(const Json::Value &flight)
     if (gmtime_r(&date, &tm) != &tm)
         return "";
 
-    if (strftime(buf, sizeof(buf), "%a %d %b", &tm) <= 0)
+    if (strftime(buf, sizeof(buf), "%a %d %b %y", &tm) <= 0)
         return "";
 
     return buf;
@@ -291,15 +304,15 @@ static string flight_browser_item(const string &name, const string &date,
 {
     /* "<name>\t<optional date>\t<payload>,<payload>" */
     return "@." + escape_browser_string(name) + "\t" +
-           "@." + date + "\t"
-           "@." + escape_browser_string(payload_list.str());
+           "@." + date + "\t" +
+           "@." + escape_browser_string(payload_list);
 }
 
 static void flight_choice_callback(Fl_Widget *w, void *a)
 {
-    int index = reinterpret_cast<int>(a);
+    int index = reinterpret_cast<intptr_t>(a);
     Fl_Choice *choice = static_cast<Fl_Choice *>(w);
-    flight_browser->value(choice->value());
+    flight_browser->value(choice->value() + 1);
     select_flight(index);
 }
 
@@ -309,22 +322,29 @@ void populate_flights()
 
     set<string> choice_items;
 
-    if (habFlights)
-        habFlights->clear();
+    if (hab_ui_exists)
+        habFlight->clear();
 
     flight_browser->clear();
 
     vector<Json::Value>::const_iterator it;
-    int i;
+    intptr_t i;
     for (it = flight_docs.begin(), i = 0; it != flight_docs.end(); it++, i++)
     {
         const Json::Value &root = (*it);
+
+        if (!root.isObject() || !root.size())
+        {
+            LOG_WARN("invalid flight doc: not an object");
+            continue;
+        }
+
         const string name = root["name"].asString();
         const string payload_list = get_payload_list(root);
         const string date = flight_launch_date(root);
         void *userdata = reinterpret_cast<void *>(i);
 
-        if (!name.size() || !payloads.size())
+        if (!name.size() || !payload_list.size())
         {
             LOG_WARN("invalid flight doc: missing a key");
             continue;
@@ -333,7 +353,7 @@ void populate_flights()
         if (is_testing_flight(root) && !show_testing_flights)
             continue;
 
-        if (habFlights)
+        if (hab_ui_exists)
         {
             string item;
             int attempt = 1;
@@ -347,15 +367,73 @@ void populate_flights()
             while (choice_items.count(item));
             choice_items.insert(item);
 
-            habFlights->add(item, 0L, flight_choice_callback, userdata);
+            habFlight->add(item.c_str(), (int) 0, flight_choice_callback,
+                           userdata);
         }
 
-        flight_browser->add(flight_browser_item(name, date, payload_list),
-                            userdata);
+        string browser_item = flight_browser_item(name, date, payload_list);
+        flight_browser->add(browser_item.c_str(), userdata);
     }
 
-    /* TODO: re-select previous item */
+    /* TODO: re-select previous item? */
     /* TODO avoid duplicate names in choice somehow */
+
+    Fl::unlock();
+}
+
+void select_flight(int index)
+{
+    Fl::lock();
+
+    LOG_DEBUG("Selecting flight, index %i", index);
+
+    if (hab_ui_exists)
+    {
+        habCHPayload->clear();
+        habCHMode->clear();
+        habConfigureButton->clear();
+        habSwitchModes->clear();
+
+        habCHPayload->deactivate();
+        habCHMode->deactivate();
+        habConfigureButton->deactivate();
+        habSwitchModes->deactivate();
+    }
+
+    payload_list->clear();
+    payload_mode_list->clear();
+
+    payload_list->deactivate();
+    payload_mode_list->deactivate();
+
+    int max = flight_docs.size();
+    if (index < 0 || index >= max)
+        return;
+
+    const Json::Value &flight = flight_docs[index];
+
+    if (!flight.isObject() || !flight.size())
+        return;
+
+    const Json::Value &payloads = flight["payloads"];
+
+    if (!payloads.isObject() || !payloads.size())
+        return;
+
+    payload_index = payloads.getMemberNames();
+
+    vector<string>::const_iterator it;
+    for (it = payload_index.begin(); it != payload_index.end(); it++)
+    {
+        habCHPayload->add(escape_menu_string(*it).c_str());
+        payload_list->add(escape_menu_string(*it).c_str());
+    }
+
+    habCHPayload->activate();
+    payload_list->activate();
+
+    /* TODO: select_payload(0); */
+    /* remove this: */ habCHPayload->value(1); payload_list->value(1);
 
     Fl::unlock();
 }

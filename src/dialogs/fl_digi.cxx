@@ -5515,7 +5515,6 @@ void create_fl_digi_main_dl_fldigi() {
 		habFlight->down_box(FL_BORDER_BOX);
 		habFlight->align(FL_ALIGN_TOP);
 		habFlight->when(FL_WHEN_CHANGED);
-		// TODO habFlight->callback(func);
 		}
 
 		{ habCHPayload = new Fl_Choice(rightof(habFlight) + 2, habRowOneY, w_habCHPayload, Hentry, _("Payload"));
@@ -5524,7 +5523,6 @@ void create_fl_digi_main_dl_fldigi() {
 		habCHPayload->align(FL_ALIGN_TOP);
 		habCHPayload->when(FL_WHEN_CHANGED);
 		habCHPayload->deactivate();
-		// TODO habCHPayload->callback(func);
 		}
 
 		{ habCHMode = new Fl_Choice(rightof(habCHPayload) + 2, habRowOneY, w_habCHMode, Hentry, _("Multi mode"));
@@ -5533,7 +5531,6 @@ void create_fl_digi_main_dl_fldigi() {
 		habCHMode->align(FL_ALIGN_TOP);
 		habCHMode->when(FL_WHEN_CHANGED);
 		habCHMode->deactivate();
-		// TODO habCHMode->callback(func);
 		}
 
 		{ habConfigureButton = new Fl_Button(rightof(habCHMode) + 2, habRowOneY, w_habConfigureButton, Hentry, _("Auto-configure"));

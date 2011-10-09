@@ -6,6 +6,7 @@
 #include <FL/Fl_Tooltip.H>
 #include <FL/filename.H>
 #include <sstream>
+#include <stdint.h>
 #include "main.h"
 #include "fl_digi.h"
 #include "dl_fldigi/dl_fldigi.h"
@@ -3101,9 +3102,16 @@ Fl_Group *tabDLPayload=(Fl_Group *)0;
 
 Fl_Browser *flight_browser=(Fl_Browser *)0;
 
+static void cb_flight_browser(Fl_Browser* o, void*) {
+  if (habFlight)
+    habFlight->value(o->value() - 1);
+int index = reinterpret_cast<intptr_t>(o->data(o->value()));
+dl_fldigi::select_flight(index);
+}
+
 Fl_Choice *payload_list=(Fl_Choice *)0;
 
-Fl_Choice *payload_sub_list=(Fl_Choice *)0;
+Fl_Choice *payload_mode_list=(Fl_Choice *)0;
 
 Fl_Input *imagepacketurl=(Fl_Input *)0;
 
@@ -3179,6 +3187,7 @@ static const char szContestiaTones[] = "2|4|8|16|32|64|128|256";
 static const char szContestiaBandwidth[] = "125|250|500|1000|2000";
 static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600|115200|230400|460800";
 static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
+  static const int flight_browser_columns[] = { 170, 150, 170 };
   { Fl_Double_Window* o = new Fl_Double_Window(500, 400, _("Fldigi configuration"));
     w = o;
     o->color((Fl_Color)FL_DARK2);
@@ -6795,6 +6804,7 @@ d frequency"));
         tabDL->labelsize(12);
         tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 500, 348);
+          tabsDL->selection_color((Fl_Color)55);
           { tabDLEnable = new Fl_Group(0, 50, 500, 295, _("Enable"));
             { Fl_Group* o = new Fl_Group(10, 55, 478, 111, _("Enable"));
               o->box(FL_ENGRAVED_FRAME);
@@ -6943,8 +6953,10 @@ d frequency"));
           } // Fl_Group* o
           { tabDLPayload = new Fl_Group(0, 50, 500, 323, _("Radio auto config"));
             tabDLPayload->hide();
-            { flight_browser = new Fl_Browser(5, 55, 490, 230);
+            { Fl_Browser* o = flight_browser = new Fl_Browser(5, 55, 490, 230);
               flight_browser->type(2);
+              flight_browser->callback((Fl_Callback*)cb_flight_browser);
+              o->column_widths(flight_browser_columns);
             } // Fl_Browser* flight_browser
             { Fl_Group* o = new Fl_Group(5, 290, 490, 75);
               o->box(FL_ENGRAVED_BOX);
@@ -6964,9 +6976,9 @@ d frequency"));
               } // Fl_Choice* payload_list
               { new Fl_Button(330, 330, 155, 25, _("Autoconfigure"));
               } // Fl_Button* o
-              { payload_sub_list = new Fl_Choice(240, 330, 85, 25);
-                payload_sub_list->down_box(FL_BORDER_BOX);
-              } // Fl_Choice* payload_sub_list
+              { payload_mode_list = new Fl_Choice(240, 330, 85, 25);
+                payload_mode_list->down_box(FL_BORDER_BOX);
+              } // Fl_Choice* payload_mode_list
               o->end();
             } // Fl_Group* o
             tabDLPayload->end();
