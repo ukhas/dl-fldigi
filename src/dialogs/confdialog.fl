@@ -3971,6 +3971,10 @@ progdefaults.changed = true;}
           } {
             Fl_Browser flight_browser {
               xywh {5 55 490 230} type Hold
+callback {if (habFlights)
+    habFlights->value(o->value());
+int index = reinterpret_cast<int>(a);
+dl_fldigi::select_flight(index);}
             }
             Fl_Group {} {open
               xywh {5 290 490 75} box ENGRAVED_BOX align 21

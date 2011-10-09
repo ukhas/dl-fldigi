@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <utility>
 #include <json/json.h>
 #include "habitat/Extractor.h"
 #include "habitat/UploaderThread.h"
@@ -26,6 +27,15 @@ enum location_mode
 {
     LOC_STATIONARY,
     LOC_GPS
+};
+
+enum populate_destinations
+{
+    POP_INDEXES = 0x01,
+    POP_CHOICE = 0x02,
+    POP_BROWSER = 0x04,
+    POP_ALL = 0x01 | 0x02 | 0x04,
+    POP_TESTING_TOO = 0x08
 };
 
 class DExtractorManager : public habitat::ExtractorManager
@@ -58,6 +68,7 @@ public:
 extern DExtractorManager *extrmgr;
 extern DUploaderThread *uthr;
 extern enum location_mode new_location_mode;
+extern bool show_testing_flights;
 
 void init();                 /* Create globals and stuff; before UI init */
 void ready(bool hab_mode);   /* After UI init, start stuff */
@@ -66,6 +77,8 @@ void online(bool value);
 bool online();
 void changed(enum changed_groups thing);
 void commit();
+void populate_flights();
+void select_flight(int index);
 
 } /* namespace dl_fldigi */
 

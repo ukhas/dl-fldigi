@@ -1,12 +1,15 @@
 #include "dl_fldigi/dl_fldigi.h"
 
 #include <vector>
+#include <map>
 #include <string>
 #include <stdexcept>
-#include <json/json.h>
 #include <fstream>
 #include <sstream>
+#include <set>
+#include <json/json.h>
 #include <time.h>
+#include <Fl/Fl.h>
 #include "habitat/UKHASExtractor.h"
 #include "habitat/EZ.h"
 #include "configuration.h"
@@ -19,18 +22,6 @@ using namespace std;
 
 namespace dl_fldigi {
 
-/*
- * A short note on thread safety.
- * The embedded habitat submodule, cpp_uploader, is thread safe.
- * fldigi in general, however, is not at all. Most of the dl_fldigi functions
- * are intended to be called by the main gui thread. The functions that are
- * not called by the main thread that we need to worry about are:
- *  - extrmgr->status and extrmgr->data
- *  - uthr->payload_telemetry (called by extrmgr)
- *  - uthr->log and uthr->warning
- *  - uthr->got_flights
- */
-
 /* How does online/offline work? if online() is false, uthr->settings() will
  * reset the UploaderThread, leaving it unintialised */
 
@@ -39,10 +30,10 @@ namespace dl_fldigi {
 DExtractorManager *extrmgr;
 DUploaderThread *uthr;
 enum location_mode new_location_mode;
+bool show_testing_flights;
 
 static EZ::cURLGlobal *cgl;
 
-static EZ::Mutex flight_docs_lock;
 static vector<Json::Value> flight_docs;
 static bool dl_online, downloaded_once, hab_ui_exists;
 static int dirty;
@@ -54,6 +45,7 @@ static void flight_docs_init();
 static void reset_gps_settings();
 static void periodically();
 
+/* Functions init, ready and cleanup should only be called from main() */
 void init()
 {
     cgl = new EZ::cURLGlobal();
@@ -110,8 +102,11 @@ static void periodically()
         uthr->listener_telemetry();
 }
 
+/* All other functions should hopefully be thread safe */
 void online(bool val)
 {
+    Fl::lock();
+
     bool changed;
 
     changed = (dl_online != val);
@@ -133,17 +128,21 @@ void online(bool val)
 
     confdialog_dl_online->value(val);
     set_menu_dl_online(val);
+
+    Fl::unlock();
 }
 
 bool online()
 {
-    return dl_online;
+    Fl::lock();
+    bool val = dl_online;
+    Fl::unlock();
+
+    return val
 }
 
 static void flight_docs_init()
 {
-    EZ::MutexLock lock(flight_docs_lock);
-
     ifstream cf(fldocs_cache_file.c_str());
 
     if (cf.fail())
@@ -180,6 +179,185 @@ static void flight_docs_init()
     {
         LOG_DEBUG("Loaded %li flight docs from file", flight_docs.size());
     }
+
+    populate_flights();
+}
+
+static string escape_menu_string(const string &s_)
+{
+    string s(s_);
+    size_t pos = 0;
+
+    do
+    {
+        pos = s.find_first_of("&/\\_", pos);
+
+        if (pos != string::npos)
+        {
+            s.insert(pos, 1, '\\');
+            pos += 2;
+        }
+    }
+    while (pos != string::npos);
+
+    return s;
+}
+
+static string escape_browser_string(const string &s_)
+{
+    string s(s_);
+    size_t pos = 0;
+
+    do
+    {
+        pos = s.find('\t', pos);
+        if (pos != string::npos)
+            s[pos] = ' ';
+    }
+    while (pos != string::npos);
+
+    return s;
+}
+
+static string get_payload_list(const Json::Value &flight)
+{
+    const Json::Value &payloads = flight["payloads"];
+
+    if (!payloads.isObject() || !payloads.size())
+        return "";
+
+    const vector<string> payloads = payloads.getMemberNames();
+
+    ostringstream payload_list;
+
+    for (vector<string::const_iterator it = payloads.begin();
+        it != payloads.end();
+        it++)
+    {
+        if (it != payloads.begin())
+            payload_list << ',';
+        payload_list << (*it);
+    }
+
+    return payload_list.str();
+}
+
+static string flight_launch_date(const Json::Value &flight)
+{
+    const Json::Value &launch = root["launch"];
+
+    if (!launch.isObject() || !launch.size() || !launch.isMember("time"))
+        return "";
+
+    time_t date = launch["time"].asInt();
+    char buf[20];
+    struct tm tm;
+
+    if (gmtime_r(&date, &tm) != &tm)
+        return "";
+
+    if (strftime(buf, sizeof(buf), "%a %d %b", &tm) <= 0)
+        return "";
+
+    return buf;
+}
+
+static bool is_testing_flight(const Json::Value &flight)
+{
+    /* TODO: is this a testing flight? */
+    return false;
+}
+
+static string flight_choice_item(const string &name,
+                                 const string &payload_list,
+                                 int attempt)
+{
+    /* "<name>: <payload>,<payload>,<payload>" */
+
+    string attempt_suffix;
+
+    if (attempt != 1)
+    {
+        ostringstream sfx;
+        sfx << " (" << attempt << ")";
+        attempt_suffix = sfx.str();
+    }
+
+    return escape_menu_string(name + ": " + payload_list + attempt_suffix);
+}
+
+static string flight_browser_item(const string &name, const string &date,
+                                  const string &payload_list)
+{
+    /* "<name>\t<optional date>\t<payload>,<payload>" */
+    return "@." + escape_browser_string(name) + "\t" +
+           "@." + date + "\t"
+           "@." + escape_browser_string(payload_list.str());
+}
+
+static void flight_choice_callback(Fl_Widget *w, void *a)
+{
+    int index = reinterpret_cast<int>(a);
+    Fl_Choice *choice = static_cast<Fl_Choice *>(w);
+    flight_browser->value(choice->value());
+    select_flight(index);
+}
+
+void populate_flights()
+{
+    Fl::lock();
+
+    set<string> choice_items;
+
+    if (habFlights)
+        habFlights->clear();
+
+    flight_browser->clear();
+
+    vector<Json::Value>::const_iterator it;
+    int i;
+    for (it = flight_docs.begin(), i = 0; it != flight_docs.end(); it++, i++)
+    {
+        const Json::Value &root = (*it);
+        const string name = root["name"].asString();
+        const string payload_list = get_payload_list(root);
+        const string date = flight_launch_date(root);
+        void *userdata = reinterpret_cast<void *>(i);
+
+        if (!name.size() || !payloads.size())
+        {
+            LOG_WARN("invalid flight doc: missing a key");
+            continue;
+        }
+
+        if (is_testing_flight(root) && !show_testing_flights)
+            continue;
+
+        if (habFlights)
+        {
+            string item;
+            int attempt = 1;
+
+            /* Avoid duplicate menu items: fltk removes them */
+            do
+            {
+                item = flight_choice_item(name, payload_list, attempt);
+                attempt++;
+            }
+            while (choice_items.count(item));
+            choice_items.insert(item);
+
+            habFlights->add(item, 0L, flight_choice_callback, userdata);
+        }
+
+        flight_browser->add(flight_browser_item(name, date, payload_list),
+                            userdata);
+    }
+
+    /* TODO: re-select previous item */
+    /* TODO avoid duplicate names in choice somehow */
+
+    Fl::unlock();
 }
 
 static void reset_gps_settings()
@@ -194,11 +372,15 @@ static void reset_gps_settings()
 
 void changed(enum changed_groups thing)
 {
+    Fl::lock();
     dirty |= thing;
+    Fl::unlock();
 }
 
 void commit()
 {
+    Fl::lock();
+
     /* Update something if its settings change; fairly simple: */
     if (dirty & CH_UTHR_SETTINGS)
     {
@@ -234,21 +416,31 @@ void commit()
     }
 
     dirty = CH_NONE;
+
+    Fl::unlock();
 }
 
 void DExtractorManager::status(const string &msg)
 {
+    Fl::lock();
+
     LOG_DEBUG("hbtE %s", msg.c_str());
     /* TODO: Log message from extractor */
     /* TODO: put_status safely */
+
+    Fl::unlock();
 }
 
 void DExtractorManager::data(const Json::Value &d)
 {
+    Fl::lock();
+
     if (!hab_ui_exists)
         return;
 
     /* TODO: Data to fill out HAB UI */
+
+    Fl::unlock();
 }
 
 /* TODO: abort these if critical settings are missing and don't upload
@@ -261,6 +453,8 @@ void DExtractorManager::data(const Json::Value &d)
 
 void DUploaderThread::settings()
 {
+    Fl::lock();
+
     UploaderThread::reset();
 
     if (!online())
@@ -276,6 +470,8 @@ void DUploaderThread::settings()
         return;
     }
 
+    Fl::unlock();
+
     UploaderThread::settings(progdefaults.myCall, progdefaults.habitat_uri,
                              progdefaults.habitat_db);
 }
@@ -283,6 +479,8 @@ void DUploaderThread::settings()
 /* This function is used for stationary listener telemetry */
 void DUploaderThread::listener_telemetry()
 {
+    Fl::lock();
+
     if (current_location_mode != LOC_STATIONARY)
     {
         warning("attempted to upload stationary listener "
@@ -314,6 +512,8 @@ void DUploaderThread::listener_telemetry()
         return;
     }
 
+    Fl::unlock();
+
     Json::Value data(Json::objectValue);
 
     /* TODO: is it really a good idea to upload time like this? */
@@ -342,12 +542,18 @@ void DUploaderThread::listener_telemetry()
 
 static void info_add(Json::Value &data, const string &key, const string &value)
 {
+    Fl::lock();
+
     if (value.size())
         data[key] = value;
+
+    Fl::unlock();
 }
 
 void DUploaderThread::listener_info()
 {
+    Fl::lock();
+
     Json::Value data(Json::objectValue);
     info_add(data, "name", progdefaults.myName);
     info_add(data, "location", progdefaults.myQth);
@@ -360,31 +566,39 @@ void DUploaderThread::listener_info()
         return;
     }
 
+    Fl::unlock();
+
     UploaderThread::listener_info(data);
 }
 
 /* These functions must try to be thread safe. */
 void DUploaderThread::log(const string &message)
 {
+    Fl::lock();
     LOG_DEBUG("hbtUT %s", message.c_str());
     /* TODO: put_status safely */
+    Fl::unlock();
 }
 
 void DUploaderThread::warning(const string &message)
 {
+    Fl::lock();
     LOG_WARN("hbtUT %s", message.c_str());
     /* TODO: put_status safely & kick up a fuss */
+    Fl::unlock();
 }
 
-void DUploaderThread::got_flights(const vector<Json::Value> &new_flights)
+void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
 {
-    EZ::MutexLock lock(flight_docs_lock);
+    Fl::lock();
+
+    flight_docs = new_flight_docs;
 
     ostringstream ltmp;
-    ltmp << "Downloaded " << new_flights.size() << " flight docs";
+    ltmp << "Downloaded " << new_flight_docs.size() << " flight docs";
     log(ltmp.str());
 
-    flight_docs = new_flights;
+    flight_docs = new_flight_docs;
     downloaded_once = true;
 
     ofstream cf(fldocs_cache_file.c_str(), ios_base::out | ios_base::trunc);
@@ -407,7 +621,9 @@ void DUploaderThread::got_flights(const vector<Json::Value> &new_flights)
         unlink(fldocs_cache_file.c_str());
     }
 
-    /* TODO: REQ(update flights list). */
+    populate_flights();
+
+    Fl::unlock();
 }
 
 } /* namespace dl_fldigi */
