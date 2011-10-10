@@ -428,6 +428,7 @@ extern Fl_Group *tabDLPayload;
 #include <FL/Fl_Browser.H>
 extern Fl_Browser *flight_browser;
 extern Fl_Choice *payload_list;
+extern Fl_Button *payload_autoconfigure;
 extern Fl_Choice *payload_mode_list;
 extern Fl_Input *imagepacketurl;
 extern Fl_Check_Button *imagesave;

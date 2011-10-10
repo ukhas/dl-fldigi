@@ -63,8 +63,8 @@ static Fl_Double_Window* window;
 static FTextView* text;
 
 debug* debug::inst = 0;
-//debug::level_e debug::level = debug::INFO_LEVEL;
-debug::level_e debug::level = debug::DEBUG_LEVEL;
+debug::level_e debug::level = debug::INFO_LEVEL;
+//debug::level_e debug::level = debug::DEBUG_LEVEL;
 uint32_t debug::mask = ~0u;
 
 static const char* prefix[] = {

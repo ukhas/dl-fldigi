@@ -3985,10 +3985,13 @@ dl_fldigi::select_flight(index);}
             } {
               Fl_Button {} {
                 label Refresh
+                callback {dl_fldigi::uthr->flights();}
                 xywh {400 300 85 25}
               }
               Fl_Check_Button {} {
                 label {Show test docs}
+                callback {dl_fldigi::show_testing_flights = o->value();
+dl_fldigi::populate_flights();} selected
                 xywh {265 300 130 25} down_box DOWN_BOX
               }
               Fl_Input {} {
@@ -4003,11 +4006,11 @@ dl_fldigi::select_flight(index);}
                 label {Payload:} open
                 xywh {75 330 160 25} down_box BORDER_BOX
               } {}
-              Fl_Button {} {
+              Fl_Button payload_autoconfigure {
                 label Autoconfigure
                 xywh {330 330 155 25}
               }
-              Fl_Choice payload_mode_list {open selected
+              Fl_Choice payload_mode_list {open
                 xywh {240 330 85 25} down_box BORDER_BOX
               } {}
             }

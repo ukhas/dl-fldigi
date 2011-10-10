@@ -1080,7 +1080,7 @@ static void setup_signal_handlers(void)
 	action.sa_flags = 0;
 
 	action.sa_handler = handle_signal;
-	//sigaction(SIGSEGV, &action, NULL);
+	sigaction(SIGSEGV, &action, NULL);
 	sigaction(SIGILL, &action, NULL);
 	sigaction(SIGABRT, &action, NULL);
 	sigaction(SIGUSR2, &action, NULL);
@@ -1092,7 +1092,7 @@ static void setup_signal_handlers(void)
 	sigaddset(&action.sa_mask, SIGUSR2);
 	pthread_sigmask(SIG_BLOCK, &action.sa_mask, NULL);
 #else
-	//signal(SIGSEGV, handle_signal);
+	signal(SIGSEGV, handle_signal);
 	signal(SIGILL, handle_signal);
 	signal(SIGABRT, handle_signal);
 #endif

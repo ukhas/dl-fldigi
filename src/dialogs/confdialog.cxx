@@ -3109,7 +3109,18 @@ int index = reinterpret_cast<intptr_t>(o->data(o->value()));
 dl_fldigi::select_flight(index);
 }
 
+static void cb_Refresh1(Fl_Button*, void*) {
+  dl_fldigi::uthr->flights();
+}
+
+static void cb_Show(Fl_Check_Button* o, void*) {
+  dl_fldigi::show_testing_flights = o->value();
+dl_fldigi::populate_flights();
+}
+
 Fl_Choice *payload_list=(Fl_Choice *)0;
+
+Fl_Button *payload_autoconfigure=(Fl_Button *)0;
 
 Fl_Choice *payload_mode_list=(Fl_Choice *)0;
 
@@ -6961,10 +6972,12 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 290, 490, 75);
               o->box(FL_ENGRAVED_BOX);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { new Fl_Button(400, 300, 85, 25, _("Refresh"));
+              { Fl_Button* o = new Fl_Button(400, 300, 85, 25, _("Refresh"));
+                o->callback((Fl_Callback*)cb_Refresh1);
               } // Fl_Button* o
               { Fl_Check_Button* o = new Fl_Check_Button(265, 300, 130, 25, _("Show test docs"));
                 o->down_box(FL_DOWN_BOX);
+                o->callback((Fl_Callback*)cb_Show);
               } // Fl_Check_Button* o
               { Fl_Input* o = new Fl_Input(75, 300, 120, 25, _("Jump to:"));
                 o->when(FL_WHEN_CHANGED);
@@ -6974,8 +6987,8 @@ d frequency"));
               { payload_list = new Fl_Choice(75, 330, 160, 25, _("Payload:"));
                 payload_list->down_box(FL_BORDER_BOX);
               } // Fl_Choice* payload_list
-              { new Fl_Button(330, 330, 155, 25, _("Autoconfigure"));
-              } // Fl_Button* o
+              { payload_autoconfigure = new Fl_Button(330, 330, 155, 25, _("Autoconfigure"));
+              } // Fl_Button* payload_autoconfigure
               { payload_mode_list = new Fl_Choice(240, 330, 85, 25);
                 payload_mode_list->down_box(FL_BORDER_BOX);
               } // Fl_Choice* payload_mode_list

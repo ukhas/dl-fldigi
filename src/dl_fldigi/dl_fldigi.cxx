@@ -45,6 +45,16 @@ static string fldocs_cache_file;
 static void flight_docs_init();
 static void reset_gps_settings();
 static void periodically();
+static void select_payload(int index);
+static void select_mode(int index);
+
+/* FLTK doesn't provide something like this, as far as I can tell */
+class Fl_AutoLock
+{
+public:
+    Fl_AutoLock() { Fl::lock(); };
+    ~Fl_AutoLock() { Fl::unlock(); };
+};
 
 /* Functions init, ready and cleanup should only be called from main() */
 void init()
@@ -113,7 +123,7 @@ static void periodically()
 /* All other functions should hopefully be thread safe */
 void online(bool val)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     bool changed;
 
@@ -136,17 +146,12 @@ void online(bool val)
 
     confdialog_dl_online->value(val);
     set_menu_dl_online(val);
-
-    Fl::unlock();
 }
 
 bool online()
 {
-    Fl::lock();
-    bool val = dl_online;
-    Fl::unlock();
-
-    return val;
+    Fl_AutoLock lock;
+    return dl_online;
 }
 
 static void flight_docs_init()
@@ -278,7 +283,8 @@ static string flight_launch_date(const Json::Value &flight)
 static bool is_testing_flight(const Json::Value &flight)
 {
     /* TODO: is this a testing flight? */
-    return false;
+    /* Crude test: */
+    return !(flight["end"].isInt() && flight["end"].asInt());
 }
 
 static string flight_choice_item(const string &name,
@@ -318,14 +324,19 @@ static void flight_choice_callback(Fl_Widget *w, void *a)
 
 void populate_flights()
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     set<string> choice_items;
 
     if (hab_ui_exists)
+    {
+        habFlight->value(-1);
         habFlight->clear();
+    }
 
     flight_browser->clear();
+
+    select_flight(-1);
 
     vector<Json::Value>::const_iterator it;
     intptr_t i;
@@ -333,20 +344,22 @@ void populate_flights()
     {
         const Json::Value &root = (*it);
 
-        if (!root.isObject() || !root.size())
+        if (!root.isObject() || !root.size() ||
+            !root["_id"].isString() || !root["name"].isString())
         {
-            LOG_WARN("invalid flight doc: not an object");
+            LOG_WARN("invalid flight doc");
             continue;
         }
 
+        const string id = root["_id"].asString();
         const string name = root["name"].asString();
         const string payload_list = get_payload_list(root);
         const string date = flight_launch_date(root);
         void *userdata = reinterpret_cast<void *>(i);
 
-        if (!name.size() || !payload_list.size())
+        if (!id.size() || !name.size() || !payload_list.size())
         {
-            LOG_WARN("invalid flight doc: missing a key");
+            LOG_WARN("invalid flight doc");
             continue;
         }
 
@@ -373,38 +386,45 @@ void populate_flights()
 
         string browser_item = flight_browser_item(name, date, payload_list);
         flight_browser->add(browser_item.c_str(), userdata);
+
+        if (progdefaults.tracking_flight == id)
+        {
+            if (hab_ui_exists)
+                habFlight->value(habFlight->size() - 2);
+            flight_browser->value(flight_browser->size());
+            select_flight(i);
+        }
     }
+}
 
-    /* TODO: re-select previous item? */
-    /* TODO avoid duplicate names in choice somehow */
+static void payload_choice_callback(Fl_Widget *w, void *a)
+{
+    Fl_Choice *choice = static_cast<Fl_Choice *>(w);
+    Fl_Choice *other = static_cast<Fl_Choice *>(a);
 
-    Fl::unlock();
+    if (other)
+        other->value(choice->value());
+    select_payload(choice->value());
 }
 
 void select_flight(int index)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     LOG_DEBUG("Selecting flight, index %i", index);
 
     if (hab_ui_exists)
     {
+        habCHPayload->value(-1);
         habCHPayload->clear();
-        habCHMode->clear();
-        habConfigureButton->clear();
-        habSwitchModes->clear();
-
         habCHPayload->deactivate();
-        habCHMode->deactivate();
-        habConfigureButton->deactivate();
-        habSwitchModes->deactivate();
     }
 
+    payload_list->value(-1);
     payload_list->clear();
-    payload_mode_list->clear();
-
     payload_list->deactivate();
-    payload_mode_list->deactivate();
+
+    select_payload(-1);
 
     int max = flight_docs.size();
     if (index < 0 || index >= max)
@@ -412,30 +432,97 @@ void select_flight(int index)
 
     const Json::Value &flight = flight_docs[index];
 
-    if (!flight.isObject() || !flight.size())
+    if (!flight.isObject() || !flight.size() || !flight["_id"].isString())
         return;
 
+    const string id = flight["_id"].asString();
     const Json::Value &payloads = flight["payloads"];
 
-    if (!payloads.isObject() || !payloads.size())
+    if (!id.size() || !payloads.isObject() || !payloads.size())
         return;
 
     payload_index = payloads.getMemberNames();
+    int auto_select = 0;
 
     vector<string>::const_iterator it;
-    for (it = payload_index.begin(); it != payload_index.end(); it++)
+    int i;
+    for (it = payload_index.begin(), i = 0;
+         it != payload_index.end();
+         it++, i++)
     {
-        habCHPayload->add(escape_menu_string(*it).c_str());
-        payload_list->add(escape_menu_string(*it).c_str());
+        if (hab_ui_exists)
+            habCHPayload->add(escape_menu_string(*it).c_str(), (int) 0,
+                              payload_choice_callback, payload_list);
+        payload_list->add(escape_menu_string(*it).c_str(), (int) 0,
+                          payload_choice_callback, habCHPayload);
+
+        if ((*it) == progdefaults.tracking_payload)
+            auto_select = i;
     }
 
-    habCHPayload->activate();
+    if (hab_ui_exists)
+    {
+        habCHPayload->activate();
+        habCHPayload->value(auto_select);
+    }
+
     payload_list->activate();
+    payload_list->value(auto_select);
 
-    /* TODO: select_payload(0); */
-    /* remove this: */ habCHPayload->value(1); payload_list->value(1);
+    if (progdefaults.tracking_flight != id)
+    {
+        progdefaults.tracking_flight = id;
+        progdefaults.changed = true;
+    }
 
-    Fl::unlock();
+    select_payload(auto_select);
+}
+
+static void select_payload(int index)
+{
+    Fl_AutoLock lock;
+    LOG_DEBUG("Selecting payload %i", index);
+
+    if (hab_ui_exists)
+    {
+        habCHMode->value(-1);
+        habCHMode->clear();
+        habCHMode->deactivate();
+    }
+
+    payload_mode_list->value(-1);
+    payload_mode_list->clear();
+    payload_mode_list->deactivate();
+
+    select_mode(-1);
+
+    int max = payload_index.size();
+    if (index < 0 || index >= max)
+        return;
+
+    const string name(payload_index[index]);
+    if (progdefaults.tracking_payload != name)
+    {
+        progdefaults.tracking_payload = name;
+        progdefaults.changed = true;
+    }
+
+    /* TODO: select payload */
+}
+
+static void select_mode(int index)
+{
+    Fl_AutoLock lock;
+
+    if (hab_ui_exists)
+    {
+        habConfigureButton->deactivate();
+        habSwitchModes->deactivate();
+    }
+
+    payload_autoconfigure->deactivate();
+
+    /* TODO: select mode */
 }
 
 static void reset_gps_settings()
@@ -450,14 +537,13 @@ static void reset_gps_settings()
 
 void changed(enum changed_groups thing)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
     dirty |= thing;
-    Fl::unlock();
 }
 
 void commit()
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     /* Update something if its settings change; fairly simple: */
     if (dirty & CH_UTHR_SETTINGS)
@@ -494,31 +580,25 @@ void commit()
     }
 
     dirty = CH_NONE;
-
-    Fl::unlock();
 }
 
 void DExtractorManager::status(const string &msg)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     LOG_DEBUG("hbtE %s", msg.c_str());
     /* TODO: Log message from extractor */
     /* TODO: put_status safely */
-
-    Fl::unlock();
 }
 
 void DExtractorManager::data(const Json::Value &d)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     if (!hab_ui_exists)
         return;
 
     /* TODO: Data to fill out HAB UI */
-
-    Fl::unlock();
 }
 
 /* TODO: abort these if critical settings are missing and don't upload
@@ -531,7 +611,7 @@ void DExtractorManager::data(const Json::Value &d)
 
 void DUploaderThread::settings()
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     UploaderThread::reset();
 
@@ -548,8 +628,6 @@ void DUploaderThread::settings()
         return;
     }
 
-    Fl::unlock();
-
     UploaderThread::settings(progdefaults.myCall, progdefaults.habitat_uri,
                              progdefaults.habitat_db);
 }
@@ -557,7 +635,7 @@ void DUploaderThread::settings()
 /* This function is used for stationary listener telemetry */
 void DUploaderThread::listener_telemetry()
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     if (current_location_mode != LOC_STATIONARY)
     {
@@ -590,8 +668,6 @@ void DUploaderThread::listener_telemetry()
         return;
     }
 
-    Fl::unlock();
-
     Json::Value data(Json::objectValue);
 
     /* TODO: is it really a good idea to upload time like this? */
@@ -620,17 +696,13 @@ void DUploaderThread::listener_telemetry()
 
 static void info_add(Json::Value &data, const string &key, const string &value)
 {
-    Fl::lock();
-
     if (value.size())
         data[key] = value;
-
-    Fl::unlock();
 }
 
 void DUploaderThread::listener_info()
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     Json::Value data(Json::objectValue);
     info_add(data, "name", progdefaults.myName);
@@ -644,31 +716,27 @@ void DUploaderThread::listener_info()
         return;
     }
 
-    Fl::unlock();
-
     UploaderThread::listener_info(data);
 }
 
 /* These functions must try to be thread safe. */
 void DUploaderThread::log(const string &message)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
     LOG_DEBUG("hbtUT %s", message.c_str());
     /* TODO: put_status safely */
-    Fl::unlock();
 }
 
 void DUploaderThread::warning(const string &message)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
     LOG_WARN("hbtUT %s", message.c_str());
     /* TODO: put_status safely & kick up a fuss */
-    Fl::unlock();
 }
 
 void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
 {
-    Fl::lock();
+    Fl_AutoLock lock;
 
     flight_docs = new_flight_docs;
 
@@ -700,8 +768,6 @@ void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
     }
 
     populate_flights();
-
-    Fl::unlock();
 }
 
 } /* namespace dl_fldigi */
