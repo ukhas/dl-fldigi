@@ -1461,13 +1461,13 @@ void cb_mnuVisitDLClient(Fl_Widget*, void*)
 
 void cb_mnuVisitTracker(Fl_Widget*, void*)
 {
-    /* TODO: update with habitat ui address */
+    /* TODO: HABITAT-LATER update with habitat ui address */
 	cb_mnuVisitURL(0, (void *) "http://spacenear.us/tracker");
 }
 
 void cb_mnuVisitView(Fl_Widget*, void*)
 {
-	// TODO cb_mnuVisitURL(0, (void*)string(progdefaults.server_location).append("view.php").c_str());
+	// TODO HABITAT-LATER cb_mnuVisitURL(0, (void*)string(progdefaults.server_location).append("view.php").c_str());
 }
 
 //End
@@ -5541,7 +5541,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->when(FL_WHEN_RELEASE);
 		habConfigureButton->align(FL_ALIGN_INSIDE);
 		habConfigureButton->deactivate();
-		// TODO habConfigureButton->callback(func);
+		// TODO HABITAT habConfigureButton->callback(func);
 		}
 
 		{ habSwitchModes = new Fl_Button(rightof(habConfigureButton) + 2, habRowOneY, w_habSwitchModes, Hentry, _("Auto-mode-switch"));
@@ -5552,7 +5552,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habSwitchModes->when(FL_WHEN_RELEASE);
 		habSwitchModes->align(FL_ALIGN_INSIDE);
 		habSwitchModes->deactivate();
-		// TODO habSwitchModes->callback(func);
+		// TODO HABITAT habSwitchModes->callback(func);
 		}
 
 		/* Row two: [callsign] [time] [lat] [lon] [alt] [checksum] [bearing] [distance] [time since last rx] */

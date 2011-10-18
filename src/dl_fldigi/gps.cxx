@@ -498,7 +498,7 @@ static void dl_fldigi_gps_post(float lat, float lon, int alt, char *identity)
 
 	/* XXX is progdefaults thread safe? */
 	/* dl_fldigi_post(rx_chase, progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str()); */
-    /* TODO habitat */
+    /* TODO HABITAT gps upload */
 }
 
 /**

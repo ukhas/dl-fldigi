@@ -1247,7 +1247,7 @@
         ELEM_(std::string, habitat_db, "HABITAT_DB",                                    \
                 "habitat CouchDB databse", "habitat")                                   \
                                                                                         \
-        /* TODO: swap to habitat! Give SSDV the UploaderThread object */                \
+        /* TODO HABITAT: swap to habitat! Give SSDV the UploaderThread object */                \
         ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL",                           \
                 "Remote URL", "http://www.sanslogic.co.uk/ssdv/data.php")               \
         ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER",                          \

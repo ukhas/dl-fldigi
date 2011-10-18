@@ -25,7 +25,7 @@ namespace dl_fldigi {
 /* How does online/offline work? if online() is false, uthr->settings() will
  * reset the UploaderThread, leaving it unintialised */
 
-/* TODO: maybe upload the git commit when compiled as the 'version' */
+/* TODO: HABITAT maybe upload the git commit when compiled as the 'version' */
 
 DExtractorManager *extrmgr;
 DUploaderThread *uthr;
@@ -112,7 +112,7 @@ void cleanup()
 
 static void periodically()
 {
-    /* TODO: arrange for this to be called periodically by fltk */
+    /* TODO: HABITAT arrange for this to be called periodically by fltk */
 
     uthr->listener_info();
 
@@ -282,7 +282,7 @@ static string flight_launch_date(const Json::Value &flight)
 
 static bool is_testing_flight(const Json::Value &flight)
 {
-    /* TODO: is this a testing flight? */
+    /* TODO: HABITAT is this a testing flight? */
     /* Crude test: */
     return !(flight["end"].isInt() && flight["end"].asInt());
 }
@@ -507,7 +507,7 @@ static void select_payload(int index)
         progdefaults.changed = true;
     }
 
-    /* TODO: select payload */
+    /* TODO: HABITAT select payload */
 }
 
 static void select_mode(int index)
@@ -522,7 +522,7 @@ static void select_mode(int index)
 
     payload_autoconfigure->deactivate();
 
-    /* TODO: select mode */
+    /* TODO: HABITAT select mode */
 }
 
 static void reset_gps_settings()
@@ -531,7 +531,7 @@ static void reset_gps_settings()
 
     if (current_location_mode == LOC_GPS)
     {
-        /* TODO gps_thread = new stuff */
+        /* TODO HABITAT gps_thread = new stuff */
     }
 }
 
@@ -587,8 +587,8 @@ void DExtractorManager::status(const string &msg)
     Fl_AutoLock lock;
 
     LOG_DEBUG("hbtE %s", msg.c_str());
-    /* TODO: Log message from extractor */
-    /* TODO: put_status safely */
+    /* TODO: HABITAT Log message from extractor */
+    /* TODO: HABITAT put_status safely */
 }
 
 void DExtractorManager::data(const Json::Value &d)
@@ -598,11 +598,8 @@ void DExtractorManager::data(const Json::Value &d)
     if (!hab_ui_exists)
         return;
 
-    /* TODO: Data to fill out HAB UI */
+    /* TODO: HABITAT Data to fill out HAB UI */
 }
-
-/* TODO: abort these if critical settings are missing and don't upload
- * empty string values (e.g., "antenna": ""). */
 
 /* All these functions are called via a DUploaderThread pointer so
  * the fact that they are non virtual is OK. Having a different set of
@@ -670,7 +667,7 @@ void DUploaderThread::listener_telemetry()
 
     Json::Value data(Json::objectValue);
 
-    /* TODO: is it really a good idea to upload time like this? */
+    /* TODO: HABITAT is it really a good idea to upload time like this? */
     struct tm tm;
     time_t now;
 
@@ -724,14 +721,14 @@ void DUploaderThread::log(const string &message)
 {
     Fl_AutoLock lock;
     LOG_DEBUG("hbtUT %s", message.c_str());
-    /* TODO: put_status safely */
+    /* TODO: HABITAT put_status safely */
 }
 
 void DUploaderThread::warning(const string &message)
 {
     Fl_AutoLock lock;
     LOG_WARN("hbtUT %s", message.c_str());
-    /* TODO: put_status safely & kick up a fuss */
+    /* TODO: HABITAT put_status safely & kick up a fuss */
 }
 
 void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)

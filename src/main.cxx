@@ -360,7 +360,7 @@ int main(int argc, char ** argv)
 	trx_start();
 
 	/* Needs to be initialised once we have progdefaults AND testCommPorts */
-	/* TODO (re)move */ dl_fldigi_gps_init();
+	/* TODO HABITAT (re)move */ dl_fldigi_gps_init();
 
 #if SHOW_WIZARD_BEFORE_MAIN_WINDOW
 	if (!have_config) {
