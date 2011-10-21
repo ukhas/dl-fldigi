@@ -112,7 +112,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;}
+        callback {progdefaults.changed = true;} selected
         tooltip {Operator information} xywh {0 25 500 345} labelsize 12 when 1
       } {
         Fl_Group {} {
@@ -3976,14 +3976,20 @@ progdefaults.changed = true;}
               callback {if (habFlight)
     habFlight->value(o->value() - 1);
 int index = reinterpret_cast<intptr_t>(o->data(o->value()));
-dl_fldigi::select_flight(index);}
+dl_fldigi::select_flight(index);
+
+/* Handle a double click and autoconfigure.
+ * This payload is ready for configuring iff dl_fldigi.cxx
+ * has activated the autoconfigure button. */
+if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
+    dl_fldigi::auto_configure();}
               xywh {5 55 490 230} type Hold
               code0 {o->column_widths(flight_browser_columns);}
             }
             Fl_Group {} {open
               xywh {5 290 490 75} box ENGRAVED_BOX align 21
             } {
-              Fl_Button {} {
+              Fl_Button flight_docs_refresh {
                 label Refresh
                 callback {dl_fldigi::uthr->flights();}
                 xywh {400 300 85 25}
@@ -3991,7 +3997,7 @@ dl_fldigi::select_flight(index);}
               Fl_Check_Button {} {
                 label {Show test docs}
                 callback {dl_fldigi::show_testing_flights = o->value();
-dl_fldigi::populate_flights();} selected
+dl_fldigi::populate_flights();}
                 xywh {265 300 130 25} down_box DOWN_BOX
               }
               Fl_Input {} {
@@ -4004,14 +4010,15 @@ dl_fldigi::populate_flights();} selected
               }
               Fl_Choice payload_list {
                 label {Payload:} open
-                xywh {75 330 160 25} down_box BORDER_BOX
+                xywh {75 330 140 25} down_box BORDER_BOX
               } {}
               Fl_Button payload_autoconfigure {
                 label Autoconfigure
+                callback {dl_fldigi::auto_configure();}
                 xywh {330 330 155 25}
               }
               Fl_Choice payload_mode_list {open
-                xywh {240 330 85 25} down_box BORDER_BOX
+                xywh {220 330 105 25} down_box BORDER_BOX
               } {}
             }
           }

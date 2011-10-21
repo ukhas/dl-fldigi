@@ -147,6 +147,7 @@ extern bool			bWF_only;
 extern bool					bHAB;
 extern Fl_Group				*TopFrameHAB;
 extern Fl_Choice			*habFlight;
+extern Fl_Button			*habOpenBrowser;
 extern Fl_Choice			*habCHPayload;
 extern Fl_Choice			*habCHMode;
 extern Fl_Button			*habConfigureButton;
@@ -321,5 +322,6 @@ void open_recv_folder(const char *fname);
 
 // dl-fldigi
 void set_menu_dl_online(bool val);
+void set_menu_dl_refresh_active(bool active);
 
 #endif

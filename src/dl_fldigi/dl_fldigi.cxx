@@ -17,6 +17,7 @@
 #include "fl_digi.h"
 #include "confdialog.h"
 #include "main.h"
+#include "rtty.h"
 
 using namespace std;
 
@@ -25,7 +26,8 @@ namespace dl_fldigi {
 /* How does online/offline work? if online() is false, uthr->settings() will
  * reset the UploaderThread, leaving it unintialised */
 
-/* TODO: HABITAT maybe upload the git commit when compiled as the 'version' */
+/* TODO: HABITAT-LATER maybe upload the git commit when compiled as the
+ * 'version' */
 
 DExtractorManager *extrmgr;
 DUploaderThread *uthr;
@@ -36,6 +38,12 @@ static EZ::cURLGlobal *cgl;
 
 static vector<Json::Value> flight_docs;
 static vector<string> payload_index;
+/* These pointers just point at some part of the heap allocated by something
+ * in the flight_docs vector; they're invalidated when filght_docs is modified
+ * but we make sure to update them when that happens (only happens when
+ * new data is downloaded; populate_flights cleans up). */
+static const Json::Value *cur_flight, *cur_payload, *cur_mode;
+static int cur_mode_index, cur_payload_modecount;
 static bool dl_online, downloaded_once, hab_ui_exists;
 static int dirty;
 static enum location_mode current_location_mode;
@@ -146,6 +154,12 @@ void online(bool val)
 
     confdialog_dl_online->value(val);
     set_menu_dl_online(val);
+    set_menu_dl_refresh_active(dl_online);
+
+    if (dl_online)
+        flight_docs_refresh->activate();
+    else
+        flight_docs_refresh->deactivate();
 }
 
 bool online()
@@ -413,6 +427,8 @@ void select_flight(int index)
 
     LOG_DEBUG("Selecting flight, index %i", index);
 
+    cur_flight = NULL;
+
     if (hab_ui_exists)
     {
         habCHPayload->value(-1);
@@ -441,6 +457,16 @@ void select_flight(int index)
     if (!id.size() || !payloads.isObject() || !payloads.size())
         return;
 
+    cur_flight = &flight;
+
+    if (progdefaults.tracking_flight != id)
+    {
+        progdefaults.tracking_flight = id;
+        progdefaults.tracking_payload = "";
+        progdefaults.tracking_mode = -1;
+        progdefaults.changed = true;
+    }
+
     payload_index = payloads.getMemberNames();
     int auto_select = 0;
 
@@ -456,7 +482,7 @@ void select_flight(int index)
         payload_list->add(escape_menu_string(*it).c_str(), (int) 0,
                           payload_choice_callback, habCHPayload);
 
-        if ((*it) == progdefaults.tracking_payload)
+        if ((*it).size() && (*it) == progdefaults.tracking_payload)
             auto_select = i;
     }
 
@@ -469,13 +495,68 @@ void select_flight(int index)
     payload_list->activate();
     payload_list->value(auto_select);
 
-    if (progdefaults.tracking_flight != id)
+    select_payload(auto_select);
+}
+
+static string mode_menu_name(int index, const Json::Value &settings)
+{
+    /* index: modulation type
+     * e.g.:  2: RTTY 300 */
+
+    ostringstream name;
+
+    name << (index + 1) << ": ";
+
+    if (false)
     {
-        progdefaults.tracking_flight = id;
-        progdefaults.changed = true;
+bad:
+        name << "Unknown";
+        return escape_menu_string(name.str());
     }
 
-    select_payload(auto_select);
+    if (!settings.isObject() || !settings.size())
+        goto bad;
+
+    if (!settings["modulation"].isString())
+        goto bad;
+
+    string modulation = settings["modulation"].asString();
+    string type_key;
+
+    if (modulation == "rtty")
+    {
+        modulation = "RTTY";
+        type_key = "baud";
+    }
+    else if (modulation == "dominoex")
+    {
+        modulation = "DOMEX";
+        type_key = "type";
+    }
+    else
+    {
+        goto bad;
+    }
+
+    name << modulation;
+
+    const Json::Value &type = settings[type_key];
+    if (type.isInt())
+        name << " " << type.asInt();
+    else if (type.isDouble())
+        name << " " << type.asDouble();
+
+    return escape_menu_string(name.str());
+}
+
+static void mode_choice_callback(Fl_Widget *w, void *a)
+{
+    Fl_Choice *choice = static_cast<Fl_Choice *>(w);
+    Fl_Choice *other = static_cast<Fl_Choice *>(a);
+
+    if (other)
+        other->value(choice->value());
+    select_mode(choice->value());
 }
 
 static void select_payload(int index)
@@ -483,11 +564,15 @@ static void select_payload(int index)
     Fl_AutoLock lock;
     LOG_DEBUG("Selecting payload %i", index);
 
+    cur_payload = NULL;
+    cur_payload_modecount = -1;
+
     if (hab_ui_exists)
     {
         habCHMode->value(-1);
         habCHMode->clear();
         habCHMode->deactivate();
+        habSwitchModes->deactivate();
     }
 
     payload_mode_list->value(-1);
@@ -495,6 +580,9 @@ static void select_payload(int index)
     payload_mode_list->deactivate();
 
     select_mode(-1);
+
+    if (!cur_flight)
+        return;
 
     int max = payload_index.size();
     if (index < 0 || index >= max)
@@ -504,25 +592,364 @@ static void select_payload(int index)
     if (progdefaults.tracking_payload != name)
     {
         progdefaults.tracking_payload = name;
+        progdefaults.tracking_mode = -1;
         progdefaults.changed = true;
     }
 
-    /* TODO: HABITAT select payload */
+    if (!name.size())
+        return;
+
+    const Json::Value &payloads = (*cur_flight)["payloads"];
+    if (!payloads.isObject() || !payloads.size())
+        return;
+
+    const Json::Value &payload = payloads[name];
+    if (!payload.isObject() || !payload.size())
+        return;
+
+    cur_payload = &payload;
+
+    const Json::Value *telemetry_settings = &(payload["telemetry"]);
+
+    if (!telemetry_settings->size())
+        return;
+
+    Json::Value temporary(Json::arrayValue);
+
+    /* If telemetry_settings is an array, it's a list of possible choices.
+     * Otherwise, it's the only choice. */
+    if (telemetry_settings->isObject())
+    {
+        temporary.append(*telemetry_settings);
+        telemetry_settings = &temporary;
+    }
+
+    if (!telemetry_settings->isArray())
+        return;
+
+    Json::Value::const_iterator it;
+    int i;
+    for (it = telemetry_settings->begin(), i = 0;
+         it != telemetry_settings->end();
+         it++, i++)
+    {
+        const string name = mode_menu_name(i, (*it));
+
+        if (hab_ui_exists)
+            habCHMode->add(name.c_str(), (int) 0,
+                           mode_choice_callback, payload_mode_list);
+        payload_mode_list->add(name.c_str(), (int) 0,
+                               mode_choice_callback, habCHMode);
+    }
+
+    cur_payload_modecount = i; /* i == telemetry_settings.size() */
+
+    int auto_select = progdefaults.tracking_mode;
+    if (auto_select < 0 || auto_select >= i)
+    {
+        auto_select = 0;
+    }
+
+    if (hab_ui_exists)
+    {
+        if (i > 1)
+            habSwitchModes->activate();
+
+        habCHMode->activate();
+        habCHMode->value(auto_select);
+    }
+
+    payload_mode_list->activate();
+    payload_mode_list->value(auto_select);
+
+    select_mode(auto_select);
 }
 
 static void select_mode(int index)
 {
     Fl_AutoLock lock;
 
+    cur_mode = NULL;
+    cur_mode_index = -1;
+
     if (hab_ui_exists)
-    {
         habConfigureButton->deactivate();
-        habSwitchModes->deactivate();
-    }
 
     payload_autoconfigure->deactivate();
 
-    /* TODO: HABITAT select mode */
+    if (!cur_flight || !cur_payload)
+        return;
+
+    const Json::Value &telemetry_settings = (*cur_payload)["telemetry"];
+
+    if (!telemetry_settings.size())
+        return;
+
+    if (telemetry_settings.isObject())
+    {
+        if (index != 0)
+            return;
+
+        cur_mode = &telemetry_settings;
+    }
+    else if (telemetry_settings.isArray())
+    {
+        int max = telemetry_settings.size();
+        if (index < 0 || index >= max)
+            return;
+
+        cur_mode = &(telemetry_settings[index]);
+    }
+
+    if (!cur_mode->isObject() || !cur_mode->size())
+    {
+        cur_mode = NULL;
+        return;
+    }
+
+    cur_mode_index = index;
+
+    if (progdefaults.tracking_mode != index)
+    {
+        progdefaults.tracking_mode = index;
+        progdefaults.changed = true;
+    }
+
+    if (hab_ui_exists)
+        habConfigureButton->activate();
+
+    payload_autoconfigure->activate();
+}
+
+void auto_configure()
+{
+    Fl_AutoLock lock;
+
+    if (!cur_mode)
+        return;
+
+    const Json::Value &settings = *cur_mode;
+
+    if (!settings.isObject() || !settings.size())
+        return;
+
+    if (!settings["modulation"].isString())
+        return;
+
+    const string modulation = settings["modulation"].asString();
+
+    if (modulation == "rtty")
+    {
+        bool configured_something = false;
+
+        /* Shift */
+        if (settings["shift"].isNumeric())
+        {
+            double shift = settings["shift"].asDouble();
+
+            /* Look in the standard shifts first */
+            /* XXX hardcoded list size :-( */
+            int stdshifts = 11;
+            int search;
+            for (search = 0; search < stdshifts; search++)
+            {
+                double diff = rtty::SHIFT[search] - shift;
+                /* I love floats :-( */
+                if (diff < 0.1 && diff > -0.1)
+                {
+                    selShift->value(search);
+                    selCustomShift->deactivate();
+                    progdefaults.rtty_shift = search;
+                    break;
+                }
+            }
+
+            /* If not found, search == stdshifts, which is the index of
+             * the "Custom" menu item */
+            if (search == stdshifts)
+            {
+                selShift->value(stdshifts);
+                selCustomShift->activate();
+                progdefaults.rtty_shift = -1;
+                selCustomShift->value(shift);
+                progdefaults.rtty_custom_shift = shift;
+            }
+
+            configured_something = true;
+        }
+
+        /* Baud */
+        if (settings["baud"].isNumeric())
+        {
+            double baud = settings["baud"].asDouble();
+            int stdbauds = 12;
+            int search;
+            for (search = 0; search < stdbauds; search++)
+            {
+                double diff = rtty::BAUD[search] - baud;
+                if (diff < 0.01 && diff > -0.01)
+                {
+                    selBaud->value(search);
+                    progdefaults.rtty_baud = search;
+                    configured_something = true;
+                    break;
+                }
+            }
+        }
+
+        /* Encoding */
+        if (settings["encoding"].isString())
+        {
+            const string encoding = settings["encoding"].asString();
+            int select = -1;
+
+            /* rtty::BITS[] = {5, 7, 8}; */
+            if (encoding == "baudot")
+                select = 0;
+            else if (encoding == "ascii-7")
+                select = 1;
+            else if (encoding == "ascii-8")
+                select = 2;
+            
+            if (select != -1)
+            {
+                selBits->value(select);
+                progdefaults.rtty_bits = select;
+
+                /* From selBits' callback */
+                if (select == 0)
+                {
+                    progdefaults.rtty_parity = RTTY_PARITY_NONE;
+                    selParity->value(RTTY_PARITY_NONE);
+                }
+
+                configured_something = true;
+            }
+        }
+
+        /* Parity: "none|even|odd|zero|one". Also, parity is disabled when
+         * using baudot (rtty_bits == 0) */
+        if (settings["parity"].isString() && progdefaults.rtty_bits != 0)
+        {
+            const string parity = settings["parity"].asString();
+            int select = -1;
+
+            if (parity == "none")
+                select = RTTY_PARITY_NONE;
+            else if (parity == "even")
+                select = RTTY_PARITY_EVEN;
+            else if (parity == "odd")
+                select = RTTY_PARITY_ODD;
+            else if (parity == "zero")
+                select = RTTY_PARITY_ZERO;
+            else if (parity == "one")
+                select = RTTY_PARITY_ONE;
+
+            if (select != -1)
+            {
+                selParity->value(select);
+                progdefaults.rtty_parity = select;
+
+                configured_something = true;
+            }
+        }
+
+        /* Stop: "1|1.5|2". */
+        if (settings["stop"].isNumeric())
+        {
+            int select = -1;
+
+            if (settings["stop"].isInt())
+            {
+                int stop = settings["stop"].asInt();
+                if (stop == 1)
+                    select = 0;
+                else if (stop == 2)
+                    select = 2;
+            }
+            else
+            {
+                double stop = settings["stop"].asDouble();
+                if (stop > 1.49 && stop < 1.51)
+                    select = 1;
+            }
+
+            if (select != -1)
+            {
+                progdefaults.rtty_stop = select;
+                selStopBits->value(select);
+
+                configured_something = true;
+            }
+        }
+
+        /* Finish up... */
+        if (configured_something)
+        {
+            init_modem_sync(MODE_RTTY);
+            resetRTTY();
+            progdefaults.changed = true;
+        }
+    }
+    else if (modulation == "dominoex")
+    {
+        if (settings["type"].isInt())
+        {
+            int type = settings["type"].asInt();
+            int modem = -1;
+
+            switch (type)
+            {
+                case 4:
+                    modem = MODE_DOMINOEX4;
+                    break;
+
+                case 5:
+                    modem = MODE_DOMINOEX5;
+                    break;
+
+                case 8:
+                    modem = MODE_DOMINOEX8;
+                    break;
+
+                case 11:
+                    modem = MODE_DOMINOEX11;
+                    break;
+
+                case 16:
+                    modem = MODE_DOMINOEX16;
+                    break;
+
+                case 22:
+                    modem = MODE_DOMINOEX22;
+                    break;
+            }
+
+            if (modem != -1)
+            {
+                init_modem_sync(modem);
+                resetDOMEX();
+            }
+        }
+    }
+
+    /* TODO HABITAT auto_configure */
+}
+
+void auto_switchmode()
+{
+    Fl_AutoLock lock;
+
+    int next = cur_mode_index + 1;
+    if (next >= cur_payload_modecount)
+        next = 0;
+
+    if (hab_ui_exists)
+        habCHMode->value(next);
+    payload_mode_list->value(next);
+
+    select_mode(next);
+    auto_configure();
 }
 
 static void reset_gps_settings()

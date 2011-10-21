@@ -29,15 +29,6 @@ enum location_mode
     LOC_GPS
 };
 
-enum populate_destinations
-{
-    POP_INDEXES = 0x01,
-    POP_CHOICE = 0x02,
-    POP_BROWSER = 0x04,
-    POP_ALL = 0x01 | 0x02 | 0x04,
-    POP_TESTING_TOO = 0x08
-};
-
 class DExtractorManager : public habitat::ExtractorManager
 {
 public:
@@ -79,6 +70,8 @@ void changed(enum changed_groups thing);
 void commit();
 void populate_flights();
 void select_flight(int index);
+void auto_configure();
+void auto_switchmode();
 
 } /* namespace dl_fldigi */
 

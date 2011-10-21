@@ -173,6 +173,7 @@ bool bHAB = false;
 #define WF_MLABEL              _("Minimal controls")
 #define SHOW_CHANNELS          _("Show channels")
 #define DLFLDIGI_ONLINE_LABEL  _("Online")
+#define DLFLDIGI_REFRESH_LABEL _("Refresh flight docs")
 #define LOG_CONNECT_SERVER     _("Connect to server")
 
 using namespace std;
@@ -338,6 +339,7 @@ Fl_Button			*btnClearMViewer = 0;
 //jcoxon
 Fl_Group			*TopFrameHAB;
 Fl_Choice			*habFlight;
+Fl_Button			*habOpenBrowser;
 Fl_Choice			*habCHPayload;
 Fl_Choice			*habCHMode;
 Fl_Button			*habConfigureButton;
@@ -356,6 +358,7 @@ Fl_Output			*habString;
 int w_TopFrameHAB = 800;
 
 int w_habFlight = 300;
+int w_habOpenBrowser = 80;
 int w_habCHPayload = 100;
 int w_habConfigureButton = 120;
 int w_habSwitchModes = 120;
@@ -1446,11 +1449,27 @@ void cb_toggle_dl_online(Fl_Widget *w, void *)
     dl_fldigi::online(val);
 }
 
+void cb_dlfldigi_autoconfigure(Fl_Widget *w, void *)
+{
+    dl_fldigi::auto_configure();
+}
+
+void cb_dlfldigi_autoswitchmode(Fl_Widget *w, void *)
+{
+    dl_fldigi::auto_switchmode();
+}
+
 //jcoxon added 21/3/10
 
-void cb_mnuConfigDLClient(Fl_Menu_*, void*) {
+void cb_mnuConfigDLClient(Fl_Widget *, void *a) {
+    Fl_Widget *open_tab = (Fl_Widget *) a;
+    if (open_tab == NULL)
+        open_tab = tabDLEnable;
+    else if (open_tab == (void *) 1)
+        open_tab = tabDLPayload;
 	progdefaults.loadDefaults();
 	tabsConfigure->value(tabDL);
+    tabsDL->value(open_tab);
 	dlgConfig->show();
 }
 
@@ -3212,7 +3231,7 @@ Fl_Menu_Item menu_[] = {
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
-{ make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(DLFLDIGI_REFRESH_LABEL, pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -5022,7 +5041,7 @@ Fl_Menu_Item alt_menu_[] = {
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
-{ make_icon_label(_("Refresh Payload Data"), pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(DLFLDIGI_REFRESH_LABEL, pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -5506,7 +5525,7 @@ void create_fl_digi_main_dl_fldigi() {
 		TopFrameHAB = new Fl_Group(0, Y, WNOM, TopFrameHABheight - 1);
 		TopFrameHAB->box(FL_UP_BOX);
 
-		/* Row one: [flight] [payload] [mode] [autoconfigure] [autoswitch] */
+		/* Row one: [flight] [browse] [payload] [mode] [autoconfigure] [autoswitch] */
 
 		int habRowOneY = Y + 18;
 
@@ -5517,7 +5536,18 @@ void create_fl_digi_main_dl_fldigi() {
 		habFlight->when(FL_WHEN_CHANGED);
 		}
 
-		{ habCHPayload = new Fl_Choice(rightof(habFlight) + 2, habRowOneY, w_habCHPayload, Hentry, _("Payload"));
+        { habOpenBrowser = new Fl_Button(rightof(habFlight) + 2, habRowOneY, w_habOpenBrowser, Hentry, _("Browse all"));
+        habOpenBrowser->tooltip(_("Open the (easier to use) flight browser and see testing flights too"));
+		habOpenBrowser->labeltype(FL_NORMAL_LABEL);
+		habOpenBrowser->labelfont(0);
+		habOpenBrowser->labelsize(13);
+		habOpenBrowser->when(FL_WHEN_RELEASE);
+		habOpenBrowser->align(FL_ALIGN_INSIDE);
+        habOpenBrowser->callback(cb_mnuConfigDLClient);
+        habOpenBrowser->user_data((void *) 1);
+        }
+
+		{ habCHPayload = new Fl_Choice(rightof(habOpenBrowser) + 2, habRowOneY, w_habCHPayload, Hentry, _("Payload"));
 		habCHPayload->tooltip(_("If applicable, select the payload to track from this flight"));
 		habCHPayload->down_box(FL_BORDER_BOX);
 		habCHPayload->align(FL_ALIGN_TOP);
@@ -5541,7 +5571,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habConfigureButton->when(FL_WHEN_RELEASE);
 		habConfigureButton->align(FL_ALIGN_INSIDE);
 		habConfigureButton->deactivate();
-		// TODO HABITAT habConfigureButton->callback(func);
+		habConfigureButton->callback(cb_dlfldigi_autoconfigure);
 		}
 
 		{ habSwitchModes = new Fl_Button(rightof(habConfigureButton) + 2, habRowOneY, w_habSwitchModes, Hentry, _("Auto-mode-switch"));
@@ -5552,7 +5582,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habSwitchModes->when(FL_WHEN_RELEASE);
 		habSwitchModes->align(FL_ALIGN_INSIDE);
 		habSwitchModes->deactivate();
-		// TODO HABITAT habSwitchModes->callback(func);
+		habSwitchModes->callback(cb_dlfldigi_autoswitchmode);
 		}
 
 		/* Row two: [callsign] [time] [lat] [lon] [alt] [checksum] [bearing] [distance] [time since last rx] */
@@ -6862,4 +6892,17 @@ void set_menu_dl_online(bool val)
         m->clear();
 }
 
+void set_menu_dl_refresh_active(bool active)
+{
+    Fl_Menu_Item *m;
 
+    if (bHAB)
+        m = getMenuItem(DLFLDIGI_REFRESH_LABEL, alt_menu_);
+    else
+        m = getMenuItem(DLFLDIGI_REFRESH_LABEL);
+
+    if (active)
+        m->activate();
+    else
+        m->deactivate();
+}

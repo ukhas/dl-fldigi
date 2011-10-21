@@ -1221,6 +1221,7 @@
         ELEM_(std::string, tracking_flight, "FLIGHT_DOCID", "The selected flight", "")  \
         ELEM_(std::string, tracking_payload, "FLIGHT_PAYLOAD",                          \
                 "The payload selected in the current flight", "")                       \
+        ELEM_(int, tracking_mode, "FLIGHT_MODE_INDEX", "The selected mode", -1)         \
                                                                                         \
         /* dl-fldigi GPS Device Info */                                                 \
         ELEM_(bool, gps_start_enabled, "GPSENABLED", "GPS Enabled on startup?", false)  \
@@ -1247,7 +1248,7 @@
         ELEM_(std::string, habitat_db, "HABITAT_DB",                                    \
                 "habitat CouchDB databse", "habitat")                                   \
                                                                                         \
-        /* TODO HABITAT: swap to habitat! Give SSDV the UploaderThread object */                \
+        /* TODO HABITAT: swap to habitat! Give SSDV the UploaderThread object */        \
         ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL",                           \
                 "Remote URL", "http://www.sanslogic.co.uk/ssdv/data.php")               \
         ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER",                          \

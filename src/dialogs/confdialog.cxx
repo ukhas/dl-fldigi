@@ -3036,7 +3036,7 @@ btnApplyConfig->activate();
 static void cb_Refresh(Fl_Button*, void*) {
   /* As far as I can tell, running this again is harmless. */
 /* dl_fldigi_gps_update_ports(1, 1); */
-/* TODO: update this */;
+/* TODO: HABITAT update this */;
 }
 
 Fl_Choice *inpGPSdev=(Fl_Choice *)0;
@@ -3107,9 +3107,17 @@ static void cb_flight_browser(Fl_Browser* o, void*) {
     habFlight->value(o->value() - 1);
 int index = reinterpret_cast<intptr_t>(o->data(o->value()));
 dl_fldigi::select_flight(index);
+
+/* Handle a double click and autoconfigure.
+ * This payload is ready for configuring iff dl_fldigi.cxx
+ * has activated the autoconfigure button. */
+if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
+    dl_fldigi::auto_configure();
 }
 
-static void cb_Refresh1(Fl_Button*, void*) {
+Fl_Button *flight_docs_refresh=(Fl_Button *)0;
+
+static void cb_flight_docs_refresh(Fl_Button*, void*) {
   dl_fldigi::uthr->flights();
 }
 
@@ -3121,6 +3129,10 @@ dl_fldigi::populate_flights();
 Fl_Choice *payload_list=(Fl_Choice *)0;
 
 Fl_Button *payload_autoconfigure=(Fl_Button *)0;
+
+static void cb_payload_autoconfigure(Fl_Button*, void*) {
+  dl_fldigi::auto_configure();
+}
 
 Fl_Choice *payload_mode_list=(Fl_Choice *)0;
 
@@ -6972,9 +6984,9 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 290, 490, 75);
               o->box(FL_ENGRAVED_BOX);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Button* o = new Fl_Button(400, 300, 85, 25, _("Refresh"));
-                o->callback((Fl_Callback*)cb_Refresh1);
-              } // Fl_Button* o
+              { flight_docs_refresh = new Fl_Button(400, 300, 85, 25, _("Refresh"));
+                flight_docs_refresh->callback((Fl_Callback*)cb_flight_docs_refresh);
+              } // Fl_Button* flight_docs_refresh
               { Fl_Check_Button* o = new Fl_Check_Button(265, 300, 130, 25, _("Show test docs"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Show);
@@ -6984,12 +6996,13 @@ d frequency"));
               } // Fl_Input* o
               { new Fl_Button(200, 300, 60, 25, _("Next"));
               } // Fl_Button* o
-              { payload_list = new Fl_Choice(75, 330, 160, 25, _("Payload:"));
+              { payload_list = new Fl_Choice(75, 330, 140, 25, _("Payload:"));
                 payload_list->down_box(FL_BORDER_BOX);
               } // Fl_Choice* payload_list
               { payload_autoconfigure = new Fl_Button(330, 330, 155, 25, _("Autoconfigure"));
+                payload_autoconfigure->callback((Fl_Callback*)cb_payload_autoconfigure);
               } // Fl_Button* payload_autoconfigure
-              { payload_mode_list = new Fl_Choice(240, 330, 85, 25);
+              { payload_mode_list = new Fl_Choice(220, 330, 105, 25);
                 payload_mode_list->down_box(FL_BORDER_BOX);
               } // Fl_Choice* payload_mode_list
               o->end();

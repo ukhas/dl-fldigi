@@ -427,6 +427,7 @@ extern Fl_Output *gps_pos_lon;
 extern Fl_Group *tabDLPayload;
 #include <FL/Fl_Browser.H>
 extern Fl_Browser *flight_browser;
+extern Fl_Button *flight_docs_refresh;
 extern Fl_Choice *payload_list;
 extern Fl_Button *payload_autoconfigure;
 extern Fl_Choice *payload_mode_list;
