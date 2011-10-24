@@ -932,8 +932,6 @@ void auto_configure()
             }
         }
     }
-
-    /* TODO HABITAT auto_configure */
 }
 
 void auto_switchmode()
@@ -1014,8 +1012,7 @@ void DExtractorManager::status(const string &msg)
     Fl_AutoLock lock;
 
     LOG_DEBUG("hbtE %s", msg.c_str());
-    /* TODO: HABITAT Log message from extractor */
-    /* TODO: HABITAT put_status safely */
+    put_status_safe(msg.c_str());
 }
 
 void DExtractorManager::data(const Json::Value &d)
@@ -1143,19 +1140,29 @@ void DUploaderThread::listener_info()
     UploaderThread::listener_info(data);
 }
 
-/* These functions must try to be thread safe. */
+/* These functions must be thread safe. */
 void DUploaderThread::log(const string &message)
 {
     Fl_AutoLock lock;
     LOG_DEBUG("hbtUT %s", message.c_str());
-    /* TODO: HABITAT put_status safely */
 }
 
 void DUploaderThread::warning(const string &message)
 {
     Fl_AutoLock lock;
     LOG_WARN("hbtUT %s", message.c_str());
-    /* TODO: HABITAT put_status safely & kick up a fuss */
+
+    string temp = "WARNING " + message;
+    put_status_safe(temp.c_str(), 10);
+}
+
+void DUploaderThread::saved_id(const string &type, const string &id)
+{
+    /* Log as normal, but also set status */
+    UploaderThread::saved_id(type, id);
+
+    string message = "Uploaded " + type + " successfully";
+    put_status_safe(message.c_str(), 10);
 }
 
 void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)

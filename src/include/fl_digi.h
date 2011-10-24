@@ -213,6 +213,7 @@ enum status_timeout {
 	STATUS_NUM
 };
 extern void put_status(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
+extern void put_status_safe(const char *msg, double timeout = 0.0, status_timeout action = STATUS_CLEAR);
 extern void clear_StatusMessages();
 extern void put_MODEstatus(const char* fmt, ...) format__(printf, 1, 2);
 extern void put_MODEstatus(trx_mode mode);

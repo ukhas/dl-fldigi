@@ -6258,13 +6258,23 @@ static void put_status_msg(Fl_Box* status, const char* msg, double timeout, stat
 
 void put_status(const char *msg, double timeout, status_timeout action)
 {
-	static char m[50];		/* DanielRichman: It looks like this function is meant to be thread safe
-					 * (REQ is some form of queue in include/qrunner.h). However, is it really
-					 * safe if m is declared static? */
+	static char m[50];
 	strncpy(m, msg, sizeof(m));
 	m[sizeof(m) - 1] = '\0';
 
 	REQ(put_status_msg, StatusBar, m, timeout, action);
+}
+
+void put_status_safe(const char *msg, double timeout, status_timeout action)
+{
+    Fl::lock();
+    StatusBar->activate();
+    StatusBar->copy_label(msg);
+    if (timeout > 0.0) {
+        Fl::remove_timeout(timeout_action[action], StatusBar);
+        Fl::add_timeout(timeout, timeout_action[action], StatusBar);
+    }
+    Fl::unlock();
 }
 
 void put_Status2(const char *msg, double timeout, status_timeout action)
