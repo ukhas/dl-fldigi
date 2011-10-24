@@ -939,7 +939,6 @@ void startup_modem(modem* m, int f)
 	else if (!bWF_only) {
 		ReceiveText->show();
 		FHdisp->hide();
-		printf("Hidden\n");
 	}
 	//
 	if (id == MODE_RTTY)
@@ -5655,7 +5654,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
 		habChecksum->align(FL_ALIGN_TOP); }
 
-		{ habBearing = new Fl_Output((rightof(habChecksum) + 2), habRowTwoY, w_habBearing, Hentry, _("Bearing"));
+		{ habBearing = new Fl_Output((rightof(habChecksum) + 20), habRowTwoY, w_habBearing, Hentry, _("Bearing"));
 		habBearing->tooltip(_("Bearing from Rx Station to Payload"));
 		habBearing->box(FL_DOWN_BOX);
 		habBearing->color(FL_BACKGROUND2_COLOR);

@@ -49,10 +49,14 @@ static int dirty;
 static enum location_mode current_location_mode;
 static habitat::UKHASExtractor *ukhas;
 static string fldocs_cache_file;
+static time_t last_rx, last_listener_telemetry, last_listener_info, last_warn;
+
+static const time_t periodically_period = 3;
+static const time_t upload_listener_period = 600;
 
 static void flight_docs_init();
 static void reset_gps_settings();
-static void periodically();
+static void periodically(void *);
 static void select_payload(int index);
 static void select_mode(int index);
 
@@ -95,6 +99,11 @@ void ready(bool hab_mode)
 
     /* online will call uthr->settings() if hab_mode since it online will
      * "change" from false to true) */
+
+    Fl::add_timeout(periodically_period, periodically);
+
+    if (hab_ui_exists)
+        habTimeSinceLastRx->value("ages");
 }
 
 void cleanup()
@@ -118,17 +127,63 @@ void cleanup()
     cgl = 0;
 }
 
-static void periodically()
+/* All other functions should hopefully be thread safe */
+static void periodically(void *)
 {
-    /* TODO: HABITAT arrange for this to be called periodically by fltk */
+    Fl::repeat_timeout(periodically_period, periodically);
 
-    uthr->listener_info();
+    time_t now = time(NULL);
 
-    if (current_location_mode == LOC_STATIONARY)
-        uthr->listener_telemetry();
+    if (hab_ui_exists)
+    {
+        time_t rx_delta = now - last_rx;
+
+        if (rx_delta > 3600 * 24)
+        {
+            habTimeSinceLastRx->value("ages");
+        }
+        else if (rx_delta < 3)
+        {
+            habTimeSinceLastRx->value("just now");
+        }
+        else
+        {
+            ostringstream sval;
+
+            if (rx_delta < 60)
+                goto seconds;
+            if (rx_delta < 3600)
+                goto minutes;
+
+            sval << (rx_delta / 3600) << "h ";
+            rx_delta %= 3600;
+minutes:
+            sval << (rx_delta / 60) << "m ";
+            rx_delta %= 60;
+seconds:
+            sval << rx_delta << "s";
+
+            habTimeSinceLastRx->value(sval.str().c_str());
+        }
+    }
+
+    if (online())
+    {
+        if (now - last_listener_info > upload_listener_period)
+        {
+            LOG_DEBUG("periodically: listener_info");
+            uthr->listener_info();
+        }
+
+        if (current_location_mode == LOC_STATIONARY &&
+            now - last_listener_telemetry > upload_listener_period)
+        {
+            LOG_DEBUG("periodically: listener_telemetry");
+            uthr->listener_telemetry();
+        }
+    }
 }
 
-/* All other functions should hopefully be thread safe */
 void online(bool val)
 {
     Fl_AutoLock lock;
@@ -748,7 +803,7 @@ void auto_configure()
             double shift = settings["shift"].asDouble();
 
             /* Look in the standard shifts first */
-            /* XXX hardcoded list size :-( */
+            /* hardcoded list size :-( */
             int stdshifts = 11;
             int search;
             for (search = 0; search < stdshifts; search++)
@@ -1012,7 +1067,22 @@ void DExtractorManager::status(const string &msg)
     Fl_AutoLock lock;
 
     LOG_DEBUG("hbtE %s", msg.c_str());
-    put_status_safe(msg.c_str());
+
+    /* Don't overwrite UploaderThread's warnings */
+    if (time(NULL) - last_warn > 10)
+        put_status_safe(msg.c_str());
+}
+
+static void set_jvalue(Fl_Output *widget, const Json::Value &value)
+{
+    /* String and null are easy. The UKHAS crude parser leaves everything as
+     * a string anyway (even lat/long, no floats!), to make it easier. */
+    if (value.isString())
+        widget->value(value.asCString());
+    else if (value.isNull())
+        widget->value("");
+    else
+        widget->value(value.toStyledString().c_str());
 }
 
 void DExtractorManager::data(const Json::Value &d)
@@ -1022,13 +1092,60 @@ void DExtractorManager::data(const Json::Value &d)
     if (!hab_ui_exists)
         return;
 
-    /* TODO: HABITAT Data to fill out HAB UI */
+    if (d["_sentence"].isString())
+    {
+        string clean = d["_sentence"].asString();
+
+        /* replace anything non printable (incl. \r \n) with spaces */
+        for (string::iterator it = clean.begin(); it != clean.end(); it++)
+            if ((*it) < 0x20 || (*it) > 0x7E)
+               (*it) = ' ';
+
+        habString->value(d["_sentence"].asCString());
+        if (d["_parsed"].isBool() && d["_parsed"].asBool())
+            habString->color(FL_GREEN);
+        else
+            habString->color(FL_RED);
+    }
+    else
+    {
+        habString->value("");
+        habString->color(FL_WHITE);
+    }
+
+    set_jvalue(habString, d["_sentence"]);
+
+    if (d["_sentence"].isNull())
+    {
+        habString->color(FL_WHITE);
+        habChecksum->value("");
+    }
+    else if (d["_parsed"].isBool() && d["_parsed"].asBool())
+    {
+        habString->color(FL_GREEN);
+        habChecksum->value("GOOD :-)");
+    }
+    else
+    {
+        habString->color(FL_RED);
+        habChecksum->value("BAD :-(");
+    }
+
+    /* UKHAS crude parser doesn't split up the time. */
+    set_jvalue(habTime, d["time"]);
+    set_jvalue(habLat, d["latitude"]);
+    set_jvalue(habLon, d["longitude"]);
+    set_jvalue(habAlt, d["altitude"]);
+    habTimeSinceLastRx->value("just now");
+    last_rx = time(NULL);
+
+    /* TODO: HABITAT set bearing, distance */
+    /* habBearing habDistance */
 }
 
 /* All these functions are called via a DUploaderThread pointer so
  * the fact that they are non virtual is OK. Having a different set of
- * arguments prevents the wrong function from being called except in the
- * case of flights() */
+ * arguments even prevents the wrong function from being selected */
 
 void DUploaderThread::settings()
 {
@@ -1053,7 +1170,7 @@ void DUploaderThread::settings()
                              progdefaults.habitat_db);
 }
 
-/* This function is used for stationary listener telemetry */
+/* This function is used for stationary listener telemetry only */
 void DUploaderThread::listener_telemetry()
 {
     Fl_AutoLock lock;
@@ -1064,6 +1181,8 @@ void DUploaderThread::listener_telemetry()
                 "telemetry while in GPS telemetry mode");
         return;
     }
+
+    last_listener_telemetry = time(NULL);
 
     if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
     {
@@ -1125,6 +1244,8 @@ void DUploaderThread::listener_info()
 {
     Fl_AutoLock lock;
 
+    last_listener_info = time(NULL);
+
     Json::Value data(Json::objectValue);
     info_add(data, "name", progdefaults.myName);
     info_add(data, "location", progdefaults.myQth);
@@ -1140,7 +1261,7 @@ void DUploaderThread::listener_info()
     UploaderThread::listener_info(data);
 }
 
-/* These functions must be thread safe. */
+/* These functions absolutely must be thread safe. */
 void DUploaderThread::log(const string &message)
 {
     Fl_AutoLock lock;
@@ -1154,6 +1275,7 @@ void DUploaderThread::warning(const string &message)
 
     string temp = "WARNING " + message;
     put_status_safe(temp.c_str(), 10);
+    last_warn = time(NULL);
 }
 
 void DUploaderThread::saved_id(const string &type, const string &id)
@@ -1161,8 +1283,12 @@ void DUploaderThread::saved_id(const string &type, const string &id)
     /* Log as normal, but also set status */
     UploaderThread::saved_id(type, id);
 
-    string message = "Uploaded " + type + " successfully";
-    put_status_safe(message.c_str(), 10);
+    /* but don't overwrite a warning */
+    if (time(NULL) - last_warn > 10)
+    {
+        string message = "Uploaded " + type + " successfully";
+        put_status_safe(message.c_str(), 10);
+    }
 }
 
 void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
