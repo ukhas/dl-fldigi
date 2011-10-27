@@ -60,7 +60,21 @@ static void periodically(void *);
 static void select_payload(int index);
 static void select_mode(int index);
 
-/* FLTK doesn't provide something like this, as far as I can tell */
+/* FLTK doesn't provide something like this, as far as I can tell. */
+/* A quick note on deadlocking during shutdown:
+ * If we block on a thread shutting down (via join or similar), and hold
+ * the Fl main lock while doing so, we could deadlock if the thread wants
+ * the lock to finish something before it dies.
+ * 
+ * I've wrapped the joins for shutting down the UploaderThread and the
+ * TRX thread in Fl::unlock() and Fl::lock().
+ *  - src/dl_fldigi/dl_fldigi.cxx cleanup() line ~130
+ *  - src/dialogs/fl_digi.cxx clean_exit line ~2530
+ *
+ * As far as I can tell,
+ * these two and the main thread are the only threads that will execute
+ * dl_fldigi functions. Protecting other thread shutdowns from the same
+ * fate is trivial. */
 class Fl_AutoLock
 {
 public:
@@ -1101,7 +1115,7 @@ void DExtractorManager::data(const Json::Value &d)
             if ((*it) < 0x20 || (*it) > 0x7E)
                (*it) = ' ';
 
-        habString->value(d["_sentence"].asCString());
+        habString->value(clean.c_str());
         if (d["_parsed"].isBool() && d["_parsed"].asBool())
             habString->color(FL_GREEN);
         else
