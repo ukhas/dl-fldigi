@@ -634,6 +634,7 @@ static void select_payload(int index)
     LOG_DEBUG("Selecting payload %i", index);
 
     cur_payload = NULL;
+    extrmgr->payload(NULL);
     cur_payload_modecount = -1;
 
     if (hab_ui_exists)
@@ -677,6 +678,7 @@ static void select_payload(int index)
         return;
 
     cur_payload = &payload;
+    extrmgr->payload(&payload);
 
     const Json::Value *telemetry_settings = &(payload["telemetry"]);
 
@@ -1110,10 +1112,10 @@ void DExtractorManager::data(const Json::Value &d)
     {
         string clean = d["_sentence"].asString();
 
-        /* replace anything non printable (incl. \r \n) with spaces */
-        for (string::iterator it = clean.begin(); it != clean.end(); it++)
-            if ((*it) < 0x20 || (*it) > 0x7E)
-               (*it) = ' ';
+        /* the \n shows up badly. remove it */
+        int last = clean.size() - 1;
+        if (last >= 0 && clean[last] == '\n')
+            clean[last] = '\0';
 
         habString->value(clean.c_str());
         if (d["_parsed"].isBool() && d["_parsed"].asBool())
@@ -1126,8 +1128,6 @@ void DExtractorManager::data(const Json::Value &d)
         habString->value("");
         habString->color(FL_WHITE);
     }
-
-    set_jvalue(habString, d["_sentence"]);
 
     if (d["_sentence"].isNull())
     {
@@ -1145,7 +1145,8 @@ void DExtractorManager::data(const Json::Value &d)
         habChecksum->value("BAD :-(");
     }
 
-    /* UKHAS crude parser doesn't split up the time. */
+    /* UKHAS crude parser doesn't split up the time, like the real one does */
+    set_jvalue(habRXPayload, d["payload"]);
     set_jvalue(habTime, d["time"]);
     set_jvalue(habLat, d["latitude"]);
     set_jvalue(habLon, d["longitude"]);
