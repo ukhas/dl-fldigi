@@ -3915,21 +3915,21 @@ btnApplyConfig->activate();} open
                 code0 {o->value(progdefaults.gps_start_enabled);}
               }
               Fl_Input {} {
-                label {Lat (DD)}
+                label Latitude
                 callback {progdefaults.myLat = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {130 105 125 25} type Float
+                xywh {120 105 125 25} type Float
                 code0 {o->value(progdefaults.myLat.c_str());}
               }
               Fl_Input {} {
-                label {Lon (DD)}
+                label Longitude
                 callback {progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {330 105 125 25} type Float
+                xywh {335 105 125 25} type Float
                 code0 {o->value(progdefaults.myLon.c_str());}
               }
               Fl_Check_Button {} {
@@ -3966,6 +3966,10 @@ progdefaults.changed = true;}
                   xywh {345 265 105 25}
                 }
               }
+            }
+            Fl_Box {} {
+              label {please enter coordinates as one number, in decimal degrees}
+              xywh {285 65 190 35} labelsize 10 align 128
             }
           }
           Fl_Group tabDLPayload {

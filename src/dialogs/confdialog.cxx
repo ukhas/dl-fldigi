@@ -3066,14 +3066,14 @@ static void cb_Upload(Fl_Round_Button* o, void*) {
 };
 }
 
-static void cb_Lat(Fl_Input* o, void*) {
+static void cb_Latitude(Fl_Input* o, void*) {
   progdefaults.myLat = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();
 }
 
-static void cb_Lon(Fl_Input* o, void*) {
+static void cb_Longitude(Fl_Input* o, void*) {
   progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
@@ -6939,14 +6939,14 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Upload);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { Fl_Input* o = new Fl_Input(130, 105, 125, 25, _("Lat (DD)"));
+              { Fl_Input* o = new Fl_Input(120, 105, 125, 25, _("Latitude"));
                 o->type(1);
-                o->callback((Fl_Callback*)cb_Lat);
+                o->callback((Fl_Callback*)cb_Latitude);
                 o->value(progdefaults.myLat.c_str());
               } // Fl_Input* o
-              { Fl_Input* o = new Fl_Input(330, 105, 125, 25, _("Lon (DD)"));
+              { Fl_Input* o = new Fl_Input(335, 105, 125, 25, _("Longitude"));
                 o->type(1);
-                o->callback((Fl_Callback*)cb_Lon);
+                o->callback((Fl_Callback*)cb_Longitude);
                 o->value(progdefaults.myLon.c_str());
               } // Fl_Input* o
               { Fl_Check_Button* o = new Fl_Check_Button(220, 135, 240, 25, _("Always enable GPS on startup"));
@@ -6972,6 +6972,10 @@ d frequency"));
               } // Fl_Group* o
               o->end();
             } // Fl_Group* o
+            { Fl_Box* o = new Fl_Box(285, 65, 190, 35, _("please enter coordinates as one number, in decimal degrees"));
+              o->labelsize(10);
+              o->align(FL_ALIGN_WRAP);
+            } // Fl_Box* o
             o->end();
           } // Fl_Group* o
           { tabDLPayload = new Fl_Group(0, 50, 500, 323, _("Radio auto config"));

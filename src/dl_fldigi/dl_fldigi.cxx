@@ -9,6 +9,7 @@
 #include <set>
 #include <json/json.h>
 #include <time.h>
+#include <math.h>
 #include <Fl/Fl.H>
 #include "habitat/UKHASExtractor.h"
 #include "habitat/EZ.h"
@@ -49,9 +50,15 @@ static int dirty;
 static enum location_mode current_location_mode;
 static habitat::UKHASExtractor *ukhas;
 static string fldocs_cache_file;
-static time_t last_rx, last_listener_telemetry, last_listener_info, last_warn;
+static time_t last_rx, last_warn;
 
-static const time_t periodically_period = 3;
+/* Keep the last listener lat/lon that we uploaded. TODO: HABITAT gps */
+/* Call update_distance_bearing whenever it is changed! */
+static double listener_latitude, listener_longitude,
+              balloon_latitude, balloon_longitude;
+static bool listener_valid, balloon_valid;
+
+static const time_t periodically_period = 10;
 static const time_t upload_listener_period = 600;
 
 static void flight_docs_init();
@@ -59,13 +66,14 @@ static void reset_gps_settings();
 static void periodically(void *);
 static void select_payload(int index);
 static void select_mode(int index);
+static void update_distance_bearing();
 
 /* FLTK doesn't provide something like this, as far as I can tell. */
 /* A quick note on deadlocking during shutdown:
  * If we block on a thread shutting down (via join or similar), and hold
  * the Fl main lock while doing so, we could deadlock if the thread wants
  * the lock to finish something before it dies.
- * 
+ *
  * I've wrapped the joins for shutting down the UploaderThread and the
  * TRX thread in Fl::unlock() and Fl::lock().
  *  - src/dl_fldigi/dl_fldigi.cxx cleanup() line ~130
@@ -178,22 +186,6 @@ seconds:
             sval << rx_delta << "s";
 
             habTimeSinceLastRx->value(sval.str().c_str());
-        }
-    }
-
-    if (online())
-    {
-        if (now - last_listener_info > upload_listener_period)
-        {
-            LOG_DEBUG("periodically: listener_info");
-            uthr->listener_info();
-        }
-
-        if (current_location_mode == LOC_STATIONARY &&
-            now - last_listener_telemetry > upload_listener_period)
-        {
-            LOG_DEBUG("periodically: listener_telemetry");
-            uthr->listener_telemetry();
         }
     }
 }
@@ -881,7 +873,7 @@ void auto_configure()
                 select = 1;
             else if (encoding == "ascii-8")
                 select = 2;
-            
+
             if (select != -1)
             {
                 selBits->value(select);
@@ -1049,7 +1041,7 @@ void commit()
         uthr->settings();
         uthr->flights();
     }
-    
+
     if (dirty & CH_LOCATION_MODE)
     {
         current_location_mode = new_location_mode;
@@ -1154,8 +1146,83 @@ void DExtractorManager::data(const Json::Value &d)
     habTimeSinceLastRx->value("just now");
     last_rx = time(NULL);
 
-    /* TODO: HABITAT set bearing, distance */
-    /* habBearing habDistance */
+    if (d["latitude"].isString() && d["longitude"].isString())
+    {
+        istringstream lat_strm(d["latitude"].asString());
+        istringstream lon_strm(d["longitude"].asString());
+        lat_strm >> balloon_latitude;
+        lon_strm >> balloon_longitude;
+        balloon_valid = !lat_strm.fail() && !lon_strm.fail();
+    }
+    else
+    {
+        balloon_valid = false;
+    }
+
+    update_distance_bearing();
+}
+
+static void update_distance_bearing()
+{
+    Fl_AutoLock lock;
+
+    if (!hab_ui_exists)
+        return;
+
+    if (!listener_valid || !balloon_valid)
+    {
+        habDistance->value("");
+        habBearing->value("");
+        return;
+    }
+
+    /* Convert everything to radians */
+    double c = M_PI/180;
+
+    double lat1, lon1, lat2, lon2;
+    lat1 = listener_latitude * c;
+    lon1 = listener_longitude * c;
+    lat2 = balloon_latitude * c;
+    lon2 = balloon_longitude * c;
+
+    double d_lat, d_lon;
+    d_lat = lat2 - lat1;
+    d_lon = lon2 - lon1;
+
+    /* haversine formula */
+    double p = sin(d_lat / 2);
+    p *= p;
+    double q = sin(d_lon / 2);
+    q *= q;
+    double a = p + cos(lat1) * cos(lat2) * q;
+
+    double t = atan2(sqrt(a), sqrt(1 - a)) * 2;
+    /* 6371 = approx radius of earth in km */
+    double distance = t * 6371;
+
+    double y = sin(d_lon) * cos(lat2);
+    double x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(d_lon);
+    double bearing = atan2(y, x);
+
+    /* back to degrees */
+    bearing *= (180/M_PI);
+
+    ostringstream str_distance;
+    str_distance.precision(4);
+    str_distance << distance << "km";
+
+    if (bearing < 0)
+        bearing += 360;
+
+    ostringstream str_bearing;
+    str_bearing.setf(ios::fixed, ios::floatfield);
+    str_bearing.precision(1);
+    str_bearing.fill('0');
+    str_bearing.width(3 + 1 + 1);
+    str_bearing << bearing;
+
+    habDistance->value(str_distance.str().c_str());
+    habBearing->value(str_bearing.str().c_str());
 }
 
 /* All these functions are called via a DUploaderThread pointer so
@@ -1197,7 +1264,8 @@ void DUploaderThread::listener_telemetry()
         return;
     }
 
-    last_listener_telemetry = time(NULL);
+    listener_valid = false;
+    update_distance_bearing();
 
     if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
     {
@@ -1246,6 +1314,11 @@ void DUploaderThread::listener_telemetry()
     data["latitude"] = latitude;
     data["longitude"] = longitude;
 
+    listener_latitude = latitude;
+    listener_longitude = longitude;
+    listener_valid = true;
+    update_distance_bearing();
+
     UploaderThread::listener_telemetry(data);
 }
 
@@ -1258,8 +1331,6 @@ static void info_add(Json::Value &data, const string &key, const string &value)
 void DUploaderThread::listener_info()
 {
     Fl_AutoLock lock;
-
-    last_listener_info = time(NULL);
 
     Json::Value data(Json::objectValue);
     info_add(data, "name", progdefaults.myName);
