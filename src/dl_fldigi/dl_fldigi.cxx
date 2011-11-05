@@ -13,6 +13,7 @@
 #include <Fl/Fl.H>
 #include "habitat/UKHASExtractor.h"
 #include "habitat/EZ.h"
+#include "dl_fldigi/version.h"
 #include "configuration.h"
 #include "debug.h"
 #include "fl_digi.h"
@@ -26,9 +27,6 @@ namespace dl_fldigi {
 
 /* How does online/offline work? if online() is false, uthr->settings() will
  * reset the UploaderThread, leaving it unintialised */
-
-/* TODO: HABITAT-LATER maybe upload the git commit when compiled as the
- * 'version' */
 
 DExtractorManager *extrmgr;
 DUploaderThread *uthr;
@@ -1337,6 +1335,7 @@ void DUploaderThread::listener_info()
     info_add(data, "location", progdefaults.myQth);
     info_add(data, "radio", progdefaults.myRadio);
     info_add(data, "antenna", progdefaults.myAntenna);
+    data["dl_fldigi"] = git_short_commit;
 
     if (!data.size())
     {

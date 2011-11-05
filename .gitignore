@@ -23,6 +23,7 @@ src/flarq
 src/fldigi
 src/dl-fldigi
 src/stamp-h1
+src/dl_fldigi/version.cxx
 
 # Runtime generated files
 dl-fldigi-waterfall.png

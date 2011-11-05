@@ -1244,11 +1244,12 @@
                                                                                         \
         /* dl-fldigi network config stuff */                                            \
         ELEM_(std::string, habitat_uri, "HABITAT_URI",                                  \
-                "habitat CouchDB URI", "http://habhub.org")                             \
+                "habitat CouchDB URI", "http://habitat.habhub.org")                     \
+        /* TODO HABITAT LATER: change the url above to http://habhub.org when setup */  \
         ELEM_(std::string, habitat_db, "HABITAT_DB",                                    \
                 "habitat CouchDB databse", "habitat")                                   \
                                                                                         \
-        /* TODO HABITAT: swap to habitat! Give SSDV the UploaderThread object */        \
+        /* TODO HABITAT LATER: swap to habitat! Give SSDV the UploaderThread object */  \
         ELEM_(std::string, ssdv_packet_url, "SSDV_BLOCK_URL",                           \
                 "Remote URL", "http://www.sanslogic.co.uk/ssdv/data.php")               \
         ELEM_(std::string, ssdv_block_user, "SSDV_BLOCK_USER",                          \

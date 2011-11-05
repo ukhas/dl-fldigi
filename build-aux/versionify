@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+FILE=../src/dl_fldigi/version.cxx
+
+COMMIT=`git log -1 | head -n1 | cut -d ' ' -f2`
+SHORT_COMMIT=`git log -1 --oneline | cut -d ' ' -f1`
+
+cat > $FILE <<EOF
+/* See build-aux/versionify */
+#include "dl_fldigi/version.h"
+
+namespace dl_fldigi {
+
+const char *git_commit = "$COMMIT";
+const char *git_short_commit = "$SHORT_COMMIT";
+
+}
+EOF
+
+echo "$COMMIT $SHORT_COMMIT >> $FILE"

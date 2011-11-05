@@ -280,6 +280,7 @@ dl_fldigi_SOURCES += \
 	include/Fl_Text_Buffer_mod.H \
 	include/Fl_Text_Display_mod.H \
 	include/Fl_Text_Editor_mod.H \
+	include/Fl_Tile_Check.h \
 	include/Panel.h \
 	include/FreqControl.h \
 	include/analysis.h \
@@ -410,6 +411,7 @@ dl_fldigi_SOURCES += \
 	include/psk_browser.h \
 	include/dl_fldigi/dl_fldigi.h \
 	include/dl_fldigi/gps.h \
+	include/dl_fldigi/version.h \
 	include/habitat/CouchDB.h \
 	include/habitat/UploaderThread.h \
 	include/habitat/Uploader.h \
@@ -552,7 +554,8 @@ dl_fldigi_SOURCES += \
 	habitat/UploaderThread.cxx \
 	habitat/Uploader.cxx \
 	dl_fldigi/dl_fldigi.cxx \
-	dl_fldigi/gps.cxx
+	dl_fldigi/gps.cxx \
+	dl_fldigi/version.cxx
 
 # Sources that are part of the distribution but are not compiled directly
 EXTRA_dl_fldigi_SOURCES += \
@@ -600,7 +603,14 @@ EXTRA_dl_fldigi_SOURCES += \
 	widgets/Fl_Text_Display_mod_1_1.cxx \
 	widgets/Fl_Text_Display_mod_1_3.cxx \
 	widgets/Fl_Text_Editor_mod_1_1.cxx \
-	widgets/Fl_Text_Editor_mod_1_3.cxx
+	widgets/Fl_Text_Editor_mod_1_3.cxx \
+	habitat/CouchDB.h \
+	habitat/UploaderThread.h \
+	habitat/Uploader.h \
+	habitat/Extractor.h \
+	habitat/UKHASExtractor.h \
+	habitat/EZ.h
+
 
 
 flarq_SOURCES += \
@@ -665,7 +675,7 @@ EXTRA_DIST = \
 	$(srcdir)/../scripts/tests/config-h.sh \
 	$(srcdir)/../data/fldigi-psk.png \
 	$(srcdir)/../data/fldigi-rtty.png \
-	$(srcdir)/../data/fldigi.xpm \
+	$(srcdir)/../data/dl-fldigi.xpm \
 	$(srcdir)/../data/fldigi.desktop \
 	$(srcdir)/../data/dl-fldigi.desktop \
 	$(srcdir)/../data/dl-fldigi-hab.desktop \
@@ -678,3 +688,10 @@ EXTRA_DIST = \
 	$(srcdir)/../data/win32/flarq.ico \
 	$(FLDIGI_FL_SRC) \
 	$(FLARQ_FL_SRC)
+
+dl_fldigi/version.cxx :
+	test -f $(srcdir)/../build-aux/versionify && $(srcdir)/../build-aux/versionify || true
+
+dist-hook : dl_fldigi/version.cxx
+
+.PHONY : dl_fldigi/version.cxx
