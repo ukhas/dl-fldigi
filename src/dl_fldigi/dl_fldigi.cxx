@@ -1335,7 +1335,6 @@ void DUploaderThread::listener_info()
     info_add(data, "location", progdefaults.myQth);
     info_add(data, "radio", progdefaults.myRadio);
     info_add(data, "antenna", progdefaults.myAntenna);
-    data["dl_fldigi"] = git_short_commit;
 
     if (!data.size())
     {
@@ -1343,6 +1342,7 @@ void DUploaderThread::listener_info()
         return;
     }
 
+    data["dl_fldigi"] = git_short_commit;
     UploaderThread::listener_info(data);
 }
 
