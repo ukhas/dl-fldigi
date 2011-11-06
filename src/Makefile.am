@@ -690,7 +690,7 @@ EXTRA_DIST = \
 	$(FLARQ_FL_SRC)
 
 dl_fldigi/version.cxx :
-	test -f $(srcdir)/../build-aux/versionify && $(srcdir)/../build-aux/versionify || true
+	@test -f $(srcdir)/../build-aux/versionify && $(srcdir)/../build-aux/versionify $@ || true
 
 dist-hook : dl_fldigi/version.cxx
 

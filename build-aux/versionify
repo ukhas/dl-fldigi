@@ -2,7 +2,12 @@
 
 set -e
 
-FILE=../src/dl_fldigi/version.cxx
+FILE=$1
+
+if [ "x$FILE" == "x" ]; then
+    echo "Usage: $0 file"
+    exit 1
+fi
 
 COMMIT=`git log -1 | head -n1 | cut -d ' ' -f2`
 SHORT_COMMIT=`git log -1 --oneline | cut -d ' ' -f1`
@@ -19,4 +24,4 @@ const char *git_short_commit = "$SHORT_COMMIT";
 }
 EOF
 
-echo "$COMMIT $SHORT_COMMIT >> $FILE"
+echo "$COMMIT $SHORT_COMMIT > $FILE"

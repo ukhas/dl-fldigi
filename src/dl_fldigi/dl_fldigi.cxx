@@ -77,8 +77,7 @@ static void update_distance_bearing();
  *  - src/dl_fldigi/dl_fldigi.cxx cleanup() line ~130
  *  - src/dialogs/fl_digi.cxx clean_exit line ~2530
  *
- * As far as I can tell,
- * these two and the main thread are the only threads that will execute
+ * These two and the main thread are the only threads that will execute
  * dl_fldigi functions. Protecting other thread shutdowns from the same
  * fate is trivial. */
 class Fl_AutoLock
