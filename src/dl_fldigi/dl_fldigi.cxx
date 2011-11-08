@@ -56,8 +56,8 @@ static double listener_latitude, listener_longitude,
               balloon_latitude, balloon_longitude;
 static bool listener_valid, balloon_valid;
 
-static const time_t periodically_period = 10;
-static const time_t upload_listener_period = 600;
+static const time_t period = 10;                /* 10s */
+static const time_t gps_retry = 10;             /* 10s */
 
 static void flight_docs_init();
 static void reset_gps_settings();
@@ -85,6 +85,33 @@ class Fl_AutoLock
 public:
     Fl_AutoLock() { Fl::lock(); };
     ~Fl_AutoLock() { Fl::unlock(); };
+};
+
+class GPSThread : public EZ::SimpleThread
+{
+    const string device;
+    const int baud;
+    bool term;
+
+#ifdef __MINGW32__
+    HANDLE handle;
+#endif
+    int fd;
+    FILE *f;
+
+    void prepare_signals();
+    void send_signal();
+    void wait();
+    bool check_term();
+    void open();
+    void read();
+
+public:
+    GPSThread(const string &d, int b)
+        : device(d), baud(b), term(false), fd(-1), f(NULL) {};
+    ~GPSThread() {};
+    void *run();
+    void shutdown();
 };
 
 /* Functions init, ready and cleanup should only be called from main() */
@@ -119,7 +146,7 @@ void ready(bool hab_mode)
     /* online will call uthr->settings() if hab_mode since it online will
      * "change" from false to true) */
 
-    Fl::add_timeout(periodically_period, periodically);
+    Fl::add_timeout(period, periodically);
 
     if (hab_ui_exists)
         habTimeSinceLastRx->value("ages");
@@ -149,7 +176,7 @@ void cleanup()
 /* All other functions should hopefully be thread safe */
 static void periodically(void *)
 {
-    Fl::repeat_timeout(periodically_period, periodically);
+    Fl::repeat_timeout(period, periodically);
 
     time_t now = time(NULL);
 
@@ -1410,5 +1437,225 @@ void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
 
     populate_flights();
 }
+
+/* On Windows we have to wait for a timeout to wake the GPS thread up
+ * to terminate it. This sucks. But on systems that support signals,
+ * it will cut short the last timeout */
+#ifndef __MINGW32__
+void GPSThread::prepare_signals()
+{
+    sigset_t usr2;
+
+    sigemptyset(&usr2);
+    sigaddset(&usr2, SIGUSR2);
+    pthread_sigmask(SIG_UNBLOCK, &usr2, NULL);
+}
+
+void GPSThread::send_signal()
+{
+    pthread_kill(thread, SIGUSR2);
+}
+#else
+void GPSThread::prepare_signals() {}
+void GPSThread::send_signal()
+{
+    /* TODO: HABITAT does this work as expected? */
+    pthread_cancel(thread);
+}
+#endif
+
+void GPSThread::wait()
+{
+    /* On error. Wait for gps_retry seconds */
+    sleep(gps_retry);
+}
+
+void GPSThread::shutdown()
+{
+    {
+        EZ::MutexLock(mutex);
+        term = true;
+    }
+
+    send_signal();
+    join();
+}
+
+bool GPSThread::check_term()
+{
+    bool b;
+    EZ::MutexLock(mutex);
+    b = term;
+    return b;
+}
+
+void *GPSThread::run()
+{
+    prepare_signals();
+
+    while (!check_term())
+    {
+        try
+        {
+            open();
+            while (!check_term())
+                read();
+        }
+        catch (runtime_error e)
+        {
+            /* TODO: HABITAT log or set status for error */
+            wait();
+        }
+    }
+}
+
+void GPSThread::read()
+{
+    /* Read until a newline */
+    char buf[100];
+    char *result;
+    result = fgets(buf, sizeof(buf), f);
+
+    if (result != buf)
+        throw runtime_error("fgets read no data: EOF or error");
+
+    /* Find the $ (i.e., discard garbage before the $) */
+    char *start = strchr(buf, '$');
+
+    if (!start)
+        throw runtime_error("Did not find start delimiter");
+
+    /* Now read data using the magic of string streams */
+    istringstream sbuf(start);
+
+    /* TODO HABITAT read all the stuff! */
+}
+
+/* The open() functions for both platforms were originally written by
+ * Robert Harrison */
+#ifndef __MINGW32__
+void GPSThread::open()
+{
+    /* Open the serial port without blocking. Rely on cleanup() */
+    fd = open(port, O_RDONLY | O_NOCTTY | O_NONBLOCK);
+    if (fd == -1)
+        throw runtime_error("open() failed");
+
+    f = fdopen(serial_port_fd, "r");
+    if (f == NULL)
+        throw runtime_error("fdopen() failed");
+
+    /* Linux requires baudrates be given as a constant */
+    speed_t baudrate = B4800;
+    if (baud == 9600)           baudrate = B9600;
+    else if (baud == 19200)     baudrate = B19200;
+    else if (baud == 38400)     baudrate = B38400;
+    else if (baud == 57600)     baudrate = B57600;
+    else if (baud == 115200)    baudrate = B115200;
+    else if (baud == 230400)    baudrate = B230400;
+
+    /* Set all the weird arcane settings Linux demands (boils down to 8N1) */
+    struct termios port_settings;
+    memset(&port_settings, 0, sizeof(port_settings));
+
+    cfsetispeed(&port_settings, baudrate);
+    cfsetospeed(&port_settings, baudrate);
+
+    /* Enable the reciever and set local */
+    port_settings.c_cflag |= (CLOCAL | CREAD);
+
+    /* Set 8N1 */
+    port_settings.c_cflag &= ~PARENB;
+    port_settings.c_cflag &= ~CSTOPB;
+    port_settings.c_cflag &= ~CSIZE;
+    port_settings.c_cflag |= CS8;
+
+    /* Set raw input output */
+    port_settings.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+    port_settings.c_oflag &= ~OPOST;
+
+    /* Ignore CR in NMEA's CRLF */
+    port_settings.c_iflag |= (IGNCR);
+
+    /* Blocking read until 1 character arrives */
+    port_settings.c_cc[VMIN] = 1;
+
+    /* Re enable blocking for reading. */
+    int set = fcntl(fd, F_SETFL, 0);
+    if (set == -1)
+        throw runtime_error("fcntl() failed");
+
+    /* All baud settings */
+    set = tcsetattr(fd, TCSANOW, &port_settings);
+    if (set == -1)
+        throw runtime_error("tcsetattr() failed");
+}
+
+void GPSThread::cleanup()
+{
+    /* The various things will close their underlying fds or handles (w32).
+     * Close the last thing we managed to open */
+    if (f)
+        fclose(f);
+    else if (fd != -1)
+        close(fd);
+
+    f = NULL;
+    fd = -1;
+}
+#else
+void GPSThread::open()
+{
+    HANDLE handle = CreateFile(port, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    if (handle == INVALID_HANDLE_VALUE)
+        throw runtime_error("CreateFile() failed");
+
+    DCB dcbSerialParams = {0};
+    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+
+    if (!GetCommState(handle, &dcbSerialParams))
+        throw runtime_error("GetCommState() failed");
+
+    dcbSerialParams.BaudRate = baud;
+    dcbSerialParams.ByteSize = 8;
+    dcbSerialParams.StopBits = ONESTOPBIT;
+    dcbSerialParams.Parity = NOPARITY;
+
+    if (!SetCommState(handle, &dcbSerialParams))
+        throw runtime_error("GetCommState() failed");
+
+    COMMTIMEOUTS timeouts;
+    timeouts.ReadIntervalTimeout            = 2000;
+    timeouts.ReadTotalTimeoutMultiplier     = 0;
+    timeouts.ReadTotalTimeoutConstant       = 5000;
+    timeouts.WriteTotalTimeoutMultiplier    = 0;
+    timeouts.WriteTotalTimeoutConstant      = 0;
+
+    if (!SetCommTimeouts(handle, &timeouts))
+        throw runtime_error("SetCommTimeouts() failed");
+
+    fd = _open_osfhandle((intptr_t) serial_port_handle, _O_RDONLY);
+    if (fd == -1)
+        throw runtime_error("_open_osfhandle() failed");
+
+    f = fdopen(fd, "r");
+    if (!f)
+        throw runtime_error("fdopen() failed");
+}
+
+void GPSThread::cleanup()
+{
+    if (f)
+        fclose(f);
+    else if (fd != -1)
+        close(fd);
+    else if (handle != INVALID_HANDLE_VALUE)
+        CloseHandle(handle);
+
+    f = NULL;
+    fd = -1;
+    handle = INVALID_HANDLE_VALUE;
+}
+#endif
 
 } /* namespace dl_fldigi */
