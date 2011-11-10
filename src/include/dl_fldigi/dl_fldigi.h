@@ -46,6 +46,7 @@ public:
      * progdefaults and other globals. */
     void settings();
     void listener_telemetry();
+    void listener_telemetry(const Json::Value &data);
     void listener_info();
 
     /* Forward data to fldigi debug/log macros */

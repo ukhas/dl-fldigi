@@ -1,3 +1,9 @@
+/* 
+ * Copyright (C) 2011 James Coxon, Daniel Richman, Robert Harrison,
+ *                    Philip Heron, Adam Greig, Simrun Basuita
+ * License: GNU GPL 3
+ */
+
 #include "dl_fldigi/dl_fldigi.h"
 
 #include <vector>
@@ -10,6 +16,16 @@
 #include <json/json.h>
 #include <time.h>
 #include <math.h>
+#include <signal.h>
+#include <pthread.h>
+#ifndef __MINGW32__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <termios.h>
+#else
+#include <windows.h>
+#endif
 #include <Fl/Fl.H>
 #include "habitat/UKHASExtractor.h"
 #include "habitat/EZ.h"
@@ -25,57 +41,19 @@ using namespace std;
 
 namespace dl_fldigi {
 
-/* How does online/offline work? if online() is false, uthr->settings() will
- * reset the UploaderThread, leaving it unintialised */
-
-DExtractorManager *extrmgr;
-DUploaderThread *uthr;
-enum location_mode new_location_mode;
-bool show_testing_flights;
-
-static EZ::cURLGlobal *cgl;
-
-static vector<Json::Value> flight_docs;
-static vector<string> payload_index;
-/* These pointers just point at some part of the heap allocated by something
- * in the flight_docs vector; they're invalidated when filght_docs is modified
- * but we make sure to update them when that happens (only happens when
- * new data is downloaded; populate_flights cleans up). */
-static const Json::Value *cur_flight, *cur_payload, *cur_mode;
-static int cur_mode_index, cur_payload_modecount;
-static bool dl_online, downloaded_once, hab_ui_exists;
-static int dirty;
-static enum location_mode current_location_mode;
-static habitat::UKHASExtractor *ukhas;
-static string fldocs_cache_file;
-static time_t last_rx, last_warn;
-
-/* Keep the last listener lat/lon that we uploaded. TODO: HABITAT gps */
-/* Call update_distance_bearing whenever it is changed! */
-static double listener_latitude, listener_longitude,
-              balloon_latitude, balloon_longitude;
-static bool listener_valid, balloon_valid;
-
-static const time_t period = 10;                /* 10s */
-static const time_t gps_retry = 10;             /* 10s */
-
-static void flight_docs_init();
-static void reset_gps_settings();
-static void periodically(void *);
-static void select_payload(int index);
-static void select_mode(int index);
-static void update_distance_bearing();
-
 /* FLTK doesn't provide something like this, as far as I can tell. */
 /* A quick note on deadlocking during shutdown:
  * If we block on a thread shutting down (via join or similar), and hold
  * the Fl main lock while doing so, we could deadlock if the thread wants
  * the lock to finish something before it dies.
  *
- * I've wrapped the joins for shutting down the UploaderThread and the
- * TRX thread in Fl::unlock() and Fl::lock().
+ * I've wrapped the joins for shutting down the UploaderThread
+ * and the TRX thread in Fl::unlock() and Fl::lock().
  *  - src/dl_fldigi/dl_fldigi.cxx cleanup() line ~130
  *  - src/dialogs/fl_digi.cxx clean_exit line ~2530
+ *
+ * The GPSThread is safe because it uses a Fl::wait and Fl::awake pair
+ * instead of join.
  *
  * These two and the main thread are the only threads that will execute
  * dl_fldigi functions. Protecting other thread shutdowns from the same
@@ -98,13 +76,21 @@ class GPSThread : public EZ::SimpleThread
 #endif
     int fd;
     FILE *f;
+    int wait_exp;
 
     void prepare_signals();
     void send_signal();
-    void wait();
     bool check_term();
-    void open();
+    void set_term();
+    void wait();
+
+    void setup();
+    void cleanup();
+    void log(const string &message);
+    void warning(const string &message);
+
     void read();
+    void upload(int h, int m, int s, double lat, double lon, double alt);
 
 public:
     GPSThread(const string &d, int b)
@@ -113,6 +99,48 @@ public:
     void *run();
     void shutdown();
 };
+
+/* How does online/offline work? if online() is false, uthr->settings() will
+ * reset the UploaderThread, leaving it unintialised */
+
+DExtractorManager *extrmgr;
+DUploaderThread *uthr;
+enum location_mode new_location_mode;
+bool show_testing_flights;
+
+static EZ::cURLGlobal *cgl;
+static GPSThread *gps_thread;
+static habitat::UKHASExtractor *ukhas;
+
+static string fldocs_cache_file;
+static vector<Json::Value> flight_docs;
+static vector<string> payload_index;
+/* These pointers just point at some part of the heap allocated by something
+ * in the flight_docs vector; they're invalidated when filght_docs is modified
+ * but we make sure to update them when that happens (only happens when
+ * new data is downloaded; populate_flights cleans up). */
+static const Json::Value *cur_flight, *cur_payload, *cur_mode;
+static int cur_mode_index, cur_payload_modecount;
+
+static bool dl_online, downloaded_once, hab_ui_exists;
+static int dirty;
+static enum location_mode current_location_mode;
+static time_t last_rx, last_warn;
+
+/* Keep the last listener lat/lon that we uploaded. */
+/* Call update_distance_bearing whenever it is changed! */
+static double listener_latitude, listener_longitude,
+              balloon_latitude, balloon_longitude;
+static bool listener_valid, balloon_valid;
+
+static const time_t period = 10;
+
+static void flight_docs_init();
+static void reset_gps_settings();
+static void periodically(void *);
+static void select_payload(int index);
+static void select_mode(int index);
+static void update_distance_bearing();
 
 /* Functions init, ready and cleanup should only be called from main() */
 void init()
@@ -1039,11 +1067,22 @@ void auto_switchmode()
 
 static void reset_gps_settings()
 {
-    /* if (gps_thread != NULL)  gps_thread->join(); delete gps_thread; */
-
-    if (current_location_mode == LOC_GPS)
+    if (gps_thread != NULL)
     {
-        /* TODO HABITAT gps_thread = new stuff */
+        /* TODO: HABITAT (srs bug): Don't deadlock GPSThread::warning()
+         * against main thread locks and locks in commit() */
+        gps_thread->shutdown();
+
+        delete gps_thread;
+        gps_thread = NULL;
+    }
+
+    if (current_location_mode == LOC_GPS &&
+        progdefaults.gps_device.size() && progdefaults.gps_speed)
+    {
+        gps_thread = new GPSThread(progdefaults.gps_device,
+                                   progdefaults.gps_speed);
+        gps_thread->start();
     }
 }
 
@@ -1346,6 +1385,17 @@ void DUploaderThread::listener_telemetry()
     UploaderThread::listener_telemetry(data);
 }
 
+void DUploaderThread::listener_telemetry(const Json::Value &data)
+{
+    Fl_AutoLock lock;
+
+    if (current_location_mode != LOC_GPS)
+        throw runtime_error("Attempted to upload GPS data while not "
+                            "in GPS mode");
+
+    UploaderThread::listener_telemetry(data);
+}
+
 static void info_add(Json::Value &data, const string &key, const string &value)
 {
     if (value.size())
@@ -1466,26 +1516,33 @@ void GPSThread::send_signal()
 
 void GPSThread::wait()
 {
-    /* On error. Wait for gps_retry seconds */
-    sleep(gps_retry);
+    /* On error. Wait for 1, 2, 4... 64 seconds */
+    sleep(1 << wait_exp);
+
+    if (wait_exp < 6)
+        wait_exp++;
 }
 
 void GPSThread::shutdown()
 {
-    {
-        EZ::MutexLock(mutex);
-        term = true;
-    }
-
+    set_term();
     send_signal();
     join();
+}
+
+void GPSThread::set_term()
+{
+    EZ::MutexLock lock(mutex);
+    term = true;
 }
 
 bool GPSThread::check_term()
 {
     bool b;
-    EZ::MutexLock(mutex);
+    EZ::MutexLock lock(mutex);
     b = term;
+    if (b)
+        log("term = true");
     return b;
 }
 
@@ -1497,16 +1554,129 @@ void *GPSThread::run()
     {
         try
         {
-            open();
+            setup();
+            log("Opened device");
             while (!check_term())
+            {
                 read();
+                /* Success? reset wait */
+                wait_exp = 0;
+            }
         }
         catch (runtime_error e)
         {
-            /* TODO: HABITAT log or set status for error */
+            warning(e.what());
+            cleanup();
             wait();
         }
     }
+
+    return NULL;
+}
+
+void GPSThread::warning(const string &message)
+{
+    Fl_AutoLock lock;
+    LOG_WARN("hbtGPS %s", message.c_str());
+
+    string temp = "WARNING GPS Error " + message;
+    put_status_safe(temp.c_str(), 10);
+    last_warn = time(NULL);
+}
+
+void GPSThread::log(const string &message)
+{
+    Fl_AutoLock lock;
+    LOG_DEBUG("hbtGPS %s", message.c_str());
+}
+
+static bool check_gpgga(const vector<string> &parts)
+{
+    if (parts.size() < 7)
+        return false;
+
+    if (parts[0] != "$GPGGA")
+        return false;
+
+    /* Fix quality field */
+    if (parts[6] == "0")
+        return false;
+
+    for (int i = 1; i < 7; i++)
+        if (!parts[i].size())
+            return false;
+
+    return true;
+}
+
+static void split_nmea(const string &data, vector<string> &parts)
+{
+    size_t a = 0, b = 0;
+
+    while (b != string::npos)
+    {
+        string part;
+        b = data.find_first_of(",*", a);
+
+        if (b == string::npos)
+            part = data.substr(a);
+        else
+            part = data.substr(a, b - a);
+
+        parts.push_back(part);
+        a = b + 1;
+    }
+}
+
+static double parse_ddm(const string &part, const string &dirpart)
+{
+    double degrees, mins;
+    size_t pos = part.find('.');
+    if (pos == string::npos || pos < 3)
+        throw runtime_error("Bad DDM");
+
+    istringstream tmp;
+    tmp.exceptions(istringstream::failbit | istringstream::badbit);
+
+    tmp.str(part.substr(0, pos - 2));
+    tmp >> degrees;
+    tmp.str(part.substr(pos + 1));
+    tmp >> mins;
+
+    double value = degrees + mins / 60;
+
+    if (dirpart == "S" || dirpart == "W")
+        return -value;
+    else
+        return value;
+}
+
+static void parse_hms(const string &part, int &hour, int &minute, int &second)
+{
+    istringstream tmp;
+    tmp.exceptions(istringstream::failbit | istringstream::badbit);
+
+    tmp.str(part.substr(0, 2));
+    tmp >> hour;
+    tmp.str(part.substr(2, 2));
+    tmp >> minute;
+    tmp.str(part.substr(4, 2));
+    tmp >> second;
+}
+
+static double parse_alt(const string &part, const string &unit_part)
+{
+    if (unit_part != "M")
+        throw runtime_error("altitude units are not M");
+
+    istringstream tmp;
+    double value;
+
+    tmp.exceptions(istringstream::failbit | istringstream::badbit);
+    tmp.str(part);
+    tmp >> value;
+
+    return value;
 }
 
 void GPSThread::read()
@@ -1525,23 +1695,78 @@ void GPSThread::read()
     if (!start)
         throw runtime_error("Did not find start delimiter");
 
-    /* Now read data using the magic of string streams */
-    istringstream sbuf(start);
+    string data(start);
+    data.erase(data.end() - 1);
 
-    /* TODO HABITAT read all the stuff! */
+    log("Read line: " + data);
+
+    vector<string> parts;
+    split_nmea(data, parts);
+
+    if (!check_gpgga(parts))
+        return;
+
+    int hour, minute, second;
+    double latitude, longitude, altitude;
+
+    try
+    {
+        parse_hms(parts[1], hour, minute, second);
+        latitude = parse_ddm(parts[2], parts[3]);
+        longitude = parse_ddm(parts[4], parts[5]);
+        altitude = parse_alt(parts[9], parts[10]);
+    }
+    catch (out_of_range e)
+    {
+        throw runtime_error("Failed to parse data (oor)");
+    }
+    catch (istringstream::failure e)
+    {
+        throw runtime_error("Failed to parse data (fail)");
+    }
+
+    upload(hour, minute, second, latitude, longitude, altitude);
+}
+
+void GPSThread::upload(int hour, int minute, int second,
+                       double latitude, double longitude, double altitude)
+{
+    Fl_AutoLock lock;
+
+    /* Data OK? upload. */
+    if (current_location_mode != LOC_GPS)
+        throw runtime_error("GPS mode disabled mid-line");
+
+    listener_valid = true;
+    listener_latitude = latitude;
+    listener_longitude = longitude;
+    update_distance_bearing();
+
+    Json::Value data(Json::objectValue);
+    data["time"] = Json::Value(Json::objectValue);
+    Json::Value &time = data["time"];
+    time["hour"] = hour;
+    time["minute"] = minute;
+    time["second"] = second;
+
+    data["latitude"] = latitude;
+    data["longitude"] = longitude;
+    data["altitude"] = altitude;
+
+    uthr->listener_telemetry(data);
 }
 
 /* The open() functions for both platforms were originally written by
  * Robert Harrison */
 #ifndef __MINGW32__
-void GPSThread::open()
+void GPSThread::setup()
 {
     /* Open the serial port without blocking. Rely on cleanup() */
-    fd = open(port, O_RDONLY | O_NOCTTY | O_NONBLOCK);
+    fd = open(device.c_str(), O_RDONLY | O_NOCTTY | O_NONBLOCK);
     if (fd == -1)
         throw runtime_error("open() failed");
 
-    f = fdopen(serial_port_fd, "r");
+    f = fdopen(fd, "r");
     if (f == NULL)
         throw runtime_error("fdopen() failed");
 
@@ -1604,9 +1829,10 @@ void GPSThread::cleanup()
     fd = -1;
 }
 #else
-void GPSThread::open()
+void GPSThread::setup()
 {
-    HANDLE handle = CreateFile(port, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    HANDLE handle = CreateFile(device, GENERIC_READ, 0, 0,
+                               OPEN_EXISTING, 0, 0);
     if (handle == INVALID_HANDLE_VALUE)
         throw runtime_error("CreateFile() failed");
 

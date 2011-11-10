@@ -3034,9 +3034,7 @@ btnApplyConfig->activate();
 }
 
 static void cb_Refresh(Fl_Button*, void*) {
-  /* As far as I can tell, running this again is harmless. */
-/* dl_fldigi_gps_update_ports(1, 1); */
-/* TODO: HABITAT update this */;
+    progdefaults.testCommPorts();
 }
 
 Fl_Choice *inpGPSdev=(Fl_Choice *)0;

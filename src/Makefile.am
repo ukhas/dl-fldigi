@@ -410,7 +410,6 @@ dl_fldigi_SOURCES += \
 	include/textio.h \
 	include/psk_browser.h \
 	include/dl_fldigi/dl_fldigi.h \
-	include/dl_fldigi/gps.h \
 	include/dl_fldigi/version.h \
 	include/habitat/CouchDB.h \
 	include/habitat/UploaderThread.h \
@@ -554,7 +553,6 @@ dl_fldigi_SOURCES += \
 	habitat/UploaderThread.cxx \
 	habitat/Uploader.cxx \
 	dl_fldigi/dl_fldigi.cxx \
-	dl_fldigi/gps.cxx \
 	dl_fldigi/version.cxx
 
 # Sources that are part of the distribution but are not compiled directly
