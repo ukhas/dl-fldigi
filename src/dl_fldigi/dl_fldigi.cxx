@@ -16,6 +16,7 @@
 #include <json/json.h>
 #include <time.h>
 #include <math.h>
+#include <ctype.h>
 #include <signal.h>
 #include <pthread.h>
 #ifndef __MINGW32__
@@ -42,22 +43,6 @@ using namespace std;
 namespace dl_fldigi {
 
 /* FLTK doesn't provide something like this, as far as I can tell. */
-/* A quick note on deadlocking during shutdown:
- * If we block on a thread shutting down (via join or similar), and hold
- * the Fl main lock while doing so, we could deadlock if the thread wants
- * the lock to finish something before it dies.
- *
- * I've wrapped the joins for shutting down the UploaderThread
- * and the TRX thread in Fl::unlock() and Fl::lock().
- *  - src/dl_fldigi/dl_fldigi.cxx cleanup() line ~130
- *  - src/dialogs/fl_digi.cxx clean_exit line ~2530
- *
- * The GPSThread is safe because it uses a Fl::wait and Fl::awake pair
- * instead of join.
- *
- * These two and the main thread are the only threads that will execute
- * dl_fldigi functions. Protecting other thread shutdowns from the same
- * fate is trivial. */
 class Fl_AutoLock
 {
 public:
@@ -121,6 +106,7 @@ static vector<string> payload_index;
  * new data is downloaded; populate_flights cleans up). */
 static const Json::Value *cur_flight, *cur_payload, *cur_mode;
 static int cur_mode_index, cur_payload_modecount;
+static int flight_search_first = 1;
 
 static bool dl_online, downloaded_once, hab_ui_exists, shutting_down;
 static int dirty;
@@ -552,6 +538,61 @@ void populate_flights()
             select_flight(i);
         }
     }
+}
+
+static string squash_string(const char *str)
+{
+    string result;
+    result.reserve(strlen(str));
+
+    while (*str)
+    {
+        char c = *str;
+        if (isalnum(c))
+            result.push_back(tolower(c));
+        str++;
+    }
+
+    return result;
+}
+
+void flight_search(bool next)
+{
+    /* Searching the flight_browser rather than looking through our JSON docs?
+     * Well: it's easier in several ways, and quicker. We've already extracted
+     * the important strings in populate_flights and filtered for testing
+     * flights; that would have to be duplicated. */
+
+    Fl_AutoLock lock;
+
+    const string search(squash_string(flight_search_text->value()));
+    if (!search.size())
+        return;
+
+    int n = flight_browser->size();
+
+    if (!next || flight_search_first > n)
+        flight_search_first = 1;
+
+    int i = flight_search_first;
+
+    do
+    {
+        const string line(squash_string(flight_browser->text(i)));
+
+        if (line.find(search) != string::npos)
+        {
+            flight_browser->value(i);
+            flight_browser->do_callback();
+            flight_search_first = i + 1;
+            break;
+        }
+
+        i++;
+        if (i > n)
+            i = 1;
+    }
+    while (i != flight_search_first);
 }
 
 static void payload_choice_callback(Fl_Widget *w, void *a)

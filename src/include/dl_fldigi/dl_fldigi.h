@@ -77,6 +77,7 @@ void populate_flights();
 void select_flight(int index);
 void auto_configure();
 void auto_switchmode();
+void flight_search(bool next);
 
 } /* namespace dl_fldigi */
 

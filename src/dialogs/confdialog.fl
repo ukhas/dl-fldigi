@@ -105,7 +105,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   code {static const int flight_browser_columns[] = { 170, 150, 170 };} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {812 216 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
+    xywh {705 205 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-4 0 521 373} color 50 selection_color 50
@@ -3879,9 +3879,7 @@ btnApplyConfig->activate();}
               }
               Fl_Button {} {
                 label {Refresh Device List}
-                callback {progdefaults.testCommPorts();
-progdefaults.gps_device = "";
-dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);}
+                callback {progdefaults.testCommPorts();}
                 xywh {290 165 170 25}
               }
               Fl_Choice inpGPSdev {
@@ -3914,7 +3912,7 @@ btnApplyConfig->activate();} open
                 xywh {30 135 190 25} type Radio down_box ROUND_DOWN_BOX
                 code0 {o->value(progdefaults.gps_start_enabled);}
               }
-              Fl_Input {} {
+              Fl_Input stationary_lat {
                 label Latitude
                 callback {progdefaults.myLat = o->value();
 progdefaults.changed = true;
@@ -3923,7 +3921,7 @@ btnApplyConfig->activate();}
                 xywh {120 105 125 25} type Float
                 code0 {o->value(progdefaults.myLat.c_str());}
               }
-              Fl_Input {} {
+              Fl_Input stationary_lon {
                 label Longitude
                 callback {progdefaults.myLon = o->value();
 progdefaults.changed = true;
@@ -3953,9 +3951,11 @@ progdefaults.changed = true;}
                 }
                 Fl_Button {} {
                   label {Save as stationary location}
-                  callback {/* Copy coordinates to the operator form */
-/* dl_fldigi_gps_save_position(); */}
-                  xywh {200 295 250 25}
+                  callback {stationary_lat->value(gps_pos_lat->value());
+stationary_lon->value(gps_pos_lon->value());
+stationary_lat->do_callback();
+stationary_lon->do_callback();}
+                  xywh {200 295 250 25} deactivate
                 }
                 Fl_Output gps_pos_time {
                   label Time
@@ -4004,12 +4004,14 @@ if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
 dl_fldigi::populate_flights();}
                 xywh {265 300 130 25} down_box DOWN_BOX
               }
-              Fl_Input {} {
+              Fl_Input flight_search_text {
                 label {Jump to:}
+                callback {dl_fldigi::flight_search(false);}
                 xywh {75 300 120 25} when 1
               }
               Fl_Button {} {
                 label Next
+                callback {dl_fldigi::flight_search(true);}
                 xywh {200 300 60 25}
               }
               Fl_Choice payload_list {

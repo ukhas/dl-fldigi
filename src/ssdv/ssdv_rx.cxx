@@ -284,7 +284,7 @@ static void *upload_packet_thread(void *arg)
 	pthread_exit(0);
 }
 
-/* TODO: HABITAT upload using habitat */
+/* TODO: HABITAT-LATER upload using habitat */
 void ssdv_rx::upload_packet()
 {
 	ssdv_post_data_t *t;

@@ -3034,7 +3034,7 @@ btnApplyConfig->activate();
 }
 
 static void cb_Refresh(Fl_Button*, void*) {
-    progdefaults.testCommPorts();
+  progdefaults.testCommPorts();
 }
 
 Fl_Choice *inpGPSdev=(Fl_Choice *)0;
@@ -3064,14 +3064,18 @@ static void cb_Upload(Fl_Round_Button* o, void*) {
 };
 }
 
-static void cb_Latitude(Fl_Input* o, void*) {
+Fl_Input *stationary_lat=(Fl_Input *)0;
+
+static void cb_stationary_lat(Fl_Input* o, void*) {
   progdefaults.myLat = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();
 }
 
-static void cb_Longitude(Fl_Input* o, void*) {
+Fl_Input *stationary_lon=(Fl_Input *)0;
+
+static void cb_stationary_lon(Fl_Input* o, void*) {
   progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
@@ -3088,8 +3092,10 @@ Fl_Output *gps_pos_lat=(Fl_Output *)0;
 Fl_Output *gps_pos_altitude=(Fl_Output *)0;
 
 static void cb_Save(Fl_Button*, void*) {
-  /* Copy coordinates to the operator form */
-/* dl_fldigi_gps_save_position(); */;
+  stationary_lat->value(gps_pos_lat->value());
+stationary_lon->value(gps_pos_lon->value());
+stationary_lat->do_callback();
+stationary_lon->do_callback();
 }
 
 Fl_Output *gps_pos_time=(Fl_Output *)0;
@@ -3122,6 +3128,16 @@ static void cb_flight_docs_refresh(Fl_Button*, void*) {
 static void cb_Show(Fl_Check_Button* o, void*) {
   dl_fldigi::show_testing_flights = o->value();
 dl_fldigi::populate_flights();
+}
+
+Fl_Input *flight_search_text=(Fl_Input *)0;
+
+static void cb_flight_search_text(Fl_Input*, void*) {
+  dl_fldigi::flight_search(false);
+}
+
+static void cb_Next(Fl_Button*, void*) {
+  dl_fldigi::flight_search(true);
 }
 
 Fl_Choice *payload_list=(Fl_Choice *)0;
@@ -6937,16 +6953,16 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Upload);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { Fl_Input* o = new Fl_Input(120, 105, 125, 25, _("Latitude"));
-                o->type(1);
-                o->callback((Fl_Callback*)cb_Latitude);
+              { Fl_Input* o = stationary_lat = new Fl_Input(120, 105, 125, 25, _("Latitude"));
+                stationary_lat->type(1);
+                stationary_lat->callback((Fl_Callback*)cb_stationary_lat);
                 o->value(progdefaults.myLat.c_str());
-              } // Fl_Input* o
-              { Fl_Input* o = new Fl_Input(335, 105, 125, 25, _("Longitude"));
-                o->type(1);
-                o->callback((Fl_Callback*)cb_Longitude);
+              } // Fl_Input* stationary_lat
+              { Fl_Input* o = stationary_lon = new Fl_Input(335, 105, 125, 25, _("Longitude"));
+                stationary_lon->type(1);
+                stationary_lon->callback((Fl_Callback*)cb_stationary_lon);
                 o->value(progdefaults.myLon.c_str());
-              } // Fl_Input* o
+              } // Fl_Input* stationary_lon
               { Fl_Check_Button* o = new Fl_Check_Button(220, 135, 240, 25, _("Always enable GPS on startup"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Always);
@@ -6961,6 +6977,7 @@ d frequency"));
                 } // Fl_Output* gps_pos_altitude
                 { Fl_Button* o = new Fl_Button(200, 295, 250, 25, _("Save as stationary location"));
                 o->callback((Fl_Callback*)cb_Save);
+                o->deactivate();
                 } // Fl_Button* o
                 { gps_pos_time = new Fl_Output(60, 265, 105, 25, _("Time"));
                 } // Fl_Output* gps_pos_time
@@ -6993,10 +7010,12 @@ d frequency"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Show);
               } // Fl_Check_Button* o
-              { Fl_Input* o = new Fl_Input(75, 300, 120, 25, _("Jump to:"));
-                o->when(FL_WHEN_CHANGED);
-              } // Fl_Input* o
-              { new Fl_Button(200, 300, 60, 25, _("Next"));
+              { flight_search_text = new Fl_Input(75, 300, 120, 25, _("Jump to:"));
+                flight_search_text->callback((Fl_Callback*)cb_flight_search_text);
+                flight_search_text->when(FL_WHEN_CHANGED);
+              } // Fl_Input* flight_search_text
+              { Fl_Button* o = new Fl_Button(200, 300, 60, 25, _("Next"));
+                o->callback((Fl_Callback*)cb_Next);
               } // Fl_Button* o
               { payload_list = new Fl_Choice(75, 330, 140, 25, _("Payload:"));
                 payload_list->down_box(FL_BORDER_BOX);
