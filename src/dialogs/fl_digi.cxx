@@ -2528,9 +2528,7 @@ bool clean_exit(void) {
 		REQ_FLUSH(GET_THREAD_ID());
 		/* Don't deadlock during shutdown! Some dl-fldigi threads which use
 		 * Fl_AutoLock could be executed in the trx thread. */
-		Fl::unlock();
-		MilliSleep(10);
-		Fl::lock();
+        Fl::wait();
 	}
 
 	if (dlgConfig) {
@@ -2544,6 +2542,8 @@ bool clean_exit(void) {
 #endif
 
 	close_logbook();
+
+    dl_fldigi::cleanup();
 
 	return true;
 }

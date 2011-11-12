@@ -430,8 +430,6 @@ int main(int argc, char ** argv)
 		delete cbq[i];
 	}
 
-    dl_fldigi::cleanup();
-
 	FSEL::destroy();
 	debug::stop();
 

@@ -122,7 +122,7 @@ static vector<string> payload_index;
 static const Json::Value *cur_flight, *cur_payload, *cur_mode;
 static int cur_mode_index, cur_payload_modecount;
 
-static bool dl_online, downloaded_once, hab_ui_exists;
+static bool dl_online, downloaded_once, hab_ui_exists, shutting_down;
 static int dirty;
 static enum location_mode current_location_mode;
 static time_t last_rx, last_warn;
@@ -142,7 +142,10 @@ static void select_payload(int index);
 static void select_mode(int index);
 static void update_distance_bearing();
 
-/* Functions init, ready and cleanup should only be called from main() */
+/*
+ * Functions init, ready and cleanup should only be called from main().
+ * thread_death and periodically are called by FLTK, which will have the lock.
+ */
 void init()
 {
     cgl = new EZ::cURLGlobal();
@@ -182,26 +185,52 @@ void ready(bool hab_mode)
 
 void cleanup()
 {
+    LOG_DEBUG("cleaning up");
+
+    shutting_down = true;
+
     delete extrmgr;
     extrmgr = 0;
 
     if (uthr)
-    {
-        /* When cleaning up the main thread (that executes this function)
-         * will hold the lock. Don't deadlock: */
-        Fl::unlock();
         uthr->shutdown();
-        Fl::lock();
-    }
 
-    delete uthr;
-    uthr = 0;
+    if (gps_thread)
+        gps_thread->shutdown();
+
+    while (uthr || gps_thread)
+        Fl::wait();
 
     delete cgl;
     cgl = 0;
 }
 
-/* All other functions should hopefully be thread safe */
+static void thread_death(void *what)
+{
+    if (what == uthr)
+    {
+        LOG_INFO("thread_death: uthr");
+        uthr->join();
+        delete uthr;
+        uthr = 0;
+    }
+    else if (what == gps_thread)
+    {
+        LOG_INFO("thread_death: gps_thread");
+        gps_thread->join();
+        delete gps_thread;
+        gps_thread = 0;
+
+        if (!shutting_down)
+            reset_gps_settings();
+    }
+    else
+    {
+        LOG_ERROR("thread_death: unknown thread");
+        return;
+    }
+}
+
 static void periodically(void *)
 {
     Fl::repeat_timeout(period, periodically);
@@ -242,6 +271,7 @@ seconds:
     }
 }
 
+/* All other functions should hopefully be thread safe */
 void online(bool val)
 {
     Fl_AutoLock lock;
@@ -1069,15 +1099,15 @@ static void reset_gps_settings()
 {
     if (gps_thread != NULL)
     {
-        /* TODO: HABITAT (srs bug): Don't deadlock GPSThread::warning()
-         * against main thread locks and locks in commit() */
         gps_thread->shutdown();
 
-        delete gps_thread;
-        gps_thread = NULL;
+        /* We will have to wait for the current thread to shutdown before
+         * we can start it up again. thread_death will call this function. */
+        return;
     }
 
-    if (current_location_mode == LOC_GPS &&
+    if (gps_thread == NULL &&
+        current_location_mode == LOC_GPS &&
         progdefaults.gps_device.size() && progdefaults.gps_speed)
     {
         gps_thread = new GPSThread(progdefaults.gps_device,
@@ -1286,6 +1316,14 @@ static void update_distance_bearing()
 
     habDistance->value(str_distance.str().c_str());
     habBearing->value(str_bearing.str().c_str());
+}
+
+/* Modify run() to help us shutdown the thread */
+void *DUploaderThread::run()
+{
+    void *ret = UploaderThread::run();
+    Fl::awake(thread_death, this);
+    return ret;
 }
 
 /* All these functions are called via a DUploaderThread pointer so
@@ -1527,7 +1565,6 @@ void GPSThread::shutdown()
 {
     set_term();
     send_signal();
-    join();
 }
 
 void GPSThread::set_term()
@@ -1571,6 +1608,7 @@ void *GPSThread::run()
         }
     }
 
+    Fl::awake(thread_death, this);
     return NULL;
 }
 

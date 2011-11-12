@@ -56,6 +56,9 @@ public:
 
     /* Update UI */
     void got_flights(const vector<Json::Value> &flights);
+
+    /* Modify run() to help us shutdown the thread */
+    void *run();
 };
 
 extern DExtractorManager *extrmgr;
