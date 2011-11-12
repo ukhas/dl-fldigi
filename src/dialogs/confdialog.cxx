@@ -3037,28 +3037,10 @@ static void cb_Refresh(Fl_Button*, void*) {
   progdefaults.testCommPorts();
 }
 
-Fl_Choice *inpGPSdev=(Fl_Choice *)0;
-
-static void cb_inpGPSdev(Fl_Choice* o, void*) {
-  progdefaults.gps_device = o->text();
-progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
-btnApplyConfig->activate();
-}
-
 static void cb_Stationary(Fl_Round_Button* o, void*) {
   if (o->value())
 {
     dl_fldigi::new_location_mode = dl_fldigi::LOC_STATIONARY;
-    dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
-    btnApplyConfig->activate();
-};
-}
-
-static void cb_Upload(Fl_Round_Button* o, void*) {
-  if (o->value())
-{
-    dl_fldigi::new_location_mode = dl_fldigi::LOC_GPS;
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 };
@@ -3079,6 +3061,24 @@ static void cb_stationary_lon(Fl_Input* o, void*) {
   progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
+btnApplyConfig->activate();
+}
+
+static void cb_Upload(Fl_Round_Button* o, void*) {
+  if (o->value())
+{
+    dl_fldigi::new_location_mode = dl_fldigi::LOC_GPS;
+    dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
+    btnApplyConfig->activate();
+};
+}
+
+Fl_Input_Choice *inpGPSdev=(Fl_Input_Choice *)0;
+
+static void cb_inpGPSdev(Fl_Input_Choice* o, void*) {
+  progdefaults.gps_device = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();
 }
 
@@ -6937,21 +6937,11 @@ d frequency"));
               { Fl_Button* o = new Fl_Button(290, 165, 170, 25, _("Refresh Device List"));
                 o->callback((Fl_Callback*)cb_Refresh);
               } // Fl_Button* o
-              { inpGPSdev = new Fl_Choice(100, 165, 180, 25, _("Device"));
-                inpGPSdev->down_box(FL_BORDER_BOX);
-                inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
-              } // Fl_Choice* inpGPSdev
               { Fl_Round_Button* o = new Fl_Round_Button(30, 80, 190, 25, _("Stationary Listener"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Stationary);
                 o->value(!progdefaults.gps_start_enabled);
-              } // Fl_Round_Button* o
-              { Fl_Round_Button* o = new Fl_Round_Button(30, 135, 190, 25, _("Upload GPS Position"));
-                o->type(102);
-                o->down_box(FL_ROUND_DOWN_BOX);
-                o->callback((Fl_Callback*)cb_Upload);
-                o->value(progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
               { Fl_Input* o = stationary_lat = new Fl_Input(120, 105, 125, 25, _("Latitude"));
                 stationary_lat->type(1);
@@ -6963,6 +6953,15 @@ d frequency"));
                 stationary_lon->callback((Fl_Callback*)cb_stationary_lon);
                 o->value(progdefaults.myLon.c_str());
               } // Fl_Input* stationary_lon
+              { Fl_Round_Button* o = new Fl_Round_Button(30, 135, 190, 25, _("Upload GPS Position"));
+                o->type(102);
+                o->down_box(FL_ROUND_DOWN_BOX);
+                o->callback((Fl_Callback*)cb_Upload);
+                o->value(progdefaults.gps_start_enabled);
+              } // Fl_Round_Button* o
+              { inpGPSdev = new Fl_Input_Choice(100, 165, 185, 25, _("Device"));
+                inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
+              } // Fl_Input_Choice* inpGPSdev
               { Fl_Check_Button* o = new Fl_Check_Button(220, 135, 240, 25, _("Always enable GPS on startup"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Always);

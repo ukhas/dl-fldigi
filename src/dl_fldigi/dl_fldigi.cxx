@@ -79,7 +79,11 @@ class GPSThread : public EZ::SimpleThread
 
 public:
     GPSThread(const string &d, int b)
-        : device(d), baud(b), term(false), fd(-1), f(NULL) {};
+        : device(d), baud(b), term(false),
+#ifdef __MINGW32__
+          handle(INVALID_HANDLE_VALUE),
+#endif
+          fd(-1), f(NULL), wait_exp(0) {};
     ~GPSThread() {};
     void *run();
     void shutdown();
@@ -195,14 +199,14 @@ static void thread_death(void *what)
 {
     if (what == uthr)
     {
-        LOG_INFO("thread_death: uthr");
+        LOG_INFO("uthr");
         uthr->join();
         delete uthr;
         uthr = 0;
     }
     else if (what == gps_thread)
     {
-        LOG_INFO("thread_death: gps_thread");
+        LOG_INFO("gps_thread");
         gps_thread->join();
         delete gps_thread;
         gps_thread = 0;
@@ -212,7 +216,7 @@ static void thread_death(void *what)
     }
     else
     {
-        LOG_ERROR("thread_death: unknown thread");
+        LOG_ERROR("unknown thread");
         return;
     }
 }
@@ -1633,7 +1637,7 @@ void *GPSThread::run()
         try
         {
             setup();
-            log("Opened device");
+            log("Opened device " + device);
             while (!check_term())
             {
                 read();
@@ -1707,19 +1711,20 @@ static void split_nmea(const string &data, vector<string> &parts)
     }
 }
 
-static double parse_ddm(const string &part, const string &dirpart)
+static double parse_ddm(string part, const string &dirpart)
 {
     double degrees, mins;
     size_t pos = part.find('.');
     if (pos == string::npos || pos < 3)
         throw runtime_error("Bad DDM");
 
-    istringstream tmp;
+    /* Split degrees and minutes parts */
+    part.insert(pos - 2, " ");
+
+    istringstream tmp(part);
     tmp.exceptions(istringstream::failbit | istringstream::badbit);
 
-    tmp.str(part.substr(0, pos - 2));
     tmp >> degrees;
-    tmp.str(part.substr(pos + 1));
     tmp >> mins;
 
     double value = degrees + mins / 60;
@@ -1730,16 +1735,18 @@ static double parse_ddm(const string &part, const string &dirpart)
         return value;
 }
 
-static void parse_hms(const string &part, int &hour, int &minute, int &second)
+static void parse_hms(string part, int &hour, int &minute, int &second)
 {
-    istringstream tmp;
+    /* Split HH MM SS with spaces */
+    part.insert(6, " ");
+    part.insert(4, " ");
+    part.insert(2, " ");
+
+    istringstream tmp(part);
     tmp.exceptions(istringstream::failbit | istringstream::badbit);
 
-    tmp.str(part.substr(0, 2));
     tmp >> hour;
-    tmp.str(part.substr(2, 2));
     tmp >> minute;
-    tmp.str(part.substr(4, 2));
     tmp >> second;
 }
 

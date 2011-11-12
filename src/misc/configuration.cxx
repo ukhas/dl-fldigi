@@ -702,6 +702,8 @@ int configuration::setDefaults()
 	mnuLang->hide();
 #endif
 
+    inpGPSdev->value(gps_device.c_str());
+
 	return 1;
 }
 

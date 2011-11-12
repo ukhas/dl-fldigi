@@ -105,7 +105,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   code {static const int flight_browser_columns[] = { 170, 150, 170 };} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {705 205 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
+    xywh {1113 417 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-4 0 521 373} color 50 selection_color 50
@@ -2294,7 +2294,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabRig {
-        label Rig
+        label Rig open
         tooltip {Transceiver control} xywh {0 25 500 346} labelsize 12 hide
       } {
         Fl_Tabs tabsRig {open
@@ -3882,14 +3882,6 @@ btnApplyConfig->activate();}
                 callback {progdefaults.testCommPorts();}
                 xywh {290 165 170 25}
               }
-              Fl_Choice inpGPSdev {
-                label Device
-                callback {progdefaults.gps_device = o->text();
-progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
-btnApplyConfig->activate();} open
-                xywh {100 165 180 25} down_box BORDER_BOX
-              } {}
               Fl_Round_Button {} {
                 label {Stationary Listener}
                 callback {if (o->value())
@@ -3900,17 +3892,6 @@ btnApplyConfig->activate();} open
 }}
                 xywh {30 80 190 25} type Radio down_box ROUND_DOWN_BOX
                 code0 {o->value(!progdefaults.gps_start_enabled);}
-              }
-              Fl_Round_Button {} {
-                label {Upload GPS Position}
-                callback {if (o->value())
-{
-    dl_fldigi::new_location_mode = dl_fldigi::LOC_GPS;
-    dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
-    btnApplyConfig->activate();
-}}
-                xywh {30 135 190 25} type Radio down_box ROUND_DOWN_BOX
-                code0 {o->value(progdefaults.gps_start_enabled);}
               }
               Fl_Input stationary_lat {
                 label Latitude
@@ -3930,6 +3911,25 @@ btnApplyConfig->activate();}
                 xywh {335 105 125 25} type Float
                 code0 {o->value(progdefaults.myLon.c_str());}
               }
+              Fl_Round_Button {} {
+                label {Upload GPS Position}
+                callback {if (o->value())
+{
+    dl_fldigi::new_location_mode = dl_fldigi::LOC_GPS;
+    dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
+    btnApplyConfig->activate();
+}}
+                xywh {30 135 190 25} type Radio down_box ROUND_DOWN_BOX
+                code0 {o->value(progdefaults.gps_start_enabled);}
+              }
+              Fl_Input_Choice inpGPSdev {
+                label Device
+                callback {progdefaults.gps_device = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
+btnApplyConfig->activate();} open
+                xywh {100 165 185 25}
+              } {}
               Fl_Check_Button {} {
                 label {Always enable GPS on startup}
                 callback {progdefaults.gps_start_enabled = o->value();
