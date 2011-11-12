@@ -409,9 +409,9 @@ void *trx_loop(void *args)
 			trx_state = STATE_ENDED;
 			// fall through
 		case STATE_ENDED:
-            Fl::lock();
-            Fl::awake();
-            Fl::unlock();
+			Fl::lock();
+			Fl::awake();
+			Fl::unlock();
 			return 0;
 		case STATE_RESTART:
 			trx_reset_loop();
