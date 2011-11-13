@@ -5,7 +5,7 @@
 #include <string>
 #include <stdexcept>
 #include <utility>
-#include <json/json.h>
+#include <jsoncpp/json.h>
 #include "habitat/Extractor.h"
 #include "habitat/UploaderThread.h"
 
