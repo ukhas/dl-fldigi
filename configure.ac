@@ -281,7 +281,12 @@ fi
 
 ### jsoncpp
 if test "x$ac_cv_want_fldigi" = "xyes"; then
-    AC_CHECK_LIB([jsoncpp], [main])
+    AC_FLDIGI_JPEG
+fi
+
+### jsoncpp
+if test "x$ac_cv_want_fldigi" = "xyes"; then
+    AC_FLDIGI_JSONCPP
 fi
 
 ### libintl
