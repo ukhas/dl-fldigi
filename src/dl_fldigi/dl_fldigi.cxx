@@ -938,10 +938,8 @@ void auto_configure()
             double shift = settings["shift"].asDouble();
 
             /* Look in the standard shifts first */
-            /* hardcoded list size :-( */
-            int stdshifts = 11;
             int search;
-            for (search = 0; search < stdshifts; search++)
+            for (search = 0; rtty::SHIFT[search] != 0; search++)
             {
                 double diff = rtty::SHIFT[search] - shift;
                 /* I love floats :-( */
@@ -954,11 +952,11 @@ void auto_configure()
                 }
             }
 
-            /* If not found, search == stdshifts, which is the index of
-             * the "Custom" menu item */
-            if (search == stdshifts)
+            /* If not found (i.e., we found the terminating 0) then
+             * search == the index of the "Custom" menu item */
+            if (rtty::SHIFT[search] == 0)
             {
-                selShift->value(stdshifts);
+                selShift->value(search);
                 selCustomShift->activate();
                 progdefaults.rtty_shift = -1;
                 selCustomShift->value(shift);
@@ -972,9 +970,8 @@ void auto_configure()
         if (settings["baud"].isNumeric())
         {
             double baud = settings["baud"].asDouble();
-            int stdbauds = 12;
             int search;
-            for (search = 0; search < stdbauds; search++)
+            for (search = 0; rtty::BAUD[search] != 0; search++)
             {
                 double diff = rtty::BAUD[search] - baud;
                 if (diff < 0.01 && diff > -0.01)

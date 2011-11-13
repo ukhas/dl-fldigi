@@ -92,8 +92,9 @@ int dspcnt = 0;
 
 static char msg1[20];
 
-const double rtty::SHIFT[] = {23, 85, 160, 170, 182, 200, 240, 350, 425, 600, 850};
-const double rtty::BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200};
+/* Terminating 0 at the end of the list for dl_fldigi.cxx */
+const double rtty::SHIFT[] = {23, 85, 160, 170, 182, 200, 240, 350, 425, 600, 850, 0};
+const double rtty::BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200, 0};
 const int    rtty::BITS[]  = {5, 7, 8};
 
 void rtty::tx_init(SoundBase *sc)
