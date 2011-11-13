@@ -290,8 +290,6 @@ int main(int argc, char ** argv)
 
 	create_fl_digi_main(argc, argv);
 
-    dl_fldigi::ready(bHAB);
-
 	if (!have_config || show_cpucheck) {
 		double speed = speed_test(SRC_SINC_FASTEST, 8);
 
@@ -413,6 +411,8 @@ int main(int argc, char ** argv)
 		show_wizard();
 #endif
 //	connect_to_log_server();
+
+    dl_fldigi::ready(bHAB);
 
 	int ret = Fl::run();
 
