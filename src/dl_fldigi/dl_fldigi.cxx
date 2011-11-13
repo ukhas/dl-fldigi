@@ -179,20 +179,45 @@ void cleanup()
 
     shutting_down = true;
 
-    delete extrmgr;
-    extrmgr = 0;
+    /* Destroy extraction stuff */
+    if (extrmgr)
+    {
+        delete extrmgr;
+        extrmgr = 0;
+    }
 
+    if (ukhas)
+    {
+        delete ukhas;
+        ukhas = 0;
+    }
+
+    /* Ask running threads to shutdown */
     if (uthr)
         uthr->shutdown();
 
     if (gps_thread)
         gps_thread->shutdown();
 
+    /* Wait for threads to die and be cleaned up */
     while (uthr || gps_thread)
         Fl::wait();
 
-    delete cgl;
-    cgl = 0;
+    /* Clean up cURL */
+    if (cgl)
+    {
+        delete cgl;
+        cgl = 0;
+    }
+
+    /* Clean up flight docs stuff */
+    flight_docs.clear();
+    payload_index.clear();
+    cur_flight = NULL;
+    cur_payload = NULL;
+    cur_mode = NULL;
+    cur_mode_index = 0;
+    cur_payload_modecount = 0;
 }
 
 static void thread_death(void *what)
@@ -223,6 +248,9 @@ static void thread_death(void *what)
 
 static void periodically(void *)
 {
+    if (shutting_down)
+        return;
+
     Fl::repeat_timeout(period, periodically);
 
     time_t now = time(NULL);
