@@ -1,5 +1,5 @@
 AC_DEFUN([AC_FLDIGI_JSONCPP], [
-    AC_LANG_PUSH(C++)
+    AC_LANG_PUSH([C++])
     LIBS="$LIBS -ljsoncpp"
     AC_MSG_CHECKING([for libjsoncpp])
     AC_LINK_IFELSE(

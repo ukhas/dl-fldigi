@@ -279,7 +279,7 @@ if test "x$target_darwin" = "xno" && test "x$target_win32" = "xno"; then
     AC_FLDIGI_PKG_CHECK([x], [x11], [no], [yes])
 fi
 
-### jsoncpp
+### jpeg
 if test "x$ac_cv_want_fldigi" = "xyes"; then
     AC_FLDIGI_JPEG
 fi
