@@ -1,5 +1,8 @@
-#ifndef DL_FLDIGI_MISC_H
-#define DL_FLDIGI_MISC_H
+#ifndef DL_FLDIGI_MAIN_H
+#define DL_FLDIGI_MAIN_H
+
+#include <time.h>
+#include <Fl/Fl.H>
 
 namespace dl_fldigi {
 
@@ -21,11 +24,8 @@ enum changed_groups
     CH_GPS_SETTINGS = 0x10
 };
 
-enum location_mode
-{
-    LOC_STATIONARY,
-    LOC_GPS
-};
+extern bool hab_ui_exists, shutting_down;
+extern time_t last_rx, last_warn;
 
 void init();                 /* Create globals and stuff; before UI init */
 void ready(bool hab_mode);   /* After UI init, start stuff */
@@ -39,4 +39,4 @@ void commit();
 
 } /* namespace dl_fldigi */
 
-#endif /* DL_FLDIGI_MISC_H */
+#endif /* DL_FLDIGI_MAIN_H */

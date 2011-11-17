@@ -4,20 +4,36 @@
  * License: GNU GPL 3
  */
 
+#include "dl_fldigi/dl_fldigi.h"
+
+#include <sstream>
+#include <time.h>
+
+#include <Fl/Fl.H>
+
+#include "configuration.h"
+#include "debug.h"
+#include "confdialog.h"
+#include "fl_digi.h"
+
+#include "dl_fldigi/flights.h"
+#include "dl_fldigi/hbtint.h"
+#include "dl_fldigi/location.h"
+#include "dl_fldigi/gps.h"
+
 using namespace std;
 
 namespace dl_fldigi {
 
-/* FLTK doesn't provide something like this, as far as I can tell. */
+bool hab_ui_exists, shutting_down;
+time_t last_rx, last_warn;
 
-static bool dl_online, hab_ui_exists, shutting_down;
+static bool dl_online;
 static int dirty;
-static time_t last_rx, last_warn;
 
 static const time_t period = 10;
 
 static void periodically(void *);
-static void update_distance_bearing();
 
 /*
  * Functions init, ready and cleanup should only be called from main().
@@ -31,24 +47,11 @@ void init()
 
 void ready(bool hab_mode)
 {
-    flights::load_cache();
-    hbtint::start();
-
-    /* XXX before gps configure */ location::ready();
-
-    gps::configure_gps();
-
-
-    /* XXX move to small functions */
-    /* if --hab was specified, default online to true, and update ui */
     hab_ui_exists = hab_mode;
 
-    if (progdefaults.gps_start_enabled)
-        current_location_mode = LOC_GPS;
-    else
-        current_location_mode = LOC_STATIONARY;
-
-    reset_gps_settings();
+    flights::load_cache();
+    hbtint::start();
+    location::init();
 
     /* online will call uthr->settings() if hab_mode since it online will
      * "change" from false to true) */
@@ -114,6 +117,9 @@ seconds:
 }
 
 /* All other functions should hopefully be thread safe */
+
+/* How does online/offline work? if online() is false, uthr->settings() will
+ * reset the UploaderThread, leaving it unintialised */
 void online(bool val)
 {
     Fl_AutoLock lock;
@@ -125,16 +131,16 @@ void online(bool val)
 
     if (changed)
     {
-        uthr->settings();
+        hbtint::uthr->settings();
     }
 
     if (changed && dl_online)
     {
-        if (!downloaded_once)
-            uthr->flights();
+        if (!flights::downloaded_once)
+            hbtint::uthr->flights();
 
-        uthr->listener_info();
-        uthr->listener_telemetry();
+        hbtint::uthr->listener_info();
+        hbtint::uthr->listener_telemetry();
     }
 
     confdialog_dl_online->value(val);
@@ -166,35 +172,35 @@ void commit()
     /* Update something if its settings change; fairly simple: */
     if (dirty & CH_UTHR_SETTINGS)
     {
-        downloaded_once = false;
+        flights::downloaded_once = false;
 
-        uthr->settings();
-        uthr->flights();
+        hbtint::uthr->settings();
+        hbtint::uthr->flights();
     }
 
     if (dirty & CH_LOCATION_MODE)
     {
-        current_location_mode = new_location_mode;
+        location::current_location_mode = location::new_location_mode;
     }
 
     if ((dirty & CH_LOCATION_MODE) || (dirty & CH_GPS_SETTINGS))
     {
-        reset_gps_settings();
+        gps::configure_gps();
     }
 
     /* If the info has been updated, or the upload settings changed... */
     if (dirty & (CH_UTHR_SETTINGS | CH_INFO))
     {
-        uthr->listener_info();
+        hbtint::uthr->listener_info();
     }
 
     /* if stationary and (settings changed, or if we just switched to
      * stationary mode from gps mode, or if the upload settings changed) */
-    if (current_location_mode == LOC_STATIONARY &&
+    if (location::current_location_mode == location::LOC_STATIONARY &&
         (dirty & (CH_STATIONARY_LOCATION | CH_LOCATION_MODE |
                   CH_UTHR_SETTINGS)))
     {
-        uthr->listener_telemetry();
+        hbtint::uthr->listener_telemetry();
     }
 
     dirty = CH_NONE;

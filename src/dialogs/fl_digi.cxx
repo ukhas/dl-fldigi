@@ -148,6 +148,8 @@
 
 #include <iostream>
 #include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/flights.h"
+#include "dl_fldigi/hbtint.h"
 bool bHAB = false;
 
 #define LOG_TO_FILE_MLABEL     _("Log all RX/TX text")
@@ -1439,7 +1441,7 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 
 void cb_dl_fldigi_refresh(Fl_Widget *, void *)
 {
-    dl_fldigi::uthr->flights();
+    dl_fldigi::hbtint::uthr->flights();
 }
 
 void cb_toggle_dl_online(Fl_Widget *w, void *)
@@ -1450,12 +1452,12 @@ void cb_toggle_dl_online(Fl_Widget *w, void *)
 
 void cb_dlfldigi_autoconfigure(Fl_Widget *w, void *)
 {
-    dl_fldigi::auto_configure();
+    dl_fldigi::flights::auto_configure();
 }
 
 void cb_dlfldigi_autoswitchmode(Fl_Widget *w, void *)
 {
-    dl_fldigi::auto_switchmode();
+    dl_fldigi::flights::auto_switchmode();
 }
 
 //jcoxon added 21/3/10
@@ -6191,7 +6193,7 @@ void put_rx_char(unsigned int data, int style, bool extracted)
 
     if (!extracted)
     {
-        dl_fldigi::extrmgr->push(data);
+        dl_fldigi::hbtint::extrmgr->push(data);
     }
 }
 

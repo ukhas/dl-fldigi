@@ -1,14 +1,18 @@
 #ifndef DL_FLDIGI_FLIGHTS_H
 #define DL_FLDIGI_FLIGHTS_H
 
+#include <vector>
+#include <jsoncpp/json.h>
+
 namespace dl_fldigi {
 namespace flights {
 
-extern bool show_testing;
+extern bool show_testing, downloaded_once;
 
 void init();
 void cleanup();
 
+void new_docs(const std::vector<Json::Value> &new_flight_docs);
 void load_cache();
 void populate_flights();
 void flight_search(bool next);

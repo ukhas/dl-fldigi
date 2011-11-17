@@ -51,6 +51,7 @@ public:
 };
 
 void configure_gps();
+void cleanup();
 
 } /* namespace gps */
 } /* namespace dl_fldigi */

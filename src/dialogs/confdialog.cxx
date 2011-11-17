@@ -10,6 +10,9 @@
 #include "main.h"
 #include "fl_digi.h"
 #include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/location.h"
+#include "dl_fldigi/flights.h"
+#include "dl_fldigi/hbtint.h"
 #include "soundconf.h"
 #include "colorsfonts.h"
 #include "waterfall.h"
@@ -3040,7 +3043,7 @@ static void cb_Refresh(Fl_Button*, void*) {
 static void cb_Stationary(Fl_Round_Button* o, void*) {
   if (o->value())
 {
-    dl_fldigi::new_location_mode = dl_fldigi::LOC_STATIONARY;
+    dl_fldigi::location::new_location_mode = dl_fldigi::location::LOC_STATIONARY;
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 };
@@ -3067,7 +3070,7 @@ btnApplyConfig->activate();
 static void cb_Upload(Fl_Round_Button* o, void*) {
   if (o->value())
 {
-    dl_fldigi::new_location_mode = dl_fldigi::LOC_GPS;
+    dl_fldigi::location::new_location_mode = dl_fldigi::location::LOC_GPS;
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 };
@@ -3110,34 +3113,34 @@ static void cb_flight_browser(Fl_Browser* o, void*) {
   if (habFlight)
     habFlight->value(o->value() - 1);
 int index = reinterpret_cast<intptr_t>(o->data(o->value()));
-dl_fldigi::select_flight(index);
+dl_fldigi::flights::select_flight(index);
 
 /* Handle a double click and autoconfigure.
  * This payload is ready for configuring iff dl_fldigi.cxx
  * has activated the autoconfigure button. */
 if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
-    dl_fldigi::auto_configure();
+    dl_fldigi::flights::auto_configure();
 }
 
 Fl_Button *flight_docs_refresh=(Fl_Button *)0;
 
 static void cb_flight_docs_refresh(Fl_Button*, void*) {
-  dl_fldigi::uthr->flights();
+  dl_fldigi::hbtint::uthr->flights();
 }
 
 static void cb_Show(Fl_Check_Button* o, void*) {
-  dl_fldigi::show_testing_flights = o->value();
-dl_fldigi::populate_flights();
+  dl_fldigi::flights::show_testing = o->value();
+dl_fldigi::flights::populate_flights();
 }
 
 Fl_Input *flight_search_text=(Fl_Input *)0;
 
 static void cb_flight_search_text(Fl_Input*, void*) {
-  dl_fldigi::flight_search(false);
+  dl_fldigi::flights::flight_search(false);
 }
 
 static void cb_Next(Fl_Button*, void*) {
-  dl_fldigi::flight_search(true);
+  dl_fldigi::flights::flight_search(true);
 }
 
 Fl_Choice *payload_list=(Fl_Choice *)0;
@@ -3145,7 +3148,7 @@ Fl_Choice *payload_list=(Fl_Choice *)0;
 Fl_Button *payload_autoconfigure=(Fl_Button *)0;
 
 static void cb_payload_autoconfigure(Fl_Button*, void*) {
-  dl_fldigi::auto_configure();
+  dl_fldigi::flights::auto_configure();
 }
 
 Fl_Choice *payload_mode_list=(Fl_Choice *)0;

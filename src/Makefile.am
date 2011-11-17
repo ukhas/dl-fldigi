@@ -409,7 +409,7 @@ dl_fldigi_SOURCES += \
 	include/table.h \
 	include/textio.h \
 	include/psk_browser.h \
-	include/dl_fldigi/misc.h \
+	include/dl_fldigi/dl_fldigi.h \
 	include/dl_fldigi/flights.h \
 	include/dl_fldigi/location.h \
 	include/dl_fldigi/gps.h \
@@ -556,7 +556,7 @@ dl_fldigi_SOURCES += \
 	habitat/UKHASExtractor.cxx \
 	habitat/UploaderThread.cxx \
 	habitat/Uploader.cxx \
-	dl_fldigi/misc.cxx \
+	dl_fldigi/dl_fldigi.cxx \
 	dl_fldigi/flights.cxx \
 	dl_fldigi/location.cxx \
 	dl_fldigi/gps.cxx \

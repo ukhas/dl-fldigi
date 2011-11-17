@@ -18,6 +18,7 @@ extern double listener_latitude, listener_longitude,
               balloon_latitude, balloon_longitude;
 extern bool listener_valid, balloon_valid;
 
+void init();
 void update_distance_bearing();
 
 } /* namespace location */

@@ -5,14 +5,30 @@
  * flights.cxx: flight document management, selection, GUI and autoconfiguring
  */
 
+#include "dl_fldigi/flights.h"
+
+#include <string>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <set>
+#include <unistd.h>
+#include <jsoncpp/json.h>
+
+#include "main.h"
+#include "debug.h"
+#include "fl_digi.h"
+#include "confdialog.h"
+
+#include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/hbtint.h"
+
 using namespace std;
 
 namespace dl_fldigi {
 namespace flights {
 
-bool show_testing;
-
-static bool downloaded_once;
+bool show_testing, downloaded_once;
 
 static string cache_file;
 static vector<Json::Value> flight_docs;
@@ -109,6 +125,36 @@ static string escape_menu_string(const string &s_)
     while (pos != string::npos);
 
     return s;
+}
+
+void new_docs(const vector<Json::Value> &new_flight_docs)
+{
+    Fl_AutoLock lock;
+
+    flight_docs = new_flight_docs;
+    downloaded_once = true;
+
+    ofstream cf(cache_file.c_str(), ios_base::out | ios_base::trunc);
+
+    for (vector<Json::Value>::const_iterator it = flight_docs.begin();
+         it != flight_docs.end() && cf.good();
+         it++)
+    {
+        Json::FastWriter writer;
+        cf << writer.write(*it);
+    }
+
+    bool success = cf.good();
+
+    cf.close();
+
+    if (!success)
+    {
+        LOG_WARN("unable to save flights data");
+        unlink(cache_file.c_str());
+    }
+
+    populate_flights();
 }
 
 static string escape_browser_string(const string &s_)
@@ -497,7 +543,7 @@ static void select_payload(int index)
     LOG_DEBUG("Selecting payload %i", index);
 
     cur_payload = NULL;
-    extrmgr->payload(NULL);
+    hbtint::extrmgr->payload(NULL);
     cur_payload_modecount = -1;
 
     if (hab_ui_exists)
@@ -541,7 +587,7 @@ static void select_payload(int index)
         return;
 
     cur_payload = &payload;
-    extrmgr->payload(&payload);
+    hbtint::extrmgr->payload(&payload);
 
     const Json::Value *telemetry_settings = &(payload["telemetry"]);
 

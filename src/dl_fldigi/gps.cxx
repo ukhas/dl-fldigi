@@ -2,7 +2,36 @@
  * Copyright (C) 2011 James Coxon, Daniel Richman, Robert Harrison,
  *                    Philip Heron, Adam Greig, Simrun Basuita
  * License: GNU GPL 3
+ *
+ * gps.cxx: Threaded (async) serial GPS uploading support
  */
+
+#include "dl_fldigi/gps.h"
+
+#include <string>
+#include <sstream>
+#include <signal.h>
+#include <pthread.h>
+#include <jsoncpp/json.h>
+
+#ifndef __MINGW32__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <termios.h>
+#else
+#include <windows.h>
+#endif
+
+#include <Fl/Fl.H>
+
+#include "configuration.h"
+#include "debug.h"
+#include "fl_digi.h"
+
+#include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/location.h"
+#include "dl_fldigi/hbtint.h"
 
 using namespace std;
 
@@ -32,7 +61,7 @@ void configure_gps()
     }
 
     if (gps_thread == NULL &&
-        current_location_mode == LOC_GPS &&
+        location::current_location_mode == location::LOC_GPS &&
         progdefaults.gps_device.size() && progdefaults.gps_speed)
     {
         gps_thread = new GPSThread(progdefaults.gps_device,
@@ -55,51 +84,9 @@ static void gps_thread_death(void *what)
     delete gps_thread;
     gps_thread = 0;
 
-    if (!shutting_down)
+    if (!dl_fldigi::shutting_down)
         configure_gps();
 }
-
-class GPSThread : public EZ::SimpleThread
-{
-    const string device;
-    const int baud;
-    bool term;
-
-#ifdef __MINGW32__
-    HANDLE handle;
-#endif
-    int fd;
-    FILE *f;
-    int wait_exp;
-
-    void prepare_signals();
-    void send_signal();
-    bool check_term();
-    void set_term();
-    void wait();
-
-    void setup();
-    void cleanup();
-    void log(const string &message);
-    void warning(const string &message);
-
-    void read();
-    void upload(int h, int m, int s, double lat, double lon, double alt);
-
-public:
-    GPSThread(const string &d, int b)
-        : device(d), baud(b), term(false),
-#ifdef __MINGW32__
-          handle(INVALID_HANDLE_VALUE),
-#endif
-          fd(-1), f(NULL), wait_exp(0) {};
-    ~GPSThread() {};
-    void *run();
-    void shutdown();
-};
-
-/* How does online/offline work? if online() is false, uthr->settings() will
- * reset the UploaderThread, leaving it unintialised */
 
 /* On Windows we have to wait for a timeout to wake the GPS thread up
  * to terminate it. This sucks. But on systems that support signals,
@@ -183,7 +170,7 @@ void *GPSThread::run()
         }
     }
 
-    Fl::awake(thread_death, this);
+    Fl::awake(gps_thread_death, this);
     return NULL;
 }
 
@@ -194,7 +181,7 @@ void GPSThread::warning(const string &message)
 
     string temp = "WARNING GPS Error " + message;
     put_status_safe(temp.c_str(), 10);
-    last_warn = time(NULL);
+    dl_fldigi::last_warn = time(NULL);
 }
 
 void GPSThread::log(const string &message)
@@ -350,13 +337,13 @@ void GPSThread::upload(int hour, int minute, int second,
     Fl_AutoLock lock;
 
     /* Data OK? upload. */
-    if (current_location_mode != LOC_GPS)
+    if (location::current_location_mode != location::LOC_GPS)
         throw runtime_error("GPS mode disabled mid-line");
 
-    listener_valid = true;
-    listener_latitude = latitude;
-    listener_longitude = longitude;
-    update_distance_bearing();
+    location::listener_valid = true;
+    location::listener_latitude = latitude;
+    location::listener_longitude = longitude;
+    location::update_distance_bearing();
 
     Json::Value data(Json::objectValue);
     data["time"] = Json::Value(Json::objectValue);
@@ -369,7 +356,7 @@ void GPSThread::upload(int hour, int minute, int second,
     data["longitude"] = longitude;
     data["altitude"] = altitude;
 
-    uthr->listener_telemetry(data);
+    hbtint::uthr->listener_telemetry(data);
 }
 
 /* The open() functions for both platforms were originally written by

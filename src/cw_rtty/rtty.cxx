@@ -38,7 +38,7 @@ using namespace std;
 #include "digiscope.h"
 #include "trx.h"
 
-#include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/hbtint.h"
 
 view_rtty *rttyviewer = (view_rtty *)0;
 
@@ -92,7 +92,7 @@ int dspcnt = 0;
 
 static char msg1[20];
 
-/* Terminating 0 at the end of the list for dl_fldigi.cxx */
+/* Terminating 0 at the end of the list for dl_fldigi/flights.cxx */
 const double rtty::SHIFT[] = {23, 85, 160, 170, 182, 200, 240, 350, 425, 600, 850, 0};
 const double rtty::BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200, 0};
 const int    rtty::BITS[]  = {5, 7, 8};
@@ -421,12 +421,12 @@ bool rtty::rx(bool bit)
 					put_rx_ssdv(c, lb);
 
 					if (lb != 0)
-						dl_fldigi::extrmgr->skipped(lb);
+						dl_fldigi::hbtint::extrmgr->skipped(lb);
 
 					if (nbits == 5)
-						dl_fldigi::extrmgr->push(c, habitat::PUSH_BAUDOT_HACK);
+						dl_fldigi::hbtint::extrmgr->push(c, habitat::PUSH_BAUDOT_HACK);
 					else
-						dl_fldigi::extrmgr->push(c);
+						dl_fldigi::hbtint::extrmgr->push(c);
 
 					if ( c != 0 )
 						put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c, FTextBase::RECV, true);

@@ -2,7 +2,19 @@
  * Copyright (C) 2011 James Coxon, Daniel Richman, Robert Harrison,
  *                    Philip Heron, Adam Greig, Simrun Basuita
  * License: GNU GPL 3
+ *
+ * location.cxx: Stationary and moving location management
  */
+
+#include "dl_fldigi/location.h"
+
+#include <sstream>
+
+#include "configuration.h"
+#include "fl_digi.h"
+
+#include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/gps.h"
 
 using namespace std;
 
@@ -13,6 +25,16 @@ enum location_mode new_location_mode, current_location_mode;
 double listener_latitude, listener_longitude,
        balloon_latitude, balloon_longitude;
 bool listener_valid, balloon_valid;
+
+void init()
+{
+    if (progdefaults.gps_start_enabled)
+        current_location_mode = LOC_GPS;
+    else
+        current_location_mode = LOC_STATIONARY;
+
+    gps::configure_gps();
+}
 
 void update_distance_bearing()
 {

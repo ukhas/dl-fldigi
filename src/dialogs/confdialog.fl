@@ -21,6 +21,12 @@ decl {\#include "fl_digi.h"} {}
 
 decl {\#include "dl_fldigi/dl_fldigi.h"} {} 
 
+decl {\#include "dl_fldigi/location.h"} {} 
+
+decl {\#include "dl_fldigi/flights.h"} {} 
+
+decl {\#include "dl_fldigi/hbtint.h"} {} 
+
 decl {\#include "soundconf.h"} {} 
 
 decl {\#include "globals.h"} {public
@@ -3886,7 +3892,7 @@ btnApplyConfig->activate();}
                 label {Stationary Listener}
                 callback {if (o->value())
 {
-    dl_fldigi::new_location_mode = dl_fldigi::LOC_STATIONARY;
+    dl_fldigi::location::new_location_mode = dl_fldigi::location::LOC_STATIONARY;
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 }}
@@ -3915,7 +3921,7 @@ btnApplyConfig->activate();}
                 label {Upload GPS Position}
                 callback {if (o->value())
 {
-    dl_fldigi::new_location_mode = dl_fldigi::LOC_GPS;
+    dl_fldigi::location::new_location_mode = dl_fldigi::location::LOC_GPS;
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 }}
@@ -3980,13 +3986,13 @@ stationary_lon->do_callback();}
               callback {if (habFlight)
     habFlight->value(o->value() - 1);
 int index = reinterpret_cast<intptr_t>(o->data(o->value()));
-dl_fldigi::select_flight(index);
+dl_fldigi::flights::select_flight(index);
 
 /* Handle a double click and autoconfigure.
  * This payload is ready for configuring iff dl_fldigi.cxx
  * has activated the autoconfigure button. */
 if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
-    dl_fldigi::auto_configure();}
+    dl_fldigi::flights::auto_configure();}
               xywh {5 55 490 230} type Hold
               code0 {o->column_widths(flight_browser_columns);}
             }
@@ -3995,23 +4001,23 @@ if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
             } {
               Fl_Button flight_docs_refresh {
                 label Refresh
-                callback {dl_fldigi::uthr->flights();}
+                callback {dl_fldigi::hbtint::uthr->flights();}
                 xywh {400 300 85 25}
               }
               Fl_Check_Button {} {
                 label {Show test docs}
-                callback {dl_fldigi::show_testing_flights = o->value();
-dl_fldigi::populate_flights();}
+                callback {dl_fldigi::flights::show_testing = o->value();
+dl_fldigi::flights::populate_flights();}
                 xywh {265 300 130 25} down_box DOWN_BOX
               }
               Fl_Input flight_search_text {
                 label {Jump to:}
-                callback {dl_fldigi::flight_search(false);}
+                callback {dl_fldigi::flights::flight_search(false);}
                 xywh {75 300 120 25} when 1
               }
               Fl_Button {} {
                 label Next
-                callback {dl_fldigi::flight_search(true);}
+                callback {dl_fldigi::flights::flight_search(true);}
                 xywh {200 300 60 25}
               }
               Fl_Choice payload_list {
@@ -4020,7 +4026,7 @@ dl_fldigi::populate_flights();}
               } {}
               Fl_Button payload_autoconfigure {
                 label Autoconfigure
-                callback {dl_fldigi::auto_configure();}
+                callback {dl_fldigi::flights::auto_configure();}
                 xywh {330 330 155 25}
               }
               Fl_Choice payload_mode_list {open

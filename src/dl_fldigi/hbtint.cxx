@@ -1,8 +1,29 @@
 /* 
- * Copyright (C) 2011 James Coxon, Daniel Richman, Robert Harrison,
- *                    Philip Heron, Adam Greig, Simrun Basuita
+ * Copyright (C) 2011 Daniel Richman
  * License: GNU GPL 3
+ *
+ * hbtint.cxx: habitat integration (see habitat_extensions/cpp_uploader)
  */
+
+#include "dl_fldigi/hbtint.h"
+
+#include <string>
+#include <sstream>
+#include <jsoncpp/json.h>
+
+#include <Fl/Fl.H>
+
+#include "configuration.h"
+#include "debug.h"
+#include "fl_digi.h"
+
+#include "habitat/EZ.h"
+#include "habitat/UKHASExtractor.h"
+
+#include "dl_fldigi/dl_fldigi.h"
+#include "dl_fldigi/version.h"
+#include "dl_fldigi/location.h"
+#include "dl_fldigi/flights.h"
 
 using namespace std;
 
@@ -66,7 +87,7 @@ static void uthr_thread_death(void *what)
 void *DUploaderThread::run()
 {
     void *ret = UploaderThread::run();
-    Fl::awake(thread_death, this);
+    Fl::awake(uthr_thread_death, this);
     return ret;
 }
 
@@ -102,15 +123,15 @@ void DUploaderThread::listener_telemetry()
 {
     Fl_AutoLock lock;
 
-    if (current_location_mode != LOC_STATIONARY)
+    if (location::current_location_mode != location::LOC_STATIONARY)
     {
         warning("attempted to upload stationary listener "
                 "telemetry while in GPS telemetry mode");
         return;
     }
 
-    listener_valid = false;
-    update_distance_bearing();
+    location::listener_valid = false;
+    location::update_distance_bearing();
 
     if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
     {
@@ -159,10 +180,10 @@ void DUploaderThread::listener_telemetry()
     data["latitude"] = latitude;
     data["longitude"] = longitude;
 
-    listener_latitude = latitude;
-    listener_longitude = longitude;
-    listener_valid = true;
-    update_distance_bearing();
+    location::listener_latitude = latitude;
+    location::listener_longitude = longitude;
+    location::listener_valid = true;
+    location::update_distance_bearing();
 
     UploaderThread::listener_telemetry(data);
 }
@@ -171,7 +192,7 @@ void DUploaderThread::listener_telemetry(const Json::Value &data)
 {
     Fl_AutoLock lock;
 
-    if (current_location_mode != LOC_GPS)
+    if (location::current_location_mode != location::LOC_GPS)
         throw runtime_error("Attempted to upload GPS data while not "
                             "in GPS mode");
 
@@ -236,38 +257,11 @@ void DUploaderThread::saved_id(const string &type, const string &id)
 
 void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
 {
-    Fl_AutoLock lock;
-
-    flight_docs = new_flight_docs;
-
     ostringstream ltmp;
     ltmp << "Downloaded " << new_flight_docs.size() << " flight docs";
     log(ltmp.str());
 
-    flight_docs = new_flight_docs;
-    downloaded_once = true;
-
-    ofstream cf(fldocs_cache_file.c_str(), ios_base::out | ios_base::trunc);
-
-    for (vector<Json::Value>::const_iterator it = flight_docs.begin();
-         it != flight_docs.end() && cf.good();
-         it++)
-    {
-        Json::FastWriter writer;
-        cf << writer.write(*it);
-    }
-
-    bool success = cf.good();
-
-    cf.close();
-
-    if (!success)
-    {
-        warning("unable to save flights data");
-        unlink(fldocs_cache_file.c_str());
-    }
-
-    populate_flights();
+    flights::new_docs(new_flight_docs);
 }
 
 void DExtractorManager::status(const string &msg)
@@ -350,16 +344,16 @@ void DExtractorManager::data(const Json::Value &d)
     {
         istringstream lat_strm(d["latitude"].asString());
         istringstream lon_strm(d["longitude"].asString());
-        lat_strm >> balloon_latitude;
-        lon_strm >> balloon_longitude;
-        balloon_valid = !lat_strm.fail() && !lon_strm.fail();
+        lat_strm >> location::balloon_latitude;
+        lon_strm >> location::balloon_longitude;
+        location::balloon_valid = !lat_strm.fail() && !lon_strm.fail();
     }
     else
     {
-        balloon_valid = false;
+        location::balloon_valid = false;
     }
 
-    update_distance_bearing();
+    location::update_distance_bearing();
 }
 
 } /* namespace hbtint */
