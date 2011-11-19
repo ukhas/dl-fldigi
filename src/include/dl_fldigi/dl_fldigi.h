@@ -25,7 +25,7 @@ enum changed_groups
 };
 
 extern bool hab_ui_exists, shutting_down;
-extern time_t last_rx, last_warn;
+extern time_t last_rx;
 
 void init();                 /* Create globals and stuff; before UI init */
 void ready(bool hab_mode);   /* After UI init, start stuff */
@@ -36,6 +36,9 @@ bool online();
 
 void changed(enum changed_groups thing);
 void commit();
+
+void status(const string &message);
+void status_important(const string &message);
 
 } /* namespace dl_fldigi */
 

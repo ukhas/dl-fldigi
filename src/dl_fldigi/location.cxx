@@ -26,7 +26,7 @@ double listener_latitude, listener_longitude,
        balloon_latitude, balloon_longitude;
 bool listener_valid, balloon_valid;
 
-void init()
+void start()
 {
     if (progdefaults.gps_start_enabled)
         current_location_mode = LOC_GPS;
@@ -97,6 +97,46 @@ void update_distance_bearing()
 
     habDistance->value(str_distance.str().c_str());
     habBearing->value(str_bearing.str().c_str());
+}
+
+void update_stationary()
+{
+    if (current_location_mode != LOC_STATIONARY)
+    {
+        throw runtime_error("attempted to update stationary location "
+                            "while in GPS mode");
+    }
+
+    if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
+    {
+        status_important("unable to set listener location: "
+                         "latitude or longitude missing");
+        goto fail;
+    }
+
+    istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon);
+    lat_strm >> listener_latitude;
+    lon_strm >> listener_longitude;
+
+    if (lat_strm.fail())
+    {
+        status_important("unable to parse stationary latitude");
+        goto fail;
+    }
+
+    if (lon_strm.fail())
+    {
+        status_important("unable to parse stationary longitude");
+        goto fail;
+    }
+
+    listener_valid = true;
+    update_distance_bearing();
+    return;
+
+fail:
+    listener_valid = false;
+    update_distance_bearing();
 }
 
 } /* namespace location */

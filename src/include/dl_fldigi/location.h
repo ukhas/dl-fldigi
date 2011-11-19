@@ -18,8 +18,9 @@ extern double listener_latitude, listener_longitude,
               balloon_latitude, balloon_longitude;
 extern bool listener_valid, balloon_valid;
 
-void init();
+void start();
 void update_distance_bearing();
+void update_stationary();
 
 } /* namespace location */
 } /* namespace dl_fldigi */

@@ -1,6 +1,5 @@
 /* 
- * Copyright (C) 2011 James Coxon, Daniel Richman, Robert Harrison,
- *                    Philip Heron, Adam Greig, Simrun Basuita
+ * Copyright (C) 2011 Daniel Richman, Robert Harrison,
  * License: GNU GPL 3
  *
  * gps.cxx: Threaded (async) serial GPS uploading support
@@ -51,12 +50,13 @@ void cleanup()
 
 void configure_gps()
 {
+    /* If it's running we need to shut it down to either stop GPS or change
+     * its settings. */
     if (gps_thread != NULL)
     {
+        /* Wait for it to die. gps_thread_death will call this function
+         * again */
         gps_thread->shutdown();
-
-        /* We will have to wait for the current thread to shutdown before
-         * we can start it up again. thread_death will call this function. */
         return;
     }
 
@@ -179,9 +179,8 @@ void GPSThread::warning(const string &message)
     Fl_AutoLock lock;
     LOG_WARN("hbtGPS %s", message.c_str());
 
-    string temp = "WARNING GPS Error " + message;
-    put_status_safe(temp.c_str(), 10);
-    dl_fldigi::last_warn = time(NULL);
+    string temp = "GPS Error " + message;
+    status_important(temp);
 }
 
 void GPSThread::log(const string &message)
@@ -359,8 +358,6 @@ void GPSThread::upload(int hour, int minute, int second,
     hbtint::uthr->listener_telemetry(data);
 }
 
-/* The open() functions for both platforms were originally written by
- * Robert Harrison */
 #ifndef __MINGW32__
 void GPSThread::setup()
 {

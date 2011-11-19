@@ -2,6 +2,8 @@
  * Copyright (C) 2011 James Coxon, Daniel Richman, Robert Harrison,
  *                    Philip Heron, Adam Greig, Simrun Basuita
  * License: GNU GPL 3
+ *
+ * dl_fldigi.cxx: glue, startup/cleanup and misc functions
  */
 
 #include "dl_fldigi/dl_fldigi.h"
@@ -26,10 +28,11 @@ using namespace std;
 namespace dl_fldigi {
 
 bool hab_ui_exists, shutting_down;
-time_t last_rx, last_warn;
+time_t last_rx;
 
 static bool dl_online;
 static int dirty;
+static time_t last_warn;
 
 static const time_t period = 10;
 
@@ -51,7 +54,7 @@ void ready(bool hab_mode)
 
     flights::load_cache();
     hbtint::start();
-    location::init();
+    location::start();
 
     /* online will call uthr->settings() if hab_mode since it online will
      * "change" from false to true) */
@@ -204,6 +207,26 @@ void commit()
     }
 
     dirty = CH_NONE;
+}
+
+void status(const string &message)
+{
+    Fl_AutoLock lock;
+    LOG_DEBUG("unimp status: " + message);
+
+    /* don't overwrite a warning */
+    if (time(NULL) - last_warn > 10)
+        put_status_safe(message.c_str(), 10)
+}
+
+void status_important(const string &message)
+{
+    Fl_AutoLock lock;
+    LOG_DEBUG("warn status: " + message);
+
+    string temp = "WARNING " + message;
+    put_status_safe(temp.c_str(), 10);
+    last_warn = time(NULL);
 }
 
 } /* namespace dl_fldigi */

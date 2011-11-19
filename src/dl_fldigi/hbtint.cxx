@@ -119,6 +119,7 @@ void DUploaderThread::settings()
 }
 
 /* This function is used for stationary listener telemetry only */
+
 void DUploaderThread::listener_telemetry()
 {
     Fl_AutoLock lock;
@@ -130,32 +131,7 @@ void DUploaderThread::listener_telemetry()
         return;
     }
 
-    location::listener_valid = false;
-    location::update_distance_bearing();
-
-    if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
-    {
-        warning("unable to upload stationary listener telemetry: "
-                "latitude or longitude missing");
-        return;
-    }
-
-    double latitude, longitude;
-    istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon);
-    lat_strm >> latitude;
-    lon_strm >> longitude;
-
-    if (lat_strm.fail())
-    {
-        warning("unable to parse stationary latitude");
-        return;
-    }
-
-    if (lon_strm.fail())
-    {
-        warning("unable to parse stationary longitude");
-        return;
-    }
+    location::update_stationary();
 
     Json::Value data(Json::objectValue);
 
@@ -177,13 +153,9 @@ void DUploaderThread::listener_telemetry()
     time["minute"] = tm.tm_min;
     time["second"] = tm.tm_sec;
 
-    data["latitude"] = latitude;
-    data["longitude"] = longitude;
+    data["latitude"] = listener_latitude;
+    data["longitude"] = listener_longitude;
 
-    location::listener_latitude = latitude;
-    location::listener_longitude = longitude;
-    location::listener_valid = true;
-    location::update_distance_bearing();
 
     UploaderThread::listener_telemetry(data);
 }
@@ -236,23 +208,14 @@ void DUploaderThread::warning(const string &message)
 {
     Fl_AutoLock lock;
     LOG_WARN("hbtUT %s", message.c_str());
-
-    string temp = "WARNING " + message;
-    put_status_safe(temp.c_str(), 10);
-    last_warn = time(NULL);
+    status_important(message);
 }
 
 void DUploaderThread::saved_id(const string &type, const string &id)
 {
     /* Log as normal, but also set status */
     UploaderThread::saved_id(type, id);
-
-    /* but don't overwrite a warning */
-    if (time(NULL) - last_warn > 10)
-    {
-        string message = "Uploaded " + type + " successfully";
-        put_status_safe(message.c_str(), 10);
-    }
+    status("Uploaded " + type + " successfully");
 }
 
 void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
@@ -267,12 +230,9 @@ void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
 void DExtractorManager::status(const string &msg)
 {
     Fl_AutoLock lock;
-
     LOG_DEBUG("hbtE %s", msg.c_str());
 
-    /* Don't overwrite UploaderThread's warnings */
-    if (time(NULL) - last_warn > 10)
-        put_status_safe(msg.c_str());
+    status(msg);
 }
 
 static void set_jvalue(Fl_Output *widget, const Json::Value &value)
