@@ -2996,6 +2996,37 @@ dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
 btnApplyConfig->activate();
 }
 
+Fl_Input *imagepacketurl=(Fl_Input *)0;
+
+static void cb_imagepacketurl(Fl_Input* o, void*) {
+  progdefaults.ssdv_packet_url = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *imagesave=(Fl_Check_Button *)0;
+
+static void cb_imagesave(Fl_Check_Button* o, void*) {
+  progdefaults.ssdv_save_image = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Input *imagesavedir=(Fl_Input *)0;
+
+static void cb_imagesavedir(Fl_Input* o, void*) {
+  progdefaults.ssdv_save_dir = o->value();
+progdefaults.changed = true;
+}
+
+static void cb_Enable(Fl_Check_Button* o, void*) {
+  progdefaults.png_wfall = o->value();
+progdefaults.changed = true;
+}
+
+static void cb_Location(Fl_Input* o, void*) {
+  progdefaults.waterfall_png_location = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Check_Button *btnTrackFreq=(Fl_Check_Button *)0;
 
 static void cb_btnTrackFreq(Fl_Check_Button* o, void*) {
@@ -3105,6 +3136,13 @@ Fl_Output *gps_pos_time=(Fl_Output *)0;
 
 Fl_Output *gps_pos_lon=(Fl_Output *)0;
 
+static void cb_Rate(Fl_Spinner* o, void*) {
+  progdefaults.gps_rate = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
+btnApplyConfig->activate();
+}
+
 Fl_Group *tabDLPayload=(Fl_Group *)0;
 
 Fl_Browser *flight_browser=(Fl_Browser *)0;
@@ -3152,37 +3190,6 @@ static void cb_payload_autoconfigure(Fl_Button*, void*) {
 }
 
 Fl_Choice *payload_mode_list=(Fl_Choice *)0;
-
-Fl_Input *imagepacketurl=(Fl_Input *)0;
-
-static void cb_imagepacketurl(Fl_Input* o, void*) {
-  progdefaults.ssdv_packet_url = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *imagesave=(Fl_Check_Button *)0;
-
-static void cb_imagesave(Fl_Check_Button* o, void*) {
-  progdefaults.ssdv_save_image = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Input *imagesavedir=(Fl_Input *)0;
-
-static void cb_imagesavedir(Fl_Input* o, void*) {
-  progdefaults.ssdv_save_dir = o->value();
-progdefaults.changed = true;
-}
-
-static void cb_Waterfall(Fl_Check_Button* o, void*) {
-  progdefaults.png_wfall = o->value();
-progdefaults.changed = true;
-}
-
-static void cb_Location(Fl_Input* o, void*) {
-  progdefaults.waterfall_png_location = o->value();
-progdefaults.changed = true;
-}
 
 Fl_Button *btnSaveConfig=(Fl_Button *)0;
 
@@ -3234,7 +3241,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE);
-    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 373);
+    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 375);
       tabsConfigure->color((Fl_Color)FL_LIGHT1);
       tabsConfigure->selection_color((Fl_Color)FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
@@ -6367,7 +6374,6 @@ d frequency"));
         { tabsMisc = new Fl_Tabs(0, 25, 500, 346);
           tabsMisc->selection_color((Fl_Color)FL_LIGHT1);
           { tabCPUspeed = new Fl_Group(0, 50, 500, 320, _("CPU"));
-            tabCPUspeed->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 51);
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6439,6 +6445,7 @@ d frequency"));
           } // Fl_Group* tabNBEMS
           { tabPskmail = new Fl_Group(0, 50, 500, 320, _("Pskmail"));
             tabPskmail->align(FL_ALIGN_TOP_LEFT);
+            tabPskmail->hide();
             { Fl_Group* o = new Fl_Group(5, 58, 490, 174, _("Mail Server Attributes"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -6840,41 +6847,74 @@ d frequency"));
         } // Fl_Group* o
         tabQRZ->end();
       } // Fl_Group* tabQRZ
-      { tabDL = new Fl_Group(0, 25, 500, 348, _("DL Client"));
+      { tabDL = new Fl_Group(0, 25, 500, 350, _("DL Client"));
         tabDL->labelsize(12);
         tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 500, 348);
           tabsDL->selection_color((Fl_Color)55);
-          { tabDLEnable = new Fl_Group(0, 50, 500, 295, _("Enable"));
-            { Fl_Group* o = new Fl_Group(10, 55, 478, 111, _("Enable"));
+          { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
+            { Fl_Group* o = new Fl_Group(5, 59, 490, 76, _("habitat"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { confdialog_dl_online = new Fl_Check_Button(40, 75, 200, 25, _("Online"));
+              { confdialog_dl_online = new Fl_Check_Button(15, 90, 70, 25, _("Online"));
                 confdialog_dl_online->down_box(FL_DOWN_BOX);
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
               } // Fl_Check_Button* confdialog_dl_online
-              { Fl_Input* o = new Fl_Input(100, 105, 334, 20, _("Couch URI"));
+              { Fl_Input* o = new Fl_Input(165, 80, 300, 20, _("Couch URI"));
                 o->tooltip(_("Address of the CouchDB server"));
                 o->callback((Fl_Callback*)cb_Couch);
                 o->value(progdefaults.habitat_uri.c_str());
               } // Fl_Input* o
-              { Fl_Input* o = new Fl_Input(100, 130, 334, 20, _("Couch DB"));
+              { Fl_Input* o = new Fl_Input(165, 106, 300, 19, _("Couch DB"));
                 o->tooltip(_("CouchDB database name"));
                 o->callback((Fl_Callback*)cb_Couch1);
                 o->value(progdefaults.habitat_db.c_str());
               } // Fl_Input* o
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(10, 179, 478, 116, _("Frequency Tracking"));
+            { Fl_Group* o = new Fl_Group(5, 140, 490, 80, _("SSDV Image Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = btnTrackFreq = new Fl_Check_Button(40, 205, 90, 15, _("Enabled"));
+              { Fl_Input* o = imagepacketurl = new Fl_Input(165, 165, 300, 20, _("Packet Upload URL:"));
+                imagepacketurl->callback((Fl_Callback*)cb_imagepacketurl);
+                o->value(progdefaults.ssdv_packet_url.c_str());
+              } // Fl_Input* imagepacketurl
+              { Fl_Check_Button* o = imagesave = new Fl_Check_Button(15, 189, 130, 21, _("Save Images"));
+                imagesave->down_box(FL_DOWN_BOX);
+                imagesave->callback((Fl_Callback*)cb_imagesave);
+                o->value(progdefaults.ssdv_save_image);
+              } // Fl_Check_Button* imagesave
+              { Fl_Input* o = imagesavedir = new Fl_Input(235, 190, 230, 20, _("Location:"));
+                imagesavedir->callback((Fl_Callback*)cb_imagesavedir);
+                o->value(progdefaults.ssdv_save_dir.c_str());
+              } // Fl_Input* imagesavedir
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(5, 225, 490, 55, _("Waterfall PNG Export"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Check_Button* o = new Fl_Check_Button(15, 250, 80, 20, _("Enable"));
+                o->down_box(FL_DOWN_BOX);
+                o->callback((Fl_Callback*)cb_Enable);
+                o->value(progdefaults.png_wfall);
+              } // Fl_Check_Button* o
+              { Fl_Input* o = new Fl_Input(235, 250, 230, 20, _("Location:"));
+                o->tooltip(_("Please use full path including filename"));
+                o->callback((Fl_Callback*)cb_Location);
+                o->value(progdefaults.waterfall_png_location.c_str());
+              } // Fl_Input* o
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(5, 284, 490, 76, _("Frequency Tracking"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Check_Button* o = btnTrackFreq = new Fl_Check_Button(15, 317, 125, 25, _("Enable"));
                 btnTrackFreq->tooltip(_("Adjust the radio frequency to keep the signal inside the specified limits"));
                 btnTrackFreq->down_box(FL_DOWN_BOX);
                 btnTrackFreq->callback((Fl_Callback*)cb_btnTrackFreq);
                 o->value(progdefaults.track_freq);
               } // Fl_Check_Button* btnTrackFreq
-              { Fl_Counter2* o = cntTrackFreqMin = new Fl_Counter2(26, 231, 105, 20, _("Minimum Waterfall Frequency"));
+              { Fl_Counter2* o = cntTrackFreqMin = new Fl_Counter2(145, 308, 105, 20, _("Minimum Waterfall Frequency"));
                 cntTrackFreqMin->tooltip(_("Low frequency limit in Hz"));
                 cntTrackFreqMin->box(FL_UP_BOX);
                 cntTrackFreqMin->color((Fl_Color)FL_BACKGROUND_COLOR);
@@ -6894,7 +6934,7 @@ d frequency"));
                 o->labelsize(FL_NORMAL_SIZE);
                 o->lstep(10.0);
               } // Fl_Counter2* cntTrackFreqMin
-              { Fl_Counter2* o = cntTrackFreqMax = new Fl_Counter2(26, 259, 105, 20, _("Maximum Waterfall Frequency"));
+              { Fl_Counter2* o = cntTrackFreqMax = new Fl_Counter2(145, 333, 105, 20, _("Maximum Waterfall Frequency"));
                 cntTrackFreqMax->tooltip(_("High frequency limit in Hz"));
                 cntTrackFreqMax->box(FL_UP_BOX);
                 cntTrackFreqMax->color((Fl_Color)FL_BACKGROUND_COLOR);
@@ -6918,12 +6958,12 @@ d frequency"));
             } // Fl_Group* o
             tabDLEnable->end();
           } // Fl_Group* tabDLEnable
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 307, _("Location"));
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 317, _("Location"));
             o->hide();
-            { Fl_Group* o = new Fl_Group(5, 55, 490, 285, _("Listener Location"));
+            { Fl_Group* o = new Fl_Group(5, 60, 490, 300, _("Listener Location"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 195, 150, 25, _("Baud"));
+              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 200, 150, 25, _("Baud"));
                 o->type(2);
                 o->box(FL_DOWN_BOX);
                 o->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -6937,59 +6977,67 @@ d frequency"));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gps_speed);
               } // Fl_Value_Input2* o
-              { Fl_Button* o = new Fl_Button(290, 165, 170, 25, _("Refresh Device List"));
+              { Fl_Button* o = new Fl_Button(290, 170, 170, 25, _("Refresh Device List"));
                 o->callback((Fl_Callback*)cb_Refresh);
               } // Fl_Button* o
-              { Fl_Round_Button* o = new Fl_Round_Button(30, 80, 190, 25, _("Stationary Listener"));
+              { Fl_Round_Button* o = new Fl_Round_Button(30, 85, 190, 25, _("Stationary Listener"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Stationary);
                 o->value(!progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { Fl_Input* o = stationary_lat = new Fl_Input(120, 105, 125, 25, _("Latitude"));
+              { Fl_Input* o = stationary_lat = new Fl_Input(120, 110, 125, 25, _("Latitude"));
                 stationary_lat->type(1);
                 stationary_lat->callback((Fl_Callback*)cb_stationary_lat);
                 o->value(progdefaults.myLat.c_str());
               } // Fl_Input* stationary_lat
-              { Fl_Input* o = stationary_lon = new Fl_Input(335, 105, 125, 25, _("Longitude"));
+              { Fl_Input* o = stationary_lon = new Fl_Input(335, 110, 125, 25, _("Longitude"));
                 stationary_lon->type(1);
                 stationary_lon->callback((Fl_Callback*)cb_stationary_lon);
                 o->value(progdefaults.myLon.c_str());
               } // Fl_Input* stationary_lon
-              { Fl_Round_Button* o = new Fl_Round_Button(30, 135, 190, 25, _("Upload GPS Position"));
+              { Fl_Round_Button* o = new Fl_Round_Button(30, 140, 190, 25, _("Upload GPS Position"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Upload);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { inpGPSdev = new Fl_Input_Choice(100, 165, 185, 25, _("Device"));
+              { inpGPSdev = new Fl_Input_Choice(100, 170, 185, 25, _("Device"));
                 inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
               } // Fl_Input_Choice* inpGPSdev
-              { Fl_Check_Button* o = new Fl_Check_Button(220, 135, 240, 25, _("Always enable GPS on startup"));
+              { Fl_Check_Button* o = new Fl_Check_Button(220, 140, 240, 25, _("Always enable GPS on startup"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Always);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Check_Button* o
-              { Fl_Group* o = new Fl_Group(10, 240, 475, 90, _("Last GPS Position"));
+              { Fl_Group* o = new Fl_Group(10, 265, 475, 90, _("Last GPS Position"));
                 o->box(FL_ENGRAVED_BOX);
                 o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-                { gps_pos_lat = new Fl_Output(200, 265, 105, 25, _("Lat"));
+                { gps_pos_lat = new Fl_Output(200, 290, 105, 25, _("Lat"));
                 } // Fl_Output* gps_pos_lat
-                { gps_pos_altitude = new Fl_Output(60, 295, 105, 25, _("Alt"));
+                { gps_pos_altitude = new Fl_Output(60, 320, 105, 25, _("Alt"));
                 } // Fl_Output* gps_pos_altitude
-                { Fl_Button* o = new Fl_Button(200, 295, 250, 25, _("Save as stationary location"));
+                { Fl_Button* o = new Fl_Button(200, 320, 250, 25, _("Save as stationary location"));
                 o->callback((Fl_Callback*)cb_Save);
                 o->deactivate();
                 } // Fl_Button* o
-                { gps_pos_time = new Fl_Output(60, 265, 105, 25, _("Time"));
+                { gps_pos_time = new Fl_Output(60, 290, 105, 25, _("Time"));
                 } // Fl_Output* gps_pos_time
-                { gps_pos_lon = new Fl_Output(345, 265, 105, 25, _("Lon"));
+                { gps_pos_lon = new Fl_Output(345, 290, 105, 25, _("Lon"));
                 } // Fl_Output* gps_pos_lon
                 o->end();
               } // Fl_Group* o
               o->end();
             } // Fl_Group* o
-            { Fl_Box* o = new Fl_Box(285, 65, 190, 35, _("please enter coordinates as one number, in decimal degrees"));
+            { Fl_Box* o = new Fl_Box(285, 70, 190, 35, _("please enter coordinates as one number, in decimal degrees"));
+              o->labelsize(10);
+              o->align(FL_ALIGN_WRAP);
+            } // Fl_Box* o
+            { Fl_Spinner* o = new Fl_Spinner(100, 225, 45, 25, _("Rate"));
+              o->callback((Fl_Callback*)cb_Rate);
+              o->value(progdefaults.gps_rate);
+            } // Fl_Spinner* o
+            { Fl_Box* o = new Fl_Box(155, 225, 270, 25, _("(max number of positions uploaded each minute)"));
               o->labelsize(10);
               o->align(FL_ALIGN_WRAP);
             } // Fl_Box* o
@@ -6997,7 +7045,7 @@ d frequency"));
           } // Fl_Group* o
           { tabDLPayload = new Fl_Group(0, 50, 500, 323, _("Radio auto config"));
             tabDLPayload->hide();
-            { Fl_Browser* o = flight_browser = new Fl_Browser(5, 55, 490, 230);
+            { Fl_Browser* o = flight_browser = new Fl_Browser(5, 60, 490, 225);
               flight_browser->type(2);
               flight_browser->callback((Fl_Callback*)cb_flight_browser);
               o->column_widths(flight_browser_columns);
@@ -7032,48 +7080,6 @@ d frequency"));
             } // Fl_Group* o
             tabDLPayload->end();
           } // Fl_Group* tabDLPayload
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 307, _("Misc"));
-            o->hide();
-            { Fl_Group* o = new Fl_Group(4, 54, 492, 116, _("SSDV Image Configuration"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Input* o = imagepacketurl = new Fl_Input(100, 81, 330, 20, _("Packet URL:"));
-                imagepacketurl->labelsize(12);
-                imagepacketurl->textsize(12);
-                imagepacketurl->callback((Fl_Callback*)cb_imagepacketurl);
-                o->value(progdefaults.ssdv_packet_url.c_str());
-              } // Fl_Input* imagepacketurl
-              { Fl_Check_Button* o = imagesave = new Fl_Check_Button(105, 115, 150, 15, _("Save received images"));
-                imagesave->down_box(FL_DOWN_BOX);
-                imagesave->labelsize(12);
-                imagesave->callback((Fl_Callback*)cb_imagesave);
-                o->value(progdefaults.ssdv_save_image);
-              } // Fl_Check_Button* imagesave
-              { Fl_Input* o = imagesavedir = new Fl_Input(105, 140, 330, 20, _("Location:"));
-                imagesavedir->labelsize(12);
-                imagesavedir->textsize(12);
-                imagesavedir->callback((Fl_Callback*)cb_imagesavedir);
-                o->value(progdefaults.ssdv_save_dir.c_str());
-              } // Fl_Input* imagesavedir
-              o->end();
-            } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(5, 180, 492, 105, _("Waterfall PNG"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { Fl_Check_Button* o = new Fl_Check_Button(45, 205, 200, 25, _("Waterfall PNG Export"));
-                o->down_box(FL_DOWN_BOX);
-                o->callback((Fl_Callback*)cb_Waterfall);
-                o->value(progdefaults.png_wfall);
-              } // Fl_Check_Button* o
-              { Fl_Input* o = new Fl_Input(110, 240, 334, 20, _("Location:"));
-                o->tooltip(_("Please use full path including filename"));
-                o->callback((Fl_Callback*)cb_Location);
-                o->value(progdefaults.waterfall_png_location.c_str());
-              } // Fl_Input* o
-              o->end();
-            } // Fl_Group* o
-            o->end();
-          } // Fl_Group* o
           tabsDL->end();
         } // Fl_Tabs* tabsDL
         tabDL->end();

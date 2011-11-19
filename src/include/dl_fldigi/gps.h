@@ -3,6 +3,7 @@
 
 #include <string>
 #include <stdio.h>
+#include <time.h>
 #include "habitat/EZ.h"
 #ifdef __MINGW32__
 #include <windows.h>
@@ -14,8 +15,9 @@ namespace gps {
 class GPSThread : public EZ::SimpleThread
 {
     const std::string device;
-    const int baud;
+    const int baud, rate;
     bool term;
+    time_t last_upload;
 
 #ifdef __MINGW32__
     HANDLE handle;
@@ -39,13 +41,14 @@ class GPSThread : public EZ::SimpleThread
     void upload(int h, int m, int s, double lat, double lon, double alt);
 
 public:
-    GPSThread(const std::string &d, int b)
-        : device(d), baud(b), term(false),
+    GPSThread(const std::string &d, int b, int r)
+        : device(d), baud(b), rate(r), term(false), last_upload(0),
 #ifdef __MINGW32__
           handle(INVALID_HANDLE_VALUE),
 #endif
           fd(-1), f(NULL), wait_exp(0) {};
     ~GPSThread() {};
+
     void *run();
     void shutdown();
 };

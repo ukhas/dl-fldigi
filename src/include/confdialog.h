@@ -416,6 +416,9 @@ extern Fl_Group *tabDL;
 extern Fl_Tabs *tabsDL;
 extern Fl_Group *tabDLEnable;
 extern Fl_Check_Button *confdialog_dl_online;
+extern Fl_Input *imagepacketurl;
+extern Fl_Check_Button *imagesave;
+extern Fl_Input *imagesavedir;
 extern Fl_Check_Button *btnTrackFreq;
 extern Fl_Counter2 *cntTrackFreqMin;
 extern Fl_Counter2 *cntTrackFreqMax;
@@ -426,6 +429,7 @@ extern Fl_Output *gps_pos_lat;
 extern Fl_Output *gps_pos_altitude;
 extern Fl_Output *gps_pos_time;
 extern Fl_Output *gps_pos_lon;
+#include <FL/Fl_Spinner.H>
 extern Fl_Group *tabDLPayload;
 #include <FL/Fl_Browser.H>
 extern Fl_Browser *flight_browser;
@@ -434,9 +438,6 @@ extern Fl_Input *flight_search_text;
 extern Fl_Choice *payload_list;
 extern Fl_Button *payload_autoconfigure;
 extern Fl_Choice *payload_mode_list;
-extern Fl_Input *imagepacketurl;
-extern Fl_Check_Button *imagesave;
-extern Fl_Input *imagesavedir;
 extern Fl_Button *btnSaveConfig;
 #include <FL/Fl_Return_Button.H>
 extern Fl_Return_Button *btnCloseConfig;

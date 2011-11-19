@@ -62,10 +62,12 @@ void configure_gps()
 
     if (gps_thread == NULL &&
         location::current_location_mode == location::LOC_GPS &&
-        progdefaults.gps_device.size() && progdefaults.gps_speed)
+        progdefaults.gps_device.size() && progdefaults.gps_speed >= 0 &&
+        progdefaults.gps_rate >= 1)
     {
         gps_thread = new GPSThread(progdefaults.gps_device,
-                                   progdefaults.gps_speed);
+                                   progdefaults.gps_speed,
+                                   progdefaults.gps_rate);
         gps_thread->start();
     }
 }
@@ -335,9 +337,17 @@ void GPSThread::upload(int hour, int minute, int second,
 {
     Fl_AutoLock lock;
 
+    LOG_DEBUG("GPS position: %02d:%02d:%02d %f %f, %fM",
+              hour, minute, second, latitude, longitude, altitude);
+
+    if (time(NULL) - last_upload < rate)
+        return;
+
     /* Data OK? upload. */
     if (location::current_location_mode != location::LOC_GPS)
         throw runtime_error("GPS mode disabled mid-line");
+
+    last_upload = time(NULL);
 
     location::listener_valid = true;
     location::listener_latitude = latitude;

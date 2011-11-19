@@ -111,10 +111,10 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   code {static const int flight_browser_columns[] = { 170, 150, 170 };} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {1113 417 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
+    xywh {511 412 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
-      xywh {-4 0 521 373} color 50 selection_color 50
+      xywh {-4 0 521 375} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
@@ -3350,7 +3350,7 @@ progdefaults.changed = true;}
         } {
           Fl_Group tabCPUspeed {
             label CPU open
-            xywh {0 50 500 320} hide
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {open
               xywh {5 60 490 51} box ENGRAVED_FRAME align 21
@@ -3422,7 +3422,7 @@ progdefaults.changed = true;}
           }
           Fl_Group tabPskmail {
             label Pskmail open
-            xywh {0 50 500 320} align 5
+            xywh {0 50 500 320} align 5 hide
           } {
             Fl_Group {} {
               label {Mail Server Attributes} open
@@ -3777,18 +3777,18 @@ progdefaults.changed = true;}
       }
       Fl_Group tabDL {
         label {DL Client} open
-        xywh {0 25 500 348} labelsize 12 hide
+        xywh {0 25 500 350} labelsize 12 hide
       } {
         Fl_Tabs tabsDL {open
           xywh {0 25 500 348} selection_color 55
         } {
           Fl_Group tabDLEnable {
             label Enable open
-            xywh {0 50 500 295}
+            xywh {0 50 500 320}
           } {
             Fl_Group {} {
-              label Enable open
-              xywh {10 55 478 111} box ENGRAVED_FRAME align 21
+              label habitat open
+              xywh {5 59 490 76} box ENGRAVED_FRAME align 21
             } {
               Fl_Check_Button confdialog_dl_online {
                 label Online
@@ -3799,7 +3799,7 @@ progdefaults.changed = true;}
 }
 
 dl_fldigi::online(o->value());}
-                xywh {40 75 200 25} down_box DOWN_BOX
+                xywh {15 90 70 25} down_box DOWN_BOX
               }
               Fl_Input {} {
                 label {Couch URI}
@@ -3807,7 +3807,7 @@ dl_fldigi::online(o->value());}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
 btnApplyConfig->activate();}
-                tooltip {Address of the CouchDB server} xywh {100 105 334 20}
+                tooltip {Address of the CouchDB server} xywh {165 80 300 20}
                 code0 {o->value(progdefaults.habitat_uri.c_str());}
               }
               Fl_Input {} {
@@ -3816,19 +3816,64 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_UTHR_SETTINGS);
 btnApplyConfig->activate();}
-                tooltip {CouchDB database name} xywh {100 130 334 20}
+                tooltip {CouchDB database name} xywh {165 106 300 19}
                 code0 {o->value(progdefaults.habitat_db.c_str());}
               }
             }
             Fl_Group {} {
+              label {SSDV Image Configuration} open
+              xywh {5 140 490 80} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Input imagepacketurl {
+                label {Packet Upload URL:}
+                callback {progdefaults.ssdv_packet_url = o->value();
+progdefaults.changed = true;}
+                xywh {165 165 300 20}
+                code0 {o->value(progdefaults.ssdv_packet_url.c_str());}
+              }
+              Fl_Check_Button imagesave {
+                label {Save Images}
+                callback {progdefaults.ssdv_save_image = o->value();
+progdefaults.changed = true;}
+                xywh {15 189 130 21} down_box DOWN_BOX
+                code0 {o->value(progdefaults.ssdv_save_image);}
+              }
+              Fl_Input imagesavedir {
+                label {Location:}
+                callback {progdefaults.ssdv_save_dir = o->value();
+progdefaults.changed = true;}
+                xywh {235 190 230 20}
+                code0 {o->value(progdefaults.ssdv_save_dir.c_str());}
+              }
+            }
+            Fl_Group {} {
+              label {Waterfall PNG Export} open
+              xywh {5 225 490 55} box ENGRAVED_FRAME align 21
+            } {
+              Fl_Check_Button {} {
+                label Enable
+                callback {progdefaults.png_wfall = o->value();
+progdefaults.changed = true;}
+                xywh {15 250 80 20} down_box DOWN_BOX
+                code0 {o->value(progdefaults.png_wfall);}
+              }
+              Fl_Input {} {
+                label {Location:}
+                callback {progdefaults.waterfall_png_location = o->value();
+progdefaults.changed = true;}
+                tooltip {Please use full path including filename} xywh {235 250 230 20}
+                code0 {o->value(progdefaults.waterfall_png_location.c_str());}
+              }
+            }
+            Fl_Group {} {
               label {Frequency Tracking} open
-              xywh {10 179 478 116} box ENGRAVED_FRAME align 21
+              xywh {5 284 490 76} box ENGRAVED_FRAME align 21
             } {
               Fl_Check_Button btnTrackFreq {
-                label Enabled
+                label Enable
                 callback {progdefaults.track_freq = o->value();
 progdefaults.changed = true;}
-                tooltip {Adjust the radio frequency to keep the signal inside the specified limits} xywh {40 205 90 15} down_box DOWN_BOX
+                tooltip {Adjust the radio frequency to keep the signal inside the specified limits} xywh {15 317 125 25} down_box DOWN_BOX
                 code0 {o->value(progdefaults.track_freq);}
               }
               Fl_Counter cntTrackFreqMin {
@@ -3841,7 +3886,7 @@ if(progdefaults.track_freq_max < i)
   cntTrackFreqMax->value(i);
 }
 progdefaults.changed = true;}
-                tooltip {Low frequency limit in Hz} xywh {26 231 105 20} align 8 minimum 0 maximum 4000 step 1 value 1000
+                tooltip {Low frequency limit in Hz} xywh {145 308 105 20} align 8 minimum 0 maximum 4000 step 1 value 1000
                 code0 {o->value(progdefaults.track_freq_min);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 code2 {o->lstep(10.0);}
@@ -3857,7 +3902,7 @@ if(progdefaults.track_freq_min > i)
   cntTrackFreqMin->value(i);
 }
 progdefaults.changed = true;}
-                tooltip {High frequency limit in Hz} xywh {26 259 105 20} align 8 minimum 0 maximum 4000 step 1 value 2000
+                tooltip {High frequency limit in Hz} xywh {145 333 105 20} align 8 minimum 0 maximum 4000 step 1 value 2000
                 code0 {o->value(progdefaults.track_freq_max);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 code2 {o->lstep(10.0);}
@@ -3867,11 +3912,11 @@ progdefaults.changed = true;}
           }
           Fl_Group {} {
             label Location open
-            xywh {0 50 500 307} hide
+            xywh {0 50 500 317} hide
           } {
             Fl_Group {} {
               label {Listener Location} open
-              xywh {5 55 490 285} box ENGRAVED_FRAME align 21
+              xywh {5 60 490 300} box ENGRAVED_FRAME align 21
             } {
               Fl_Input {} {
                 label Baud
@@ -3879,14 +3924,14 @@ progdefaults.changed = true;}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
-                xywh {100 195 150 25} type Int
+                xywh {100 200 150 25} type Int
                 code0 {o->value(progdefaults.gps_speed);}
                 class Fl_Value_Input2
               }
               Fl_Button {} {
                 label {Refresh Device List}
                 callback {progdefaults.testCommPorts();}
-                xywh {290 165 170 25}
+                xywh {290 170 170 25}
               }
               Fl_Round_Button {} {
                 label {Stationary Listener}
@@ -3896,7 +3941,7 @@ btnApplyConfig->activate();}
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 }}
-                xywh {30 80 190 25} type Radio down_box ROUND_DOWN_BOX
+                xywh {30 85 190 25} type Radio down_box ROUND_DOWN_BOX
                 code0 {o->value(!progdefaults.gps_start_enabled);}
               }
               Fl_Input stationary_lat {
@@ -3905,7 +3950,7 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {120 105 125 25} type Float
+                xywh {120 110 125 25} type Float
                 code0 {o->value(progdefaults.myLat.c_str());}
               }
               Fl_Input stationary_lon {
@@ -3914,7 +3959,7 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {335 105 125 25} type Float
+                xywh {335 110 125 25} type Float
                 code0 {o->value(progdefaults.myLon.c_str());}
               }
               Fl_Round_Button {} {
@@ -3925,7 +3970,7 @@ btnApplyConfig->activate();}
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 }}
-                xywh {30 135 190 25} type Radio down_box ROUND_DOWN_BOX
+                xywh {30 140 190 25} type Radio down_box ROUND_DOWN_BOX
                 code0 {o->value(progdefaults.gps_start_enabled);}
               }
               Fl_Input_Choice inpGPSdev {
@@ -3934,26 +3979,26 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();} open
-                xywh {100 165 185 25}
+                xywh {100 170 185 25}
               } {}
               Fl_Check_Button {} {
                 label {Always enable GPS on startup}
                 callback {progdefaults.gps_start_enabled = o->value();
 progdefaults.changed = true;}
-                xywh {220 135 240 25} down_box DOWN_BOX
+                xywh {220 140 240 25} down_box DOWN_BOX
                 code0 {o->value(progdefaults.gps_start_enabled);}
               }
               Fl_Group {} {
                 label {Last GPS Position} open
-                xywh {10 240 475 90} box ENGRAVED_BOX align 21
+                xywh {10 265 475 90} box ENGRAVED_BOX align 21
               } {
                 Fl_Output gps_pos_lat {
                   label Lat
-                  xywh {200 265 105 25}
+                  xywh {200 290 105 25}
                 }
                 Fl_Output gps_pos_altitude {
                   label Alt
-                  xywh {60 295 105 25}
+                  xywh {60 320 105 25}
                 }
                 Fl_Button {} {
                   label {Save as stationary location}
@@ -3961,21 +4006,34 @@ progdefaults.changed = true;}
 stationary_lon->value(gps_pos_lon->value());
 stationary_lat->do_callback();
 stationary_lon->do_callback();}
-                  xywh {200 295 250 25} deactivate
+                  xywh {200 320 250 25} deactivate
                 }
                 Fl_Output gps_pos_time {
                   label Time
-                  xywh {60 265 105 25}
+                  xywh {60 290 105 25}
                 }
                 Fl_Output gps_pos_lon {
                   label Lon
-                  xywh {345 265 105 25}
+                  xywh {345 290 105 25}
                 }
               }
             }
             Fl_Box {} {
               label {please enter coordinates as one number, in decimal degrees}
-              xywh {285 65 190 35} labelsize 10 align 128
+              xywh {285 70 190 35} labelsize 10 align 128
+            }
+            Fl_Spinner {} {
+              label Rate
+              callback {progdefaults.gps_rate = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
+btnApplyConfig->activate();}
+              xywh {100 225 45 25}
+              code0 {o->value(progdefaults.gps_rate);}
+            }
+            Fl_Box {} {
+              label {(max number of positions uploaded each minute)}
+              xywh {155 225 270 25} labelsize 10 align 128
             }
           }
           Fl_Group tabDLPayload {
@@ -3993,7 +4051,7 @@ dl_fldigi::flights::select_flight(index);
  * has activated the autoconfigure button. */
 if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
     dl_fldigi::flights::auto_configure();}
-              xywh {5 55 490 230} type Hold
+              xywh {5 60 490 225} type Hold
               code0 {o->column_widths(flight_browser_columns);}
             }
             Fl_Group {} {open
@@ -4032,56 +4090,6 @@ dl_fldigi::flights::populate_flights();}
               Fl_Choice payload_mode_list {open
                 xywh {220 330 105 25} down_box BORDER_BOX
               } {}
-            }
-          }
-          Fl_Group {} {
-            label Misc open
-            xywh {0 50 500 307} hide
-          } {
-            Fl_Group {} {
-              label {SSDV Image Configuration} open
-              xywh {4 54 492 116} box ENGRAVED_FRAME align 21
-            } {
-              Fl_Input imagepacketurl {
-                label {Packet URL:}
-                callback {progdefaults.ssdv_packet_url = o->value();
-progdefaults.changed = true;}
-                xywh {100 81 330 20} labelsize 12 textsize 12
-                code0 {o->value(progdefaults.ssdv_packet_url.c_str());}
-              }
-              Fl_Check_Button imagesave {
-                label {Save received images}
-                callback {progdefaults.ssdv_save_image = o->value();
-progdefaults.changed = true;}
-                xywh {105 115 150 15} down_box DOWN_BOX labelsize 12
-                code0 {o->value(progdefaults.ssdv_save_image);}
-              }
-              Fl_Input imagesavedir {
-                label {Location:}
-                callback {progdefaults.ssdv_save_dir = o->value();
-progdefaults.changed = true;}
-                xywh {105 140 330 20} labelsize 12 textsize 12
-                code0 {o->value(progdefaults.ssdv_save_dir.c_str());}
-              }
-            }
-            Fl_Group {} {
-              label {Waterfall PNG} open
-              xywh {5 180 492 105} box ENGRAVED_FRAME align 21
-            } {
-              Fl_Check_Button {} {
-                label {Waterfall PNG Export}
-                callback {progdefaults.png_wfall = o->value();
-progdefaults.changed = true;}
-                xywh {45 205 200 25} down_box DOWN_BOX
-                code0 {o->value(progdefaults.png_wfall);}
-              }
-              Fl_Input {} {
-                label {Location:}
-                callback {progdefaults.waterfall_png_location = o->value();
-progdefaults.changed = true;}
-                tooltip {Please use full path including filename} xywh {110 240 334 20}
-                code0 {o->value(progdefaults.waterfall_png_location.c_str());}
-              }
             }
           }
         }
