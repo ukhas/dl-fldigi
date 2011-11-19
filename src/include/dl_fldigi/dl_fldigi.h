@@ -1,7 +1,9 @@
 #ifndef DL_FLDIGI_MAIN_H
 #define DL_FLDIGI_MAIN_H
 
+#include <string>
 #include <time.h>
+
 #include <Fl/Fl.H>
 
 namespace dl_fldigi {
@@ -37,8 +39,8 @@ bool online();
 void changed(enum changed_groups thing);
 void commit();
 
-void status(const string &message);
-void status_important(const string &message);
+void status(const std::string &message);
+void status_important(const std::string &message);
 
 } /* namespace dl_fldigi */
 

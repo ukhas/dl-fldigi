@@ -153,9 +153,8 @@ void DUploaderThread::listener_telemetry()
     time["minute"] = tm.tm_min;
     time["second"] = tm.tm_sec;
 
-    data["latitude"] = listener_latitude;
-    data["longitude"] = listener_longitude;
-
+    data["latitude"] = location::listener_latitude;
+    data["longitude"] = location::listener_longitude;
 
     UploaderThread::listener_telemetry(data);
 }

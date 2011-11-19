@@ -107,6 +107,8 @@ void update_stationary()
                             "while in GPS mode");
     }
 
+    istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon);
+
     if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
     {
         status_important("unable to set listener location: "
@@ -114,7 +116,6 @@ void update_stationary()
         goto fail;
     }
 
-    istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon);
     lat_strm >> listener_latitude;
     lon_strm >> listener_longitude;
 
