@@ -30,3 +30,6 @@ dl-fldigi-waterfall.png
 
 # Sample capture files
 capture*.wav
+
+# Vim
+*.swp
