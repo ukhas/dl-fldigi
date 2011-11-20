@@ -6854,7 +6854,7 @@ d frequency"));
         tabDL->labelsize(12);
         tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 500, 348);
-          tabsDL->selection_color((Fl_Color)FL_LIGHT1);
+          tabsDL->selection_color((Fl_Color)55);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
             { Fl_Group* o = new Fl_Group(5, 59, 490, 76, _("habitat"));
               o->box(FL_ENGRAVED_FRAME);

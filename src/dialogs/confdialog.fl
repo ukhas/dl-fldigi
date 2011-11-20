@@ -3781,7 +3781,7 @@ progdefaults.changed = true;}
         xywh {0 25 500 350} selection_color 48 labelsize 12 hide
       } {
         Fl_Tabs tabsDL {open
-          xywh {0 25 500 348} selection_color 50
+          xywh {0 25 500 348} selection_color 55
         } {
           Fl_Group tabDLEnable {
             label Enable open
