@@ -63,11 +63,11 @@ void configure_gps()
     if (gps_thread == NULL &&
         location::current_location_mode == location::LOC_GPS &&
         progdefaults.gps_device.size() && progdefaults.gps_speed >= 0 &&
-        progdefaults.gps_rate >= 1)
+        progdefaults.gps_period >= 1)
     {
         gps_thread = new GPSThread(progdefaults.gps_device,
                                    progdefaults.gps_speed,
-                                   progdefaults.gps_rate);
+                                   progdefaults.gps_period);
         gps_thread->start();
     }
 }

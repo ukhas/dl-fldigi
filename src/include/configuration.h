@@ -1256,7 +1256,7 @@
         ELEM_(bool, gps_start_enabled, "GPSENABLED", "GPS Enabled on startup?", false)  \
         ELEM_(std::string, gps_device, "GPSDEVICE", "GPS Serial port", "")              \
         ELEM_(int, gps_speed, "GPSSPEED", "GPS Serial baud", 0)                         \
-        ELEM_(int, gps_rate, "GPSRATE", "GPS Upload rate", 30)                          \
+        ELEM_(int, gps_period, "GPSPERIOD", "GPS Upload period", 30)                    \
                                                                                         \
         /* dl-fldigi Misc config stuff */                                               \
         ELEM_(int, png_wfall, "PNG_WFALL", "", 0)                                       \

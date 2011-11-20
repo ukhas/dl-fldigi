@@ -4158,16 +4158,16 @@ stationary_lon->do_callback();}
               xywh {285 70 190 35} labelsize 10 align 128
             }
             Fl_Spinner {} {
-              label Rate
-              callback {progdefaults.gps_rate = o->value();
+              label Period
+              callback {progdefaults.gps_period = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
               xywh {100 225 45 25} minimum 10 maximum 300
-              code0 {o->value(progdefaults.gps_rate);}
+              code0 {o->value(progdefaults.gps_period);}
             }
             Fl_Box {} {
-              label {(max number of positions uploaded each minute)}
+              label {(number of seconds between position updates)}
               xywh {155 225 270 25} labelsize 10 align 128
             }
           }

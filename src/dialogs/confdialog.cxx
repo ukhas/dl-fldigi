@@ -3223,8 +3223,8 @@ Fl_Output *gps_pos_time=(Fl_Output *)0;
 
 Fl_Output *gps_pos_lon=(Fl_Output *)0;
 
-static void cb_Rate(Fl_Spinner* o, void*) {
-  progdefaults.gps_rate = o->value();
+static void cb_Period(Fl_Spinner* o, void*) {
+  progdefaults.gps_period = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();
@@ -7259,13 +7259,13 @@ d frequency"));
               o->labelsize(10);
               o->align(FL_ALIGN_WRAP);
             } // Fl_Box* o
-            { Fl_Spinner* o = new Fl_Spinner(100, 225, 45, 25, _("Rate"));
+            { Fl_Spinner* o = new Fl_Spinner(100, 225, 45, 25, _("Period"));
               o->minimum(10);
               o->maximum(300);
-              o->callback((Fl_Callback*)cb_Rate);
-              o->value(progdefaults.gps_rate);
+              o->callback((Fl_Callback*)cb_Period);
+              o->value(progdefaults.gps_period);
             } // Fl_Spinner* o
-            { Fl_Box* o = new Fl_Box(155, 225, 270, 25, _("(max number of positions uploaded each minute)"));
+            { Fl_Box* o = new Fl_Box(155, 225, 270, 25, _("(number of seconds between position updates)"));
               o->labelsize(10);
               o->align(FL_ALIGN_WRAP);
             } // Fl_Box* o
