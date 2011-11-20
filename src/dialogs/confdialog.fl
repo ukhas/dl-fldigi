@@ -111,14 +111,14 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   code {static const int flight_browser_columns[] = { 170, 150, 170 };} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {511 412 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
+    xywh {644 190 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
-      xywh {-4 0 521 375} color 50 selection_color 50
+      xywh {-4 0 521 372} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
-        callback {progdefaults.changed = true;} selected
+        callback {progdefaults.changed = true;}
         tooltip {Operator information} xywh {0 25 500 345} labelsize 12 when 1
       } {
         Fl_Group {} {
@@ -182,7 +182,7 @@ progdefaults.changed = true;}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_INFO);
 btnApplyConfig->activate();}
-            tooltip {Short description of antenna} xywh {110 166 320 24}
+            tooltip {Short description of antenna} xywh {110 167 320 24}
             code0 {inpMyAntenna->labelsize(FL_NORMAL_SIZE);}
             class Fl_Input2
           }
@@ -216,7 +216,7 @@ btnApplyConfig->activate();}
         }
       }
       Fl_Group tabUI {
-        label UI
+        label UI open
         xywh {0 25 502 346} labelsize 12 hide
       } {
         Fl_Tabs tabsUI {open
@@ -935,10 +935,10 @@ connect_to_log_server();}
       }
       Fl_Group tabWaterfall {
         label Waterfall
-        xywh {0 25 500 346} labelsize 12 hide
+        xywh {0 25 500 347} labelsize 12 hide
       } {
         Fl_Tabs tabsWaterfall {open
-          xywh {0 25 500 346} color 50 selection_color 50
+          xywh {0 25 500 347} color 50 selection_color 50
         } {
           Fl_Group {} {
             label Display open
@@ -1247,7 +1247,7 @@ behaves inside the waterfall} xywh {15 196 150 22} down_box BORDER_BOX align 8
         }
       }
       Fl_Group tabModems {
-        label Modems
+        label Modems open
         xywh {-4 25 521 347} labelsize 12 hide
       } {
         Fl_Tabs tabsModems {open
@@ -2184,7 +2184,7 @@ o->color(fl_rgb_color(progdefaults.rttymarkRGBI.R,progdefaults.rttymarkRGBI.G,pr
 o->redraw();
 wf->redraw_marker();
 progdefaults.changed = true;
-}}
+}} selected
                   tooltip {Change color} xywh {403 208 18 18} color 2 align 8
                   code0 {o->color(fl_rgb_color(progdefaults.rttymarkRGBI.R,progdefaults.rttymarkRGBI.G,progdefaults.rttymarkRGBI.B));}
                 }
@@ -2300,15 +2300,15 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabRig {
-        label Rig open
-        tooltip {Transceiver control} xywh {0 25 500 346} labelsize 12 hide
+        label Rig
+        tooltip {Transceiver control} xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Tabs tabsRig {open
-          xywh {0 25 500 346} selection_color 50
+          xywh {0 25 500 345} selection_color 50
         } {
           Fl_Group {} {
             label {Hardware PTT} open
-            xywh {0 50 500 320}
+            xywh {0 50 500 320} hide
           } {
             Fl_Group grpHWPTT {
               label {h/w ptt device-pin} open
@@ -2414,7 +2414,7 @@ progdefaults.changed = true;}
           }
           Fl_Group {} {
             label RigCAT open
-            tooltip {Rig Control using xml spec file} xywh {0 50 500 320} hide
+            tooltip {Rig Control using xml spec file} xywh {0 50 500 320}
           } {
             Fl_Check_Button chkUSERIGCAT {
               label {Use RigCAT}
@@ -2888,10 +2888,10 @@ progdefaults.changed = true;}
       }
       Fl_Group tabSoundCard {
         label Audio
-        tooltip {Audio devices} xywh {0 25 500 346} labelsize 12 hide
+        tooltip {Audio devices} xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Tabs tabsSoundCard {open
-          xywh {0 25 500 346} selection_color 50
+          xywh {0 25 500 345} selection_color 50
         } {
           Fl_Group tabAudio {
             label Devices open
@@ -3154,11 +3154,11 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabID {
-        label ID open
+        label ID
         xywh {0 25 500 346} labelsize 12 hide
       } {
         Fl_Group {} {
-          label {Video Preamble ID}
+          label {Video Preamble ID} open
           xywh {5 35 490 103} box ENGRAVED_FRAME align 21
         } {
           Fl_Check_Button btnsendid {
@@ -3342,11 +3342,11 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabMisc {
-        label Misc
-        xywh {0 25 500 346} labelsize 12 hide
+        label Misc open
+        xywh {0 25 500 345} labelsize 12 hide
       } {
-        Fl_Tabs tabsMisc {
-          xywh {0 25 500 346} selection_color 50
+        Fl_Tabs tabsMisc {open
+          xywh {0 25 500 345} selection_color 50
         } {
           Fl_Group tabCPUspeed {
             label CPU open
@@ -3663,7 +3663,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabQRZ {
-        label {Callsign DB} open
+        label {Callsign DB}
         tooltip {Callsign database} xywh {0 25 500 345} labelsize 12 hide
       } {
         Fl_Group {} {
@@ -3755,7 +3755,7 @@ progdefaults.changed = true;}
             callback {set_qrz_buttons(o);
 progdefaults.QRZ = QRZHTML;
 progdefaults.changed = true;}
-            tooltip {Visit QRZ web site} xywh {25 100 337 20} down_box DOWN_BOX
+            tooltip {Visit QRZ web site} xywh {25 75 337 20} down_box DOWN_BOX
             code0 {o->value(progdefaults.QRZ == QRZHTML);}
           }
           Fl_Round_Button btnHAMCALLonline {
@@ -3763,7 +3763,7 @@ progdefaults.changed = true;}
             callback {set_qrz_buttons(o);
 progdefaults.QRZ = HAMCALLHTML;
 progdefaults.changed = true;}
-            tooltip {Visit Hamcall web site} xywh {25 125 337 20} down_box DOWN_BOX
+            tooltip {Visit Hamcall web site} xywh {25 106 337 20} down_box DOWN_BOX
             code0 {o->value(progdefaults.QRZ == HAMCALLHTML);}
           }
           Fl_Round_Button btnCALLOOK {
@@ -3771,16 +3771,17 @@ progdefaults.changed = true;}
             callback {set_qrz_buttons(o);
 progdefaults.QRZ = CALLOOK;
 progdefaults.changed = true;}
-            xywh {25 70 375 25} down_box DOWN_BOX
+            tooltip {Visit Hamcall web site} xywh {25 137 337 20} down_box DOWN_BOX
+            code0 {o->value(progdefaults.QRZ == CALLOOK);}
           }
         }
       }
       Fl_Group tabDL {
         label {DL Client} open
-        xywh {0 25 500 350} labelsize 12 hide
+        xywh {0 25 500 350} selection_color 48 labelsize 12 hide
       } {
         Fl_Tabs tabsDL {open
-          xywh {0 25 500 348} selection_color 55
+          xywh {0 25 500 348} selection_color 50
         } {
           Fl_Group tabDLEnable {
             label Enable open
@@ -4028,7 +4029,7 @@ stationary_lon->do_callback();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
-              xywh {100 225 45 25}
+              xywh {100 225 45 25} minimum 10 maximum 300
               code0 {o->value(progdefaults.gps_rate);}
             }
             Fl_Box {} {

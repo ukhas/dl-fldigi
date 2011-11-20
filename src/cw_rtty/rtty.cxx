@@ -453,7 +453,7 @@ char snrmsg[80];
 void rtty::Metric()
 {
 	double delta = rtty_baud/2.0;
-	double np =
+	double np = 
 		wf->powerDensity(frequency - shift * 1.5, delta) +
 	 	wf->powerDensity(frequency + shift * 1.5, delta) + 1e-10;
 	double sp =

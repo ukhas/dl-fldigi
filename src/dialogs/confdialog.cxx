@@ -3241,7 +3241,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE);
-    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 375);
+    { tabsConfigure = new Fl_Tabs(-4, 0, 521, 372);
       tabsConfigure->color((Fl_Color)FL_LIGHT1);
       tabsConfigure->selection_color((Fl_Color)FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
@@ -3308,7 +3308,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
             inpMyLocator->when(FL_WHEN_RELEASE);
             inpMyLocator->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyLocator
-          { inpMyAntenna = new Fl_Input2(110, 166, 320, 24, _("Antenna:"));
+          { inpMyAntenna = new Fl_Input2(110, 167, 320, 24, _("Antenna:"));
             inpMyAntenna->tooltip(_("Short description of antenna"));
             inpMyAntenna->box(FL_DOWN_BOX);
             inpMyAntenna->color((Fl_Color)FL_BACKGROUND2_COLOR);
@@ -3944,10 +3944,10 @@ ab and newline are automatically included."));
         } // Fl_Tabs* tabsUI
         tabUI->end();
       } // Fl_Group* tabUI
-      { tabWaterfall = new Fl_Group(0, 25, 500, 346, _("Waterfall"));
+      { tabWaterfall = new Fl_Group(0, 25, 500, 347, _("Waterfall"));
         tabWaterfall->labelsize(12);
         tabWaterfall->hide();
-        { tabsWaterfall = new Fl_Tabs(0, 25, 500, 346);
+        { tabsWaterfall = new Fl_Tabs(0, 25, 500, 347);
           tabsWaterfall->color((Fl_Color)FL_LIGHT1);
           tabsWaterfall->selection_color((Fl_Color)FL_LIGHT1);
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Display"));
@@ -5447,13 +5447,14 @@ an merging"));
         } // Fl_Tabs* tabsModems
         tabModems->end();
       } // Fl_Group* tabModems
-      { tabRig = new Fl_Group(0, 25, 500, 346, _("Rig"));
+      { tabRig = new Fl_Group(0, 25, 500, 345, _("Rig"));
         tabRig->tooltip(_("Transceiver control"));
         tabRig->labelsize(12);
         tabRig->hide();
-        { tabsRig = new Fl_Tabs(0, 25, 500, 346);
+        { tabsRig = new Fl_Tabs(0, 25, 500, 345);
           tabsRig->selection_color((Fl_Color)FL_LIGHT1);
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Hardware PTT"));
+            o->hide();
             { grpHWPTT = new Fl_Group(5, 100, 490, 265, _("h/w ptt device-pin"));
               grpHWPTT->box(FL_ENGRAVED_FRAME);
               grpHWPTT->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -5516,7 +5517,6 @@ an merging"));
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("RigCAT"));
             o->tooltip(_("Rig Control using xml spec file"));
-            o->hide();
             { chkUSERIGCAT = new Fl_Check_Button(195, 60, 110, 20, _("Use RigCAT"));
               chkUSERIGCAT->tooltip(_("RigCAT used for rig control"));
               chkUSERIGCAT->down_box(FL_DOWN_BOX);
@@ -5941,11 +5941,11 @@ an merging"));
         } // Fl_Tabs* tabsRig
         tabRig->end();
       } // Fl_Group* tabRig
-      { tabSoundCard = new Fl_Group(0, 25, 500, 346, _("Audio"));
+      { tabSoundCard = new Fl_Group(0, 25, 500, 345, _("Audio"));
         tabSoundCard->tooltip(_("Audio devices"));
         tabSoundCard->labelsize(12);
         tabSoundCard->hide();
-        { tabsSoundCard = new Fl_Tabs(0, 25, 500, 346);
+        { tabsSoundCard = new Fl_Tabs(0, 25, 500, 345);
           tabsSoundCard->selection_color((Fl_Color)FL_LIGHT1);
           { tabAudio = new Fl_Group(0, 50, 500, 320, _("Devices"));
             { AudioOSS = new Fl_Group(5, 60, 490, 45);
@@ -6368,10 +6368,10 @@ d frequency"));
         } // Fl_Group* o
         tabID->end();
       } // Fl_Group* tabID
-      { tabMisc = new Fl_Group(0, 25, 500, 346, _("Misc"));
+      { tabMisc = new Fl_Group(0, 25, 500, 345, _("Misc"));
         tabMisc->labelsize(12);
         tabMisc->hide();
-        { tabsMisc = new Fl_Tabs(0, 25, 500, 346);
+        { tabsMisc = new Fl_Tabs(0, 25, 500, 345);
           tabsMisc->selection_color((Fl_Color)FL_LIGHT1);
           { tabCPUspeed = new Fl_Group(0, 50, 500, 320, _("CPU"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 51);
@@ -6827,31 +6827,34 @@ d frequency"));
             btnQRZnotavailable->callback((Fl_Callback*)cb_btnQRZnotavailable);
             o->value(progdefaults.QRZ == QRZNONE);
           } // Fl_Round_Button* btnQRZnotavailable
-          { Fl_Round_Button* o = btnQRZonline = new Fl_Round_Button(25, 100, 337, 20, _("QRZ online via default Internet Browser"));
+          { Fl_Round_Button* o = btnQRZonline = new Fl_Round_Button(25, 75, 337, 20, _("QRZ online via default Internet Browser"));
             btnQRZonline->tooltip(_("Visit QRZ web site"));
             btnQRZonline->down_box(FL_DOWN_BOX);
             btnQRZonline->callback((Fl_Callback*)cb_btnQRZonline);
             o->value(progdefaults.QRZ == QRZHTML);
           } // Fl_Round_Button* btnQRZonline
-          { Fl_Round_Button* o = btnHAMCALLonline = new Fl_Round_Button(25, 125, 337, 20, _("HamCall online via default Internet Browser"));
+          { Fl_Round_Button* o = btnHAMCALLonline = new Fl_Round_Button(25, 106, 337, 20, _("HamCall online via default Internet Browser"));
             btnHAMCALLonline->tooltip(_("Visit Hamcall web site"));
             btnHAMCALLonline->down_box(FL_DOWN_BOX);
             btnHAMCALLonline->callback((Fl_Callback*)cb_btnHAMCALLonline);
             o->value(progdefaults.QRZ == HAMCALLHTML);
           } // Fl_Round_Button* btnHAMCALLonline
-          { btnCALLOOK = new Fl_Round_Button(25, 70, 375, 25, _("Callook.info lookup (US callsigns only)"));
+          { Fl_Round_Button* o = btnCALLOOK = new Fl_Round_Button(25, 137, 337, 20, _("Callook.info lookup (US callsigns only)"));
+            btnCALLOOK->tooltip(_("Visit Hamcall web site"));
             btnCALLOOK->down_box(FL_DOWN_BOX);
             btnCALLOOK->callback((Fl_Callback*)cb_btnCALLOOK);
+            o->value(progdefaults.QRZ == CALLOOK);
           } // Fl_Round_Button* btnCALLOOK
           o->end();
         } // Fl_Group* o
         tabQRZ->end();
       } // Fl_Group* tabQRZ
       { tabDL = new Fl_Group(0, 25, 500, 350, _("DL Client"));
+        tabDL->selection_color((Fl_Color)48);
         tabDL->labelsize(12);
         tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 500, 348);
-          tabsDL->selection_color((Fl_Color)55);
+          tabsDL->selection_color((Fl_Color)FL_LIGHT1);
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
             { Fl_Group* o = new Fl_Group(5, 59, 490, 76, _("habitat"));
               o->box(FL_ENGRAVED_FRAME);
@@ -7034,6 +7037,8 @@ d frequency"));
               o->align(FL_ALIGN_WRAP);
             } // Fl_Box* o
             { Fl_Spinner* o = new Fl_Spinner(100, 225, 45, 25, _("Rate"));
+              o->minimum(10);
+              o->maximum(300);
               o->callback((Fl_Callback*)cb_Rate);
               o->value(progdefaults.gps_rate);
             } // Fl_Spinner* o

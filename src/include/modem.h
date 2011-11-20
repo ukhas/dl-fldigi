@@ -65,7 +65,7 @@ protected:
 	bool s2n_valid;
 
 	unsigned cap;
-	
+
 	double track_freq(double freq);
 
 public:
@@ -131,7 +131,7 @@ public:
 	       CAP_IMG = 1 << 3, CAP_BW = 1 << 4, CAP_RX = 1 << 5,
 	       CAP_TX = 1 << 6
 	};
-	
+
 	unsigned char track_freq_lock;
 
 // for CW modem use only

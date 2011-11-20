@@ -702,7 +702,7 @@ int configuration::setDefaults()
 	mnuLang->hide();
 #endif
 
-    inpGPSdev->value(gps_device.c_str());
+	inpGPSdev->value(gps_device.c_str());
 
 	return 1;
 }
@@ -871,7 +871,7 @@ static bool open_serial(const char* dev)
 
 		if (err == ERROR_ACCESS_DENIED)
 		{
-			LOG_INFO("opening port %s resulted in ERROR_ACCESS_DENIED, it exists but is currently open - allowing");
+			LOG_DEBUG("opening port %s resulted in ERROR_ACCESS_DENIED, it exists but is currently open - allowing");
 			ret = true;
 		}
 	}
@@ -991,6 +991,7 @@ out:
 			inpRIGdev->add(ttyname);
 #  endif
 			inpXmlRigDevice->add(ttyname);
+
 			inpGPSdev->add(ttyname);
 		}
 #else // __APPLE__

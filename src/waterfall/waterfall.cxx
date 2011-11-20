@@ -873,7 +873,7 @@ void WFdisp::update_waterfall() {
 }
 
 void WFdisp::drawcolorWF() {
-        static int waterwheel = 0;
+	static int waterwheel = 0;
 	FILE *fp;
 	png_structp png_ptr;
 	png_infop info_ptr;

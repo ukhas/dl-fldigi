@@ -143,7 +143,6 @@ extern Fl_Button		*btnMacroTimer;
 
 extern bool			bWF_only;
 
-/* dl_fldigi */
 extern bool					bHAB;
 extern Fl_Group				*TopFrameHAB;
 extern Fl_Choice			*habFlight;
@@ -162,7 +161,6 @@ extern Fl_Output			*habBearing;
 extern Fl_Output			*habDistance;
 extern Fl_Output			*habTimeSinceLastRx;
 extern Fl_Output			*habString;
-/* end */
 
 extern bool			withnoise;
 extern int			altMacros;
@@ -321,7 +319,6 @@ void sync_cw_parameters();
 
 void open_recv_folder(const char *fname);
 
-// dl-fldigi
 void set_menu_dl_online(bool val);
 void set_menu_dl_refresh_active(bool active);
 

@@ -55,6 +55,7 @@
 #define DEFAULT_HWFALL 124
 #define DEFAULT_HNOM 500
 #define WMIN 645
+#define WMIN_hab 1000
 #define HMIN 450
 //#define Wwfall		(DEFAULT_HNOM + 2 * BEZEL)
 #define DEFAULT_WNOM (Wwfall + 2* DEFAULT_SW)

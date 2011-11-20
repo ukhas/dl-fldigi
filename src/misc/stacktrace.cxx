@@ -169,7 +169,7 @@ void handle_signal(int s)
 #ifdef __MINGW32__
 	else
 	{
-		/* Re-establish the signal */
+		/* Reset the signal */
 		signal(SIGUSR2, handle_signal);
 	}
 #endif

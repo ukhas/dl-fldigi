@@ -116,6 +116,8 @@
 
 using namespace std;
 
+string appname;
+
 string scDevice[2];
 
 string HomeDir;
@@ -142,6 +144,7 @@ string WRAP_auto_dir;
 string ICS_dir;
 string ICS_msg_dir;
 string ICS_tmp_dir;
+
 string PskMailFile;
 string ArqFilename;
 string xmlfname;
@@ -190,14 +193,10 @@ static void arg_error(const char* name, const char* arg, bool missing) noreturn_
 #  define SHOW_WIZARD_BEFORE_MAIN_WINDOW 0
 #endif
 
-std::string appname;
-
 int main(int argc, char ** argv)
 {
 	appname = argv[0];
 	debug_exec(argv);
-
-	set_platform_ui();
 
 	CREATE_THREAD_ID(); // only call this once
 	SET_THREAD_ID(FLMAIN_TID);
@@ -234,7 +233,9 @@ int main(int argc, char ** argv)
 #endif
 	}
 
-    dl_fldigi::init();
+	set_platform_ui();
+
+	dl_fldigi::init();
 
 	generate_option_help();
 	generate_version_text();
@@ -287,7 +288,6 @@ int main(int argc, char ** argv)
 		qsl_open(string(HomeDir).append("AGMemberList.txt").c_str(), QSL_EQSL);
 
 	progStatus.loadLastState();
-
 	create_fl_digi_main(argc, argv);
 
 	if (!have_config || show_cpucheck) {
@@ -412,7 +412,7 @@ int main(int argc, char ** argv)
 #endif
 //	connect_to_log_server();
 
-    dl_fldigi::ready(bHAB);
+	dl_fldigi::ready(bHAB);
 
 	int ret = Fl::run();
 
@@ -531,10 +531,10 @@ void generate_option_help(void) {
 
 	     << "  --wfall-only\n"
 	     << "    Hide all controls but the waterfall\n\n"
-//jcoxon		 
+
 	     << "  --hab\n"
 	     << "    High Altitude Balloon Setup (dl-fldigi)\n\n"
-//
+
 	     << "  --debug-level LEVEL\n"
 	     << "    Set the event log verbosity\n\n"
 
@@ -633,9 +633,7 @@ int parse_args(int argc, char **argv, int& idx)
 
                OPT_FONT, OPT_WFALL_HEIGHT,
                OPT_WINDOW_WIDTH, OPT_WINDOW_HEIGHT, OPT_WFALL_ONLY,
-//jcoxon
-			   OPT_HAB,
-//
+               OPT_HAB,
 #if USE_PORTAUDIO
                OPT_FRAMES_PER_BUFFER,
 #endif
@@ -682,9 +680,7 @@ int parse_args(int argc, char **argv, int& idx)
 		{ "window-width",  1, 0, OPT_WINDOW_WIDTH },
 		{ "window-height", 1, 0, OPT_WINDOW_HEIGHT },
 		{ "wfall-only",    0, 0, OPT_WFALL_ONLY },
-//jcoxon
 		{ "hab",		   0, 0, OPT_HAB },
-//
 		{ "wo",            0, 0, OPT_WFALL_ONLY },
 
 #if USE_PORTAUDIO
@@ -850,11 +846,11 @@ int parse_args(int argc, char **argv, int& idx)
 		case OPT_WFALL_ONLY:
 			bWF_only = true;
 			break;
-//jcoxon
+
 		case OPT_HAB:
 			bHAB = true;
 			break;
-//
+
 		case OPT_NOISE:
 			withnoise = true;
 			break;
@@ -1110,7 +1106,7 @@ static void checkdirectories(void)
 		{ MacrosDir, "macros", create_new_macros },
 		{ WrapDir, "wrap", 0 },
 		{ TalkDir, "talk", 0 },
-		{ TempDir, "temp", 0 }
+		{ TempDir, "temp", 0 },
 	};
 
 	int r;

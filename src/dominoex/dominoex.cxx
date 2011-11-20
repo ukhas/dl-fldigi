@@ -251,7 +251,7 @@ dominoex::dominoex(trx_mode md)
 
 	tonespacing = 1.0 * samplerate * doublespaced / symlen;
 	tonespacing += progdefaults.DOMINOEX_ADJ;
-	
+
 	bandwidth = NUMTONES * tonespacing;
 
 	hilbert	= new C_FIR_filter();

@@ -1047,7 +1047,6 @@ msgid "flmsg\t*"
 msgstr "flmsg\t*"
 
 #: src/logger/speak.cxx:42
-#, fuzzy
 msgid ""
 "Save all received text, one character at a time to the following file:\n"
 "\n"
@@ -1057,7 +1056,7 @@ msgstr ""
 "Salvar todo el texto recibido, un caractér cada vez al siguiente fichero:\n"
 "\n"
 "    fldigi.files\\talk\\textout.txt (Windows)\n"
-"    ~/.fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
+"    ~/.dl-fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
 
 #: src/misc/configuration.cxx:530
 msgid "Rig mode"
@@ -1072,7 +1071,6 @@ msgid "Always USB"
 msgstr "Siempre USB"
 
 #: src/misc/configuration.cxx:710
-#, fuzzy
 msgid ""
 "Reset all options to their default values?\n"
 "\n"
@@ -1084,7 +1082,7 @@ msgstr ""
 "Los efectos de esta acción no se observarán\n"
 "hasta el próximo inicio del programa\n"
 "Se eliminaran los ficheros siguientes:\n"
-"fldigi_def.xml and fldigi.prefs\n"
+"dl-fldigi_def.xml and dl-fldigi.prefs\n"
 
 #: src/misc/configuration.cxx:715
 msgid "Confirm RESET"
