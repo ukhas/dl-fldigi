@@ -70,7 +70,7 @@
               +20.0)                                                                    \
         ELEM_(bool, rsidWideSearch, "RSIDWIDESEARCH",                                   \
               "RSID detector searches the entire passband",                             \
-              true)                                                                     \
+              false)                                                                    \
         ELEM_(int, rsid_squelch, "RSIDSQUELCH",                                         \
               "RSID detection opens squelch for nn seconds",                            \
               5)                                                                        \
@@ -88,8 +88,8 @@
               "Trigger RSID notifications but do not change modem and frequency",       \
               false)                                                                    \
         ELEM_(bool, rsid_auto_disable, "RSIDAUTODISABLE",                               \
-              "Disable RSID detection when changing modem and/or frequency",            \
-              true)                                                                     \
+              "Disable RSID detection when RsID signal is detected",                    \
+              false)                                                                      \
         ELEM_(bool, rsid_post, "RSIDPOST",                                              \
               "Transmit an RSID signal when modem data is concluded",                   \
               false)                                                                    \
@@ -239,9 +239,12 @@
         ELEM_(int, rtty_custom_shift, "RTTYCUSTOMSHIFT",                                \
               "Custom shift (Hz)",                                                      \
               450)                                                                      \
+        ELEM_(double, RTTY_BW, "RTTYBW",                                                \
+              "Receive filter bandwidth (Hz)",                                          \
+              68.0)                                                                     \
         ELEM_(int, rtty_baud, "RTTYBAUD",                                               \
               "Carrier baud rate. Values are as follows:\n"                             \
-              "  0: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"      \
+              "  1: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"      \
               "  8: 200; 9: 300",                                                       \
               0)   /* 45 */                                                             \
         ELEM_(int, rtty_bits, "RTTYBITS",                                               \
@@ -293,13 +296,10 @@
               true)                                                                     \
         ELEM_(bool, useMARKfreq, "USEMARKFREQ",                                         \
               "Use MARK frequency for logging",                                         \
-              true)                                                                    \
+              true)                                                                     \
         ELEM_(bool, Xagc, "XAGC",                                                       \
               "This setting is currently unused",                                       \
               false)                                                                    \
-        ELEM_(double, RTTY_BW, "RTTYBW",                                                \
-              "Receive filter bandwidth (Hz)",                                          \
-              400.0)                                                                    \
         /* CW */                                                                        \
         ELEM_(bool, useCWkeylineRTS, "", "",  false)                                    \
         ELEM_(bool, useCWkeylineDTR, "", "",  false)                                    \
@@ -523,6 +523,15 @@
         ELEM_(bool, UseBWTracks, "USEBWTRACKS",                                         \
               "Draw bandwidth marker with vertical lines",                              \
               true)                                                                     \
+        ELEM_(bool, UseWideTracks, "USEWIDETRACKS",                                     \
+              "Draw bandwidth marker with 3x vertical lines",                           \
+              false)                                                                    \
+        ELEM_(bool, UseWideCursor, "USEWIDECURSOR",                                     \
+              "Draw cursor with 3x vertical lines",                                     \
+              false)                                                                    \
+        ELEM_(bool, UseWideCenter, "USEWIDECENTER",                                     \
+              "Draw center line marker with 3x vertical lines",                         \
+              false)                                                                    \
         ELEM_(RGBI, cursorLineRGBI, "CLCOLORS",                                         \
               "Color of cursor lines (RGBI)",                                           \
               {255, 255, 0, 255})                                                       \
@@ -557,6 +566,10 @@
               "Single tone at center of modem BW, carrier detect for amplifiers",       \
               0.0)                                                                      \
         ELEM_(bool, macroCWid, "", "",  false)                                          \
+        ELEM_(std::string, DTMFstr, "", "", "")                                         \
+        ELEM_(bool, DTMFdecode, "DTMFDECODE",                                           \
+              "Decode received DTMF tones",                                             \
+              false)                                                                    \
         ELEM_(int, videowidth, "VIDEOWIDTH",                                            \
               "Video ID text width (characters per row)",                               \
               1)                                                                        \
@@ -652,6 +665,22 @@
               "QRZ or HamCall subscriber password",                                     \
               "")                                                                       \
         ELEM_(bool, QRZchanged, "", "",  false)                                         \
+        /* eQSL */                                                                      \
+        ELEM_(std::string, eqsl_id, "EQSL_ID",                                          \
+              "eQSL login id",                                                          \
+              "")                                                                       \
+        ELEM_(std::string, eqsl_pwd, "EQSL_PASSWORD",                                   \
+              "eQSL login password",                                                    \
+              "")                                                                       \
+        ELEM_(std::string, eqsl_nick, "EQSL_NICKNAME",                                  \
+              "eQSL nickname",                                                          \
+              "")                                                                       \
+        ELEM_(std::string, eqsl_default_message, "EQSL_DEF_MSG",                        \
+              "eQSl default message",                                                   \
+              "")                                                                       \
+        ELEM_(bool, eqsl_when_logged, "EQSL_WHEN_LOGGED",                               \
+              "Send eQSL when other log action invoked",                                \
+              false)                                                                    \
         /* Rig control */                                                               \
         ELEM_(bool, btnusb, "BTNUSB",                                                   \
               "This setting is currently unused",                                       \

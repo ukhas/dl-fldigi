@@ -36,13 +36,14 @@ struct MACROTEXT {
 	void openMacroFile();
 	void saveMacroFile();
 	void saveMacros(const std::string& fname);
-	std::string expandMacro(int n);
+	std::string expandMacro(std::string &s);
 	void execute(int n);
 	void repeat(int n);
+	void timed_execute();
 	MACROTEXT();
 private:
 	std::string expanded;
-	void loadnewMACROS(std::string& s, size_t &i);
+	void loadnewMACROS(std::string& s, size_t &i, size_t endbracket);
 };
 
 extern MACROTEXT macros;
@@ -52,7 +53,20 @@ extern std::string info1msg;
 extern std::string info2msg;
 extern std::string qso_time;
 extern std::string qso_exchange;
+extern std::string exec_date;
+extern std::string exec_time;
+extern std::string exec_string;
+extern std::string text2repeat;
+
+extern bool macro_idle_on;
+extern size_t repeatchar;
+
 
 void set_macro_env(void);
+
+void queue_reset();
+void queue_execute();
+bool queue_must_rx();
+void idleTimer(void *);
 
 #endif

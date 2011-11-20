@@ -172,6 +172,9 @@ extern Digiscope		*digiscope;
 
 extern std::string		main_window_title;
 
+extern int Qwait_time;
+extern int Qidle_time;
+
 extern void toggleRSID();
 
 extern void set_menus();
@@ -190,7 +193,7 @@ extern void cb_mnuVisitURL(Fl_Widget*, void* arg);
 
 extern void put_freq(double frequency);
 extern void put_Bandwidth(int bandwidth);
-extern void display_metric(double metric);
+extern void global_display_metric(double metric);
 extern void put_cwRcvWPM(double wpm);
 
 extern void set_scope_mode(Digiscope::scope_mode md);
@@ -224,6 +227,7 @@ extern void show_bw(const std::string& sWidth);
 extern void show_spot(bool v);
 extern void showMacroSet();
 extern void setwfrange();
+extern void showDTMF(const std::string s);
 
 extern void xmtrcv_selection_color();
 extern void rev_selection_color();
@@ -238,6 +242,10 @@ extern void spot_selection_color();
 extern void put_WARNstatus(double);
 
 extern void qsoSave_cb(Fl_Widget *b, void *);
+
+extern bool que_ok;
+extern void post_queue_execute(void*);
+extern void queue_execute_after_rx(void*);
 
 extern void put_rx_data(int *data, int len);
 extern int get_tx_char();
@@ -284,6 +292,10 @@ extern void set_contestia_default_integ();
 
 extern void startMacroTimer();
 extern void stopMacroTimer();
+extern void macro_timer(void *);
+extern void macro_timed_execute(void *);
+extern void startTimedExecute(std::string &);
+
 extern void cb_ResetSerNbr();
 extern void updateOutSerNo();
 
@@ -314,6 +326,7 @@ void set_contestia_tones(int tones);
 void set_rtty_shift(int shift);
 void set_rtty_baud(float baud);
 void set_rtty_bits(int bits);
+void set_rtty_bw(float bw);
 
 void sync_cw_parameters();
 

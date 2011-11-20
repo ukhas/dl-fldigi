@@ -1,6 +1,125 @@
 
 
+=Version 3.21.26=
+
+2011-11-14  David Freese  <w1hkj@w1hkj.com>
+
+	77551e8: eQSL update
+
+
+=Version 3.21.25=
+
+	50fa414: guard lock
+
+2011-11-12  Remi Chateauneu  <remi.chateauneu@gmail.com>
+
+	dae542e: Wefax enhancements.
+	e75cc0e: Use Logbook record
+
+2011-11-12  David Freese  <w1hkj@w1hkj.com>
+
+	c2ba559: eQSL
+
+
+=Version 3.21.24=
+
+	16fc289: Exec macro
+	0859928: QRZ on-line lookup
+
+
+=Version 3.21.23=
+
+	047543a: HamQTH
+	2ffb4a5: Auto-send
+
+
+=Version 3.21.22=
+
+
+2011-10-28  Pavel Milanes Costa  <pavel@conas.co.cu>
+
+	b66a4d7: es.po update
+
+2011-10-28  David Freese  <w1hkj@w1hkj.com>
+
+	269ae3a: RSID defaults
+	1b3e852: NBEMS-FLMSG Directories
+
+
+=Version 3.21.21=
+
+	3163fd2: Resize fault
+
+
+=Version 3.21.20=
+
+	fba599c: RSID limit fault
+	c32fa63: DTMF debug
+
+
+=Version 3.21.19=
+
+	7046d49: HamQTH lookup
+
+
+=Version 3.21.18=
+
+	1247488: REV macro tag
+	9c13f6f: RTTY bandwidth
+
+
+=Version 3.21.17=
+
+	4ac5f6b: MFSK soft decode
+	07baee2: MACRO code cleanup
+	4d13cb4: <EXEC>...</EXEC>
+
+
+=Version 3.21.16=
+
+	3e554f8: !Queue reset
+	8ac0558: Timer delay
+
+
+=Version 3.21.15=
+
+	d0e1c5f: Log Menu Items
+	cebc292: Macro Editor
+	960e580: WWV xmt mode
+	bb258cd: Inline macro tags
+	d2c33e4: RTTY baud
+	ab472e0: CW/RTTY init fault
+	5a9607a: Control-Z bug fix
+	c565815: CW QSK
+	405816e: Log Server lookup
+
+2011-09-04  Remi Chateauneu  <remi.chateauneu@gmail.com>
+
+	e0ee3a9: Added wefax::adjust_metric method.
+	261275e: modem::display_metric now sets the member modem::m
+
+
+=Version 3.21.14=
+
+
+2011-09-03  David Freese  <w1hkj@w1hkj.com>
+
+	166fe59: DTMF decoder
+	49e2dd2: CW Prosign defaults
+
+2011-08-30  Remi Chateauneu  <remi.chateauneu@gmail.com>
+
+	ff18562: Macros code cleanup
+
+2011-08-30  David Freese  <w1hkj@w1hkj.com>
+
+	74364ee: DTMF class
+	5af9f3a: DTMF encoder
+	39fe31b: Wide Cursor Tracks
+
+
 =Version 3.21.13=
+
 
 2011-08-07  Pavel Milanes Costa  <co7wt@frcuba.co.cu>
 

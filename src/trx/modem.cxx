@@ -42,6 +42,7 @@
 
 using namespace std;
 
+modem *null_modem = 0;
 modem *cw_modem = 0;
 
 modem *mfsk8_modem = 0;
@@ -246,6 +247,12 @@ void modem::set_reverse(bool on)
 void modem::set_metric(double m)
 {
 	metric = m;
+}
+
+void modem::display_metric(double m)
+{
+	set_metric(m);
+	::global_display_metric(m);
 }
 
 double modem::get_metric(void)
@@ -990,5 +997,3 @@ mfntchr idch2[] = {
 {'}', { 0x00, 0x80, 0xC0, 0x40, 0x40, 0x40, 0x60, 0x60, 0x40, 0x40, 0x40, 0xC0, 0x80, 0x00 }, },
 {'~', { 0x00, 0x98, 0xFC, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } }
 };
-
-

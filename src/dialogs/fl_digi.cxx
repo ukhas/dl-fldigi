@@ -77,6 +77,7 @@
 #endif
 #include "rigio.h"
 #include "rigMEM.h"
+#include "nullmodem.h"
 #include "psk.h"
 #include "cw.h"
 #include "mfsk.h"
@@ -1034,6 +1035,11 @@ void init_modem(trx_mode mode, int freq)
 			mode = NUM_MODES - 1;
 		return init_modem(mode, freq);
 
+	case MODE_NULL:
+		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
+			      *mode_info[mode].modem = new NULLMODEM, freq);
+		break;
+
 	case MODE_CW:
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new cw, freq);
@@ -1856,6 +1862,19 @@ void cb_ShowNBEMS(Fl_Widget*, void*)
 	cb_mnuVisitURL(0, (void*)NBEMS_dir.c_str());
 }
 
+void cb_ShowFLMSG(Fl_Widget*, void*)
+{
+	DIR *flmsg_dir;
+	flmsg_dir = opendir(FLMSG_dir.c_str());
+	if (!flmsg_dir) {
+		int ans = fl_choice2(_("Do not exist, create?"), _("No"), _("Yes"), 0);
+		if (!ans) return;
+		check_nbems_dirs();
+	}
+	closedir(flmsg_dir);
+	cb_mnuVisitURL(0, (void*)FLMSG_dir.c_str());
+}
+
 void cbTune(Fl_Widget *w, void *) {
 	Fl_Button *b = (Fl_Button *)w;
 	if (!(active_modem->get_cap() & modem::CAP_TX)) {
@@ -2342,6 +2361,7 @@ void stopMacroTimer()
 	progStatus.timer = 0;
 	progStatus.repeatMacro = -1;
 	Fl::remove_timeout(macro_timer);
+	Fl::remove_timeout(macro_timed_execute);
 
 	btnMacroTimer->label(0);
 	btnMacroTimer->color(FL_BACKGROUND_COLOR);
@@ -2360,6 +2380,32 @@ void macro_timer(void*)
 	}
 	else
 		Fl::repeat_timeout(1.0, macro_timer);
+}
+
+void macro_timed_execute(void *)
+{
+	if (exec_date == zdate() && exec_time == ztime()) {
+		macros.timed_execute();
+		btnMacroTimer->label(0);
+		btnMacroTimer->color(FL_BACKGROUND_COLOR);
+		btnMacroTimer->set_output();
+	} else {
+		Fl::repeat_timeout(1.0, macro_timed_execute);
+	}
+}
+
+void startTimedExecute(std::string &title)
+{
+	ENSURE_THREAD(FLMAIN_TID);
+	Fl::add_timeout(0.0, macro_timed_execute);
+	string txt = "Macro '";
+	txt.append(title).append("' scheduled at ");
+	txt.append(exec_time).append(", on ").append(exec_date).append("\n");
+	btnMacroTimer->label("SKED");
+	btnMacroTimer->color(fl_rgb_color(240, 240, 0));
+	btnMacroTimer->redraw_label();
+	ReceiveText->clear();
+	ReceiveText->add(txt.c_str(), FTextBase::CTRL);
 }
 
 void cbMacroTimerButton(Fl_Widget*, void*)
@@ -2993,6 +3039,7 @@ Fl_Menu_Item menu_[] = {
 
 { make_icon_label(_("Folders")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Fldigi config..."), folder_open_icon), 0, cb_ShowConfig, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("FLMSG files..."), folder_open_icon), 0, cb_ShowFLMSG, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("NBEMS files..."), folder_open_icon), 0, cb_ShowNBEMS, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -3142,6 +3189,7 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
+{ mode_info[MODE_NULL].name, 0, cb_init_mode, (void *)MODE_NULL, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_SSB].name, 0, cb_init_mode, (void *)MODE_SSB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 { mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3163,7 +3211,7 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(_("Misc")), 0,  (Fl_Callback*)cb_mnuConfigMisc, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Notifications")), 0,  (Fl_Callback*)cb_mnuConfigNotify, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(CONTEST_MLABEL), 0,  (Fl_Callback*)cb_mnuConfigContest, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("QRZ"), net_icon), 0,  (Fl_Callback*)cb_mnuConfigQRZ, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("QRZ/eQSL"), net_icon), 0,  (Fl_Callback*)cb_mnuConfigQRZ, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Save Config"), save_icon), 0, (Fl_Callback*)cb_mnuSaveConfig, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -3194,23 +3242,24 @@ Fl_Menu_Item menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {_("&Logbook"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ LOG_CONNECT_SERVER, 0, cb_log_server, 0, FL_MENU_TOGGLE | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("View")), 'l', (Fl_Callback*)cb_mnuShowLogbook, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("New")), 0, (Fl_Callback*)cb_mnuNewLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Open...")), 0, (Fl_Callback*)cb_mnuOpenLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Save")), 0, (Fl_Callback*)cb_mnuSaveLogbook, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 
 {"ADIF", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Merge...")), 0, (Fl_Callback*)cb_mnuMergeADIF_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Export...")), 0, (Fl_Callback*)cb_mnuExportADIF_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"Reports", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{"Reports", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("Text...")), 0, (Fl_Callback*)cb_mnuExportTEXT_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("CSV...")), 0, (Fl_Callback*)cb_mnuExportCSV_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Cabrillo...")), 0, (Fl_Callback*)cb_Export_Cabrillo, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
+{ make_icon_label(_("New")), 0, (Fl_Callback*)cb_mnuNewLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Open...")), 0, (Fl_Callback*)cb_mnuOpenLogbook, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Save")), 0, (Fl_Callback*)cb_mnuSaveLogbook, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+
+{ LOG_CONNECT_SERVER, 0, cb_log_server, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3673,6 +3722,12 @@ void showMacroSet() {
 	set_macroLabels();
 }
 
+void showDTMF(const string s) {
+	string dtmfstr = "\n<DTMF> ";
+	dtmfstr.append(s);
+	ReceiveText->add(dtmfstr.c_str());
+}
+
 void setwfrange() {
 	wf->opmode();
 }
@@ -3762,7 +3817,7 @@ void create_fl_digi_main_primary() {
 	int Hmacrobtn;
 	int xpos;
 	int ypos;
-	int wblank;
+	int wBLANK;
 
 	int fnt = fl_font();
 	int fsize = fl_size();
@@ -4404,14 +4459,14 @@ void create_fl_digi_main_primary() {
 			Fl_Group *btngroup2 = new Fl_Group(0, Y + 1, progStatus.mainW - Hmacros, Hmacros - 1);
 			Wmacrobtn = (btngroup2->w()) / NUMMACKEYS;
 			Hmacrobtn = btngroup2->h() - 1;
-			wblank = (btngroup2->w() - NUMMACKEYS * Wmacrobtn) / 2;
+			wBLANK = (btngroup2->w() - NUMMACKEYS * Wmacrobtn) / 2;
 			xpos = 0;
 			ypos = btngroup2->y();
 			for (int i = 0; i < NUMMACKEYS; i++) {
 				if (i == 4 || i == 8) {
-					bx = new Fl_Box(xpos, ypos, wblank, Hmacrobtn);
+					bx = new Fl_Box(xpos, ypos, wBLANK, Hmacrobtn);
 					bx->box(FL_FLAT_BOX);
-					xpos += wblank;
+					xpos += wBLANK;
 				}
 				btnMacro[NUMMACKEYS + i] = new Fl_Button(xpos, ypos, Wmacrobtn, Hmacrobtn, 
 					macros.name[NUMMACKEYS + i].c_str());
@@ -4427,6 +4482,7 @@ void create_fl_digi_main_primary() {
 			btnAltMacros2->tooltip(_("Shift-key macro set"));
 			macroFrame2->resizable(btngroup2);
 		macroFrame2->end();
+
 		Y += Hmacros;
 		int Htext = progStatus.mainH - Hwfall - Hmenu - Hstatus - Hmacros*NUMKEYROWS - Hqsoframe - 4;
 		int Hrcvtxt = Htext / 2;
@@ -4465,7 +4521,6 @@ void create_fl_digi_main_primary() {
 				text_panel->x(), text_panel->y(),
 				text_panel->w()/2, Htext, "");
 
-//				mainViewer = new pskBrowser(mvgroup->x(), mvgroup->y(), mvgroup->w(), Htext-22, "");
 				mainViewer = new pskBrowser(mvgroup->x(), mvgroup->y(), mvgroup->w(), Htext-42, "");
 				mainViewer->box(FL_DOWN_BOX);
 				mainViewer->has_scrollbar(Fl_Browser_::VERTICAL);
@@ -4477,9 +4532,6 @@ void create_fl_digi_main_primary() {
 
 				Fl_Group* gseek = new Fl_Group(mvgroup->x(), mvgroup->y() + Htext - 42, mvgroup->w(), 20);
 // search field
-//					const char* label = _("Find: ");
-//					fl_font(FL_HELVETICA, FL_NORMAL_SIZE);
-//					int label_w = static_cast<int>(fl_width(label));
 					int seek_x = mvgroup->x() + 2;
 					int seek_y = mvgroup->y() + Htext - 42;
 					int seek_w = mvgroup->w() - 4;
@@ -4567,8 +4619,8 @@ void create_fl_digi_main_primary() {
 			TransmitText->align(FL_ALIGN_CLIP);
 
 			Fl_Box *minbox = new Fl_Box(
-				text_panel->x(), text_panel->y() + 66, 
-				text_panel->w() - 100, text_panel->h() - 66 - 80);
+				text_panel->x(), text_panel->y() + 66, // fixed by Raster min height
+				text_panel->w() - 100, text_panel->h() - 66 - 60); // fixed by HMIN & Hwfall max
 			minbox->hide();
 
 			text_panel->resizable(minbox);
@@ -4583,14 +4635,14 @@ void create_fl_digi_main_primary() {
 			Fl_Group *btngroup1 = new Fl_Group(0, Y+1, progStatus.mainW - Hmacros, Hmacros-1);
 			Wmacrobtn = (btngroup1->w()) / NUMMACKEYS;
 			Hmacrobtn = btngroup1->h() - 1;
-			wblank = (btngroup1->w() - NUMMACKEYS * Wmacrobtn) / 2;
+			wBLANK = (btngroup1->w() - NUMMACKEYS * Wmacrobtn) / 2;
 			xpos = 0;
 			ypos = btngroup1->y();
 			for (int i = 0; i < NUMMACKEYS; i++) {
 				if (i == 4 || i == 8) {
-					bx = new Fl_Box(xpos, ypos, wblank, Hmacrobtn);
+					bx = new Fl_Box(xpos, ypos, wBLANK, Hmacrobtn);
 					bx->box(FL_FLAT_BOX);
-					xpos += wblank;
+					xpos += wBLANK;
 				}
 				btnMacro[i] = new Fl_Button(xpos, ypos, Wmacrobtn, Hmacrobtn, 
 					macros.name[i].c_str());
@@ -4975,6 +5027,7 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
+{ mode_info[MODE_NULL].name, 0, cb_init_mode, (void *)MODE_NULL, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_SSB].name, 0, cb_init_mode, (void *)MODE_SSB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
 { mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -5901,7 +5954,7 @@ void put_Bandwidth(int bandwidth)
 	wf->Bandwidth ((int)bandwidth);
 }
 
-static void set_metric(double metric)
+static void callback_set_metric(double metric)
 {
 	pgrsSquelch->value(metric);
 	if (!progStatus.sqlonoff)
@@ -5913,10 +5966,10 @@ static void set_metric(double metric)
 	btnSQL->redraw_label();
 }
 
-void display_metric(double metric)
+void global_display_metric(double metric)
 {
 	FL_LOCK_D();
-	REQ_DROP(set_metric, metric);
+	REQ_DROP(callback_set_metric, metric);
 	FL_UNLOCK_D();
 	FL_AWAKE_D();
 }
@@ -6305,10 +6358,6 @@ void put_rx_data(int *data, int len)
  	FHdisp->data(data, len);
 }
 
-extern bool macro_idle_on;
-extern string text2repeat;
-extern size_t repeatchar;
-
 bool idling = false;
 
 void get_tx_char_idle(void *)
@@ -6317,10 +6366,55 @@ void get_tx_char_idle(void *)
 	progStatus.repeatIdleTime = 0;
 }
 
+int Qwait_time = 0;
+int Qidle_time = 0;
+
+static int que_timeout = 0;
+bool que_ok = true;
+
+void post_queue_execute(void*)
+{
+	if (!que_timeout) {
+		LOG_ERROR("%s", "timed out");
+		return;
+	}
+	while (!que_ok && trx_state != STATE_RX) {
+		que_timeout--;
+		Fl::repeat_timeout(0.05, post_queue_execute);
+	}
+	trx_transmit();
+}
+
+void queue_execute_after_rx(void*)
+{
+	if (!que_timeout) {
+		LOG_ERROR("%s", "timed out");
+		return;
+	}
+	while (trx_state == STATE_TX) {
+		que_timeout--;
+		Fl::repeat_timeout(0.05, queue_execute_after_rx);
+		return;
+	}
+	que_ok = false;
+	que_timeout = 100; // 5 seconds
+	Fl::add_timeout(0.05, post_queue_execute);
+	queue_execute();
+}
+
 char szTestChar[] = "E|I|S|T|M|O|A|V";
 int get_tx_char(void)
 {
-	if (macro_idle_on) return -1;
+	int c;
+	static int pending = -1;
+	enum { STATE_CHAR, STATE_CTRL };
+	static int state = STATE_CHAR;
+
+	if (!que_ok) { return -1; }
+	if (Qwait_time) { return -1; }
+	if (Qidle_time) { return -1; }
+	if (macro_idle_on) { return -1; }
+	if (idling) { return -1; }
 
 	if (arq_text_available)
 		return arq_get_char();
@@ -6328,23 +6422,18 @@ int get_tx_char(void)
     if (active_modem == cw_modem && progdefaults.QSKadjust)
         return szTestChar[2 * progdefaults.TestChar];
 
-	int c;
-	static int pending = -1;
+	if ( progStatus.repeatMacro && progStatus.repeatIdleTime > 0 &&
+		 !idling ) {
+		Fl::add_timeout(progStatus.repeatIdleTime, get_tx_char_idle);
+		idling = true;
+		return -1;
+	}
+
 	if (pending >= 0) {
 		c = pending;
 		pending = -1;
 		return c;
 	}
-
-	enum { STATE_CHAR, STATE_CTRL };
-	static int state = STATE_CHAR;
-
-	if ( progStatus.repeatMacro && progStatus.repeatIdleTime > 0 &&
-		 !idling ) {
-		Fl::add_timeout(progStatus.repeatIdleTime, get_tx_char_idle);
-		idling = true;
-	}
-	if (idling) return -1;
 
 	if (progStatus.repeatMacro > -1 && text2repeat.length()) {
 		c = text2repeat[repeatchar];
@@ -6357,12 +6446,15 @@ int get_tx_char(void)
 	}
 
 	c = TransmitText->nextChar();
+
 	if (c == '^' && state == STATE_CHAR) {
 		state = STATE_CTRL;
 		c = TransmitText->nextChar();
 	}
 	switch (c) {
-	case -1: break; // no character available
+	case -1: // no character available
+		queue_reset();
+		break;
 	case '\n':
 		pending = '\n';
 		return '\r';
@@ -6372,6 +6464,8 @@ int get_tx_char(void)
 		REQ_SYNC(&FTextTX::clear_sent, TransmitText);
 		state = STATE_CHAR;
 		c = 3; // ETX
+//		if (progStatus.timer)
+//			REQ(startMacroTimer);
 		break;
 	case 'R':
 		if (state != STATE_CTRL)
@@ -6380,6 +6474,8 @@ int get_tx_char(void)
 		if (TransmitText->eot()) {
 			REQ_SYNC(&FTextTX::clear_sent, TransmitText);
 			c = 3; // ETX
+//			if (progStatus.timer)
+//				REQ(startMacroTimer);
 		} else
 			c = -1;
 		break;
@@ -6396,6 +6492,19 @@ int get_tx_char(void)
 		state = STATE_CHAR;
 		c = -1;
 		REQ(clearQSO);
+		break;
+	case '!':
+		if (state != STATE_CTRL)
+			break;
+		state = STATE_CHAR;
+		if (queue_must_rx()) {
+			c = 3;
+			que_timeout = 400; // 20 seconds
+			Fl::add_timeout(0.0, queue_execute_after_rx);
+		} else {
+			c = -1;
+			queue_execute();
+		}
 		break;
 	case '^':
 		state = STATE_CHAR;
@@ -6580,7 +6689,6 @@ void start_tx()
 	if (!(active_modem->get_cap() & modem::CAP_TX))
 		return;
 	trx_transmit();
-	REQ(&waterfall::set_XmtRcvBtn, wf, true);
 }
 
 void abort_tx()
@@ -6591,6 +6699,7 @@ void abort_tx()
 		return;
 	}
 	if (trx_state == STATE_TX) {
+		queue_reset();
 		trx_start_modem(active_modem);
 	}
 }
@@ -6830,6 +6939,12 @@ void set_rtty_bits(int bits)
 			break;
 		}
 	}
+}
+
+void set_rtty_bw(float bw)
+{
+	sldrRTTYbandwidth->value(bw);
+	sldrRTTYbandwidth->do_callback();
 }
 
 void set_menu_dl_online(bool val)

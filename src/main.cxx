@@ -120,30 +120,41 @@ string appname;
 
 string scDevice[2];
 
-string HomeDir;
-string RigsDir;
-string ScriptsDir;
-string PalettesDir;
-string LogsDir;
-string PicsDir;
-string HelpDir;
-string MacrosDir;
-string WrapDir;
-string TalkDir;
-string TempDir;
-string PskMailDir;
-string NBEMS_dir;
-string ARQ_dir;
-string ARQ_files_dir;
-string ARQ_recv_dir;
-string ARQ_send;
-string WRAP_dir;
-string WRAP_recv_dir;
-string WRAP_send_dir;
-string WRAP_auto_dir;
-string ICS_dir;
-string ICS_msg_dir;
-string ICS_tmp_dir;
+string HomeDir = "";
+string RigsDir = "";
+string ScriptsDir = "";
+string PalettesDir = "";
+string LogsDir = "";
+string PicsDir = "";
+string HelpDir = "";
+string MacrosDir = "";
+string WrapDir = "";
+string TalkDir = "";
+string TempDir = "";
+string PskMailDir = "";
+
+string NBEMS_dir = "";
+string ARQ_dir = "";
+string ARQ_files_dir = "";
+string ARQ_recv_dir = "";
+string ARQ_send = "";
+string WRAP_dir = "";
+string WRAP_recv_dir = "";
+string WRAP_send_dir = "";
+string WRAP_auto_dir = "";
+string ICS_dir = "";
+string ICS_msg_dir = "";
+string ICS_tmp_dir = "";
+
+string FLMSG_dir = "";
+string FLMSG_dir_default = "";
+string FLMSG_WRAP_dir = "";
+string FLMSG_WRAP_recv_dir = "";
+string FLMSG_WRAP_send_dir = "";
+string FLMSG_WRAP_auto_dir = "";
+string FLMSG_ICS_dir = "";
+string FLMSG_ICS_msg_dir = "";
+string FLMSG_ICS_tmp_dir = "";
 
 string PskMailFile;
 string ArqFilename;
@@ -223,6 +234,7 @@ int main(int argc, char ** argv)
 		NBEMS_dir = dirbuf;
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$USERPROFILE/");
 		PskMailDir = dirbuf;
+		FLMSG_dir_default = "$USERPROFILE/NBEMS.files/";
 #else
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/.dl-fldigi/");
 		HomeDir = dirbuf;
@@ -230,6 +242,7 @@ int main(int argc, char ** argv)
 		NBEMS_dir = dirbuf;
 		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, "$HOME/");
 		PskMailDir = dirbuf;
+		FLMSG_dir_default = "$HOME/.nbems/";
 #endif
 	}
 
@@ -245,6 +258,13 @@ int main(int argc, char ** argv)
 	if (main_window_title.empty())
 		main_window_title = PACKAGE_TARNAME;
 
+	{
+		char dirbuf[FL_PATH_MAX + 1];
+		if (FLMSG_dir_default[FLMSG_dir_default.length()-1] != '/')
+			FLMSG_dir_default += '/';
+		fl_filename_expand(dirbuf, sizeof(dirbuf) - 1, FLMSG_dir_default.c_str());
+		FLMSG_dir = dirbuf;
+	}
 	checkdirectories();
 	check_nbems_dirs();
 
@@ -467,6 +487,12 @@ void generate_option_help(void) {
 	     << "  --arq-server-port PORT\n"
 	     << "    Set the ARQ TCP server port\n"
 	     << "    The default is: " << progdefaults.arq_port << "\n\n"
+	     << "  --flmsg-dir DIRECTORY\n"
+	     << "    Look for flmsg files in DIRECTORY\n"
+	     << "    The default is " << FLMSG_dir_default << "\n\n"
+	     << "  --auto-dir DIRECTORY\n"
+	     << "    Look for auto-send files in DIRECTORY\n"
+	     << "    The default is " << HomeDir << "/autosend" << "\n\n"
 
 #if USE_XMLRPC
 	     << "  --xmlrpc-server-address HOSTNAME\n"
@@ -619,6 +645,8 @@ int parse_args(int argc, char **argv, int& idx)
 	       OPT_CONFIG_DIR,
 	       OPT_ARQ_ADDRESS, OPT_ARQ_PORT,
 	       OPT_SHOW_CPU_CHECK,
+	       OPT_FLMSG_DIR,
+	       OPT_AUTOSEND_DIR,
 
 #if USE_XMLRPC
 	       OPT_CONFIG_XMLRPC_ADDRESS, OPT_CONFIG_XMLRPC_PORT,
@@ -651,6 +679,8 @@ int parse_args(int argc, char **argv, int& idx)
 
 		{ "arq-server-address", 1, 0, OPT_ARQ_ADDRESS },
 		{ "arq-server-port",    1, 0, OPT_ARQ_PORT },
+		{ "flmsg-dir", 1, 0, OPT_FLMSG_DIR },
+		{ "auto-dir", 1, 0, OPT_AUTOSEND_DIR },
 
 		{ "cpu-speed-test", 0, 0, OPT_SHOW_CPU_CHECK },
 
@@ -738,6 +768,14 @@ int parse_args(int argc, char **argv, int& idx)
 			break;
 		case OPT_ARQ_PORT:
 			progdefaults.arq_port = optarg;
+			break;
+
+		case OPT_FLMSG_DIR:
+			FLMSG_dir_default = optarg;
+			break;
+
+		case OPT_AUTOSEND_DIR:
+			FLMSG_WRAP_auto_dir = optarg;
 			break;
 
 #if USE_XMLRPC
@@ -1164,6 +1202,31 @@ void check_nbems_dirs(void)
 		else if (r == 0 && NBEMS_dirs[i].new_dir_func)
 			NBEMS_dirs[i].new_dir_func();
 	}
+
+	DIRS FLMSG_dirs[] = {
+		{ FLMSG_dir,               0, 0 },
+		{ FLMSG_WRAP_dir,          "WRAP", 0 },
+		{ FLMSG_WRAP_recv_dir,     "WRAP/recv", 0 },
+		{ FLMSG_WRAP_send_dir,     "WRAP/send", 0 },
+		{ FLMSG_WRAP_auto_dir,     "WRAP/auto", 0 },
+		{ FLMSG_ICS_dir,           "ICS", 0 },
+		{ FLMSG_ICS_msg_dir,       "ICS/messages", 0 },
+		{ FLMSG_ICS_tmp_dir,       "ICS/templates", 0 },
+	};
+
+	for (size_t i = 0; i < sizeof(FLMSG_dirs)/sizeof(*FLMSG_dirs); i++) {
+		if (FLMSG_dirs[i].dir.empty() && FLMSG_dirs[i].suffix)
+			FLMSG_dirs[i].dir.assign(FLMSG_dir).append(FLMSG_dirs[i].suffix).append("/");
+
+		if ((r = mkdir(FLMSG_dirs[i].dir.c_str(), 0777)) == -1 && errno != EEXIST) {
+			cerr << _("Could not make directory") << ' ' << FLMSG_dirs[i].dir
+			     << ": " << strerror(errno) << '\n';
+			exit(EXIT_FAILURE);
+		}
+		else if (r == 0 && FLMSG_dirs[i].new_dir_func)
+			FLMSG_dirs[i].new_dir_func();
+	}
+
 	nbems_dirs_checked = true;
 }
 

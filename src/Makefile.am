@@ -257,6 +257,7 @@ dl_fldigi_SOURCES += \
 	dialogs/Viewer.cxx \
 	dialogs/htmlstrings.cxx \
 	dialogs/notifydialog.cxx \
+	dtmf/dtmf.cxx \
 	thor/thor.cxx \
 	thor/thorvaricode.cxx \
 	dominoex/dominoex.cxx \
@@ -274,6 +275,7 @@ dl_fldigi_SOURCES += \
 	include/htmlstrings.h \
 	include/arq_io.h \
 	include/confdialog.h \
+	include/dtmf.h \
 	include/FTextView.h \
 	include/FTextRXTX.h \
 	include/fileselect.h \
@@ -373,6 +375,7 @@ dl_fldigi_SOURCES += \
 	include/rsid.h \
 	include/rtty.h \
 	include/view_rtty.h \
+	include/nullmodem.h \
 	include/rx_extract.h \
 	include/speak.h \
 	include/serial.h \
@@ -502,6 +505,7 @@ dl_fldigi_SOURCES += \
 	ssb/ssb.cxx \
 	throb/throb.cxx \
 	trx/modem.cxx \
+	trx/nullmodem.cxx \
 	trx/trx.cxx \
 	waterfall/colorbox.cxx \
 	waterfall/digiscope.cxx \

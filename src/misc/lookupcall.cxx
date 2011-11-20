@@ -44,10 +44,12 @@
 #include "configuration.h"
 
 #include "lookupcall.h"
+#include "logsupport.h"
 #include "main.h"
 #include "confdialog.h"
 #include "fl_digi.h"
 #include "qrzlib.h"
+#include "trx.h"
 
 #include "xmlreader.h"
 
@@ -150,7 +152,7 @@ bool parseSessionKey(const string& sessionpage)
 		{
 		case EXN_TEXT:
 		case EXN_CDATA:
-			switch (tag) 
+			switch (tag)
 			{
 			default:
 				break;
@@ -188,7 +190,7 @@ bool parseSessionKey(const string& sessionpage)
 	}
 	delete xml;
 	return true;
-} 
+}
 
 
 bool parse_xml(const string& xmlpage)
@@ -196,7 +198,7 @@ bool parse_xml(const string& xmlpage)
 //printf("%s\n", xmlpage.c_str());
 	IrrXMLReader* xml = createIrrXMLReader(new IIrrXMLStringReader(xmlpage));
 
-// If we got any result back, clear the session key so that it will be 
+// If we got any result back, clear the session key so that it will be
 // refreshed by this response, or if not present, will be removed and we'll
 // know to log in next time.
 	if (xml) {
@@ -207,7 +209,7 @@ bool parse_xml(const string& xmlpage)
 	}
 
 	TAG tag = QRZ_IGNORE;
-	
+
 // parse the file until end reached
 	while(xml && xml->read()) {
 		switch(xml->getNodeType()) {
@@ -269,12 +271,12 @@ bool parse_xml(const string& xmlpage)
 						break;
 				}
 				break;
-				
+
 			case EXN_ELEMENT_END:
 				tag=QRZ_IGNORE;
 				break;
 
-			case EXN_ELEMENT: 
+			case EXN_ELEMENT:
 				{
 				const char *nodeName = xml->getNodeName();
 				if (!strcmp("call", nodeName)) 			tag = QRZ_CALL;
@@ -390,11 +392,11 @@ void QRZ_disp_result()
 	}
 
 	inpQth->value(lookup_qth.c_str());
-	
+
 	inpState->value(lookup_state.c_str());
 
 	inpVEprov->value(lookup_province.c_str());
-		
+
 	inpLoc->value(lookup_grid.c_str());
 
 	if (!lookup_country.empty())
@@ -419,7 +421,7 @@ void QRZ_CD_query()
 
 	char srch[20];
 	size_t snip;
-	
+
 	memset( srch, 0, sizeof(srch) );
 	strncpy( srch, callsign.c_str(), 6 );
 	for (size_t i = 0; i < strlen(srch); i ++ )
@@ -652,36 +654,36 @@ void CALLOOKquery()
 void parse_html(const string& htmlpage)
 {
 	size_t p;
-	
+
 	clear_Lookup();
-	
+
 	if ((p = htmlpage.find(HAMCALL_FIRST)) != string::npos) {
 		p++;
 		while ((uchar)htmlpage[p] < 128 && p < htmlpage.length() )
 			lookup_fname += htmlpage[p++];
 			camel_case(lookup_fname);
 	}
-	if ((p = htmlpage.find(HAMCALL_CITY)) != string::npos) { 
+	if ((p = htmlpage.find(HAMCALL_CITY)) != string::npos) {
 		p++;
 		while ((uchar)htmlpage[p] < 128 && p < htmlpage.length())
 			lookup_qth += htmlpage[p++];
 	}
-	if ((p = htmlpage.find(HAMCALL_STATE)) != string::npos) { 
+	if ((p = htmlpage.find(HAMCALL_STATE)) != string::npos) {
 		p++;
 		while ((uchar)htmlpage[p] < 128 && p < htmlpage.length())
 			lookup_state += htmlpage[p++];
 	}
-	if ((p = htmlpage.find(HAMCALL_GRID)) != string::npos) { 
+	if ((p = htmlpage.find(HAMCALL_GRID)) != string::npos) {
 		p++;
 		while ((uchar)htmlpage[p] < 128 && p < htmlpage.length())
 			lookup_grid += htmlpage[p++];
 	}
-	if ((p = htmlpage.find(HAMCALL_DOB)) != string::npos) { 
+	if ((p = htmlpage.find(HAMCALL_DOB)) != string::npos) {
 		p++;
 		lookup_notes = "DOB: ";
 		while ((uchar)htmlpage[p] < 128 && p < htmlpage.length())
 			lookup_notes += htmlpage[p++];
-	}	
+	}
 }
 
 bool HAMCALLget(string& htmlpage)
@@ -713,11 +715,186 @@ void HAMCALLquery()
 	REQ(QRZ_disp_result);
 }
 
+// ---------------------------------------------------------------------
+// Hamcall specific functions
+// ---------------------------------------------------------------------
+
+static string HAMQTH_session_id = "";
+static string HAMQTH_reply = "";
+
+#define HAMQTH_DEBUG 1
+#undef HAMQTH_DEBUG
+
+bool HAMQTH_get_session_id()
+{
+	string url = "";
+	string retstr = "";
+	size_t p1 = string::npos;
+	size_t p2 = string::npos;
+
+	url.append("http://www.hamqth.com/xml.php?u=").append(progdefaults.QRZusername);
+	url.append("&p=").append(progdefaults.QRZuserpassword);
+
+	HAMQTH_session_id.clear();
+	if (!fetch_http(url, retstr, 5.0)) {
+		return false;
+	}
+	if ((p1 = retstr.find("<error>")) != string::npos) {
+		p2 = retstr.find("</error>");
+		lookup_notes = retstr.substr(p1 + 7, p2 - p1 - 7);
+		return false;
+	}
+	if ((p1 = retstr.find("<session_id>")) == string::npos) {
+		lookup_notes = "HamQTH not available";
+		return false;
+	}
+	p2 = retstr.find("</session_id>");
+	HAMQTH_session_id = retstr.substr(p1 + 12, p2 - p1 - 12);
+//#ifdef HAMQTH_DEBUG
+//	printf("session id = %s\n", HAMQTH_session_id.c_str());
+//#endif
+	return true;
+}
+
+void parse_HAMQTH_html(const string& htmlpage)
+{
+	size_t p = string::npos;
+	size_t p1 = string::npos;
+
+	clear_Lookup();
+
+	lookup_fname.clear();
+	lookup_qth.clear();
+	lookup_state.clear();
+	lookup_grid.clear();
+	lookup_notes.clear();
+	lookup_country.clear();
+
+	if ((p = htmlpage.find("<error>")) != string::npos) {
+		p += 7;
+		p1 = htmlpage.find("</error>");
+		if (p1 != string::npos) 
+			lookup_notes.append(htmlpage.substr(p, p1 - p));
+		return;
+	}
+	if ((p = htmlpage.find("<nick>")) != string::npos) {
+		p += 6;
+		p1 = htmlpage.find("</nick>", p);
+		if (p1 != string::npos) {
+			lookup_fname = htmlpage.substr(p, p1 - p);
+			camel_case(lookup_fname);
+		}
+	}
+	if ((p = htmlpage.find("<qth>")) != string::npos) {
+		p += 5;
+		p1 = htmlpage.find("</qth>", p);
+		if (p1 != string::npos)
+			lookup_qth = htmlpage.substr(p, p1 - p);
+	}
+	if ((p = htmlpage.find("<country>")) != string::npos) {
+		p += 9;
+		p1 = htmlpage.find("</country>", p);
+		if (p1 != string::npos)
+			lookup_country = htmlpage.substr(p, p1 - p);
+	}
+	if ((p = htmlpage.find("<us_state>")) != string::npos) {
+		p += 10;
+		p1 = htmlpage.find("</us_state>");
+		if (p1 != string::npos)
+			lookup_state = htmlpage.substr(p, p1 - p);
+	}
+	if ((p = htmlpage.find("<grid>")) != string::npos) {
+		p += 6;
+		p1 = htmlpage.find("</grid>");
+		if (p1 != string::npos)
+			lookup_grid = htmlpage.substr(p, p1 - p);
+	}
+	if ((p = htmlpage.find("<qsl_via>")) != string::npos) {
+		p += 9;
+		p1 = htmlpage.find("</qsl_via>");
+		if (p1 != string::npos)
+			lookup_notes.append("QSL via: ").append(htmlpage.substr(p, p1 - p)).append("\n");
+	}
+	if ((p = htmlpage.find("<adr_name>")) != string::npos) {
+		p += 10;
+		p1 = htmlpage.find("</adr_name>");
+		if (p1 != string::npos)
+			lookup_notes.append(htmlpage.substr(p, p1 - p)).append("\n");
+	}
+	if ((p = htmlpage.find("<adr_street1>")) != string::npos) {
+		p += 13;
+		p1 = htmlpage.find("</adr_street1>");
+		if (p1 != string::npos)
+			lookup_notes.append(htmlpage.substr(p, p1 - p)).append("\n");
+	}
+	if ((p = htmlpage.find("<adr_city>")) != string::npos) {
+		p += 10;
+		p1 = htmlpage.find("</adr_city>");
+		if (p1 != string::npos)
+			lookup_notes.append(htmlpage.substr(p, p1 - p)).append(", ").append(lookup_state);
+	}
+	if ((p = htmlpage.find("<adr_zip>")) != string::npos) {
+		p += 9;
+		p1 = htmlpage.find("</adr_zip>");
+		if (p1 != string::npos)
+			lookup_notes.append("  ").append(htmlpage.substr(p, p1 - p));
+	}
+	if ((p = htmlpage.find("<adr_country>")) != string::npos) {
+		p += 13;
+		p1 = htmlpage.find("</adr_country>");
+		if (p1 != string::npos)
+			lookup_notes.append("  ").append(htmlpage.substr(p, p1 - p));
+	}
+}
+
+bool HAMQTHget(string& htmlpage)
+{
+	string url = "";
+	bool ret;
+	if (HAMQTH_session_id.empty()) {
+		if (!HAMQTH_get_session_id()) return false;
+	}
+	url.append("http://www.hamqth.com/xml.php?id=").append(HAMQTH_session_id);
+	url.append("&callsign=").append(callsign);
+	url.append("&prg=fldigi-").append(VERSION);
+
+	ret = fetch_http(url, htmlpage, 5.0);
+	if (htmlpage.find("<error>") != string::npos) {
+		htmlpage.clear();
+		if (!HAMQTH_get_session_id()) {
+			lookup_notes = "Get session id failed!\n";
+			return false;
+		}
+		ret = fetch_http(url, htmlpage, 5.0);
+	}
+#ifdef HAMQTH_DEBUG
+	FILE *fetchit = fopen("fetchit.txt", "a");
+	fprintf(fetchit, "%s\n", htmlpage.c_str());
+	fclose(fetchit);
+#endif
+	return ret;
+}
+
+void HAMQTHquery()
+{
+	ENSURE_THREAD(QRZ_TID);
+
+	string htmlpage;
+
+	if (!HAMQTHget(htmlpage)) return;
+
+	parse_HAMQTH_html(htmlpage);
+	REQ(QRZ_disp_result);
+
+}
+
+// ----------------------------------------------------------------------------
+
 void QRZ_DETAILS_query()
 {
-	string qrzurl = "http://www.qrz.com/callsign.html?callsign=";
+	string qrzurl = "http://www.qrz.com/db/";
 	qrzurl.append(callsign);
-	
+
 	cb_mnuVisitURL(0, (void*)qrzurl.c_str());
 }
 
@@ -725,7 +902,7 @@ void HAMCALL_DETAILS_query()
 {
 	string hamcallurl = "http://www.hamcall.net/call?callsign=";
 	hamcallurl.append(callsign);
-	
+
 	cb_mnuVisitURL(0, (void*)hamcallurl.c_str());
 }
 
@@ -761,6 +938,9 @@ static void *LOOKUP_loop(void *args)
 			break;
 		case CALLOOK:
 			CALLOOKquery();
+			break;
+		case HAMQTH:
+			HAMQTHquery();
 			break;
 		case QRZ_EXIT:
 			return NULL;
@@ -815,6 +995,9 @@ void CALLSIGNquery()
 	case CALLOOK:
 		inpNotes->value("Request sent to\nhttp://callook.info...");
 		break;
+	case HAMQTH:
+		inpNotes->value("Request sent to \nhttp://hamqth.com...");
+		break;
 	default:
 		LOG_ERROR("Bad query type %d", DB_query);
 		return;
@@ -824,3 +1007,201 @@ void CALLSIGNquery()
 	pthread_cond_signal(&qrz_cond);
 	pthread_mutex_unlock(&qrz_mutex);
 }
+
+//======================================================================
+// thread to support sending log entry to eQSL
+//======================================================================
+
+pthread_t* EQSLthread = 0;
+pthread_mutex_t EQSLmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t EQSLcond = PTHREAD_COND_INITIALIZER;
+
+static void *EQSL_loop(void *args);
+static void EQSL_init(void);
+
+void EQSL_close(void);
+void EQSL_send();
+
+static std::string EQSL_url = "";
+static std::string EQSL_xmlpage = "";
+
+static bool EQSLEXIT = false;
+
+static void *EQSL_loop(void *args)
+{
+	SET_THREAD_ID(EQSL_TID);
+
+	SET_THREAD_CANCEL();
+
+	for (;;) {
+		TEST_THREAD_CANCEL();
+		pthread_mutex_lock(&EQSLmutex);
+		pthread_cond_wait(&EQSLcond, &EQSLmutex);
+		pthread_mutex_unlock(&EQSLmutex);
+
+		if (EQSLEXIT)
+			return NULL;
+
+		size_t p;
+		if (fetch_http(EQSL_url, EQSL_xmlpage, 5.0) == -1)
+			LOG_ERROR("%s", "eQSL not available");
+
+		else if ((p = EQSL_xmlpage.find("Error:")) != std::string::npos) {
+			size_t p2 = EQSL_xmlpage.find('\n', p);
+			LOG_ERROR("%s\n%s", EQSL_xmlpage.substr(p, p2 - p - 1).c_str(), EQSL_url.c_str());
+		} else
+			LOG_INFO("eQSL logged %s", EQSL_url.c_str()); 
+
+	}
+	return NULL;
+}
+
+void EQSL_close(void)
+{
+	ENSURE_THREAD(FLMAIN_TID);
+
+	if (!EQSLthread)
+		return;
+
+	CANCEL_THREAD(*EQSLthread);
+
+	pthread_mutex_lock(&qrz_mutex);
+	EQSLEXIT = true;
+	pthread_cond_signal(&qrz_cond);
+	pthread_mutex_unlock(&qrz_mutex);
+
+	pthread_join(*QRZ_thread, NULL);
+	delete QRZ_thread;
+	QRZ_thread = 0;
+}
+
+static void EQSL_init(void)
+{
+	ENSURE_THREAD(FLMAIN_TID);
+
+	if (EQSLthread)
+		return;
+	EQSLthread = new pthread_t;
+	EQSLEXIT = false;
+	if (pthread_create(EQSLthread, NULL, EQSL_loop, NULL) != 0) {
+		LOG_PERROR("pthread_create");
+		return;
+	}
+	MilliSleep(10);
+}
+
+void sendEQSL(const char *url)
+{
+	ENSURE_THREAD(FLMAIN_TID);
+
+	if (!EQSLthread)
+		EQSL_init();
+
+	pthread_mutex_lock(&EQSLmutex);
+	EQSL_url = url;
+	pthread_cond_signal(&EQSLcond);
+	pthread_mutex_unlock(&EQSLmutex);
+}
+
+// this function may be called from several places including macro
+// expansion and execution
+
+void makeEQSL(const char *message)
+{
+	char sztemp[100];
+	std::string tempstr;
+	std::string eQSL_url;
+	std::string msg;
+	size_t p = 0;
+
+	msg = message;
+
+	if (msg.empty()) msg = progdefaults.eqsl_default_message;
+
+// replace message tags {CALL}, {NAME}, {MODE}
+	while ((p = msg.find("{CALL}")) != std::string::npos)
+		msg.replace(p, 6, inpCall->value());
+	while ((p = msg.find("{NAME}")) != std::string::npos)
+		msg.replace(p, 6, inpName->value());
+	while ((p = msg.find("{MODE}")) != std::string::npos)
+		msg.replace(p, 6, mode_info[active_modem->get_mode()].adif_name);
+
+
+// eqsl url header
+	eQSL_url = "http://www.eqsl.cc/qslcard/importADIF.cfm?ADIFdata=upload <adIF_ver:5>2.1.9";
+	snprintf(sztemp, sizeof(sztemp),"<EQSL_USER:%d>%s<EQSL_PSWD:%d>%s", 
+		progdefaults.eqsl_id.length(), progdefaults.eqsl_id.c_str(),
+		progdefaults.eqsl_pwd.length(), progdefaults.eqsl_pwd.c_str());
+	eQSL_url.append(sztemp);
+// eqsl nickname
+	if (!progdefaults.eqsl_nick.empty()) {
+		snprintf(sztemp, sizeof(sztemp), "<APP_EQSL_QTH_NICKNAME:%d>%s",
+		progdefaults.eqsl_nick.length(), progdefaults.eqsl_nick.c_str());
+		eQSL_url.append(sztemp);
+	}
+	eQSL_url.append("<PROGRAMID:6>FLDIGI<EOH>");
+
+// eqsl record
+// band
+	tempstr = band_name(band(wf->rfcarrier()));
+	snprintf(sztemp, sizeof(sztemp), "<BAND:%d>%s", tempstr.length(), tempstr.c_str());
+	eQSL_url.append(sztemp);
+// call
+	tempstr = inpCall->value();
+	snprintf(sztemp, sizeof(sztemp), "<CALL:%d>%s", tempstr.length(), tempstr.c_str());
+	eQSL_url.append(sztemp);
+// mode
+	tempstr = mode_info[active_modem->get_mode()].adif_name;
+// test for modes not supported by eQSL
+	if ((tempstr.find("MFSK4") != std::string::npos) ||
+		(tempstr.find("MFSK11") != std::string::npos) ||
+		(tempstr.find("MFSK22") != std::string::npos) ||
+		(tempstr.find("MFSK31") != std::string::npos) ||
+		(tempstr.find("MFSK32") != std::string::npos) ||
+		(tempstr.find("MFSK64") != std::string::npos) )
+		tempstr = "MFSK16";
+	if ((tempstr.find("PSK250") != std::string::npos) ||
+		(tempstr.find("PSK500") != std::string::npos) ||
+		(tempstr.find("PSK125R") != std::string::npos) ||
+		(tempstr.find("PSK250R") != std::string::npos) ||
+		(tempstr.find("PSK500R") != std::string::npos))
+		tempstr = "PSK125";
+	if ((tempstr.find("QPSK250") != std::string::npos) ||
+		(tempstr.find("QPSK500") != std::string::npos) ||
+		(tempstr.find("QPSK125R") != std::string::npos) ||
+		(tempstr.find("QPSK250R") != std::string::npos) ||
+		(tempstr.find("QPSK500R") != std::string::npos))
+		tempstr = "QPSK125";
+
+	snprintf(sztemp, sizeof(sztemp), "<MODE:%d>%s", tempstr.length(), tempstr.c_str());
+	eQSL_url.append(sztemp);
+// qso date
+	snprintf(sztemp, sizeof(sztemp), "<QSO_DATE:%d>%s", sDate_on.length(), sDate_on.c_str());
+	eQSL_url.append(sztemp);
+// qso time
+	tempstr = inpTimeOn->value();
+	snprintf(sztemp, sizeof(sztemp), "<TIME_ON:%d>%s", tempstr.length(), tempstr.c_str());
+	eQSL_url.append(sztemp);
+// rst sent
+	tempstr = inpRstOut->value();
+	snprintf(sztemp, sizeof(sztemp), "<RST_SENT:%d>%s", tempstr.length(), tempstr.c_str());
+	eQSL_url.append(sztemp);
+// message
+	if (!msg.empty()) {
+		snprintf(sztemp, sizeof(sztemp), "<QSLMSG:%d>%s", msg.length(), msg.c_str());
+		eQSL_url.append(sztemp);
+	}
+	eQSL_url.append("<EOR>");
+
+	tempstr.clear();
+	for (size_t n = 0; n < eQSL_url.length(); n++) {
+		if (eQSL_url[n] == ' ') tempstr.append("%20");
+		else if (eQSL_url[n] == '<') tempstr.append("%3c");
+		else if (eQSL_url[n] == '>') tempstr.append("%3e");
+		else tempstr += eQSL_url[n];
+	}
+
+	sendEQSL(tempstr.c_str());
+
+}
+

@@ -34,8 +34,6 @@
 #include <cstring>
 #include <cassert>
 
-#include <FL/Fl_Pixmap.H>
-
 #include "macros.h"
 #include "macroedit.h"
 #include "globals.h"
@@ -52,12 +50,12 @@ using namespace std;
 
 Fl_Double_Window *MacroEditDialog = (Fl_Double_Window *)0;
 
-Fl_Button	*btnMacroEditOK = (Fl_Button *)0;
-Fl_Button	*btnMacroEditCancel = (Fl_Button *)0;
+Fl_Button	*btnMacroEditApply = (Fl_Button *)0;
+Fl_Button	*btnMacroEditClose = (Fl_Button *)0;
 Fl_Button	*btnInsertMacro = (Fl_Button *)0;
 Fl_Input2	*macrotext = (Fl_Input2 *)0;
 Fl_Input2	*labeltext = (Fl_Input2 *)0;
-static int widths[] = {130, 0};
+static int widths[] = {150, 0};
 
 Fl_Hold_Browser *macroDefs=(Fl_Hold_Browser *)0;
 
@@ -106,6 +104,7 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<LOG>\tsave QSO data"));
 	w->add(_("<LNW>\tlog at xmt time"));
 	w->add(_("<CLRLOG>\tclear log fields"));
+	w->add(_("<EQSL:[msg]>\tlog eQSL optional msg"));
 
 	w->add(LINE_SEP);
 	w->add(_("<QSOTIME>\tQSO time (HHMM))"));
@@ -151,6 +150,7 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<TUNE:NN>\ttune signal for NN sec"));
 	w->add(_("<WAIT:NN>\tdelay xmt for NN sec"));
 	w->add(_("<REPEAT>\trepeat macro continuously"));
+	w->add(_("<SKED:hhmm[:YYYYDDMM]>\tschedule execution"));
 
 	w->add(LINE_SEP);
 	w->add(_("<CWID>\tCW identifier"));
@@ -158,6 +158,7 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<TEXT>\tvideo text"));
 	w->add(_("<TXRSID:on|off|t>\tTx RSID on,off,toggle"));
 	w->add(_("<RXRSID:on|off|t>\tRx RSID on,off,toggle"));
+	w->add(_("<DTMF:[Wn:][Ln:]chrs>\t[Wait][Len](ms)"));
 
 	w->add(LINE_SEP);
 	w->add(_("<POST:+/-nn.n>\tCW QSK post-timing"));
@@ -168,6 +169,7 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(LINE_SEP);
 	w->add(_("<AFC:on|off|t>\tAFC  on,off,toggle"));
 	w->add(_("<LOCK:on|off|t>\tLOCK on,off,toggle"));
+	w->add(_("<REV:on|off|t>\tRev on,off,toggle"));
 
 	w->add(LINE_SEP);
 	w->add(_("<MACROS:>\tchange macro defs file"));
@@ -201,7 +203,7 @@ void loadBrowser(Fl_Widget *widget) {
 		w->add(s);
 	}
 	// add some RTTY macros
-	const char* rtty[] = { "170:45.45:5", "170:50:5", "850:75:5" };
+	const char* rtty[] = { "170:45.45:5:90", "170:50:5:100", "850:75:5:150" };
 	for (size_t i = 0; i < sizeof(rtty)/sizeof(*rtty); i++) {
 		snprintf(s, sizeof(s), "<MODEM:%s:%s>", mode_info[MODE_RTTY].sname, rtty[i]);
 		w->add(s);
@@ -239,8 +241,10 @@ void loadBrowser(Fl_Widget *widget) {
 
 void cbMacroEditOK(Fl_Widget *w, void *)
 {
-	if (w == btnMacroEditCancel)
-		goto ret;
+	if (w == btnMacroEditClose) {
+		MacroEditDialog->hide();
+		return;
+	}
 
 	if (iType == MACRO_EDIT_BUTTON) {
 		macros.text[iMacro] = macrotext->value();
@@ -263,8 +267,6 @@ void cbMacroEditOK(Fl_Widget *w, void *)
 	}
 	else if (iType == MACRO_EDIT_INPUT)
 		iInput->value(macrotext->value());
-ret:
-	MacroEditDialog->hide();
 }
 
 void cbInsertMacro(Fl_Widget *, void *)
@@ -312,35 +314,65 @@ void cbInsertMacro(Fl_Widget *, void *)
 	macrotext->take_focus();
 }
 
+#include <FL/Fl_Tile.H>
+
 Fl_Double_Window* make_macroeditor(void)
 {
-	Fl_Double_Window* w = new Fl_Double_Window(768, 190, "");
+	Fl_Double_Window* w = new Fl_Double_Window(800, 190, "");
 
-	macrotext = new Fl_Input2(2, 22, 450, 140, _("Text:"));
-	macrotext->type(FL_MULTILINE_INPUT);
-	macrotext->textfont(FL_COURIER);
-	macrotext->align(FL_ALIGN_TOP_LEFT);
-
-	btnInsertMacro = new Fl_Button(454, 86, 20, 20);
+	Fl_Group *grpA = new Fl_Group(0, 0, 800, 22);
+	Fl_Group *grpB = new Fl_Group(450, 0, 350, 22);
+	btnInsertMacro = new Fl_Button(450, 2, 40, 20);
 	btnInsertMacro->image(new Fl_Pixmap(left_arrow_icon));
 	btnInsertMacro->callback(cbInsertMacro);
+	grpB->end();
+	grpA->end();
 
-	macroDefs = new Fl_Hold_Browser(476, 22, 290, 140, _("Select Tags:"));
+	Fl_Group *grpC = new Fl_Group(0, 22, 800, 140);
+	Fl_Tile *tile = new Fl_Tile(0,22,800,140);
+	macrotext = new Fl_Input2(0, 22, 450, 140, _("Macro Text"));
+	macrotext->type(FL_MULTILINE_INPUT);
+	macrotext->textfont(FL_COURIER);
+	macrotext->align(FL_ALIGN_TOP);
+
+	macroDefs = new Fl_Hold_Browser(450, 22, 350, 140, _("Select Tag"));
 	macroDefs->column_widths(widths);
-	macroDefs->align(FL_ALIGN_TOP_LEFT);
-	loadBrowser(macroDefs);
+	macroDefs->align(FL_ALIGN_TOP);
 
-	labeltext = new Fl_Input2(2 + 450 - 115, 164, 115, 24, _("Macro Button Label:"));
+	Fl_Box *minbox = new Fl_Box(200, 22, 400, 140);
+	minbox->hide();
+	tile->end();
+	tile->resizable(minbox);
+	grpC->end();
+
+	Fl_Group *grpD = new Fl_Group(0, 164, 452, 24);
+	Fl_Box *box3a = new Fl_Box(0, 164, 327, 24, "");
+	labeltext = new Fl_Input2(337, 164, 115, 24, _("Macro Button Label"));
 	labeltext->textfont(FL_COURIER);
+	grpD->end();
+	grpD->resizable(box3a);
 
-	btnMacroEditOK = new Fl_Button(476 + 145 - 80 - 1, 164, 80, 24, _("OK"));
-	btnMacroEditOK->callback(cbMacroEditOK);
+	Fl_Group *grpE = new Fl_Group(452, 164, 348, 24);
+	Fl_Box *box4a = new Fl_Box(452, 164, 92, 24, "");
 
-	btnMacroEditCancel = new Fl_Button(476 + 145 + 1 , 164, 80, 24, _("Cancel"));
-	btnMacroEditCancel->callback(cbMacroEditOK);
+	btnMacroEditApply = new Fl_Button(544, 164, 80, 24, _("Apply"));
+	btnMacroEditApply->callback(cbMacroEditOK);
+
+	btnMacroEditClose = new Fl_Button(626 , 164, 80, 24, _("Close"));
+	btnMacroEditClose->callback(cbMacroEditOK);
+	grpE->end();
+	grpE->resizable(box4a);
 
 	w->end();
+
+	w->resizable(grpC);
+
+	w->size_range( 600, 120);
+
 	w->xclass(PACKAGE_NAME);
+
+	loadBrowser(macroDefs);
+
 	return w;
 }
 

@@ -4,6 +4,7 @@
 #include "confdialog.h"
 #include <config.h>
 #include <FL/Fl_Tooltip.H>
+#include <FL/Fl_Box.H>
 #include <FL/filename.H>
 #include <sstream>
 #include <stdint.h>
@@ -35,7 +36,7 @@ Mode_Browser* mode_browser;
 void set_qrz_buttons(Fl_Button* b) {
   Fl_Button* qrzb[] = { btnQRZnotavailable, btnQRZcdrom, btnQRZonline,
                               btnQRZsub, btnHamcall, btnHAMCALLonline,
-                              btnCALLOOK};
+                              btnCALLOOK, btnHamQTH};
 
 for (size_t i = 0; i < sizeof(qrzb)/sizeof(*qrzb); i++)
 	qrzb[i]->value(b == qrzb[i]);
@@ -879,6 +880,27 @@ o->redraw();
 wf->redraw_marker();
 progdefaults.changed = true;
 };
+}
+
+Fl_Check_Button *btnUseWideTracks=(Fl_Check_Button *)0;
+
+static void cb_btnUseWideTracks(Fl_Check_Button* o, void*) {
+  progdefaults.UseWideTracks = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btnUseWideCenter=(Fl_Check_Button *)0;
+
+static void cb_btnUseWideCenter(Fl_Check_Button* o, void*) {
+  progdefaults.UseWideCenter = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btnUseWideCursor=(Fl_Check_Button *)0;
+
+static void cb_btnUseWideCursor(Fl_Check_Button* o, void*) {
+  progdefaults.UseWideCursor = o->value();
+progdefaults.changed = true;
 }
 
 Fl_Check_Button *chkShowAudioScale=(Fl_Check_Button *)0;
@@ -2876,7 +2898,47 @@ static void cb_chkRxStream(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
+Fl_Group *tabDTMF=(Fl_Group *)0;
+
+Fl_Check_Button *chkDTMFdecode=(Fl_Check_Button *)0;
+
+static void cb_chkDTMFdecode(Fl_Check_Button* o, void*) {
+  progdefaults.DTMFdecode = o->value();
+}
+
 Fl_Group *tabQRZ=(Fl_Group *)0;
+
+Fl_Round_Button *btnQRZnotavailable=(Fl_Round_Button *)0;
+
+static void cb_btnQRZnotavailable(Fl_Round_Button* o, void*) {
+  set_qrz_buttons(o);
+progdefaults.QRZ = QRZNONE;
+progdefaults.changed = true;
+}
+
+Fl_Round_Button *btnQRZonline=(Fl_Round_Button *)0;
+
+static void cb_btnQRZonline(Fl_Round_Button* o, void*) {
+  set_qrz_buttons(o);
+progdefaults.QRZ = QRZHTML;
+progdefaults.changed = true;
+}
+
+Fl_Round_Button *btnHAMCALLonline=(Fl_Round_Button *)0;
+
+static void cb_btnHAMCALLonline(Fl_Round_Button* o, void*) {
+  set_qrz_buttons(o);
+progdefaults.QRZ = HAMCALLHTML;
+progdefaults.changed = true;
+}
+
+Fl_Round_Button *btnCALLOOK=(Fl_Round_Button *)0;
+
+static void cb_btnCALLOOK(Fl_Round_Button* o, void*) {
+  set_qrz_buttons(o);
+progdefaults.QRZ = CALLOOK;
+progdefaults.changed = true;
+}
 
 Fl_Round_Button *btnQRZcdrom=(Fl_Round_Button *)0;
 
@@ -2932,37 +2994,62 @@ inpQRZuserpassword->redraw();
 o->label((inpQRZuserpassword->type() & FL_SECRET_INPUT) ? "Show" : "Hide");
 }
 
-Fl_Round_Button *btnQRZnotavailable=(Fl_Round_Button *)0;
+Fl_Round_Button *btnHamQTH=(Fl_Round_Button *)0;
 
-static void cb_btnQRZnotavailable(Fl_Round_Button* o, void*) {
+static void cb_btnHamQTH(Fl_Round_Button* o, void*) {
   set_qrz_buttons(o);
-progdefaults.QRZ = QRZNONE;
+progdefaults.QRZ = HAMQTH;
 progdefaults.changed = true;
 }
 
-Fl_Round_Button *btnQRZonline=(Fl_Round_Button *)0;
+Fl_Input2 *inpEQSL_id=(Fl_Input2 *)0;
 
-static void cb_btnQRZonline(Fl_Round_Button* o, void*) {
-  set_qrz_buttons(o);
-progdefaults.QRZ = QRZHTML;
+static void cb_inpEQSL_id(Fl_Input2* o, void*) {
+  progdefaults.eqsl_id = o->value();
 progdefaults.changed = true;
 }
 
-Fl_Round_Button *btnHAMCALLonline=(Fl_Round_Button *)0;
+Fl_Input2 *inpEQSL_pwd=(Fl_Input2 *)0;
 
-static void cb_btnHAMCALLonline(Fl_Round_Button* o, void*) {
-  set_qrz_buttons(o);
-progdefaults.QRZ = HAMCALLHTML;
+static void cb_inpEQSL_pwd(Fl_Input2* o, void*) {
+  progdefaults.eqsl_pwd = o->value();
 progdefaults.changed = true;
 }
 
-Fl_Round_Button *btnCALLOOK=(Fl_Round_Button *)0;
+Fl_Button *btnEQSL_pwd_show=(Fl_Button *)0;
 
-static void cb_btnCALLOOK(Fl_Round_Button* o, void*) {
-  set_qrz_buttons(o);
-progdefaults.QRZ = CALLOOK;
+static void cb_btnEQSL_pwd_show(Fl_Button* o, void*) {
+  inpEQSL_pwd->type(inpEQSL_pwd->type() ^ FL_SECRET_INPUT);
+inpEQSL_pwd->redraw();
+o->label((inpEQSL_pwd->type() & FL_SECRET_INPUT) ? "Show" : "Hide");
+}
+
+Fl_Input2 *inpEQSL_nick=(Fl_Input2 *)0;
+
+static void cb_inpEQSL_nick(Fl_Input2* o, void*) {
+  progdefaults.eqsl_nick = o->value();
 progdefaults.changed = true;
 }
+
+Fl_Check_Button *btn_send_when_logged=(Fl_Check_Button *)0;
+
+static void cb_btn_send_when_logged(Fl_Check_Button* o, void*) {
+  progdefaults.eqsl_when_logged = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_eqsl_default_message=(Fl_Input2 *)0;
+
+static void cb_txt_eqsl_default_message(Fl_Input2* o, void*) {
+  progdefaults.eqsl_default_message = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Box *eqsl_txt1=(Fl_Box *)0;
+
+Fl_Box *eqsl_txt2=(Fl_Box *)0;
+
+Fl_Box *eqsl_txt3=(Fl_Box *)0;
 
 Fl_Group *tabDL=(Fl_Group *)0;
 
@@ -3944,17 +4031,17 @@ ab and newline are automatically included."));
         } // Fl_Tabs* tabsUI
         tabUI->end();
       } // Fl_Group* tabUI
-      { tabWaterfall = new Fl_Group(0, 25, 500, 347, _("Waterfall"));
+      { tabWaterfall = new Fl_Group(0, 25, 501, 347, _("Waterfall"));
         tabWaterfall->labelsize(12);
         tabWaterfall->hide();
-        { tabsWaterfall = new Fl_Tabs(0, 25, 500, 347);
+        { tabsWaterfall = new Fl_Tabs(0, 25, 501, 347);
           tabsWaterfall->color((Fl_Color)FL_LIGHT1);
           tabsWaterfall->selection_color((Fl_Color)FL_LIGHT1);
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("Display"));
-            { Fl_Group* o = new Fl_Group(5, 60, 490, 162, _("Colors and cursors"));
+          { Fl_Group* o = new Fl_Group(0, 50, 501, 320, _("Display"));
+            { Fl_Group* o = new Fl_Group(5, 60, 496, 162, _("Colors and cursors"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-              { colorbox* o = WF_Palette = new colorbox(15, 98, 260, 24);
+              { colorbox* o = WF_Palette = new colorbox(15, 93, 260, 24, _("aa"));
                 WF_Palette->box(FL_DOWN_BOX);
                 WF_Palette->color((Fl_Color)FL_FOREGROUND_COLOR);
                 WF_Palette->selection_color((Fl_Color)FL_BACKGROUND_COLOR);
@@ -3968,89 +4055,107 @@ ab and newline are automatically included."));
                 o->label(progdefaults.PaletteName.c_str());
                 o->labelsize(FL_NORMAL_SIZE);
               } // colorbox* WF_Palette
-              { btnColor[0] = new Fl_Button(15, 128, 20, 24);
+              { btnColor[0] = new Fl_Button(15, 120, 20, 24);
                 btnColor[0]->tooltip(_("Change color"));
                 btnColor[0]->callback((Fl_Callback*)cb_btnColor);
               } // Fl_Button* btnColor[0]
-              { btnColor[1] = new Fl_Button(45, 128, 20, 24);
+              { btnColor[1] = new Fl_Button(45, 120, 20, 24);
                 btnColor[1]->tooltip(_("Change color"));
                 btnColor[1]->callback((Fl_Callback*)cb_btnColor1);
               } // Fl_Button* btnColor[1]
-              { btnColor[2] = new Fl_Button(75, 128, 20, 24);
+              { btnColor[2] = new Fl_Button(75, 120, 20, 24);
                 btnColor[2]->tooltip(_("Change color"));
                 btnColor[2]->callback((Fl_Callback*)cb_btnColor2);
               } // Fl_Button* btnColor[2]
-              { btnColor[3] = new Fl_Button(105, 128, 20, 24);
+              { btnColor[3] = new Fl_Button(105, 120, 20, 24);
                 btnColor[3]->tooltip(_("Change color"));
                 btnColor[3]->callback((Fl_Callback*)cb_btnColor3);
               } // Fl_Button* btnColor[3]
-              { btnColor[4] = new Fl_Button(135, 128, 20, 24);
+              { btnColor[4] = new Fl_Button(135, 120, 20, 24);
                 btnColor[4]->tooltip(_("Change color"));
                 btnColor[4]->callback((Fl_Callback*)cb_btnColor4);
               } // Fl_Button* btnColor[4]
-              { btnColor[5] = new Fl_Button(165, 128, 20, 24);
+              { btnColor[5] = new Fl_Button(165, 120, 20, 24);
                 btnColor[5]->tooltip(_("Change color"));
                 btnColor[5]->callback((Fl_Callback*)cb_btnColor5);
               } // Fl_Button* btnColor[5]
-              { btnColor[6] = new Fl_Button(195, 128, 20, 24);
+              { btnColor[6] = new Fl_Button(195, 120, 20, 24);
                 btnColor[6]->tooltip(_("Change color"));
                 btnColor[6]->callback((Fl_Callback*)cb_btnColor6);
               } // Fl_Button* btnColor[6]
-              { btnColor[7] = new Fl_Button(225, 128, 20, 24);
+              { btnColor[7] = new Fl_Button(225, 120, 20, 24);
                 btnColor[7]->tooltip(_("Change color"));
                 btnColor[7]->callback((Fl_Callback*)cb_btnColor7);
               } // Fl_Button* btnColor[7]
-              { btnColor[8] = new Fl_Button(256, 128, 20, 24);
+              { btnColor[8] = new Fl_Button(256, 120, 20, 24);
                 btnColor[8]->tooltip(_("Change color"));
                 btnColor[8]->callback((Fl_Callback*)cb_btnColor8);
               } // Fl_Button* btnColor[8]
-              { btnLoadPalette = new Fl_Button(314, 96, 70, 24, _("Load..."));
+              { btnLoadPalette = new Fl_Button(314, 93, 70, 24, _("Load..."));
                 btnLoadPalette->tooltip(_("Load a new palette"));
                 btnLoadPalette->callback((Fl_Callback*)cb_btnLoadPalette);
               } // Fl_Button* btnLoadPalette
-              { btnSavePalette = new Fl_Button(314, 128, 70, 24, _("Save..."));
+              { btnSavePalette = new Fl_Button(314, 120, 70, 24, _("Save..."));
                 btnSavePalette->tooltip(_("Save this palette"));
                 btnSavePalette->callback((Fl_Callback*)cb_btnSavePalette);
               } // Fl_Button* btnSavePalette
-              { Fl_Check_Button* o = btnUseCursorLines = new Fl_Check_Button(15, 161, 150, 20, _("Bandwidth cursor"));
+              { Fl_Check_Button* o = btnUseCursorLines = new Fl_Check_Button(15, 149, 150, 20, _("Bandwidth cursor"));
                 btnUseCursorLines->tooltip(_("Show cursor with bandwidth lines"));
                 btnUseCursorLines->down_box(FL_DOWN_BOX);
                 btnUseCursorLines->callback((Fl_Callback*)cb_btnUseCursorLines);
                 o->value(progdefaults.UseCursorLines);
               } // Fl_Check_Button* btnUseCursorLines
-              { Fl_Button* o = btnCursorBWcolor = new Fl_Button(15, 191, 20, 20, _("Cursor color"));
+              { Fl_Button* o = btnCursorBWcolor = new Fl_Button(15, 172, 20, 20, _("Cursor color"));
                 btnCursorBWcolor->tooltip(_("Change color"));
                 btnCursorBWcolor->color((Fl_Color)3);
                 btnCursorBWcolor->callback((Fl_Callback*)cb_btnCursorBWcolor);
                 btnCursorBWcolor->align(FL_ALIGN_RIGHT);
                 o->color(fl_rgb_color(progdefaults.cursorLineRGBI.R,progdefaults.cursorLineRGBI.G,progdefaults.cursorLineRGBI.B));
               } // Fl_Button* btnCursorBWcolor
-              { Fl_Check_Button* o = btnUseCursorCenterLine = new Fl_Check_Button(185, 161, 149, 20, _("Cursor center line"));
+              { Fl_Check_Button* o = btnUseCursorCenterLine = new Fl_Check_Button(185, 149, 149, 20, _("Cursor center line"));
                 btnUseCursorCenterLine->tooltip(_("Show cursor with center line"));
                 btnUseCursorCenterLine->down_box(FL_DOWN_BOX);
                 btnUseCursorCenterLine->callback((Fl_Callback*)cb_btnUseCursorCenterLine);
                 o->value(progdefaults.UseCursorCenterLine);
               } // Fl_Check_Button* btnUseCursorCenterLine
-              { Fl_Button* o = btnCursorCenterLineColor = new Fl_Button(185, 191, 20, 20, _("Center line color"));
+              { Fl_Button* o = btnCursorCenterLineColor = new Fl_Button(185, 172, 20, 20, _("Center line color"));
                 btnCursorCenterLineColor->tooltip(_("Change color"));
                 btnCursorCenterLineColor->color((Fl_Color)FL_BACKGROUND2_COLOR);
                 btnCursorCenterLineColor->callback((Fl_Callback*)cb_btnCursorCenterLineColor);
                 btnCursorCenterLineColor->align(FL_ALIGN_RIGHT);
                 o->color(fl_rgb_color(progdefaults.cursorCenterRGBI.R,progdefaults.cursorCenterRGBI.G,progdefaults.cursorCenterRGBI.B));
               } // Fl_Button* btnCursorCenterLineColor
-              { Fl_Check_Button* o = btnUseBWTracks = new Fl_Check_Button(346, 161, 145, 20, _("Bandwidth tracks"));
+              { Fl_Check_Button* o = btnUseBWTracks = new Fl_Check_Button(346, 149, 145, 20, _("Bandwidth tracks"));
                 btnUseBWTracks->tooltip(_("Show bandwidth tracks on waterfall"));
                 btnUseBWTracks->down_box(FL_DOWN_BOX);
                 btnUseBWTracks->callback((Fl_Callback*)cb_btnUseBWTracks);
                 o->value(progdefaults.UseBWTracks);
               } // Fl_Check_Button* btnUseBWTracks
-              { Fl_Button* o = btnBwTracksColor = new Fl_Button(346, 191, 20, 20, _("Tracks color"));
+              { Fl_Button* o = btnBwTracksColor = new Fl_Button(346, 172, 20, 20, _("Tracks color"));
                 btnBwTracksColor->tooltip(_("Change color"));
                 btnBwTracksColor->color((Fl_Color)1);
                 btnBwTracksColor->callback((Fl_Callback*)cb_btnBwTracksColor);
                 btnBwTracksColor->align(FL_ALIGN_RIGHT);
                 o->color(fl_rgb_color(progdefaults.bwTrackRGBI.R,progdefaults.bwTrackRGBI.G,progdefaults.bwTrackRGBI.B));
               } // Fl_Button* btnBwTracksColor
+              { Fl_Check_Button* o = btnUseWideTracks = new Fl_Check_Button(346, 196, 145, 20, _("Wide tracks"));
+                btnUseWideTracks->tooltip(_("Show bandwidth tracks on waterfall"));
+                btnUseWideTracks->down_box(FL_DOWN_BOX);
+                btnUseWideTracks->callback((Fl_Callback*)cb_btnUseWideTracks);
+                o->value(progdefaults.UseWideTracks);
+              } // Fl_Check_Button* btnUseWideTracks
+              { Fl_Check_Button* o = btnUseWideCenter = new Fl_Check_Button(185, 197, 145, 20, _("Wide center line"));
+                btnUseWideCenter->tooltip(_("Show bandwidth tracks on waterfall"));
+                btnUseWideCenter->down_box(FL_DOWN_BOX);
+                btnUseWideCenter->callback((Fl_Callback*)cb_btnUseWideCenter);
+                o->value(progdefaults.UseWideCenter);
+              } // Fl_Check_Button* btnUseWideCenter
+              { Fl_Check_Button* o = btnUseWideCursor = new Fl_Check_Button(15, 195, 145, 20, _("Wide cursor"));
+                btnUseWideCursor->tooltip(_("Show bandwidth tracks on waterfall"));
+                btnUseWideCursor->down_box(FL_DOWN_BOX);
+                btnUseWideCursor->callback((Fl_Callback*)cb_btnUseWideCursor);
+                o->value(progdefaults.UseWideCursor);
+              } // Fl_Check_Button* btnUseWideCursor
               o->end();
             } // Fl_Group* o
             { Fl_Group* o = new Fl_Group(5, 222, 490, 62, _("Frequency scale"));
@@ -6731,122 +6836,240 @@ d frequency"));
             } // Fl_Group* o
             tabText_IO->end();
           } // Fl_Group* tabText_IO
+          { tabDTMF = new Fl_Group(0, 50, 500, 320, _("DTMF"));
+            tabDTMF->hide();
+            { Fl_Check_Button* o = chkDTMFdecode = new Fl_Check_Button(175, 71, 175, 20, _("Decode DTMF tones"));
+              chkDTMFdecode->tooltip(_("Send rx text to file: textout.txt"));
+              chkDTMFdecode->down_box(FL_DOWN_BOX);
+              chkDTMFdecode->callback((Fl_Callback*)cb_chkDTMFdecode);
+              o->value(progdefaults.DTMFdecode);
+            } // Fl_Check_Button* chkDTMFdecode
+            tabDTMF->end();
+          } // Fl_Group* tabDTMF
           tabsMisc->end();
         } // Fl_Tabs* tabsMisc
         tabMisc->end();
       } // Fl_Group* tabMisc
-      { tabQRZ = new Fl_Group(0, 25, 500, 345, _("Callsign DB"));
+      { tabQRZ = new Fl_Group(0, 25, 500, 345, _("Web"));
         tabQRZ->tooltip(_("Callsign database"));
         tabQRZ->labelsize(12);
         tabQRZ->hide();
-        { Fl_Group* o = new Fl_Group(5, 180, 490, 75, _("CDROM"));
-          o->box(FL_ENGRAVED_FRAME);
-          o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-          { Fl_Round_Button* o = btnQRZcdrom = new Fl_Round_Button(25, 215, 70, 20, _("QRZ"));
-            btnQRZcdrom->tooltip(_("Use CD or hard drive CD image"));
-            btnQRZcdrom->down_box(FL_DOWN_BOX);
-            btnQRZcdrom->callback((Fl_Callback*)cb_btnQRZcdrom);
-            o->value(progdefaults.QRZ == QRZCD);
-          } // Fl_Round_Button* btnQRZcdrom
-          { Fl_Input2* o = txtQRZpathname = new Fl_Input2(104, 215, 300, 20, _("at:"));
-            txtQRZpathname->tooltip(_("ie: /home/dave/CALLBK/ or C:/CALLBK/\nLeave blank to search for database"));
-            txtQRZpathname->box(FL_DOWN_BOX);
-            txtQRZpathname->color((Fl_Color)FL_BACKGROUND2_COLOR);
-            txtQRZpathname->selection_color((Fl_Color)FL_SELECTION_COLOR);
-            txtQRZpathname->labeltype(FL_NORMAL_LABEL);
-            txtQRZpathname->labelfont(0);
-            txtQRZpathname->labelsize(14);
-            txtQRZpathname->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
-            txtQRZpathname->callback((Fl_Callback*)cb_txtQRZpathname);
-            txtQRZpathname->align(FL_ALIGN_LEFT);
-            txtQRZpathname->when(FL_WHEN_RELEASE);
-            o->value(progdefaults.QRZpathname.c_str());
-            txtQRZpathname->labelsize(FL_NORMAL_SIZE);
-          } // Fl_Input2* txtQRZpathname
+        { Fl_Tabs* o = new Fl_Tabs(0, 25, 500, 345);
+          { Fl_Group* o = new Fl_Group(0, 46, 500, 324, _("QRZ/etal"));
+            { Fl_Group* o = new Fl_Group(5, 55, 490, 120);
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Round_Button* o = btnQRZnotavailable = new Fl_Round_Button(25, 64, 337, 20, _("Not available"));
+                btnQRZnotavailable->tooltip(_("Do not use callsign database"));
+                btnQRZnotavailable->down_box(FL_DOWN_BOX);
+                btnQRZnotavailable->value(1);
+                btnQRZnotavailable->callback((Fl_Callback*)cb_btnQRZnotavailable);
+                o->value(progdefaults.QRZ == QRZNONE);
+              } // Fl_Round_Button* btnQRZnotavailable
+              { Fl_Round_Button* o = btnQRZonline = new Fl_Round_Button(25, 92, 337, 20, _("QRZ online via default Internet Browser"));
+                btnQRZonline->tooltip(_("Visit QRZ web site"));
+                btnQRZonline->down_box(FL_DOWN_BOX);
+                btnQRZonline->callback((Fl_Callback*)cb_btnQRZonline);
+                o->value(progdefaults.QRZ == QRZHTML);
+              } // Fl_Round_Button* btnQRZonline
+              { Fl_Round_Button* o = btnHAMCALLonline = new Fl_Round_Button(25, 120, 337, 20, _("HamCall online via default Internet Browser"));
+                btnHAMCALLonline->tooltip(_("Visit Hamcall web site"));
+                btnHAMCALLonline->down_box(FL_DOWN_BOX);
+                btnHAMCALLonline->callback((Fl_Callback*)cb_btnHAMCALLonline);
+                o->value(progdefaults.QRZ == HAMCALLHTML);
+              } // Fl_Round_Button* btnHAMCALLonline
+              { Fl_Round_Button* o = btnCALLOOK = new Fl_Round_Button(25, 148, 337, 20, _("Callook.info lookup (US callsigns only)"));
+                btnCALLOOK->tooltip(_("Visit Hamcall web site"));
+                btnCALLOOK->down_box(FL_DOWN_BOX);
+                btnCALLOOK->callback((Fl_Callback*)cb_btnCALLOOK);
+                o->value(progdefaults.QRZ == CALLOOK);
+              } // Fl_Round_Button* btnCALLOOK
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(5, 176, 490, 55, _("CDROM"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Round_Button* o = btnQRZcdrom = new Fl_Round_Button(25, 196, 70, 20, _("QRZ"));
+                btnQRZcdrom->tooltip(_("Use CD or hard drive CD image"));
+                btnQRZcdrom->down_box(FL_DOWN_BOX);
+                btnQRZcdrom->callback((Fl_Callback*)cb_btnQRZcdrom);
+                o->value(progdefaults.QRZ == QRZCD);
+              } // Fl_Round_Button* btnQRZcdrom
+              { Fl_Input2* o = txtQRZpathname = new Fl_Input2(104, 196, 300, 20, _("at:"));
+                txtQRZpathname->tooltip(_("ie: /home/dave/CALLBK/ or C:/CALLBK/\nLeave blank to search for database"));
+                txtQRZpathname->box(FL_DOWN_BOX);
+                txtQRZpathname->color((Fl_Color)FL_BACKGROUND2_COLOR);
+                txtQRZpathname->selection_color((Fl_Color)FL_SELECTION_COLOR);
+                txtQRZpathname->labeltype(FL_NORMAL_LABEL);
+                txtQRZpathname->labelfont(0);
+                txtQRZpathname->labelsize(14);
+                txtQRZpathname->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                txtQRZpathname->callback((Fl_Callback*)cb_txtQRZpathname);
+                txtQRZpathname->align(FL_ALIGN_LEFT);
+                txtQRZpathname->when(FL_WHEN_RELEASE);
+                o->value(progdefaults.QRZpathname.c_str());
+                txtQRZpathname->labelsize(FL_NORMAL_SIZE);
+              } // Fl_Input2* txtQRZpathname
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(5, 232, 490, 134, _("Subscriber data"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Round_Button* o = btnQRZsub = new Fl_Round_Button(25, 263, 90, 20, _("QRZ.com"));
+                btnQRZsub->tooltip(_("You need a paid QRZ online\nsubscription to access"));
+                btnQRZsub->down_box(FL_DOWN_BOX);
+                btnQRZsub->callback((Fl_Callback*)cb_btnQRZsub);
+                o->value(progdefaults.QRZ == QRZNET);
+              } // Fl_Round_Button* btnQRZsub
+              { Fl_Round_Button* o = btnHamcall = new Fl_Round_Button(25, 297, 105, 20, _("Hamcall.net"));
+                btnHamcall->tooltip(_("You need a paid Hamcall online\nsubscription to access"));
+                btnHamcall->down_box(FL_DOWN_BOX);
+                btnHamcall->callback((Fl_Callback*)cb_btnHamcall);
+                o->value(progdefaults.QRZ == HAMCALLNET);
+              } // Fl_Round_Button* btnHamcall
+              { Fl_Input2* o = inpQRZusername = new Fl_Input2(235, 263, 150, 20, _("User name"));
+                inpQRZusername->tooltip(_("Your login name"));
+                inpQRZusername->box(FL_DOWN_BOX);
+                inpQRZusername->color((Fl_Color)FL_BACKGROUND2_COLOR);
+                inpQRZusername->selection_color((Fl_Color)FL_SELECTION_COLOR);
+                inpQRZusername->labeltype(FL_NORMAL_LABEL);
+                inpQRZusername->labelfont(0);
+                inpQRZusername->labelsize(14);
+                inpQRZusername->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                inpQRZusername->callback((Fl_Callback*)cb_inpQRZusername);
+                inpQRZusername->align(FL_ALIGN_LEFT);
+                inpQRZusername->when(FL_WHEN_RELEASE);
+                o->value(progdefaults.QRZusername.c_str());
+                inpQRZusername->labelsize(FL_NORMAL_SIZE);
+              } // Fl_Input2* inpQRZusername
+              { Fl_Input2* o = inpQRZuserpassword = new Fl_Input2(235, 297, 150, 20, _("Password"));
+                inpQRZuserpassword->tooltip(_("Your login password"));
+                inpQRZuserpassword->box(FL_DOWN_BOX);
+                inpQRZuserpassword->color((Fl_Color)FL_BACKGROUND2_COLOR);
+                inpQRZuserpassword->selection_color((Fl_Color)FL_SELECTION_COLOR);
+                inpQRZuserpassword->labeltype(FL_NORMAL_LABEL);
+                inpQRZuserpassword->labelfont(0);
+                inpQRZuserpassword->labelsize(14);
+                inpQRZuserpassword->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                inpQRZuserpassword->callback((Fl_Callback*)cb_inpQRZuserpassword);
+                inpQRZuserpassword->align(FL_ALIGN_LEFT);
+                inpQRZuserpassword->when(FL_WHEN_RELEASE);
+                o->value(progdefaults.QRZuserpassword.c_str());
+                o->type(FL_SECRET_INPUT);
+                inpQRZuserpassword->labelsize(FL_NORMAL_SIZE);
+              } // Fl_Input2* inpQRZuserpassword
+              { btnQRZpasswordShow = new Fl_Button(395, 297, 70, 20, _("Show"));
+                btnQRZpasswordShow->tooltip(_("Show password in plain text"));
+                btnQRZpasswordShow->callback((Fl_Callback*)cb_btnQRZpasswordShow);
+              } // Fl_Button* btnQRZpasswordShow
+              { Fl_Round_Button* o = btnHamQTH = new Fl_Round_Button(26, 332, 121, 20, _("HamQTH.com (free service http://www.hamqth.com)"));
+                btnHamQTH->tooltip(_("You need a paid Hamcall online\nsubscription to access"));
+                btnHamQTH->down_box(FL_DOWN_BOX);
+                btnHamQTH->callback((Fl_Callback*)cb_btnHamQTH);
+                o->value(progdefaults.QRZ == HAMQTH);
+              } // Fl_Round_Button* btnHamQTH
+              o->end();
+            } // Fl_Group* o
+            o->end();
+          } // Fl_Group* o
+          { Fl_Group* o = new Fl_Group(0, 50, 500, 320, _("eQSL"));
+            o->hide();
+            { Fl_Input2* o = inpEQSL_id = new Fl_Input2(176, 75, 150, 20, _("User ID"));
+              inpEQSL_id->tooltip(_("Your login name"));
+              inpEQSL_id->box(FL_DOWN_BOX);
+              inpEQSL_id->color((Fl_Color)FL_BACKGROUND2_COLOR);
+              inpEQSL_id->selection_color((Fl_Color)FL_SELECTION_COLOR);
+              inpEQSL_id->labeltype(FL_NORMAL_LABEL);
+              inpEQSL_id->labelfont(0);
+              inpEQSL_id->labelsize(14);
+              inpEQSL_id->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+              inpEQSL_id->callback((Fl_Callback*)cb_inpEQSL_id);
+              inpEQSL_id->align(FL_ALIGN_LEFT);
+              inpEQSL_id->when(FL_WHEN_RELEASE);
+              o->value(progdefaults.eqsl_id.c_str());
+              inpEQSL_id->labelsize(FL_NORMAL_SIZE);
+            } // Fl_Input2* inpEQSL_id
+            { Fl_Input2* o = inpEQSL_pwd = new Fl_Input2(176, 106, 150, 20, _("Password"));
+              inpEQSL_pwd->tooltip(_("Your login password"));
+              inpEQSL_pwd->box(FL_DOWN_BOX);
+              inpEQSL_pwd->color((Fl_Color)FL_BACKGROUND2_COLOR);
+              inpEQSL_pwd->selection_color((Fl_Color)FL_SELECTION_COLOR);
+              inpEQSL_pwd->labeltype(FL_NORMAL_LABEL);
+              inpEQSL_pwd->labelfont(0);
+              inpEQSL_pwd->labelsize(14);
+              inpEQSL_pwd->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+              inpEQSL_pwd->callback((Fl_Callback*)cb_inpEQSL_pwd);
+              inpEQSL_pwd->align(FL_ALIGN_LEFT);
+              inpEQSL_pwd->when(FL_WHEN_RELEASE);
+              o->value(progdefaults.eqsl_pwd.c_str());
+              o->type(FL_SECRET_INPUT);
+              inpEQSL_pwd->labelsize(FL_NORMAL_SIZE);
+            } // Fl_Input2* inpEQSL_pwd
+            { btnEQSL_pwd_show = new Fl_Button(344, 106, 70, 20, _("Show"));
+              btnEQSL_pwd_show->tooltip(_("Show password in plain text"));
+              btnEQSL_pwd_show->callback((Fl_Callback*)cb_btnEQSL_pwd_show);
+            } // Fl_Button* btnEQSL_pwd_show
+            { Fl_Input2* o = inpEQSL_nick = new Fl_Input2(176, 137, 150, 20, _("QTH Nickname"));
+              inpEQSL_nick->tooltip(_("Your login name"));
+              inpEQSL_nick->box(FL_DOWN_BOX);
+              inpEQSL_nick->color((Fl_Color)FL_BACKGROUND2_COLOR);
+              inpEQSL_nick->selection_color((Fl_Color)FL_SELECTION_COLOR);
+              inpEQSL_nick->labeltype(FL_NORMAL_LABEL);
+              inpEQSL_nick->labelfont(0);
+              inpEQSL_nick->labelsize(14);
+              inpEQSL_nick->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+              inpEQSL_nick->callback((Fl_Callback*)cb_inpEQSL_nick);
+              inpEQSL_nick->align(FL_ALIGN_LEFT);
+              inpEQSL_nick->when(FL_WHEN_RELEASE);
+              o->value(progdefaults.eqsl_nick.c_str());
+              inpEQSL_nick->labelsize(FL_NORMAL_SIZE);
+            } // Fl_Input2* inpEQSL_nick
+            { Fl_Group* o = new Fl_Group(4, 170, 492, 194, _("Options"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              { Fl_Check_Button* o = btn_send_when_logged = new Fl_Check_Button(29, 191, 70, 15, _("send when logged (log button, <LOG>, <LNW>)"));
+                btn_send_when_logged->tooltip(_("eQSL upload when record logged"));
+                btn_send_when_logged->down_box(FL_DOWN_BOX);
+                btn_send_when_logged->callback((Fl_Callback*)cb_btn_send_when_logged);
+                o->value(progdefaults.eqsl_when_logged);
+              } // Fl_Check_Button* btn_send_when_logged
+              { Fl_Input2* o = txt_eqsl_default_message = new Fl_Input2(33, 226, 451, 40, _("Default message"));
+                txt_eqsl_default_message->tooltip(_("Default message sent with eQSL"));
+                txt_eqsl_default_message->type(4);
+                txt_eqsl_default_message->box(FL_DOWN_BOX);
+                txt_eqsl_default_message->color((Fl_Color)FL_BACKGROUND2_COLOR);
+                txt_eqsl_default_message->selection_color((Fl_Color)FL_SELECTION_COLOR);
+                txt_eqsl_default_message->labeltype(FL_NORMAL_LABEL);
+                txt_eqsl_default_message->labelfont(0);
+                txt_eqsl_default_message->labelsize(14);
+                txt_eqsl_default_message->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                txt_eqsl_default_message->callback((Fl_Callback*)cb_txt_eqsl_default_message);
+                txt_eqsl_default_message->align(FL_ALIGN_TOP_LEFT);
+                txt_eqsl_default_message->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.eqsl_default_message.c_str());
+              } // Fl_Input2* txt_eqsl_default_message
+              { Fl_Group* o = new Fl_Group(8, 270, 484, 90, _("Text Tags (tags use {} delimiters)"));
+                o->box(FL_THIN_DOWN_BOX);
+                o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+                { eqsl_txt1 = new Fl_Box(14, 317, 220, 17, _("{CALL} other ops call sign"));
+                eqsl_txt1->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+                } // Fl_Box* eqsl_txt1
+                { eqsl_txt2 = new Fl_Box(12, 336, 220, 17, _("{MODE} full mode / submode"));
+                eqsl_txt2->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+                } // Fl_Box* eqsl_txt2
+                { eqsl_txt3 = new Fl_Box(260, 317, 220, 17, _("{NAME} other ops name"));
+                eqsl_txt3->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+                } // Fl_Box* eqsl_txt3
+                { new Fl_Box(28, 293, 440, 17, _("These tags can also be used in <EQSL:[message]>"));
+                } // Fl_Box* o
+                o->end();
+              } // Fl_Group* o
+              o->end();
+            } // Fl_Group* o
+            o->end();
+          } // Fl_Group* o
           o->end();
-        } // Fl_Group* o
-        { Fl_Group* o = new Fl_Group(5, 260, 490, 95, _("Paid online subscription"));
-          o->box(FL_ENGRAVED_FRAME);
-          o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-          { Fl_Round_Button* o = btnQRZsub = new Fl_Round_Button(25, 291, 90, 20, _("QRZ.com"));
-            btnQRZsub->tooltip(_("You need a paid QRZ online\nsubscription to access"));
-            btnQRZsub->down_box(FL_DOWN_BOX);
-            btnQRZsub->callback((Fl_Callback*)cb_btnQRZsub);
-            o->value(progdefaults.QRZ == QRZNET);
-          } // Fl_Round_Button* btnQRZsub
-          { Fl_Round_Button* o = btnHamcall = new Fl_Round_Button(25, 321, 105, 20, _("Hamcall.net"));
-            btnHamcall->tooltip(_("You need a paid Hamcall online\nsubscription to access"));
-            btnHamcall->down_box(FL_DOWN_BOX);
-            btnHamcall->callback((Fl_Callback*)cb_btnHamcall);
-            o->value(progdefaults.QRZ == HAMCALLNET);
-          } // Fl_Round_Button* btnHamcall
-          { Fl_Input2* o = inpQRZusername = new Fl_Input2(235, 291, 90, 20, _("User name"));
-            inpQRZusername->tooltip(_("Your login name"));
-            inpQRZusername->box(FL_DOWN_BOX);
-            inpQRZusername->color((Fl_Color)FL_BACKGROUND2_COLOR);
-            inpQRZusername->selection_color((Fl_Color)FL_SELECTION_COLOR);
-            inpQRZusername->labeltype(FL_NORMAL_LABEL);
-            inpQRZusername->labelfont(0);
-            inpQRZusername->labelsize(14);
-            inpQRZusername->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
-            inpQRZusername->callback((Fl_Callback*)cb_inpQRZusername);
-            inpQRZusername->align(FL_ALIGN_LEFT);
-            inpQRZusername->when(FL_WHEN_RELEASE);
-            o->value(progdefaults.QRZusername.c_str());
-            inpQRZusername->labelsize(FL_NORMAL_SIZE);
-          } // Fl_Input2* inpQRZusername
-          { Fl_Input2* o = inpQRZuserpassword = new Fl_Input2(236, 321, 90, 20, _("Password"));
-            inpQRZuserpassword->tooltip(_("Your login password"));
-            inpQRZuserpassword->box(FL_DOWN_BOX);
-            inpQRZuserpassword->color((Fl_Color)FL_BACKGROUND2_COLOR);
-            inpQRZuserpassword->selection_color((Fl_Color)FL_SELECTION_COLOR);
-            inpQRZuserpassword->labeltype(FL_NORMAL_LABEL);
-            inpQRZuserpassword->labelfont(0);
-            inpQRZuserpassword->labelsize(14);
-            inpQRZuserpassword->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
-            inpQRZuserpassword->callback((Fl_Callback*)cb_inpQRZuserpassword);
-            inpQRZuserpassword->align(FL_ALIGN_LEFT);
-            inpQRZuserpassword->when(FL_WHEN_RELEASE);
-            o->value(progdefaults.QRZuserpassword.c_str());
-            o->type(FL_SECRET_INPUT);
-            inpQRZuserpassword->labelsize(FL_NORMAL_SIZE);
-          } // Fl_Input2* inpQRZuserpassword
-          { btnQRZpasswordShow = new Fl_Button(336, 321, 70, 20, _("Show"));
-            btnQRZpasswordShow->tooltip(_("Show password in plain text"));
-            btnQRZpasswordShow->callback((Fl_Callback*)cb_btnQRZpasswordShow);
-          } // Fl_Button* btnQRZpasswordShow
-          o->end();
-        } // Fl_Group* o
-        { Fl_Group* o = new Fl_Group(5, 35, 490, 140);
-          o->box(FL_ENGRAVED_FRAME);
-          o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
-          { Fl_Round_Button* o = btnQRZnotavailable = new Fl_Round_Button(25, 45, 337, 20, _("Not available"));
-            btnQRZnotavailable->tooltip(_("Do not use callsign database"));
-            btnQRZnotavailable->down_box(FL_DOWN_BOX);
-            btnQRZnotavailable->value(1);
-            btnQRZnotavailable->callback((Fl_Callback*)cb_btnQRZnotavailable);
-            o->value(progdefaults.QRZ == QRZNONE);
-          } // Fl_Round_Button* btnQRZnotavailable
-          { Fl_Round_Button* o = btnQRZonline = new Fl_Round_Button(25, 75, 337, 20, _("QRZ online via default Internet Browser"));
-            btnQRZonline->tooltip(_("Visit QRZ web site"));
-            btnQRZonline->down_box(FL_DOWN_BOX);
-            btnQRZonline->callback((Fl_Callback*)cb_btnQRZonline);
-            o->value(progdefaults.QRZ == QRZHTML);
-          } // Fl_Round_Button* btnQRZonline
-          { Fl_Round_Button* o = btnHAMCALLonline = new Fl_Round_Button(25, 106, 337, 20, _("HamCall online via default Internet Browser"));
-            btnHAMCALLonline->tooltip(_("Visit Hamcall web site"));
-            btnHAMCALLonline->down_box(FL_DOWN_BOX);
-            btnHAMCALLonline->callback((Fl_Callback*)cb_btnHAMCALLonline);
-            o->value(progdefaults.QRZ == HAMCALLHTML);
-          } // Fl_Round_Button* btnHAMCALLonline
-          { Fl_Round_Button* o = btnCALLOOK = new Fl_Round_Button(25, 137, 337, 20, _("Callook.info lookup (US callsigns only)"));
-            btnCALLOOK->tooltip(_("Visit Hamcall web site"));
-            btnCALLOOK->down_box(FL_DOWN_BOX);
-            btnCALLOOK->callback((Fl_Callback*)cb_btnCALLOOK);
-            o->value(progdefaults.QRZ == CALLOOK);
-          } // Fl_Round_Button* btnCALLOOK
-          o->end();
-        } // Fl_Group* o
+        } // Fl_Tabs* o
         tabQRZ->end();
       } // Fl_Group* tabQRZ
       { tabDL = new Fl_Group(0, 25, 500, 350, _("DL Client"));

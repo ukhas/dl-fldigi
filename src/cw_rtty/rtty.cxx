@@ -125,6 +125,7 @@ void rtty::init()
 	bool wfrev = wf->Reverse();
 	bool wfsb = wf->USB();
 	reverse = wfrev ^ !wfsb;
+	stopflag = false;
 
 	if (progdefaults.StartAtSweetSpot)
 		set_freq(progdefaults.RTTYsweetspot);
@@ -138,7 +139,10 @@ void rtty::init()
 
 	rx_init();
 	put_MODEstatus(mode);
-	snprintf(msg1, sizeof(msg1), "%-4.1f / %-4.0f", rtty_baud, rtty_shift);
+	if ((rtty_baud - (int)rtty_baud) == 0)
+		snprintf(msg1, sizeof(msg1), "%-3.0f / %-4.0f", rtty_baud, rtty_shift);
+	else
+		snprintf(msg1, sizeof(msg1), "%-4.2f / %-4.0f", rtty_baud, rtty_shift);
 	put_Status1(msg1);
 	if (progdefaults.PreferXhairScope)
 		set_scope_mode(Digiscope::XHAIRS);
@@ -181,8 +185,9 @@ void rtty::restart()
 	symbollen = (int) (samplerate / rtty_baud + 0.5);
 	set_bandwidth(shift);
 
-	rtty_BW = 1.5 * rtty_baud;
-	progdefaults.RTTY_BW = rtty_BW;
+	if (progdefaults.RTTY_BW < rtty_baud)
+		progdefaults.RTTY_BW = rtty_baud;
+	rtty_BW = progdefaults.RTTY_BW;
 	sldrRTTYbandwidth->value(rtty_BW);
 
 	wf->redraw_marker();
@@ -219,7 +224,10 @@ void rtty::restart()
 
 	metric = 0.0;
 
-	snprintf(msg1, sizeof(msg1), "%-4.1f / %-4.0f", rtty_baud, rtty_shift);
+	if ((rtty_baud - (int)rtty_baud) == 0)
+		snprintf(msg1, sizeof(msg1), "%-3.0f / %-4.0f", rtty_baud, rtty_shift);
+	else
+		snprintf(msg1, sizeof(msg1), "%-4.2f / %-4.0f", rtty_baud, rtty_shift);
 	put_Status1(msg1);
 	put_MODEstatus(mode);
 	for (int i = 0; i < 1024; i++) QI[i].re = QI[i].im = 0.0;
@@ -756,9 +764,10 @@ void rtty::send_char(int c)
 void rtty::send_idle()
 {
 
-	if (nbits == 5)
+	if (nbits == 5) {
 		send_char(LETTERS);
-	else
+		txmode = LETTERS;
+	} else
 		send_char(0);
 }
 
@@ -769,13 +778,13 @@ int rtty::tx_process()
 	int c;
 
 	if (preamble > 0) {
-		preamble--;
-		send_symbol(1);
-		if (preamble == 0 && nbits == 5) {
+		for (int i = 0; i < preamble; i++)
+			send_symbol(1);
+		if (nbits == 5) {
 			send_char(LETTERS);
 			txmode = LETTERS;
 		}
-		return 0;
+		preamble = 0;
 	}
 
 	c = get_tx_char();
@@ -798,16 +807,15 @@ int rtty::tx_process()
 		return -1;
 	}
 
-// if NOT Baudot
-	if (nbits != 5) {
-		send_char(c);
-		return 0;
-	}
-
 // send idle character if c == -1
 	if (c == -1) {
 		send_idle();
-		txmode = LETTERS;
+		return 0;
+	}
+
+// if NOT Baudot
+	if (nbits != 5) {
+		send_char(c);
 		return 0;
 	}
 

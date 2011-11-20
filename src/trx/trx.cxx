@@ -37,6 +37,7 @@
 #include "misc.h"
 #include "configuration.h"
 #include "status.h"
+#include "dtmf.h"
 
 #include "soundconf.h"
 #include "ringbuffer.h"
@@ -68,6 +69,7 @@ state_t 	trx_state;
 
 modem		*active_modem = 0;
 cRsId		*ReedSolomon = 0;
+cDTMF		*dtmf = 0;
 SoundBase 	*scard;
 static int	_trx_tune;
 
@@ -156,7 +158,6 @@ static void trx_xmit_wfall_end(int samplerate)
 void trx_xmit_wfall_queue(int samplerate, const double* buf, size_t len)
 {
 	ENSURE_THREAD(TRX_TID);
-
 	ringbuffer<double>::vector_type wv[2];
 	wv[0].buf = wv[1].buf = 0;
 
@@ -256,6 +257,7 @@ void trx_trx_receive_loop()
 			active_modem->rx_process(rbvec[0].buf, numread);
 			if (progdefaults.rsid)
 				ReedSolomon->receive(fbuf, numread);
+			dtmf->receive(fbuf, numread);
 		}
 		else {
 			bool afc = progStatus.afconoff;
@@ -286,7 +288,6 @@ void trx_trx_transmit_loop()
 		MilliSleep(10);
 		return;
 	}
-
 	if (active_modem) {
 		try {
 			current_samplerate = active_modem->get_samplerate();
@@ -299,13 +300,21 @@ void trx_trx_transmit_loop()
 			return;
 		}
 
-		push2talk->set(true);
+		if (active_modem != ssb_modem) {
+			push2talk->set(true);
+			REQ(&waterfall::set_XmtRcvBtn, wf, true);
+		}
 		active_modem->tx_init(scard);
 
-		if (progdefaults.TransmitRSid)
+		if ((active_modem != null_modem && 
+			active_modem != ssb_modem &&
+			active_modem != wwv_modem ) && 
+			progdefaults.TransmitRSid)
 			ReedSolomon->send(true);
 
 		while (trx_state == STATE_TX) {
+			if (active_modem != ssb_modem && !progdefaults.DTMFstr.empty())
+				dtmf->send();
 			try {
 				if (active_modem->tx_process() < 0)
 					trx_state = STATE_RX;
@@ -321,9 +330,6 @@ void trx_trx_transmit_loop()
 
 		trx_xmit_wfall_end(current_samplerate);
 
-//		if (progdefaults.TransmitRSid)
-//			ReedSolomon->send(false);
-
 		scard->flush();
 		if (scard->must_close(O_WRONLY))
 			scard->Close(O_WRONLY);
@@ -333,6 +339,8 @@ void trx_trx_transmit_loop()
 
 	push2talk->set(false);
 	REQ(&waterfall::set_XmtRcvBtn, wf, false);
+	if (progStatus.timer)
+		REQ(startMacroTimer);
 }
 
 //=============================================================================
@@ -402,6 +410,17 @@ void *trx_loop(void *args)
 				trxrb.reset();
 			trx_signal_state();
 		}
+/*
+printf("trx state %s\n",
+trx_state == STATE_ABORT ? "abort" :
+trx_state == STATE_ENDED ? "ended" :
+trx_state == STATE_RESTART ? "restart" :
+trx_state == STATE_NEW_MODEM ? "new modem" :
+trx_state == STATE_TX ? "tx" :
+trx_state == STATE_TUNE ? "tune" :
+trx_state == STATE_RX ? "rx" :
+"unknown");
+*/
 		switch (trx_state) {
 		case STATE_ABORT:
 			delete scard;
@@ -421,8 +440,6 @@ void *trx_loop(void *args)
 			break;
 		case STATE_TX:
 			trx_trx_transmit_loop();
-			if (progStatus.timer)
-				REQ(startMacroTimer);
 			break;
 		case STATE_TUNE:
 			trx_tune_loop();
@@ -527,6 +544,7 @@ void trx_start(void)
 	
 	if (scard) delete scard;
 	if (ReedSolomon) delete ReedSolomon;
+	if (dtmf) delete dtmf;
 
 
 	switch (progdefaults.btnAudioIOis) {
@@ -553,6 +571,8 @@ void trx_start(void)
 	}
 
 	ReedSolomon = new cRsId;
+	dtmf = new cDTMF;
+
 #endif // !BENCHMARK_MODE
 
 #if USE_NAMED_SEMAPHORES
