@@ -989,13 +989,7 @@ void cb_wMain(Fl_Widget*, void*)
 {
 	if (!clean_exit())
 		return;
-	// hide all shown windows
-	Fl::first_window(fl_digi_main);
-	for (Fl_Window* w = Fl::next_window(fl_digi_main); w; w = Fl::next_window(w)) {
-		w->do_callback();
-		w = fl_digi_main;
-	}
-	// this will make Fl::run return
+	// this will make Fl::run return (clean_exit closes all other windows)
 	fl_digi_main->hide();
 }
 
@@ -2536,12 +2530,12 @@ bool clean_exit(void) {
 
 	double_exit = true;
 
-	/* disable all windows while shutting down */
+	/* close all windows while shutting down; disable main. */
 	Fl::first_window();
 	Fl::first_window(fl_digi_main);
 	fl_digi_main->deactivate();
-	for (Fl_Window* w = Fl::next_window(fl_digi_main); w; w = Fl::next_window(w))
-		w->deactivate();
+	while (Fl_Window* w = Fl::next_window(fl_digi_main))
+		w->do_callback();
 
 	if (Maillogfile)
 		Maillogfile->log_to_file_stop();
