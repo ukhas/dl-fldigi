@@ -2529,6 +2529,20 @@ bool clean_exit(void) {
 			break;
 		}
 	}
+
+	static bool double_exit = false;
+	if (double_exit)
+		return false;
+
+	double_exit = true;
+
+	/* disable all windows while shutting down */
+	Fl::first_window();
+	Fl::first_window(fl_digi_main);
+	fl_digi_main->deactivate();
+	for (Fl_Window* w = Fl::next_window(fl_digi_main); w; w = Fl::next_window(w))
+		w->deactivate();
+
 	if (Maillogfile)
 		Maillogfile->log_to_file_stop();
 	if (logfile)
