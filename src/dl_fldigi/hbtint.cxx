@@ -234,6 +234,15 @@ void DExtractorManager::status(const string &msg)
     status(msg);
 }
 
+static string nice_double_string(double value)
+{
+    ostringstream tmp;
+    tmp.setf(ios::fixed);
+    tmp.precision(6);
+    tmp << value;
+    return tmp.str();
+}
+
 static void set_jvalue(Fl_Output *widget, const Json::Value &value)
 {
     /* String and null are easy. The UKHAS crude parser leaves everything as
@@ -242,6 +251,8 @@ static void set_jvalue(Fl_Output *widget, const Json::Value &value)
         widget->value(value.asCString());
     else if (value.isNull())
         widget->value("");
+    else if (value.isDouble())
+        widget->value(nice_double_string(value.asDouble()).c_str());
     else
         widget->value(value.toStyledString().c_str());
 }
