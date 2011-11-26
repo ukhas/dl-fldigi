@@ -49,6 +49,13 @@ void init()
 void start()
 {
     uthr->start();
+
+    Json::Value d;
+    d["_sentence"] = "testing";
+    d["latitude"] = 123;
+    d["longitude"] = "345";
+    d["altitude"] = 456;
+    extrmgr->data(d);
 }
 
 void cleanup()
@@ -234,27 +241,38 @@ void DExtractorManager::status(const string &msg)
     status(msg);
 }
 
-static string nice_double_string(double value)
-{
-    ostringstream tmp;
-    tmp.setf(ios::fixed);
-    tmp.precision(6);
-    tmp << value;
-    return tmp.str();
-}
-
 static void set_jvalue(Fl_Output *widget, const Json::Value &value)
 {
-    /* String and null are easy. The UKHAS crude parser leaves everything as
-     * a string anyway (even lat/long, no floats!), to make it easier. */
     if (value.isString())
+    {
         widget->value(value.asCString());
-    else if (value.isNull())
-        widget->value("");
-    else if (value.isDouble())
-        widget->value(nice_double_string(value.asDouble()).c_str());
+    }
+    else if (value.isBool() || value.isIntegral())
+    {
+        ostringstream tmp;
+
+        if (value.isDouble())
+        {
+            tmp.setf(ios::fixed);
+            tmp.precision(6);
+            tmp << value.asDouble();
+        }
+        else if (value.isIntegral())
+        {
+            tmp << value.asInt();
+        }
+        else if (value.isBool())
+        {
+            tmp << value.asBool();
+        }
+
+        widget->value(tmp.str().c_str());
+    }
     else
-        widget->value(value.toStyledString().c_str());
+    {
+        /* We can't print objects or arrays, and null is just "" */
+        widget->value("");
+    }
 }
 
 void DExtractorManager::data(const Json::Value &d)
