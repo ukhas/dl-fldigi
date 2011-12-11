@@ -11,6 +11,8 @@
 #include <sstream>
 #include <signal.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <jsoncpp/json.h>
 
 #ifndef __MINGW32__
@@ -441,7 +443,7 @@ void GPSThread::cleanup()
 #else
 void GPSThread::setup()
 {
-    HANDLE handle = CreateFile(device, GENERIC_READ, 0, 0,
+    HANDLE handle = CreateFile(device.c_str(), GENERIC_READ, 0, 0,
                                OPEN_EXISTING, 0, 0);
     if (handle == INVALID_HANDLE_VALUE)
         throw runtime_error("CreateFile() failed");
@@ -470,7 +472,7 @@ void GPSThread::setup()
     if (!SetCommTimeouts(handle, &timeouts))
         throw runtime_error("SetCommTimeouts() failed");
 
-    fd = _open_osfhandle((intptr_t) serial_port_handle, _O_RDONLY);
+    fd = _open_osfhandle((intptr_t) handle, _O_RDONLY);
     if (fd == -1)
         throw runtime_error("_open_osfhandle() failed");
 
