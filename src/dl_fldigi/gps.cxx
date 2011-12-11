@@ -12,13 +12,13 @@
 #include <signal.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <jsoncpp/json.h>
 
 #ifndef __MINGW32__
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <termios.h>
 #else
 #include <windows.h>
@@ -115,6 +115,13 @@ void GPSThread::send_signal()
 {
     /* TODO: HABITAT does this work as expected? */
     pthread_cancel(thread);
+}
+
+/* Provide a sleep function for GPSThread::wait() ... */
+static void sleep(int time)
+{
+    /* ... using some random Windows specific function */
+    Sleep(1000 * time);
 }
 #endif
 
