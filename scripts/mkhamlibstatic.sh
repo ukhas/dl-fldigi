@@ -17,7 +17,12 @@ else
 	hamlib_dir=/usr/lib
     fi
 fi
-hamlib_libs="$hamlib_dir/hamlib-*.a"
+
+if test -d $hamlib_dir/hamlib; then
+    hamlib_libs="$hamlib_dir/hamlib/hamlib-*.a"
+else
+    hamlib_libs="$hamlib_dir/hamlib-*.a"
+fi
 
 case "$target_os" in
     *linux*)
@@ -42,4 +47,4 @@ case "$target_os" in
 	;;
 esac
 
-$CXX -o ${1}${EXEEXT} $AM_CXXFLAGS $dl_fldigi_CXXFLAGS $CXXFLAGS $AM_LDFLAGS $dl_fldigi_LDFLAGS $LDFLAGS $dl_fldigi_OBJECTS $dl_fldigi_LDADD
+$CXX -o ${1}${EXEEXT} $AM_CXXFLAGS $dl_fldigi_CXXFLAGS $CXXFLAGS $AM_LDFLAGS $dl_fldigi_LDFLAGS $LDFLAGS $dl_fldigi_OBJECTS $dl_fldigi_LDADD $LIBS
