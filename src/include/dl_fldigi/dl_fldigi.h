@@ -4,7 +4,7 @@
 #include <string>
 #include <time.h>
 
-#include <Fl/Fl.H>
+#include <FL/Fl.H>
 
 namespace dl_fldigi {
 

@@ -22,7 +22,7 @@
 #include <windows.h>
 #endif
 
-#include <Fl/Fl.H>
+#include <FL/Fl.H>
 
 #include "configuration.h"
 #include "debug.h"

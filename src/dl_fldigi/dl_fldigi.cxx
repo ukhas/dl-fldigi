@@ -11,7 +11,7 @@
 #include <sstream>
 #include <time.h>
 
-#include <Fl/Fl.H>
+#include <FL/Fl.H>
 
 #include "configuration.h"
 #include "debug.h"
