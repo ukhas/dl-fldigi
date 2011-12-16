@@ -49,13 +49,6 @@ void init()
 void start()
 {
     uthr->start();
-
-    Json::Value d;
-    d["_sentence"] = "testing";
-    d["latitude"] = 123;
-    d["longitude"] = "345";
-    d["altitude"] = 456;
-    extrmgr->data(d);
 }
 
 void cleanup()
