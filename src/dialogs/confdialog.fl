@@ -4135,14 +4135,6 @@ progdefaults.changed = true;}
                   label Alt
                   xywh {60 320 105 25}
                 }
-                Fl_Button {} {
-                  label {Save as stationary location}
-                  callback {stationary_lat->value(gps_pos_lat->value());
-stationary_lon->value(gps_pos_lon->value());
-stationary_lat->do_callback();
-stationary_lon->do_callback();}
-                  xywh {200 320 250 25} deactivate
-                }
                 Fl_Output gps_pos_time {
                   label Time
                   xywh {60 290 105 25}
@@ -4150,6 +4142,14 @@ stationary_lon->do_callback();}
                 Fl_Output gps_pos_lon {
                   label Lon
                   xywh {345 290 105 25}
+                }
+                Fl_Button gps_pos_save {
+                  label {Save as stationary location}
+                  callback {stationary_lat->value(gps_pos_lat->value());
+stationary_lon->value(gps_pos_lon->value());
+stationary_lat->do_callback();
+stationary_lon->do_callback();}
+                  xywh {200 320 250 25} deactivate
                 }
               }
             }

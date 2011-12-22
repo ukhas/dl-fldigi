@@ -3212,16 +3212,18 @@ Fl_Output *gps_pos_lat=(Fl_Output *)0;
 
 Fl_Output *gps_pos_altitude=(Fl_Output *)0;
 
-static void cb_Save(Fl_Button*, void*) {
+Fl_Output *gps_pos_time=(Fl_Output *)0;
+
+Fl_Output *gps_pos_lon=(Fl_Output *)0;
+
+Fl_Button *gps_pos_save=(Fl_Button *)0;
+
+static void cb_gps_pos_save(Fl_Button*, void*) {
   stationary_lat->value(gps_pos_lat->value());
 stationary_lon->value(gps_pos_lon->value());
 stationary_lat->do_callback();
 stationary_lon->do_callback();
 }
-
-Fl_Output *gps_pos_time=(Fl_Output *)0;
-
-Fl_Output *gps_pos_lon=(Fl_Output *)0;
 
 static void cb_Period(Fl_Spinner* o, void*) {
   progdefaults.gps_period = o->value();
@@ -7243,14 +7245,14 @@ d frequency"));
                 } // Fl_Output* gps_pos_lat
                 { gps_pos_altitude = new Fl_Output(60, 320, 105, 25, _("Alt"));
                 } // Fl_Output* gps_pos_altitude
-                { Fl_Button* o = new Fl_Button(200, 320, 250, 25, _("Save as stationary location"));
-                o->callback((Fl_Callback*)cb_Save);
-                o->deactivate();
-                } // Fl_Button* o
                 { gps_pos_time = new Fl_Output(60, 290, 105, 25, _("Time"));
                 } // Fl_Output* gps_pos_time
                 { gps_pos_lon = new Fl_Output(345, 290, 105, 25, _("Lon"));
                 } // Fl_Output* gps_pos_lon
+                { gps_pos_save = new Fl_Button(200, 320, 250, 25, _("Save as stationary location"));
+                gps_pos_save->callback((Fl_Callback*)cb_gps_pos_save);
+                gps_pos_save->deactivate();
+                } // Fl_Button* gps_pos_save
                 o->end();
               } // Fl_Group* o
               o->end();

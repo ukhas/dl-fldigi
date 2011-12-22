@@ -27,6 +27,7 @@
 #include <FL/Fl.H>
 
 #include "configuration.h"
+#include "confdialog.h"
 #include "debug.h"
 #include "fl_digi.h"
 
@@ -338,7 +339,27 @@ void GPSThread::read()
         throw runtime_error("Failed to parse data (fail)");
     }
 
+    update_ui(hour, minute, second, latitude, longitude, altitude);
     upload(hour, minute, second, latitude, longitude, altitude);
+}
+
+void GPSThread::update_ui(int hour, int minute, int second,
+                          double latitude, double longitude, double altitude)
+{
+    ostringstream time_tmp, lat_tmp, lon_tmp, alt_tmp;
+    time_tmp.fill('0');
+    time_tmp.width(2);
+    time_tmp << hour << ":" << minute << ":" << second;
+    lat_tmp << latitude;
+    lon_tmp << longitude;
+    alt_tmp << altitude;
+
+    gps_pos_time->value(time_tmp.str().c_str());
+    gps_pos_lat->value(lat_tmp.str().c_str());
+    gps_pos_lon->value(lat_tmp.str().c_str());
+    gps_pos_altitude->value(lat_tmp.str().c_str());
+
+    gps_pos_save->activate();
 }
 
 void GPSThread::upload(int hour, int minute, int second,
