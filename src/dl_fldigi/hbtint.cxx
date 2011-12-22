@@ -226,12 +226,11 @@ void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
     flights::new_docs(new_flight_docs);
 }
 
+/* Be careful not to call this function instead of dl_fldigi::status() */
 void DExtractorManager::status(const string &msg)
 {
     Fl_AutoLock lock;
     LOG_DEBUG("hbtE %s", msg.c_str());
-
-    status(msg);
 }
 
 static void set_jvalue(Fl_Output *widget, const Json::Value &value)
