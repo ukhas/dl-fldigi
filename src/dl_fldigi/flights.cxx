@@ -63,6 +63,9 @@ void cleanup()
 
 void load_cache()
 {
+    /* initialise an empty and disabled UI: */
+    populate_flights();
+
     ifstream cf(cache_file.c_str());
 
     if (cf.fail())
