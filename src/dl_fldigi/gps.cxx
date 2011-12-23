@@ -110,21 +110,6 @@ void GPSThread::send_signal()
 {
     pthread_kill(thread, SIGUSR2);
 }
-#else
-void GPSThread::prepare_signals() {}
-void GPSThread::send_signal()
-{
-    /* TODO: HABITAT does this work as expected? */
-    pthread_cancel(thread);
-}
-
-/* Provide a sleep function for GPSThread::wait() ... */
-static void sleep(int time)
-{
-    /* ... using some random Windows specific function */
-    Sleep(1000 * time);
-}
-#endif
 
 void GPSThread::wait()
 {
@@ -134,6 +119,27 @@ void GPSThread::wait()
     if (wait_exp < 6)
         wait_exp++;
 }
+#else
+void GPSThread::prepare_signals() {}
+
+void GPSThread::send_signal()
+{
+    /* Closing the files on windows should cause read() to fail 
+     * immediately. */
+    cleanup();
+}
+
+void GPSThread::wait()
+{
+    int wait_seconds = 1 << wait_exp;
+
+    if (wait_exp < 6)
+        wait_exp++;
+
+    for (int i = 0; i < wait_seconds && !check_term(); i++)
+        Sleep(1000);
+}
+#endif
 
 void GPSThread::shutdown()
 {
