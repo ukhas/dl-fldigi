@@ -3208,6 +3208,13 @@ static void cb_Always(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
+static void cb_Period(Fl_Spinner* o, void*) {
+  progdefaults.gps_period = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
+btnApplyConfig->activate();
+}
+
 Fl_Output *gps_pos_lat=(Fl_Output *)0;
 
 Fl_Output *gps_pos_altitude=(Fl_Output *)0;
@@ -3223,13 +3230,6 @@ static void cb_gps_pos_save(Fl_Button*, void*) {
 stationary_lon->value(gps_pos_lon->value());
 stationary_lat->do_callback();
 stationary_lon->do_callback();
-}
-
-static void cb_Period(Fl_Spinner* o, void*) {
-  progdefaults.gps_period = o->value();
-progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
-btnApplyConfig->activate();
 }
 
 Fl_Group *tabDLPayload=(Fl_Group *)0;
@@ -7238,6 +7238,13 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Always);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Check_Button* o
+              { Fl_Spinner* o = new Fl_Spinner(100, 230, 45, 25, _("Period"));
+                o->box(FL_DOWN_BOX);
+                o->minimum(10);
+                o->maximum(300);
+                o->callback((Fl_Callback*)cb_Period);
+                o->value(progdefaults.gps_period);
+              } // Fl_Spinner* o
               { Fl_Group* o = new Fl_Group(10, 265, 475, 90, _("Last GPS Position"));
                 o->box(FL_ENGRAVED_BOX);
                 o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
@@ -7255,22 +7262,16 @@ d frequency"));
                 } // Fl_Button* gps_pos_save
                 o->end();
               } // Fl_Group* o
+              { Fl_Box* o = new Fl_Box(290, 70, 190, 35, _("please enter coordinates as one number, in decimal degrees"));
+                o->labelsize(10);
+                o->align(FL_ALIGN_WRAP);
+              } // Fl_Box* o
+              { Fl_Box* o = new Fl_Box(160, 230, 270, 25, _("(number of seconds between position updates)"));
+                o->labelsize(10);
+                o->align(FL_ALIGN_WRAP);
+              } // Fl_Box* o
               o->end();
             } // Fl_Group* o
-            { Fl_Box* o = new Fl_Box(285, 70, 190, 35, _("please enter coordinates as one number, in decimal degrees"));
-              o->labelsize(10);
-              o->align(FL_ALIGN_WRAP);
-            } // Fl_Box* o
-            { Fl_Spinner* o = new Fl_Spinner(100, 225, 45, 25, _("Period"));
-              o->minimum(10);
-              o->maximum(300);
-              o->callback((Fl_Callback*)cb_Period);
-              o->value(progdefaults.gps_period);
-            } // Fl_Spinner* o
-            { Fl_Box* o = new Fl_Box(155, 225, 270, 25, _("(number of seconds between position updates)"));
-              o->labelsize(10);
-              o->align(FL_ALIGN_WRAP);
-            } // Fl_Box* o
             o->end();
           } // Fl_Group* o
           { tabDLPayload = new Fl_Group(0, 50, 500, 323, _("Radio auto config"));

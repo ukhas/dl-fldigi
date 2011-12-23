@@ -440,12 +440,12 @@ extern Fl_Counter2 *cntTrackFreqMax;
 extern Fl_Input *stationary_lat;
 extern Fl_Input *stationary_lon;
 extern Fl_Input_Choice *inpGPSdev;
+#include <FL/Fl_Spinner.H>
 extern Fl_Output *gps_pos_lat;
 extern Fl_Output *gps_pos_altitude;
 extern Fl_Output *gps_pos_time;
 extern Fl_Output *gps_pos_lon;
 extern Fl_Button *gps_pos_save;
-#include <FL/Fl_Spinner.H>
 extern Fl_Group *tabDLPayload;
 #include <FL/Fl_Browser.H>
 extern Fl_Browser *flight_browser;

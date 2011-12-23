@@ -4123,6 +4123,15 @@ progdefaults.changed = true;}
                 xywh {220 140 240 25} down_box DOWN_BOX
                 code0 {o->value(progdefaults.gps_start_enabled);}
               }
+              Fl_Spinner {} {
+                label Period
+                callback {progdefaults.gps_period = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
+btnApplyConfig->activate();}
+                xywh {100 230 45 25} box DOWN_BOX minimum 10 maximum 300
+                code0 {o->value(progdefaults.gps_period);}
+              }
               Fl_Group {} {
                 label {Last GPS Position} open
                 xywh {10 265 475 90} box ENGRAVED_BOX align 21
@@ -4152,23 +4161,14 @@ stationary_lon->do_callback();}
                   xywh {200 320 250 25} deactivate
                 }
               }
-            }
-            Fl_Box {} {
-              label {please enter coordinates as one number, in decimal degrees}
-              xywh {285 70 190 35} labelsize 10 align 128
-            }
-            Fl_Spinner {} {
-              label Period
-              callback {progdefaults.gps_period = o->value();
-progdefaults.changed = true;
-dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
-btnApplyConfig->activate();}
-              xywh {100 225 45 25} minimum 10 maximum 300
-              code0 {o->value(progdefaults.gps_period);}
-            }
-            Fl_Box {} {
-              label {(number of seconds between position updates)}
-              xywh {155 225 270 25} labelsize 10 align 128
+              Fl_Box {} {
+                label {please enter coordinates as one number, in decimal degrees}
+                xywh {290 70 190 35} labelsize 10 align 128
+              }
+              Fl_Box {} {
+                label {(number of seconds between position updates)}
+                xywh {160 230 270 25} labelsize 10 align 128
+              }
             }
           }
           Fl_Group tabDLPayload {
