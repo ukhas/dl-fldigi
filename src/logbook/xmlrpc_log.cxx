@@ -81,7 +81,7 @@ void activate_log_menus(bool val)
 string get_field(string &adifline, int field)
 {
 	string fld;
-	fld.append("<").append(fields[field].name->c_str()).append(":");
+	fld.append("<").append(fields[field].name).append(":");
 	size_t pos1 = adifline.find(fld);
 	if (pos1 == std::string::npos)
 		return "";
@@ -142,7 +142,7 @@ static std::string notes;
 
 #define adif_str(a, b) { \
 std::ostringstream os; \
-os << "<" << fields[(a)].name->c_str() << ":" << strlen((b)) << ">" << (b); \
+os << "<" << fields[(a)].name << ":" << strlen((b)) << ">" << (b); \
 adif.append(os.str()); }
 
 void xml_add_record()
@@ -228,7 +228,7 @@ bool xml_check_dup()
 }
 
 
-void connect_to_log_server()
+void connect_to_log_server(void *)
 {
 	if (!log_client) {
 		int xmllog_port = atoi(progdefaults.xmllog_port.c_str());

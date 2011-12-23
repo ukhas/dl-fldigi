@@ -11,6 +11,9 @@ using namespace std;
 
 enum COMPTYPE {COMPTIME, COMPDATE, COMPCALL, COMPFREQ, COMPMODE};
 
+class cQsoDb;
+class cQsoRec;
+
 class cQsoRec {
 
 friend int compareCalls (const cQsoRec &, const cQsoRec &);
@@ -35,6 +38,9 @@ public:
 	void clearRec ();
 	int  validRec();
 	void checkBand();
+	void checkDateTimes();
+	void setDateTime(bool dtOn);
+	void setFrequency(long long freq);
 // operator overloads
 	const cQsoRec &operator=(const cQsoRec &);
 	bool operator==(const cQsoRec &) const;
@@ -60,23 +66,25 @@ private:
 	int dirty;
 	
 	static const int jdays[][13];
-	bool isleapyear( int y );
+	bool isleapyear( int y ) const;
 	int dayofyear (int year, int mon, int mday);
 	unsigned int epoch_minutes (const char *szdate, const char *sztime);	
 public:
 	cQsoDb ();
+	cQsoDb (cQsoDb *);
 	~cQsoDb ();
 	static bool reverse;
 	void deleteRecs();
 	void clearDatabase();
 	void isdirty(int n) {dirty = n;}
-	int  isdirty() {return dirty;}
+	int  isdirty() const {return dirty;}
 	void qsoNewRec (cQsoRec *);
+	cQsoRec *newrec();
 	void qsoDelRec (int);
 	void qsoUpdRec (int, cQsoRec *);
 	int qsoFindRec (cQsoRec *);
 	cQsoRec *getRec (int n) {return &qsorec[n];};
-	int nbrRecs () {return nbrrecs;};
+	int nbrRecs () const {return nbrrecs;};
 	bool qsoIsValidFile(const char *);
 	int qsoReadFile (const char *);
 	int qsoWriteFile (const char *);
@@ -85,6 +93,7 @@ public:
 	void SortByMode ();
 	void SortByFreq ();
 	void sort_reverse(bool rev) { reverse = rev;}
+	const cQsoRec *recarray() { return qsorec; }
   
 	bool duplicate(
 		const char *callsign, 

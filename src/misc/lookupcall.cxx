@@ -83,7 +83,8 @@ string lookup_latd;
 string lookup_lond;
 string lookup_notes;
 
-qrz_query_t DB_query = QRZNONE;
+qrz_xmlquery_t DB_XML_query = QRZXMLNONE;
+qrz_webquery_t DB_WEB_query = QRZWEBNONE;
 
 enum TAG {
 	QRZ_IGNORE,	QRZ_KEY,	QRZ_ALERT,	QRZ_ERROR,	QRZ_CALL,
@@ -470,7 +471,9 @@ void QRZclose(void)
 
 	CANCEL_THREAD(*QRZ_thread);
 
-	DB_query = QRZ_EXIT;
+	DB_XML_query = QRZXML_EXIT;
+	DB_WEB_query = QRZWEB_EXIT;
+
 	pthread_mutex_lock(&qrz_mutex);
 	pthread_cond_signal(&qrz_cond);
 	pthread_mutex_unlock(&qrz_mutex);
@@ -839,12 +842,12 @@ void parse_HAMQTH_html(const string& htmlpage)
 		if (p1 != string::npos)
 			lookup_notes.append("  ").append(htmlpage.substr(p, p1 - p));
 	}
-	if ((p = htmlpage.find("<adr_country>")) != string::npos) {
-		p += 13;
-		p1 = htmlpage.find("</adr_country>");
-		if (p1 != string::npos)
-			lookup_notes.append("  ").append(htmlpage.substr(p, p1 - p));
-	}
+//	if ((p = htmlpage.find("<adr_country>")) != string::npos) {
+//		p += 13;
+//		p1 = htmlpage.find("</adr_country>");
+//		if (p1 != string::npos)
+//			lookup_notes.append("  ").append(htmlpage.substr(p, p1 - p));
+//	}
 }
 
 bool HAMQTHget(string& htmlpage)
@@ -856,7 +859,7 @@ bool HAMQTHget(string& htmlpage)
 	}
 	url.append("http://www.hamqth.com/xml.php?id=").append(HAMQTH_session_id);
 	url.append("&callsign=").append(callsign);
-	url.append("&prg=fldigi-").append(VERSION);
+	url.append("&prg=FLDIGI");
 
 	ret = fetch_http(url, htmlpage, 5.0);
 	if (htmlpage.find("<error>") != string::npos) {
@@ -906,6 +909,15 @@ void HAMCALL_DETAILS_query()
 	cb_mnuVisitURL(0, (void*)hamcallurl.c_str());
 }
 
+void HAMQTH_DETAILS_query()
+{
+	string hamqthurl = "http://www.hamQTH.com/";
+	hamqthurl.append(callsign);
+
+	cb_mnuVisitURL(0, (void*)hamqthurl.c_str());
+}
+
+
 // ----------------------------------------------------------------------------
 
 static void *LOOKUP_loop(void *args)
@@ -920,7 +932,7 @@ static void *LOOKUP_loop(void *args)
 		pthread_cond_wait(&qrz_cond, &qrz_mutex);
 		pthread_mutex_unlock(&qrz_mutex);
 
-		switch (DB_query) {
+		switch (DB_XML_query) {
 		case QRZCD :
 			QRZ_CD_query();
 			break;
@@ -930,22 +942,31 @@ static void *LOOKUP_loop(void *args)
 		case HAMCALLNET :
 			HAMCALLquery();
 			break;
-		case QRZHTML :
-			QRZ_DETAILS_query();
-			break;
-		case HAMCALLHTML :
-			HAMCALL_DETAILS_query();
-			break;
 		case CALLOOK:
 			CALLOOKquery();
 			break;
 		case HAMQTH:
 			HAMQTHquery();
 			break;
-		case QRZ_EXIT:
+		case QRZXML_EXIT:
 			return NULL;
 		default:
-			LOG_ERROR("Bad query type %d", DB_query);
+			break;
+		}
+
+		switch (DB_WEB_query) {
+		case QRZHTML :
+			QRZ_DETAILS_query();
+			break;
+		case HAMCALLHTML :
+			HAMCALL_DETAILS_query();
+			break;
+		case HAMQTHHTML :
+			HAMQTH_DETAILS_query();
+			break;
+		case QRZWEB_EXIT:
+			return NULL;
+		default:
 			break;
 		}
 	}
@@ -970,11 +991,17 @@ void CALLSIGNquery()
 	if (callsign != inpCall->value())
 		inpCall->value(callsign.c_str());
 
-	switch (DB_query = static_cast<qrz_query_t>(progdefaults.QRZ)) {
+	size_t slash;
+	while ((slash = callsign.rfind('/')) != string::npos) {
+		if (((slash+1) * 2) < callsign.length())
+			callsign.erase(0, slash + 1);
+		else
+			callsign.erase(slash);
+	}
+
+	switch (DB_XML_query = static_cast<qrz_xmlquery_t>(progdefaults.QRZXML)) {
 	case QRZNET:
 		inpNotes->value("Request sent to\nqrz.com...");
-		break;
-	case QRZHTML: case HAMCALLHTML:
 		break;
 	case HAMCALLNET:
 		inpNotes->value("Request sent to\nwww.hamcall.net...");
@@ -988,7 +1015,7 @@ void CALLSIGNquery()
 		}
 		if (!qCall->getQRZvalid()) {
 			inpNotes->value("QRZ DB error");
-			DB_query = QRZNONE;
+			DB_XML_query = QRZXMLNONE;
 			return;
 		}
 		break;
@@ -998,10 +1025,14 @@ void CALLSIGNquery()
 	case HAMQTH:
 		inpNotes->value("Request sent to \nhttp://hamqth.com...");
 		break;
+	case QRZXMLNONE:
+		break;
 	default:
-		LOG_ERROR("Bad query type %d", DB_query);
+		LOG_ERROR("Bad query type %d", DB_XML_query);
 		return;
 	}
+
+	DB_WEB_query = static_cast<qrz_webquery_t>(progdefaults.QRZWEB);
 
 	pthread_mutex_lock(&qrz_mutex);
 	pthread_cond_signal(&qrz_cond);
@@ -1130,25 +1161,32 @@ void makeEQSL(const char *message)
 // eqsl url header
 	eQSL_url = "http://www.eqsl.cc/qslcard/importADIF.cfm?ADIFdata=upload <adIF_ver:5>2.1.9";
 	snprintf(sztemp, sizeof(sztemp),"<EQSL_USER:%d>%s<EQSL_PSWD:%d>%s", 
-		progdefaults.eqsl_id.length(), progdefaults.eqsl_id.c_str(),
-		progdefaults.eqsl_pwd.length(), progdefaults.eqsl_pwd.c_str());
+		static_cast<int>(progdefaults.eqsl_id.length()),
+		progdefaults.eqsl_id.c_str(),
+		static_cast<int>(progdefaults.eqsl_pwd.length()),
+		progdefaults.eqsl_pwd.c_str());
 	eQSL_url.append(sztemp);
+	eQSL_url.append("<PROGRAMID:6>FLDIGI<EOH>");
 // eqsl nickname
 	if (!progdefaults.eqsl_nick.empty()) {
 		snprintf(sztemp, sizeof(sztemp), "<APP_EQSL_QTH_NICKNAME:%d>%s",
-		progdefaults.eqsl_nick.length(), progdefaults.eqsl_nick.c_str());
+			static_cast<int>(progdefaults.eqsl_nick.length()),
+			progdefaults.eqsl_nick.c_str());
 		eQSL_url.append(sztemp);
 	}
-	eQSL_url.append("<PROGRAMID:6>FLDIGI<EOH>");
 
 // eqsl record
 // band
 	tempstr = band_name(band(wf->rfcarrier()));
-	snprintf(sztemp, sizeof(sztemp), "<BAND:%d>%s", tempstr.length(), tempstr.c_str());
+	snprintf(sztemp, sizeof(sztemp), "<BAND:%d>%s",
+		static_cast<int>(tempstr.length()),
+		tempstr.c_str());
 	eQSL_url.append(sztemp);
 // call
 	tempstr = inpCall->value();
-	snprintf(sztemp, sizeof(sztemp), "<CALL:%d>%s", tempstr.length(), tempstr.c_str());
+	snprintf(sztemp, sizeof(sztemp), "<CALL:%d>%s",
+		static_cast<int>(tempstr.length()),
+		tempstr.c_str());
 	eQSL_url.append(sztemp);
 // mode
 	tempstr = mode_info[active_modem->get_mode()].adif_name;
@@ -1173,22 +1211,32 @@ void makeEQSL(const char *message)
 		(tempstr.find("QPSK500R") != std::string::npos))
 		tempstr = "QPSK125";
 
-	snprintf(sztemp, sizeof(sztemp), "<MODE:%d>%s", tempstr.length(), tempstr.c_str());
+	snprintf(sztemp, sizeof(sztemp), "<MODE:%d>%s",
+		static_cast<int>(tempstr.length()),
+		tempstr.c_str());
 	eQSL_url.append(sztemp);
 // qso date
-	snprintf(sztemp, sizeof(sztemp), "<QSO_DATE:%d>%s", sDate_on.length(), sDate_on.c_str());
+	snprintf(sztemp, sizeof(sztemp), "<QSO_DATE:%d>%s",
+		static_cast<int>(sDate_on.length()),
+		sDate_on.c_str());
 	eQSL_url.append(sztemp);
 // qso time
 	tempstr = inpTimeOn->value();
-	snprintf(sztemp, sizeof(sztemp), "<TIME_ON:%d>%s", tempstr.length(), tempstr.c_str());
+	snprintf(sztemp, sizeof(sztemp), "<TIME_ON:%d>%s",
+		static_cast<int>(tempstr.length()),
+		tempstr.c_str());
 	eQSL_url.append(sztemp);
 // rst sent
 	tempstr = inpRstOut->value();
-	snprintf(sztemp, sizeof(sztemp), "<RST_SENT:%d>%s", tempstr.length(), tempstr.c_str());
+	snprintf(sztemp, sizeof(sztemp), "<RST_SENT:%d>%s",
+		static_cast<int>(tempstr.length()),
+		tempstr.c_str());
 	eQSL_url.append(sztemp);
 // message
 	if (!msg.empty()) {
-		snprintf(sztemp, sizeof(sztemp), "<QSLMSG:%d>%s", msg.length(), msg.c_str());
+		snprintf(sztemp, sizeof(sztemp), "<QSLMSG:%d>%s",
+			static_cast<int>(msg.length()),
+			msg.c_str());
 		eQSL_url.append(sztemp);
 	}
 	eQSL_url.append("<EOR>");

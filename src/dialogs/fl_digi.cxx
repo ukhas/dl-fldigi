@@ -227,6 +227,7 @@ Fl_Input2			*txtInpSeek = (Fl_Input2 *)0;
 Fl_Box				*StatusBar = (Fl_Box *)0;
 Fl_Box				*Status2 = (Fl_Box *)0;
 Fl_Box				*Status1 = (Fl_Box *)0;
+Fl_Counter2			*cntTxLevel = (Fl_Counter2 *)0;
 Fl_Counter2			*cntCW_WPM=(Fl_Counter2 *)0;
 Fl_Button			*btnCW_Default=(Fl_Button *)0;
 Fl_Box				*WARNstatus = (Fl_Box *)0;
@@ -473,6 +474,7 @@ void cb_contestiaF(Fl_Widget *w, void *arg);
 void cb_contestiaG(Fl_Widget *w, void *arg);
 void cb_contestiaH(Fl_Widget *w, void *arg);
 void cb_contestiaI(Fl_Widget *w, void *arg);
+void cb_contestiaJ(Fl_Widget *w, void *arg);
 void cb_contestiaCustom(Fl_Widget *w, void *arg);
 
 void cb_rtty45(Fl_Widget *w, void *arg);
@@ -599,6 +601,7 @@ Fl_Menu_Item quick_change_contestia[] = {
 	{ "8/1000", 0, cb_contestiaF, (void *)MODE_CONTESTIA },
 	{ "16/1000", 0, cb_contestiaG, (void *)MODE_CONTESTIA },
 	{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA },
+	{ "64/1000", 0, cb_contestiaJ, (void *)MODE_CONTESTIA },
 	{ _("Custom..."), 0, cb_contestiaCustom, (void *)MODE_CONTESTIA },
 	{ 0 }
 };
@@ -795,6 +798,14 @@ void cb_contestiaI(Fl_Widget *w, void *arg)
 {
 	progdefaults.contestiatones = 1;
 	progdefaults.contestiabw = 0;
+	set_contestia_tab_widgets();
+	cb_init_mode(w, arg);
+}
+
+void cb_contestiaJ(Fl_Widget *w, void *arg)
+{
+	progdefaults.contestiatones = 5;
+	progdefaults.contestiabw = 3;
 	set_contestia_tab_widgets();
 	cb_init_mode(w, arg);
 }
@@ -2048,8 +2059,12 @@ if (bHAB) return;
 	if (progdefaults.fixed599 && progStatus.contest) {
 		inpRstIn1->value("599"); inpRstIn2->value("599");
 		inpRstOut1->value("599"); inpRstOut2->value("599");
-	} else if (progdefaults.RSTdefault)
-		inpRstOut1->value("599");
+	} else {
+		if (progdefaults.RSTdefault)
+			inpRstOut1->value("599");
+		if (progdefaults.RSTin_default)
+			inpRstIn1->value("599");
+	}
 	inpCall1->color(FL_BACKGROUND2_COLOR);
 	inpCall2->color(FL_BACKGROUND2_COLOR);
 	inpCall3->color(FL_BACKGROUND2_COLOR);
@@ -2465,7 +2480,7 @@ int default_handler(int event)
 #endif
 			progdefaults.txlevel += 0.1;
 			if (progdefaults.txlevel > 0) progdefaults.txlevel = 0;
-			valTxLevel->value(progdefaults.txlevel);
+			cntTxLevel->value(progdefaults.txlevel);
 			return 1;
 		}
 #ifdef __APPLE__
@@ -2475,7 +2490,7 @@ int default_handler(int event)
 #endif
 			progdefaults.txlevel -= 0.1;
 			if (progdefaults.txlevel < -30) progdefaults.txlevel = -30;
-			valTxLevel->value(progdefaults.txlevel);
+			cntTxLevel->value(progdefaults.txlevel);
 			return 1;
 		}
 	}
@@ -2554,6 +2569,7 @@ bool clean_exit(void) {
 	rigCAT_close();
 	rigMEM_close();
 
+
 	if (mixer)
 		mixer->closeMixer();
 
@@ -2579,6 +2595,7 @@ bool clean_exit(void) {
 #endif
 
 	close_logbook();
+	MilliSleep(50);
 
 	dl_fldigi::cleanup();
 
@@ -3083,7 +3100,8 @@ Fl_Menu_Item menu_[] = {
 { "16/500", 0, cb_contestiaE, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/1000", 0, cb_contestiaF, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "16/1000", 0, cb_contestiaG, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "64/1000", 0, cb_contestiaJ, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { _("Custom..."), 0, cb_contestiaCustom, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -3777,6 +3795,10 @@ static void cb_mainViewer_Seek(Fl_Input *, void *)
 	progStatus.browser_search = txtInpSeek->value();
 	if (viewer_inp_seek)
 		viewer_inp_seek->value(progStatus.browser_search.c_str());
+}
+
+static void cb_cntTxLevel(Fl_Counter2* o, void*) {
+  progdefaults.txlevel = o->value();
 }
 
 static void cb_mainViewer(Fl_Hold_Browser*, void*) {
@@ -4742,11 +4764,23 @@ void create_fl_digi_main_primary() {
 
 			StatusBar = new Fl_Box(
                 rightof(Status2), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-                progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - rightof(Status2) - 2 * pad,// - 60,
+                progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - bwTxLevel - rightof(Status2) - 2 * pad,// - 60,
                 Hstatus, "");
 			StatusBar->box(FL_DOWN_BOX);
 			StatusBar->color(FL_BACKGROUND2_COLOR);
 			StatusBar->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+
+			cntTxLevel = new Fl_Counter2(
+				rightof(StatusBar) + 2 * pad, Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
+				bwTxLevel - 4 * pad,
+				Hstatus, "");
+			cntTxLevel->minimum(-30);
+			cntTxLevel->maximum(0);
+			cntTxLevel->value(-6);
+			cntTxLevel->callback((Fl_Callback*)cb_cntTxLevel);
+			cntTxLevel->value(progdefaults.txlevel);
+			cntTxLevel->lstep(1.0);
+			cntTxLevel->tooltip(_("Tx level attenuator (dB)"));
 
 			WARNstatus = new Fl_Box(
 				rightof(StatusBar) + pad, Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
@@ -4920,7 +4954,8 @@ Fl_Menu_Item alt_menu_[] = {
 { "16/500", 0, cb_contestiaE, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { "8/1000", 0, cb_contestiaF, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { "16/1000", 0, cb_contestiaG, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ "32/1000", 0, cb_contestiaH, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ "64/1000", 0, cb_contestiaJ, (void *)MODE_CONTESTIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { _("Custom..."), 0, cb_contestiaCustom, (void *)MODE_CONTESTIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -5284,7 +5319,6 @@ void altTabs()
 	tabsUI->remove(tabUserInterface);
 	tabsUI->remove(tabContest);
 	tabsUI->remove(tabWF_UI);
-	tabsUI->remove(tabRxText);
 	tabsUI->remove(tabMBars);
 }
 
@@ -5412,12 +5446,24 @@ void create_fl_digi_main_WF_only() {
 			Status2->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
 
 			StatusBar = new Fl_Box(
-				rightof(Status2), Y,
-				progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - rightof(Status2) - 2 * pad,// - 60,
-				Hstatus, "");
+                rightof(Status2), Y,
+                progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - bwTxLevel - rightof(Status2) - 2 * pad,// - 60,
+                Hstatus, "");
 			StatusBar->box(FL_DOWN_BOX);
 			StatusBar->color(FL_BACKGROUND2_COLOR);
 			StatusBar->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+
+			cntTxLevel = new Fl_Counter2(
+				rightof(StatusBar) + 2 * pad, Y,
+				bwTxLevel - 4 * pad,
+				Hstatus, "");
+			cntTxLevel->minimum(-30);
+			cntTxLevel->maximum(0);
+			cntTxLevel->value(-6);
+			cntTxLevel->callback((Fl_Callback*)cb_cntTxLevel);
+			cntTxLevel->value(progdefaults.txlevel);
+			cntTxLevel->lstep(1.0);
+			cntTxLevel->tooltip(_("Tx level attenuator (dB)"));
 
 			WARNstatus = new Fl_Box(
 				rightof(StatusBar) + pad, Y,
@@ -6312,13 +6358,13 @@ void put_WARNstatus(double val)
 {
 	FL_LOCK_D();
 	if (val < 0.05)
-		WARNstatus->color(FL_BLACK);
-    if (val > 0.05)
-        WARNstatus->color(FL_DARK_GREEN);
-    if (val > 0.9)
-        WARNstatus->color(FL_YELLOW);
-    if (val > 0.98)
-        WARNstatus->color(FL_DARK_RED);
+		WARNstatus->color(progdefaults.LowSignal);
+    if (val >= 0.05)
+        WARNstatus->color(progdefaults.NormSignal);
+    if (val >= 0.9)
+        WARNstatus->color(progdefaults.HighSignal);
+    if (val >= 0.98)
+        WARNstatus->color(progdefaults.OverSignal);
 	WARNstatus->redraw();
 	FL_UNLOCK_D();
 }

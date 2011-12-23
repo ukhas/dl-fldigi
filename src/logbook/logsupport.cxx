@@ -39,12 +39,12 @@
 #include "status.h"
 #include "date.h"
 
+#include "logger.h"
 #include "adif_io.h"
 #include "textio.h"
 #include "logbook.h"
 #include "rigsupport.h"
 
-#include "logger.h"
 #include "fl_digi.h"
 #include "fileselect.h"
 #include "configuration.h"
@@ -52,6 +52,7 @@
 #include "locator.h"
 #include "icons.h"
 #include "gettext.h"
+#include "qrunner.h"
 
 #include <FL/filename.H>
 #include <FL/fl_ask.H>
@@ -63,6 +64,12 @@ cAdifIO		adifFile;
 cTextFile	txtFile;
 
 string		logbook_filename;
+
+enum sorttype {NONE, SORTCALL, SORTDATE, SORTFREQ, SORTMODE};
+sorttype lastsort = SORTDATE;
+bool callfwd = true;
+bool modefwd = true;
+bool freqfwd = true;
 
 void restore_sort();
 
@@ -129,7 +136,6 @@ void Export_ADIF()
 			qsodb.qsoUpdRec (i, rec);
 		}
 	}
-
 	adifFile.writeFile (p, &qsodb);
 }
 
@@ -152,12 +158,11 @@ void saveLogbook()
 	cQsoDb::reverse = false;
 	qsodb.SortByDate(progdefaults.sort_date_time_off);
 
-//	pthread_mutex_lock (&logbook_mutex);
-	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
-//	pthread_mutex_unlock (&logbook_mutex);
-
 	qsodb.isdirty(0);
 	restore_sort();
+
+	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
+
 }
 
 static void dxcc_entity_cache_clear(void);
@@ -182,6 +187,17 @@ void cb_mnuNewLogbook(Fl_Menu_* m, void* d){
 	clearRecord();
 }
 
+void adif_read_OK()
+{
+	if (qsodb.nbrRecs() == 0)
+		adifFile.writeFile(logbook_filename.c_str(), &qsodb);
+	dxcc_entity_cache_clear();
+	dxcc_entity_cache_add(qsodb);
+	restore_sort();
+	activateButtons();
+	loadBrowser();
+}
+
 void cb_mnuOpenLogbook(Fl_Menu_* m, void* d)
 {
 	const char* p = FSEL::select(_("Open logbook file"), "ADIF\t*." ADIF_SUFFIX,
@@ -195,12 +211,8 @@ void cb_mnuOpenLogbook(Fl_Menu_* m, void* d)
 		progdefaults.changed = true;
 
 		adifFile.readFile (logbook_filename.c_str(), &qsodb);
-		dxcc_entity_cache_clear();
-		dxcc_entity_cache_add(qsodb);
-		qsodb.isdirty(0);
-		loadBrowser();
 		dlgLogbook->label(fl_filename_name(logbook_filename.c_str()));
-		activateButtons();
+		qsodb.isdirty(0);
 	}
 }
 
@@ -214,24 +226,203 @@ void cb_mnuSaveLogbook(Fl_Menu_*m, void* d) {
 		cQsoDb::reverse = false;
 		qsodb.SortByDate(progdefaults.sort_date_time_off);
 
-//		pthread_mutex_lock (&logbook_mutex);
-		adifFile.writeLog (logbook_filename.c_str(), &qsodb);
-//		pthread_mutex_unlock (&logbook_mutex);
-
 		qsodb.isdirty(0);
 		restore_sort();
+		adifFile.writeLog (logbook_filename.c_str(), &qsodb);
 	}
+}
+
+int comparerecs (const void *rp1, const void *rp2) { // rp1 needle, rp2 haystack
+	cQsoRec *r1 = (cQsoRec *)rp1;
+	cQsoRec *r2 = (cQsoRec *)rp2;
+	int cmp = 0;
+// compare by call
+	const char * s1 = r1->getField(CALL);
+	const char * s2 = r2->getField(CALL);
+
+	const char *p1 = strpbrk (s1+1, "0123456789");
+	const char *p2 = strpbrk (s2+1, "0123456789");
+	if (p1 && p2) {
+		cmp = (*p1 < *p2) ? -1 : (*p1 > *p2) ? 1 : 0;
+		if (cmp == 0) {
+			cmp = strncmp (s1, s2, max(p1 - s1, p2 - s2));
+			if (cmp == 0)
+				cmp = strcmp(p1+1, p2+1);
+		}
+	} else // not a normal call, do a simple string comparison
+		cmp = strcmp(s1, s2);
+	if (cmp != 0)
+		return cmp;
+
+// compare by date
+	cmp = strcmp( r1->getField(QSO_DATE), r2->getField(QSO_DATE));
+	if (cmp != 0) return cmp;
+
+// compare by time
+	int t1 = atoi(r1->getField(TIME_ON));
+	int t2 = atoi(r2->getField(TIME_ON));
+	if (abs(t1 - t2) > 2) {
+		if (t1 < t2)
+			return -1;
+		if (t1 > t2)
+			return 1;
+	} // matched with +/- 2 minutes
+
+// compare by mode
+	const char *m1 = r1->getField(MODE); // needle
+	const char *m2 = r2->getField(MODE); // haystack
+	if (strcasestr(m1, "DOM"))
+		cmp = strncasecmp("DOM", m2, 3);
+	else if (strcasestr(m2, m1)) // eQSL, LoTW use sparse MODE designators
+		cmp = 0;
+	else
+		cmp = strcasecmp(m1, m2);
+	if (cmp != 0) return cmp;
+
+// compare by band
+	cmp = strcasecmp( r1->getField(BAND), r2->getField(BAND));
+
+	return cmp;
+}
+
+static void rxtext(const char *s)
+{
+	ReceiveText->add(s);
+}
+
+void merge_recs( cQsoDb *db, cQsoDb *mrgdb ) // (haystack, needle)
+{
+	static char msg1[100];
+	static char msg2[100];
+	static char msg3[100];
+	sorttype origsort = lastsort;
+	cQsoDb::reverse = false;
+	cQsoDb *reject = new cQsoDb;
+	cQsoDb *copy = new cQsoDb(db);
+	cQsoDb *merged = new cQsoDb;
+
+	snprintf(msg1, sizeof(msg1), "Read %d records", mrgdb->nbrRecs());
+	LOG_INFO("%s", msg1);
+	REQ(rxtext, "\n*** ");
+	REQ(rxtext, msg1);
+
+	db->clearDatabase();
+
+	copy->SortByCall();
+	mrgdb->SortByCall();
+
+	int n = 0; // copy
+	int m = 0; // merge
+	int N = copy->nbrRecs();
+	int M = mrgdb->nbrRecs();
+
+	int cmp;
+	for (;;) {
+		if (n == N && m == M) break;
+		if (n < N && m < M) {
+			if ((cmp = comparerecs(copy->getRec(n), mrgdb->getRec(m))) <= 0) {
+				db->qsoNewRec(copy->getRec(n));
+				n++;
+				if (cmp == 0) {
+					reject->qsoNewRec(mrgdb->getRec(m));
+					m++;
+				}
+			} else {
+				if (comparerecs(db->getRec(db->nbrRecs()-1), mrgdb->getRec(m)) < 0) {
+					db->qsoNewRec(mrgdb->getRec(m));
+					merged->qsoNewRec(mrgdb->getRec(m));
+				} else
+					reject->qsoNewRec(mrgdb->getRec(m));
+				m++;
+			}
+		} else if (n == N) {
+			if (db->nbrRecs() == 0) {
+				db->qsoNewRec(mrgdb->getRec(m));
+				merged->qsoNewRec(mrgdb->getRec(m));
+			} else if (comparerecs(db->getRec(db->nbrRecs()-1), mrgdb->getRec(m)) < 0) {
+				db->qsoNewRec(mrgdb->getRec(m));
+				merged->qsoNewRec(mrgdb->getRec(m));
+			} else
+				reject->qsoNewRec(mrgdb->getRec(m));
+			m++;
+		} else {
+			db->qsoNewRec(copy->getRec(n));
+			n++;
+		}
+	}
+
+	if (merged->nbrRecs()) {
+		string mergedname = LogsDir;
+		mergedname.append("merged_recs");
+#ifdef __WIN32__
+		mergedname.append(".adi");
+#else
+		mergedname.append(".adif");
+#endif
+		adifFile.writeLog (mergedname.c_str(), merged, true);
+		snprintf(msg2, sizeof(msg2), "%d merged records saved in\n*** %s",
+			merged->nbrRecs(), mergedname.c_str());
+		REQ(rxtext, "\n*** ");
+		REQ(rxtext, msg2);
+		LOG_INFO("%s", msg2);
+		db->isdirty(1);
+	}
+
+	if (reject->nbrRecs()) {
+		string rejname = LogsDir;
+		rejname.append("duplicate_recs");
+#ifdef __WIN32__
+		rejname.append(".adi");
+#else
+		rejname.append(".adif");
+#endif
+		adifFile.writeLog (rejname.c_str(), reject, true);
+		snprintf(msg3, sizeof(msg3), "%d duplicates's saved in\n    %s", 
+			reject->nbrRecs(), rejname.c_str());
+		REQ(rxtext, "\n*** ");
+		REQ(rxtext, msg3);
+		LOG_INFO("%s", msg3);
+	}
+
+	delete reject;
+	delete copy;
+	delete merged;
+
+	lastsort = origsort;
+	restore_sort();
+	loadBrowser();
 }
 
 void cb_mnuMergeADIF_log(Fl_Menu_* m, void* d) {
 	const char* p = FSEL::select(_("Merge ADIF file"), "ADIF\t*." ADIF_SUFFIX);
+	Fl::wait();
+	fl_digi_main->redraw();
+	Fl::flush();
 	if (p) {
-		adifFile.readFile (p, &qsodb);
-		dxcc_entity_cache_clear();
-		dxcc_entity_cache_add(qsodb);
-		loadBrowser();
-		qsodb.isdirty(1);
+		cQsoDb *mrgdb = new cQsoDb;
+		adifFile.do_readfile (p, mrgdb);
+		merge_recs(&qsodb, mrgdb);
+		delete mrgdb;
 	}
+}
+
+void cb_export_date_select() {
+	if (qsodb.nbrRecs() == 0) return;
+	int start = atoi(inp_export_start_date->value());
+	int stop = atoi(inp_export_stop_date->value());
+	if (!start || !stop) return;
+	int chkdate;
+	chkExportBrowser->check_none();
+	if (!btn_export_by_date->value()) return;
+
+	cQsoRec *rec;
+	for (int i = 0; i < qsodb.nbrRecs(); i++) {
+		rec = qsodb.getRec (i);
+		chkdate = atoi(rec->getField(progdefaults.sort_date_time_off ? QSO_DATE_OFF : QSO_DATE));
+		if (chkdate >= start && chkdate <= stop)
+			chkExportBrowser->checked(i+1, 1);
+	}
+	chkExportBrowser->redraw();
 }
 
 void cb_Export_log() {
@@ -252,6 +443,7 @@ void cb_Export_log() {
 			rec->getField(MODE) );
         chkExportBrowser->add(line);
 	}
+	cb_export_date_select();
 	wExport->show();
 }
 
@@ -335,12 +527,6 @@ void cb_btnDelete(Fl_Button* b, void* d) {
 	deleteRecord();
 	wBrowser->take_focus();
 }
-
-enum sorttype {NONE, SORTCALL, SORTDATE, SORTFREQ, SORTMODE};
-sorttype lastsort = SORTDATE;
-bool callfwd = true;
-bool modefwd = true;
-bool freqfwd = true;
 
 void restore_sort()
 {
@@ -679,11 +865,11 @@ void saveRecord() {
 	cQsoDb::reverse = false;
 	qsodb.SortByDate(progdefaults.sort_date_time_off);
 
-//	pthread_mutex_lock (&logbook_mutex);
-	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
-//	pthread_mutex_unlock (&logbook_mutex);
-
 	qsodb.isdirty(0);
+
+	loadBrowser();
+
+	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
 }
 
 void updateRecord() {
@@ -725,14 +911,13 @@ cQsoRec rec;
 	cQsoDb::reverse = false;
 	qsodb.SortByDate(progdefaults.sort_date_time_off);
 
-//	pthread_mutex_lock (&logbook_mutex);
-	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
-//	pthread_mutex_unlock (&logbook_mutex);
-
 	qsodb.isdirty(0);
 	restore_sort();
 
 	loadBrowser(true);
+
+	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
+
 }
 
 void deleteRecord () {
@@ -746,14 +931,13 @@ void deleteRecord () {
 	cQsoDb::reverse = false;
 	qsodb.SortByDate(progdefaults.sort_date_time_off);
 
-//	pthread_mutex_lock (&logbook_mutex);
-	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
-//	pthread_mutex_unlock (&logbook_mutex);
-
 	qsodb.isdirty(0);
 	restore_sort();
 
 	loadBrowser(true);
+
+	adifFile.writeLog (logbook_filename.c_str(), &qsodb);
+
 }
 
 void EditRecord( int i )
@@ -844,7 +1028,7 @@ void AddRecord ()
 
 	saveRecord();
 
-	qsodb.SortByDate(progdefaults.sort_date_time_off);
+	restore_sort();
 	loadBrowser();
 	logState = VIEWREC;
 	activateButtons();

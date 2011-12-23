@@ -42,6 +42,7 @@ extern void cb_mnuExportADIF_log(Fl_Menu_* m, void* d);
 extern void cb_mnuExportCSV_log(Fl_Menu_* m, void* d);
 extern void cb_mnuExportTEXT_log(Fl_Menu_* m, void* d);
 extern void cb_Export_Cabrillo(Fl_Menu_* m, void* d);
+extern void cb_export_date_select();
 
 extern void saveLogbook();
 extern void cb_mnuShowLogbook(Fl_Menu_ *m, void* d);
@@ -65,6 +66,8 @@ extern void cb_doExport();
 extern void WriteCabrillo();
 
 extern void dxcc_entity_cache_enable(bool v);
-bool qsodb_dxcc_entity_find(const char* country);
+extern bool qsodb_dxcc_entity_find(const char* country);
+
+extern void adif_read_OK();
 
 #endif

@@ -1,10 +1,79 @@
 
 
+=Version 3.21.33=
+
+2011-12-09  David Freese  <w1hkj@w1hkj.com>
+
+	a68d917: Right Channel audio
+	00d4308: WEFAX update
+	96188fa: WARN status colors
+
+
+=Version 3.21.32=
+
+	422c0b1: Italian po file update
+
+2011-12-03  Remi Chateauneu  <remi.chateauneu@gmail.com>
+
+	e7d5ccf: Modem class update
+	38112d8: QsoRec comparisons
+
+2011-12-02  David Freese  <w1hkj@w1hkj.com>
+
+	e707094: Cty.dat
+	6821e78: Contestia 64/1000
+	ff596a0: Call lookups
+
+
+=Version 3.21.31=
+
+	dcbae1e: Spanish translation file
+	136bcc2: Compile warnings
+	7beb7c1: ver2int
+	8a7c4bf: Main thread hang
+	2f2fe0a: UI changes
+
+
+=Version 3.21.30=
+
+	30951fb: Merge dups
+	ee4c5b4: Logbook dirty boolean
+	2335f76: Tx Attenuator Control
+	dfe3a7b: HamQTH app ident
+
+
+=Version 3.21.29=
+
+	b97bbde: eQSL QTH nickname
+	2edfc77: Merge Logs
+	9de5095: ADIF i/o tweaks
+	77e1eb1: Call lookup
+
+
+=Version 3.21.28=
+
+	ed74b9b: ADIF/EQSL thread shutdown
+	d3e47a3: Ignore slash postamble
+	9100837: Log Export by date
+	f6888ee: ADIF file integrity test
+
+
+=Version 3.21.27=
+
+	a2184aa: Log r/w improvements
+
+2011-11-15  Remi Chateauneu  <remi.chateauneu@gmail.com>
+
+	b3a89c7: WEFAX error logging fix
+
+2011-11-15  David Freese  <w1hkj@w1hkj.com>
+
+	9269c9a: Restore Log Sort
+
+
 =Version 3.21.26=
 
-2011-11-14  David Freese  <w1hkj@w1hkj.com>
-
-	77551e8: eQSL update
+	ee27d64: eQSL update
 
 
 =Version 3.21.25=
@@ -13,8 +82,8 @@
 
 2011-11-12  Remi Chateauneu  <remi.chateauneu@gmail.com>
 
-	dae542e: Wefax enhancements.
-	e75cc0e: Use Logbook record
+	8baf07b: Wefax enhancements.
+	11d699e: Use Logbook record
 
 2011-11-12  David Freese  <w1hkj@w1hkj.com>
 

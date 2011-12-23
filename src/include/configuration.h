@@ -628,6 +628,9 @@
         ELEM_(bool, RSTdefault, "RSTDEFAULT",                                           \
               "Default outgoing RST to 599",                                            \
               false)                                                                    \
+        ELEM_(bool, RSTin_default, "RSTINDEFAULT",                                      \
+              "Default incoming RST to 599",                                            \
+              false)                                                                    \
         ELEM_(bool, autoextract, "AUTOEXTRACT",                                         \
               "Enable detection and extraction of \"wrapped\" text",                    \
               true)                                                                     \
@@ -643,6 +646,9 @@
         ELEM_(std::string, flmsg_pathname, "FLMSG_PATHNAME",                            \
               "Full pathname to the flmsg executable",                                  \
               "")                                                                       \
+        ELEM_(std::string, cty_dat_pathname, "CTYDAT_PATHNAME",                         \
+              "Full pathname to the cty.dat data file",                                 \
+              "")                                                                       \
         ELEM_(bool, speak, "SPEAK",                                                     \
               "Capture text to file 'talk/textout.txt'",                                \
               false)                                                                    \
@@ -650,11 +656,17 @@
               "Connect to Digitalk socket server during program initialization",        \
               false)                                                                    \
         /* QRZ */                                                                       \
-        ELEM_(int, QRZ, "QRZTYPE",                                                      \
-              "Callsign query type.  Values are as follows:\n"                          \
+        ELEM_(int, QRZXML, "QRZXMLTYPE",                                                \
+              "Callsign xml query type.  Values are as follows:\n"                      \
               "  0: none; 1: QRZ (paid sub.); 2: QRZ cdrom; 3: HamCall (paid sub.);\n"  \
-              "  4: QRZ (web browser); 5: HamCall (web browser). The default is 0.",    \
-              QRZNONE)                                                                  \
+              "  4: callook free US calls xml service; 5: hamQTH free xml service.\n"   \
+              "  The default is none.",                                                 \
+              QRZXMLNONE)                                                               \
+        ELEM_(int, QRZWEB, "QRZWEBTYPE",                                                \
+              "Callsign browser query type.  Values are as follows:\n"                  \
+              "  0: none; 1: QRZ web browser; 2: HamCall web browser\n"                 \
+              "  3: hamQTH web browser.\n  The default is none.",                       \
+              QRZWEBNONE)                                                               \
         ELEM_(std::string, QRZpathname, "QRZPATHNAME",                                  \
               "QRZ cdrom path",                                                         \
               "")                                                                       \
@@ -872,9 +884,12 @@
         ELEM_(int, in_channels, "INCHANNELS",                                           \
               "Number of audio input channels",                                         \
               1)                                                                        \
-        ELEM_(int, out_channels, "OUTCHANNELS",                                         \
-              "Number of audio output channels",                                        \
-              2)                                                                        \
+        ELEM_(bool, sig_on_right_channel, "SIGONRIGHTCHANNEL",                          \
+              "Duplicate modem signal on left & right",                                 \
+              false)                                                                    \
+        ELEM_(bool, ReverseAudio, "REVERSEAUDIO",                                       \
+              "Reverse left-right audio channels",                                      \
+              false)                                                                    \
         ELEM_(int, sample_rate, "SAMPLERATE",                                           \
               "For compatibility with older versions",                                  \
               SAMPLE_RATE_UNSET)                                                        \
@@ -1096,6 +1111,18 @@
         ELEM_(Fl_Color, ALTRcolor, "ALTRCOLOR",                                         \
               "Color for Alternate text style",                                         \
               FL_DARK_MAGENTA)                                                          \
+        ELEM_(Fl_Color, LowSignal, "LOWSIGNAL",                                         \
+              "Color for low signal level",                                             \
+              FL_BLACK)                                                                 \
+        ELEM_(Fl_Color, NormSignal, "NORMSIGNAL",                                       \
+              "Color for normal signal level",                                          \
+              FL_GREEN)                                                                 \
+        ELEM_(Fl_Color, HighSignal, "HIGHSIGNAL",                                       \
+              "Color for high signal level",                                            \
+              FL_YELLOW)                                                                \
+        ELEM_(Fl_Color, OverSignal, "OVERSIGNAL",                                       \
+              "Color for over driven signal",                                           \
+              FL_RED)                                                                   \
         ELEM_(std::string, WaterfallFontName, "WATERFALLFONTNAME",                      \
               "Waterfall font name",                                                    \
               "")                                                                       \
