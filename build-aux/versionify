@@ -12,7 +12,7 @@ fi
 COMMIT=`git log -1 | head -n1 | cut -d ' ' -f2`
 SHORT_COMMIT=`git log -1 --oneline | cut -d ' ' -f1`
 
-cat > $FILE <<EOF
+cat > $FILE.new <<EOF
 /* See build-aux/versionify */
 #include "dl_fldigi/version.h"
 
@@ -24,4 +24,17 @@ const char *git_short_commit = "$SHORT_COMMIT";
 }
 EOF
 
-echo "$COMMIT $SHORT_COMMIT > $FILE"
+if [ ! -e $FILE ]; then
+    mv $FILE.new $FILE
+    echo "Created $FILE ($COMMIT $SHORT_COMMIT)"
+else
+    CHANGED=0
+    diff -q $FILE $FILE.new >> /dev/null || CHANGED=1
+    if [ $CHANGED -eq 1 ]; then
+        mv $FILE.new $FILE
+        echo "Updated $FILE ($COMMIT $SHORT_COMMIT)"
+    else
+        rm $FILE.new
+        echo "$FILE does not require updating"
+    fi
+fi

@@ -25,4 +25,7 @@ hamlib-static:
 endif
 endif
 
+check-version:
+	@build-aux/versionify src/dl_fldigi/version.cxx
+
 EXTRA_DIST = build-aux/config.rpath

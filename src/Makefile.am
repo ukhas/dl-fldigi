@@ -699,9 +699,9 @@ EXTRA_DIST = \
 	$(FLDIGI_FL_SRC) \
 	$(FLARQ_FL_SRC)
 
-dl_fldigi/version.cxx :
-	@test -f $(srcdir)/../build-aux/versionify && $(srcdir)/../build-aux/versionify $@ || true
+../.git/logs/HEAD :
 
-dist-hook : dl_fldigi/version.cxx
+dl_fldigi/version.cxx : ../.git/logs/HEAD
+	@test -f ../build-aux/versionify && ../build-aux/versionify dl_fldigi/version.cxx || true
 
-.PHONY : dl_fldigi/version.cxx
+dist-local : versionify
