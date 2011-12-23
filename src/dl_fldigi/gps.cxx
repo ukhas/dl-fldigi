@@ -362,8 +362,8 @@ void GPSThread::update_ui(int hour, int minute, int second,
 
     gps_pos_time->value(time_tmp.str().c_str());
     gps_pos_lat->value(lat_tmp.str().c_str());
-    gps_pos_lon->value(lat_tmp.str().c_str());
-    gps_pos_altitude->value(lat_tmp.str().c_str());
+    gps_pos_lon->value(lon_tmp.str().c_str());
+    gps_pos_altitude->value(alt_tmp.str().c_str());
 
     gps_pos_save->activate();
 }
