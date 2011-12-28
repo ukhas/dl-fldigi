@@ -104,7 +104,8 @@ void load_cache()
     }
     else
     {
-        LOG_DEBUG("Loaded %li flight docs from file", flight_docs.size());
+        long int n = flight_docs.size();
+        LOG_DEBUG("Loaded %li flight docs from file", n);
     }
 
     populate_flights();
