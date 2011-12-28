@@ -121,13 +121,7 @@ void GPSThread::wait()
 }
 #else
 void GPSThread::prepare_signals() {}
-
-void GPSThread::send_signal()
-{
-    /* Closing the files on windows should cause read() to fail 
-     * immediately. */
-    cleanup();
-}
+void GPSThread::send_signal() {}
 
 void GPSThread::wait()
 {
@@ -416,6 +410,11 @@ void GPSThread::setup()
     if (f == NULL)
         throw runtime_error("fdopen() failed");
 
+    /* Line buffering */
+    int lbf = setvbuf(f, (char *) NULL, _IOLBF, 0);
+    if (lbf != 0)
+        throw runtime_error("setvbuf() failed");
+
     /* Linux requires baudrates be given as a constant */
     speed_t baudrate = B4800;
     if (baud == 9600)           baudrate = B9600;
@@ -513,6 +512,11 @@ void GPSThread::setup()
     f = fdopen(fd, "r");
     if (!f)
         throw runtime_error("fdopen() failed");
+
+    /* Line buffering */
+    int lbf = setvbuf(f, (char *) NULL, _IOLBF, 0);
+    if (lbf != 0)
+        throw runtime_error("setvbuf() failed");
 }
 
 void GPSThread::cleanup()
