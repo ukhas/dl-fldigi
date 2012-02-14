@@ -424,6 +424,7 @@ dl_fldigi_SOURCES += \
 	include/habitat/Extractor.h \
 	include/habitat/UKHASExtractor.h \
 	include/habitat/EZ.h \
+	include/weather.h \
 	irrxml/CXMLReaderImpl.h \
 	irrxml/fast_atof.h \
 	irrxml/heapsort.h \
@@ -474,6 +475,7 @@ dl_fldigi_SOURCES += \
 	misc/threads.cxx \
 	misc/timeops.cxx \
 	misc/util.cxx \
+	misc/weather.cxx \
 	mt63/dsp.cxx \
 	mt63/mt63.cxx \
 	mt63/mt63base.cxx \
@@ -572,12 +574,14 @@ EXTRA_dl_fldigi_SOURCES += \
 	blank/blank.cxx \
 	blank/blank.h \
 	fileselector/FL/Fl_Native_File_Chooser_FLTK.H \
-	fileselector/FL/Fl_Native_File_Chooser_MAC.H \
+	fileselector/FL/MAC_chooser.h \
 	fileselector/FL/Fl_Native_File_Chooser_WIN32.H \
 	fileselector/Fl_Native_File_Chooser_FLTK.cxx \
-	fileselector/Fl_Native_File_Chooser_MAC.cxx \
+	fileselector/MAC_chooser.cxx \
 	fileselector/Fl_Native_File_Chooser_WIN32.cxx \
 	fileselector/flnfc_common.cxx \
+	fileselector/fileselect_1_1.cxx \
+	fileselector/fileselect_1_3.cxx \
 	feld/Feld7x7-14.cxx \
 	feld/Feld7x7n-14.cxx \
 	feld/FeldDx-14.cxx \

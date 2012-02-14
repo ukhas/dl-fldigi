@@ -32,7 +32,7 @@
 #include "debug.h"
 
 #include <FL/fl_ask.H>
-#include "FL/Fl_Native_File_Chooser.H"
+#include <FL/Fl_Native_File_Chooser.H>
 
 #if FSEL_THREAD
 #    include <FL/Fl.H>
@@ -72,15 +72,11 @@ void FSEL::destroy(void)
 	inst = 0;
 }
 
-#ifdef __APPLE__
-FSEL::FSEL()
-	: chooser(new MAC_chooser) { }
-FSEL::~FSEL() { delete chooser; }
-#else
+
 FSEL::FSEL()
 	: chooser(new Fl_Native_File_Chooser) { }
 FSEL::~FSEL() { delete chooser; }
-#endif
+
 
 #if FSEL_THREAD
 void* FSEL::thread_func(void* arg)
@@ -95,7 +91,7 @@ void* FSEL::thread_func(void* arg)
 const char* FSEL::get_file(void)
 {
 	// Calling directory() is apparently not enough on Linux
-#if !defined(__WOE32__) && !defined(__APPLE__)
+#if !defined(__WIN32__) && !defined(__APPLE__)
 	const char* preset = chooser->preset_file();
 	if (preset && *preset != '/' && chooser->directory()) {
 		filename = chooser->directory();
@@ -146,13 +142,9 @@ const char* FSEL::select(const char* title, const char* filter, const char* def,
 		inst->chooser->preset_file(basename(s));
 		free(s);
 	}
-#ifdef __APPLE__
-	inst->chooser->options(MAC_chooser::PREVIEW);
-	inst->chooser->type(MAC_chooser::BROWSE_FILE);
-#else
 	inst->chooser->options(Fl_Native_File_Chooser::PREVIEW);
 	inst->chooser->type(Fl_Native_File_Chooser::BROWSE_FILE);
-#endif
+
 	const char* fn = inst->get_file();
 	if (fsel)
 		*fsel = inst->chooser->filter_value();
@@ -172,17 +164,11 @@ const char* FSEL::saveas(const char* title, const char* filter, const char* def,
 		inst->chooser->preset_file(basename(s));
 		free(s);
 	}
-#ifdef __APPLE__
-	inst->chooser->options( MAC_chooser::SAVEAS_CONFIRM |
-							MAC_chooser::NEW_FOLDER |
-							MAC_chooser::PREVIEW);
-	inst->chooser->type(MAC_chooser::BROWSE_SAVE_FILE);
-#else
 	inst->chooser->options(Fl_Native_File_Chooser::SAVEAS_CONFIRM |
 			       Fl_Native_File_Chooser::NEW_FOLDER |
 			       Fl_Native_File_Chooser::PREVIEW);
 	inst->chooser->type(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
-#endif
+
 	const char* fn = inst->get_file();
 	if (fsel)
 		*fsel = inst->chooser->filter_value();
@@ -195,14 +181,10 @@ const char* FSEL::dir_select(const char* title, const char* filter, const char* 
 	inst->chooser->filter(filter);
 	if (def)
 		inst->chooser->directory(def);
-#ifdef __APPLE__
-	inst->chooser->options(	MAC_chooser::NEW_FOLDER |
-							MAC_chooser::PREVIEW);
-	inst->chooser->type(MAC_chooser::BROWSE_DIRECTORY);
-#else
 	inst->chooser->options(Fl_Native_File_Chooser::NEW_FOLDER |
 			       Fl_Native_File_Chooser::PREVIEW);
 	inst->chooser->type(Fl_Native_File_Chooser::BROWSE_DIRECTORY);
-#endif
+
 	return inst->get_file();
 }
+

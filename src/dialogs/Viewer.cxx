@@ -244,7 +244,8 @@ Fl_Double_Window* createViewer(void)
 	// search field
 	const char* label = _("Find: ");
 	fl_font(FL_HELVETICA, FL_NORMAL_SIZE);
-	viewer_inp_seek = new Fl_Input2(static_cast<int>(BWSR_BORDER + fl_width(label)), BWSR_BORDER, 200, gseek->h(), label);
+	viewer_inp_seek = new Fl_Input2(static_cast<int>(BWSR_BORDER + fl_width(label) + fl_width("X")), BWSR_BORDER, 200, gseek->h(), label);
+	viewer_inp_seek->labelfont(FL_HELVETICA);
 	viewer_inp_seek->callback((Fl_Callback*)cb_Seek);
 	viewer_inp_seek->when(FL_WHEN_CHANGED);
 	viewer_inp_seek->textfont(FL_COURIER);
@@ -262,7 +263,7 @@ Fl_Double_Window* createViewer(void)
 
 	Fl_Group *g = new Fl_Group(BWSR_BORDER, brwsViewer->y() + brwsViewer->h() + pad, viewerwidth, 20);
 	// close button
-	btnCloseViewer = new Fl_Button(g->w() + BWSR_BORDER - 65, g->y(), 65, g->h(),
+	btnCloseViewer = new Fl_Button(g->w() + BWSR_BORDER - 75, g->y(), 75, g->h(),
 				       make_icon_label(_("Close"), close_icon));
 	btnCloseViewer->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	set_icon_label(btnCloseViewer);

@@ -1,8 +1,63 @@
 
 
-=Version 3.21.33=
+=Version 3.21.38=
 
-2011-12-09  David Freese  <w1hkj@w1hkj.com>
+2012-02-01  David Freese  <w1hkj@w1hkj.com>
+
+	9327490: Control sizing
+	df3bf09: eQSL
+	13b7107: OS X file chooser
+	5122c7b: Control key parsing
+	3c0bcd8: Control-shortcuts
+	b940e9c: WX international
+
+
+=Version 3.21.37=
+
+	c4336b7: Macro filename
+	ba5b5d5: Callsign query
+	2af9ebc: WX Celsius
+	62d9f42: Weather tag
+	3fc748e: Inline tags
+	3ae8ee9: OS-X native file chooser
+
+
+=Version 3.21.36=
+
+	5cc14a1: rigcat serial test
+	4c0526a: Macro load display
+	5cbed0c: File-dir selection
+	59e8dc9: Rx text wrap
+	2dfd6fd: UTF-8 rx suppress
+	c36983e: Get WX
+	22e1f8b: Update to fltk.m4
+	890013c: rigCAT closure
+	56104f4: GCC-4.7 fixes
+	e7ab7e2: Missing files
+	3b02bb3: RX last line
+	6e81738: Debug text
+	0f87d87: View browser find control
+	b6a8332: Rx text wrap
+	f1abc9e: Find chars fwd/back
+	6102e0c: Corner controls
+	2281325: Fltk-1.3.0
+	847fdd3: Rig cat close
+	672f4ee: OpBrowser font
+	5f8b712: Tune abort
+
+
+=Version 3.21.35=
+
+
+
+=Version 3.21.34=
+
+	a70c0fe: VAC PTT delay
+	62532af: Mono audio
+	a7f741b: VSP boolean
+
+
+=Version 3.21.33=
 
 	a68d917: Right Channel audio
 	00d4308: WEFAX update

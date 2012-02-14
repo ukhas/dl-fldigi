@@ -41,7 +41,23 @@
 #include <fstream>
 #include <algorithm>
 #include <map>
-#include <dirent.h>
+
+// this tests depends on a modified FL/filename.H in the Fltk-1.3.0
+// change
+//#  if defined(WIN32) && !defined(__CYGWIN__) && !defined(__WATCOMC__)
+// to
+//#  if defined(WIN32) && !defined(__CYGWIN__) && !defined(__WATCOMC__) && !defined(__WOE32__)
+
+#ifdef __MINGW32__
+#	if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR < 3
+#		undef dirent
+#		include <dirent.h>
+#	else
+#		include <dirent.h>
+#	endif
+#else
+#	include <dirent.h>
+#endif
 
 #ifndef __WOE32__
 #include <sys/wait.h>
@@ -2473,6 +2489,8 @@ int default_handler(int event)
 			w->take_focus(); // remove this to leave tx text focused
 			return 1;
 		}
+
+
 #ifdef __APPLE__
 		if ((key == '=') && (Fl::event_state() == FL_COMMAND)) {
 #else
@@ -2493,9 +2511,14 @@ int default_handler(int event)
 			cntTxLevel->value(progdefaults.txlevel);
 			return 1;
 		}
+
 	}
 	else if (w == dlgLogbook || w->window() == dlgLogbook)
 		return log_search_handler(event);
+
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+	else if (Fl::event_ctrl()) return w->handle(FL_KEYBOARD);
+#endif
 
 	return 0;
 }
@@ -3495,7 +3518,11 @@ int rightof(Fl_Widget* w)
 
 int leftof(Fl_Widget* w)
 {
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+	unsigned int a = w->align();
+#else
 	int a = w->align();
+#endif
 	if (a == FL_ALIGN_CENTER || a & FL_ALIGN_INSIDE)
 		return w->x();
 
@@ -3520,7 +3547,11 @@ int leftof(Fl_Widget* w)
 
 int above(Fl_Widget* w)
 {
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+	unsigned int a = w->align();
+#else
 	int a = w->align();
+#endif
 	if (a == FL_ALIGN_CENTER || a & FL_ALIGN_INSIDE)
 		return w->y();
 
@@ -3529,7 +3560,11 @@ int above(Fl_Widget* w)
 
 int below(Fl_Widget* w)
 {
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+	unsigned int a = w->align();
+#else
 	int a = w->align();
+#endif
 	if (a == FL_ALIGN_CENTER || a & FL_ALIGN_INSIDE)
 		return w->y() + w->h();
 
@@ -3739,12 +3774,6 @@ void setTabColors()
 }
 
 void showMacroSet() {
-	if (progdefaults.DisplayMacroFilename) {
-		string Macroset = "\n<<<===== Macro File ";
-		Macroset.append(progStatus.LastMacroFile);
-		Macroset.append(" Loaded =====>>>\n");
-		ReceiveText->add(Macroset.c_str());
-	}
 	set_macroLabels();
 }
 
@@ -4001,7 +4030,7 @@ void create_fl_digi_main_primary() {
 
 		RigControlFrame->end();
 
-		int opB_w = 280;
+		int opB_w = 380;
 		int qFV_w = opB_w + 2 * (Wbtn + pad) + pad;
 
 		RigViewerFrame = new Fl_Group(rightof(RigControlFrame), Hmenu, qFV_w, Hqsoframe);
@@ -4057,7 +4086,13 @@ void create_fl_digi_main_primary() {
 			qso_opBrowser->box(FL_DOWN_BOX);
 			qso_opBrowser->labelfont(4);
 			qso_opBrowser->labelsize(12);
-			qso_opBrowser->textfont(4);
+#ifdef __APPLE__
+			qso_opBrowser->textfont(FL_COURIER_BOLD);
+			qso_opBrowser->textsize(16);
+#else
+			qso_opBrowser->textfont(FL_COURIER);
+			qso_opBrowser->textsize(14);
+#endif
 			RigViewerFrame->resizable(NULL);
 
 		RigViewerFrame->end();
@@ -4578,7 +4613,7 @@ void create_fl_digi_main_primary() {
 				Fl_Group *g = new Fl_Group(mvgroup->x(), mvgroup->y() + Htext - 22, mvgroup->w(), 22);
 					g->box(FL_DOWN_BOX);
 					// squelch
-					mvsquelch = new Fl_Value_Slider2(g->x()+2, g->y()+1, g->w() - 65 - 2, g->h()-2);
+					mvsquelch = new Fl_Value_Slider2(g->x()+2, g->y()+1, g->w() - 75 - 2, g->h()-2);
 					mvsquelch->type(FL_HOR_NICE_SLIDER);
 					mvsquelch->range(-6.0, 20.0);
 					mvsquelch->value(progStatus.VIEWERsquelch);
@@ -4595,7 +4630,7 @@ void create_fl_digi_main_primary() {
 					mvsquelch->tooltip(_("Set Viewer Squelch"));
 
 					// clear button
-					btnClearMViewer = new Fl_Button(mvsquelch->x() + mvsquelch->w(), g->y()+1, 65, g->h()-2,
+					btnClearMViewer = new Fl_Button(mvsquelch->x() + mvsquelch->w(), g->y()+1, 75, g->h()-2,
 										make_icon_label(_("Clear"), edit_clear_icon));
 					btnClearMViewer->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 					set_icon_label(btnClearMViewer);
@@ -4763,8 +4798,9 @@ void create_fl_digi_main_primary() {
 			inpCall4->hide();
 
 			StatusBar = new Fl_Box(
-                rightof(Status2), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
-                progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - bwTxLevel - rightof(Status2) - 2 * pad,// - 60,
+				rightof(Status2), Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
+				progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - bwTxLevel
+				- 2 * DEFAULT_SW - rightof(Status2),
                 Hstatus, "");
 			StatusBar->box(FL_DOWN_BOX);
 			StatusBar->color(FL_BACKGROUND2_COLOR);
@@ -4791,9 +4827,6 @@ void create_fl_digi_main_primary() {
 			WARNstatus->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
 
 			int sql_width = bwSqlOnOff;
-#ifdef __APPLE__
-			sql_width -= 15; // leave room for resize handle
-#endif
 			btnAFC = new Fl_Light_Button(
 							progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
 							Hmenu+Hrcvtxt+Hxmttxt+Hwfall,
@@ -5446,9 +5479,10 @@ void create_fl_digi_main_WF_only() {
 			Status2->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
 
 			StatusBar = new Fl_Box(
-                rightof(Status2), Y,
-                progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - bwTxLevel - rightof(Status2) - 2 * pad,// - 60,
-                Hstatus, "");
+				rightof(Status2), Y,
+					progStatus.mainW - bwSqlOnOff - bwAfcOnOff - Wwarn - bwTxLevel
+					- 2 * DEFAULT_SW - rightof(Status2),
+					Hstatus, "");
 			StatusBar->box(FL_DOWN_BOX);
 			StatusBar->color(FL_BACKGROUND2_COLOR);
 			StatusBar->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
@@ -5474,9 +5508,6 @@ void create_fl_digi_main_WF_only() {
 			WARNstatus->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
 
 			int sql_width = bwSqlOnOff;
-#ifdef __APPLE__
-			sql_width -= 15; // leave room for resize handleresize
-#endif
 			btnAFC = new Fl_Light_Button(
 				progStatus.mainW - bwSqlOnOff - bwAfcOnOff,
 				Y,
@@ -6207,8 +6238,7 @@ static void put_rx_char_flmain(unsigned int data, int style)
 			ReceiveText->add('\n', style);
 			break;
 		default:
-
-			ReceiveText->add(data, style);
+			ReceiveText->add(data & 0x7F, style);
 	}
 
 	last = data;
@@ -6425,6 +6455,7 @@ int Qidle_time = 0;
 
 static int que_timeout = 0;
 bool que_ok = true;
+bool que_waiting = true;
 
 void post_queue_execute(void*)
 {
@@ -6441,6 +6472,7 @@ void post_queue_execute(void*)
 
 void queue_execute_after_rx(void*)
 {
+	que_waiting = false;
 	if (!que_timeout) {
 		LOG_ERROR("%s", "timed out");
 		return;
@@ -6453,6 +6485,12 @@ void queue_execute_after_rx(void*)
 	que_ok = false;
 	que_timeout = 100; // 5 seconds
 	Fl::add_timeout(0.05, post_queue_execute);
+	queue_execute();
+}
+
+void do_que_execute(void *)
+{
+	que_waiting = false;
 	queue_execute();
 }
 
@@ -6554,10 +6592,12 @@ int get_tx_char(void)
 		if (queue_must_rx()) {
 			c = 3;
 			que_timeout = 400; // 20 seconds
-			Fl::add_timeout(0.0, queue_execute_after_rx);
+			REQ(queue_execute_after_rx, (void *)0);
+			while(que_waiting) MilliSleep(1);
 		} else {
 			c = -1;
-			queue_execute();
+			REQ(do_que_execute, (void*)0);
+			while(que_waiting) MilliSleep(1);
 		}
 		break;
 	case '^':

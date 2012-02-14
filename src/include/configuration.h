@@ -693,6 +693,9 @@
         ELEM_(bool, eqsl_when_logged, "EQSL_WHEN_LOGGED",                               \
               "Send eQSL when other log action invoked",                                \
               false)                                                                    \
+        ELEM_(bool, eqsl_datetime_off, "EQSL_DATETIME_OFF",                             \
+              "Send logbook date/time off vice date on (default)",                      \
+              false)                                                                    \
         /* Rig control */                                                               \
         ELEM_(bool, btnusb, "BTNUSB",                                                   \
               "This setting is currently unused",                                       \
@@ -884,6 +887,9 @@
         ELEM_(int, in_channels, "INCHANNELS",                                           \
               "Number of audio input channels",                                         \
               1)                                                                        \
+        ELEM_(bool, mono_audio, "MONOAUDIO",                                            \
+              "Force use of mono audio output",                                         \
+              false)                                                                    \
         ELEM_(bool, sig_on_right_channel, "SIGONRIGHTCHANNEL",                          \
               "Duplicate modem signal on left & right",                                 \
               false)                                                                    \
@@ -912,6 +918,12 @@
               0)                                                                        \
         ELEM_(int, TxOffset, "TXOFFSET",                                                \
               "Difference between RX and TX freq (rig offset)",                         \
+              0)                                                                        \
+        ELEM_(int, PTT_on_delay, "PTTONDELAY",                                          \
+              "Start of transmit delay before sending audio",                           \
+              0)                                                                        \
+        ELEM_(int, PTT_off_delay, "PTTOFFDELAY",                                        \
+              "End of transmit delay before disabling PTT",                             \
               0)                                                                        \
         /* Contest controls and Logbook */                                              \
         ELEM_(std::string, logbookfilename, "LOGBOOKFILENAME",                          \
@@ -1326,7 +1338,42 @@
              "")                                                                        \
        ELEM_(int, wefax_filter, "WEFAXFILTER",                                          \
              "Input filter for image reception",                                        \
-             0)
+             0)                                                                         \
+       /* NAVTEX configuration items */                                                 \
+       ELEM_(bool, NVTX_AdifLog, "NAVTEXADIFLOG",                                       \
+             "Logs Navtex messages in Adig log file",                                   \
+             false)                                                                     \
+        /* WX fetch from NOAA */                                                        \
+        ELEM_(std::string, wx_sta, "WX_STA",                                            \
+              "4 letter specifier for wx station",                                      \
+              "KMDQ")                                                                   \
+        ELEM_(bool, wx_condx, "WX_CONDX",                                               \
+              "weather conditions",                                                     \
+              true)                                                                     \
+        ELEM_(bool, wx_fahrenheit, "WX_FAHRENHEIT",                                     \
+              "report in Fahrenheit",                                                   \
+              true)                                                                     \
+        ELEM_(bool, wx_celsius, "WX_CELSIUS",                                           \
+              "report in Celsius",                                                      \
+              true)                                                                     \
+        ELEM_(bool, wx_mph, "WX_MPH",                                                   \
+              "report speed in miles per hour",                                         \
+              true)                                                                     \
+        ELEM_(bool, wx_kph, "WX_KPH",                                                   \
+              "report speed in kilometers per hour",                                    \
+              true)                                                                     \
+        ELEM_(bool, wx_inches, "WX_INCHES",                                             \
+              "report pressure in inches of mercury",                                   \
+              true)                                                                     \
+        ELEM_(bool, wx_mbars, "WX_MBARS",                                               \
+              "report pressure in millibars",                                           \
+              true)                                                                     \
+        ELEM_(bool, wx_full, "WX_FULL",                                                 \
+              "use complete METAR report",                                              \
+              true)                                                                     \
+        ELEM_(bool, wx_station_name, "WX_STATION_NAME",                                 \
+              "report station noun name",                                               \
+              true)                                                                     \
 
 
 // declare the struct

@@ -47,6 +47,7 @@
 #include "network.h"
 #include "logsupport.h"
 #include "icons.h"
+#include "weather.h"
 
 #include <FL/Fl.H>
 #include <FL/filename.H>
@@ -70,12 +71,12 @@ struct CMDS { std::string cmd; void (*fp)(std::string); };
 static queue<CMDS> cmds;
 
 // following used for debugging and development
-//void pushcmd(CMDS cmd)
-//{
-//	LOG_INFO("%s, # = %d", cmd.cmd.c_str(), (int)cmds.size());
-//	cmds.push(cmd);
-//}
-#define pushcmd(a) cmds.push((a))
+void pushcmd(CMDS cmd)
+{
+	LOG_INFO("%s, # = %d", cmd.cmd.c_str(), (int)cmds.size());
+	cmds.push(cmd);
+}
+//#define pushcmd(a) cmds.push((a))
 
 // these variables are referenced outside of this file
 MACROTEXT macros;
@@ -670,7 +671,7 @@ static void pZD(std::string &s, size_t &i, size_t endbracket)
 	s.replace( i, 4, szDt);
 }
 
-static void pID(std::string &s, size_t &i, size_t endbracket)
+static void p_ID(std::string &s, size_t &i, size_t endbracket)
 {
 	if (within_exec) {
 		s.replace(i, endbracket - i + 1, "");
@@ -1415,6 +1416,25 @@ static void pRIGMODE(std::string& s, size_t& i, size_t endbracket)
 	s.replace(i, endbracket - i + 1, "");
 }
 
+static void doRIGMODE(std::string s)
+{
+	std::string sMode = s.substr(10, s.length() - 11);
+	qso_opMODE->value(sMode.c_str());
+	cb_qso_opMODE();
+	que_ok = true;
+}
+
+static void pQueRIGMODE(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	struct CMDS cmd = { s.substr(i, endbracket - i + 1), doRIGMODE };
+	pushcmd(cmd);
+	s.replace(i, endbracket - i + 1, "^!");
+}
+
 static void pFILWID(std::string& s, size_t& i, size_t endbracket)
 {
 	if (within_exec) {
@@ -1426,6 +1446,42 @@ static void pFILWID(std::string& s, size_t& i, size_t endbracket)
 	cb_qso_opBW();
 	s.replace(i, endbracket - i + 1, "");
 }
+
+static void doFILWID(std::string s)
+{
+	std::string sWID = s.substr(9, s.length() - 10);
+	qso_opBW->value(sWID.c_str());
+	cb_qso_opBW();
+	que_ok = true;
+printf("BW %s\n", sWID.c_str());
+}
+
+static void pQueFILWID(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	struct CMDS cmd = { s.substr(i, endbracket - i + 1), doFILWID };
+	pushcmd(cmd);
+	s.replace(i, endbracket - i + 1, "^!");
+}
+
+static void pWX(std::string &s, size_t &i, size_t endbracket)
+{
+	string wx;
+	getwx(wx);
+	s.replace(i, 4, wx);
+}
+
+// <WX:metar>
+static void pWX2(std::string &s, size_t &i, size_t endbracket)
+{
+	string wx;
+	getwx(wx, s.substr(i+4, endbracket - i - 4).c_str());
+	s.replace(i, endbracket - i + 1, wx);
+}
+
 
 void set_macro_env(void)
 {
@@ -1830,10 +1886,11 @@ void queue_execute()
 
 bool queue_must_rx()
 {
-static std::string rxcmds = "<!MOD<!WAI<!GOH<!QSY<!GOF";
+static std::string rxcmds = "<!MOD<!WAI<!GOH<!QSY<!GOF<!RIG<!FIL";
 	if (cmds.empty()) return false;
 	CMDS cmd = cmds.front();
-	return (rxcmds.find(cmd.cmd.substr(0,5)) != std::string::npos);
+	bool ret = (rxcmds.find(cmd.cmd.substr(0,5)) != std::string::npos);
+	return ret;
 }
 
 struct MTAGS { const char *mTAG; void (*fp)(std::string &, size_t&, size_t );};
@@ -1862,7 +1919,7 @@ static const MTAGS mtags[] = {
 {"<ZT>",		pZT},
 {"<LD>",		pLD},
 {"<ZD>",		pZD},
-{"<ID>",		pID},
+{"<ID>",		p_ID},
 {"<TEXT>",		pTEXT},
 {"<CWID>",		pCWID},
 {"<RX>",		pRX},
@@ -1922,6 +1979,8 @@ static const MTAGS mtags[] = {
 #ifdef __WIN32__
 {"<TALK:",		pTALK},
 #endif
+{"<WX>",		pWX},
+{"<WX:",		pWX2},
 {"<!WPM:",		pQueWPM},
 {"<!RISE:",		pQueRISETIME},
 {"<!PRE:",		pQuePRE},
@@ -1932,6 +1991,8 @@ static const MTAGS mtags[] = {
 {"<!IDLE:",		pQueIDLE},
 {"<!WAIT:",		pQueWAIT},
 {"<!MODEM:",	pQueMODEM},
+{"<!RIGMODE:",	pQueRIGMODE},
+{"<!FILWID:",	pQueFILWID},
 {0, 0}
 };
 
@@ -1998,40 +2059,74 @@ void MACROTEXT::loadDefault()
 {
 	int erc;
 	std::string Filename = MacrosDir;
-	if (progdefaults.UseLastMacro == true)
-		Filename.append(progStatus.LastMacroFile);
-	else {
-		Filename.append("macros.mdf");
-		progStatus.LastMacroFile = "macros.mdf";
+	Filename.append("macros.mdf");
+LOG_INFO("macro file name: %s", progStatus.LastMacroFile.c_str());
+	if (progdefaults.UseLastMacro == true) {
+		if (progStatus.LastMacroFile.find("/") != string::npos ||
+			progStatus.LastMacroFile.find("\\") != string::npos)
+			Filename.assign(progStatus.LastMacroFile);
+		else
+			Filename.assign(MacrosDir).append(progStatus.LastMacroFile);
 	}
+LOG_INFO("loading: %s", Filename.c_str());
+	progStatus.LastMacroFile = Filename;
+
 	if ((erc = loadMacros(Filename)) != 0)
 #ifndef __WOE32__
 		LOG_ERROR("Error #%d loading %s\n", erc, Filename.c_str());
 #else
 	;
 #endif
+	if (progdefaults.DisplayMacroFilename) {
+		string Macroset;
+		Macroset.assign("\nMacros: ").append(progStatus.LastMacroFile).append("\n");
+		ReceiveText->add(Macroset.c_str());
+	}
 }
 
 void MACROTEXT::openMacroFile()
 {
 	std::string deffilename = MacrosDir;
-	deffilename.append(progStatus.LastMacroFile);
-    const char *p = FSEL::select(_("Open macro file"), _("Fldigi macro definition file\t*.mdf"), deffilename.c_str());
+
+	if (progStatus.LastMacroFile.find("/") == string::npos)
+		deffilename.append(progStatus.LastMacroFile);
+	else
+		deffilename.assign(progStatus.LastMacroFile);
+
+	const char *p = FSEL::select(
+			_("Open macro file"),
+			_("Fldigi macro definition file\t*.{mdf}"),
+			deffilename.c_str());
     if (p) {
 		loadMacros(p);
-		progStatus.LastMacroFile = fl_filename_name(p);
+		progStatus.LastMacroFile = p;
 	}
 	showMacroSet();
+	if (progdefaults.DisplayMacroFilename) {
+		string Macroset;
+		Macroset.assign("\nMacros: ").append(progStatus.LastMacroFile).append("\n");
+		ReceiveText->add(Macroset.c_str());
+	}
 }
 
 void MACROTEXT::saveMacroFile()
 {
 	std::string deffilename = MacrosDir;
-	deffilename.append(progStatus.LastMacroFile);
-    const char *p = FSEL::saveas(_("Save macro file"), _("Fldigi macro definition file\t*.mdf"), deffilename.c_str());
+
+	if (progStatus.LastMacroFile.find("/") == string::npos)
+		deffilename.append(progStatus.LastMacroFile);
+	else
+		deffilename.assign(progStatus.LastMacroFile);
+
+	const char *p = FSEL::saveas(
+			_("Save macro file"), 
+			_("Fldigi macro definition file\t*.{mdf}"), 
+			deffilename.c_str());
     if (p) {
-		saveMacros(p);
-		progStatus.LastMacroFile = fl_filename_name(p);
+		string sp = p;
+		if (sp.rfind(".mdf") == string::npos) sp.append(".mdf");
+		saveMacros(sp.c_str());
+		progStatus.LastMacroFile = sp;
 	}
 }
 

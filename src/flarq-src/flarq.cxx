@@ -21,7 +21,7 @@
 // ----------------------------------------------------------------------------
 
 #include <config.h>
-
+#include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -35,6 +35,7 @@
 #include <errno.h>
 
 #include <FL/Fl.H>
+#include <FL/Fl_Widget.H>
 #include <FL/Enumerations.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Button.H>
@@ -44,16 +45,25 @@
 #include <FL/Fl_Help_Dialog.H>
 #include <FL/Fl_Menu_Item.H>
 
-#ifdef __MINGW32__
-#  include "compat.h"
-#endif
+// this tests depends on a modified FL/filename.H in the Fltk-1.3.0
+// change
+//#  if defined(WIN32) && !defined(__CYGWIN__) && !defined(__WATCOMC__)
+// to
+//#  if defined(WIN32) && !defined(__CYGWIN__) && !defined(__WATCOMC__) && !defined(__WOE32__)
+
+#include <FL/filename.H>
 
 #ifdef __MINGW32__
-#  define dirent fl_dirent_no_thanks
-#endif
-#include <FL/filename.H>
-#ifdef __MINGW32__
-#  undef dirent
+#	include "compat.h"
+#	if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR < 3
+#		define dirent fl_dirent_no_thanks
+#		undef dirent
+#		include <dirent.h>
+#	else
+#		include <dirent.h>
+#	endif
+#else
+#	include <dirent.h>
 #endif
 
 #include "fileselect.h"

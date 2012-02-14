@@ -19,16 +19,19 @@
 // USA.
 //
 
+
 #include <config.h>
 
+#if (FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR < 3) || (FLARQ_FLTK_API_MAJOR == 1 && FLARQ_FLTK_API_MINOR < 3)
+
 // Use Windows' chooser
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(__WIN32__) || defined(__CYGWIN__)
 #include "Fl_Native_File_Chooser_WIN32.cxx"
 #endif
 
 // Use Apple's chooser
 #ifdef __APPLE__
-#include "Fl_Native_File_Chooser_MAC.cxx"
+#include "MAC_chooser.cxx"
 #endif
 
 // All else falls back to FLTK's own chooser
@@ -36,3 +39,12 @@
 #include "Fl_Native_File_Chooser_FLTK.cxx"
 #endif
 
+#else
+
+// Use Apple's chooser
+#ifdef __APPLE__
+#include "MAC_chooser.cxx"
+#endif
+
+
+#endif
