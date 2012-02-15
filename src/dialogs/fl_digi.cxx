@@ -115,7 +115,6 @@
 #include "globals.h"
 #include "misc.h"
 #include "FTextRXTX.h"
-#include "Fl_Tile_Check.h"
 
 #include "confdialog.h"
 #include "configuration.h"
@@ -224,7 +223,7 @@ Fl_Light_Button		*btnRSID = (Fl_Light_Button *)0;
 Fl_Light_Button		*btnTxRSID = (Fl_Light_Button *)0;
 Fl_Button		    *btnMacroTimer = (Fl_Button *)0;
 
-Fl_Tile_Check			*TiledGroup = 0;
+Fl_Group			*TiledGroup = 0;
 Panel				*text_panel = 0;
 Fl_Group			*mvgroup = 0;
 
@@ -5846,7 +5845,7 @@ void create_fl_digi_main_dl_fldigi() {
 		
 		Y = Hmenu + pad + TopFrameHABheight;
 		
-		TiledGroup = new Fl_Tile_Check(0, Y, WMIN_hab, Htext);
+		TiledGroup = new Fl_Group(0, Y, WMIN_hab, Htext);
 			ReceiveText = new FTextRX(0, Y, WMIN_hab, minRxHeight, "");
 			ReceiveText->color(
 				fl_rgb_color(

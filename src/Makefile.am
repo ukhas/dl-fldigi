@@ -282,7 +282,6 @@ dl_fldigi_SOURCES += \
 	include/Fl_Text_Buffer_mod.H \
 	include/Fl_Text_Display_mod.H \
 	include/Fl_Text_Editor_mod.H \
-	include/Fl_Tile_Check.h \
 	include/Panel.h \
 	include/FreqControl.h \
 	include/analysis.h \
@@ -518,7 +517,6 @@ dl_fldigi_SOURCES += \
 	widgets/Fl_Text_Buffer_mod.cxx \
 	widgets/Fl_Text_Display_mod.cxx \
 	widgets/Fl_Text_Editor_mod.cxx \
-	widgets/Fl_Tile_Check.cxx \
 	widgets/Panel.cxx \
 	widgets/flinput2.cxx \
 	widgets/flmisc.cxx \
