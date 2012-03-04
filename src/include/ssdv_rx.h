@@ -23,7 +23,7 @@ private:
 	
 	Fl_Box *flimageid; /* Current Image ID */
 	Fl_Box *flreceived;
-	Fl_Box *fllast;
+	Fl_Box *flcallsign;
 	Fl_Box *flsize;
 	Fl_Box *flmissing;
 	Fl_Box *flfixes;
@@ -48,9 +48,11 @@ private:
 	
 	/* Image details */
 	time_t image_timestamp;
+	uint32_t image_callsign;
 	int image_id;
 	int image_width;
 	int image_height;
+	int image_mcu_mode;
 	int image_received_packets;
 	int image_lost_packets;
 	int image_errors;

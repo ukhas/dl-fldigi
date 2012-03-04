@@ -1,4 +1,21 @@
 
+/* SSDV - Slow Scan Digital Video                                        */
+/*=======================================================================*/
+/* Copyright 2011-2012 Philip Heron <phil@sanslogic.co.uk                */
+/*                                                                       */
+/* This program is free software: you can redistribute it and/or modify  */
+/* it under the terms of the GNU General Public License as published by  */
+/* the Free Software Foundation, either version 3 of the License, or     */
+/* (at your option) any later version.                                   */
+/*                                                                       */
+/* This program is distributed in the hope that it will be useful,       */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of        */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         */
+/* GNU General Public License for more details.                          */
+/*                                                                       */
+/* You should have received a copy of the GNU General Public License     */
+/* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
+
 #include <stdint.h>
 
 #ifndef INC_SSDV_H
@@ -16,25 +33,28 @@ extern "C" {
 
 /* Packet details */
 #define SSDV_PKT_SIZE         (0x100)
-#define SSDV_PKT_SIZE_HEADER  (0x0B)
-#define SSDV_PKT_SIZE_RSCODES (0x20)
+#define SSDV_PKT_SIZE_HEADER  (0x0F)
 #define SSDV_PKT_SIZE_CRC     (0x02)
+#define SSDV_PKT_SIZE_RSCODES (0x20)
 #define SSDV_PKT_SIZE_PAYLOAD (SSDV_PKT_SIZE - SSDV_PKT_SIZE_HEADER - SSDV_PKT_SIZE_CRC - SSDV_PKT_SIZE_RSCODES)
 
-#define HBUFF_LEN (16)
-#define COMPONENTS (3)
+#define TBL_LEN (546) /* Maximum size of the DQT and DHT tables */
+#define HBUFF_LEN (16) /* Extra space for reading marker data */
+//#define COMPONENTS (3)
 
 typedef struct
 {
 	/* Image information */
 	uint16_t width;
 	uint16_t height;
-	uint8_t image_id;
+	uint32_t callsign;
+	uint8_t  image_id;
 	uint16_t packet_id;
+	uint8_t  mcu_mode;  /* 0 = 2x2, 1 = 2x1, 2 = 1x2, 3 = 1x1           */
 	uint16_t mcu_id;
 	uint16_t mcu_count;
 	uint16_t packet_mcu_id;
-	uint16_t packet_mcu_offset;
+	uint8_t  packet_mcu_offset;
 	
 	/* Source buffer */
 	uint8_t *inp;      /* Pointer to next input byte                    */
@@ -69,41 +89,63 @@ typedef struct
 	uint8_t *marker_data; /* Where to copy marker data too              */
 	uint16_t marker_data_len; /* How much is there                      */
 	uint8_t component;  /* 0 = Y, 1 = Cb, 2 = Cr                        */
+	uint8_t ycparts;    /* Number of Y component parts per MCU          */
 	uint8_t mcupart;    /* 0-3 = Y, 4 = Cb, 5 = Cr                      */
 	uint8_t acpart;     /* 0 - 64; 0 = DC, 1 - 64 = AC                  */
-	int dc[COMPONENTS]; /* DC value for each component                  */
+	int dc[3];          /* DC value for each component                  */
+	int adc[3];         /* DC adjusted value for each component         */
 	uint8_t acrle;      /* RLE value for current AC value               */
-	char dcmode;        /* 0 = Absolute, 1 = Relative (parts 0, 4 & 5)  */
+	uint8_t accrle;     /* Accumulative RLE value                       */
+	uint16_t dri;       /* Reset interval                               */
+	enum {
+		S_ENCODING = 0,
+		S_DECODING,
+	} mode;
+	uint32_t reset_mcu; /* MCU block to do absolute encoding            */
 	char needbits;      /* Number of bits needed to decode integer      */
 	
-	/* Small buffer for reading SOF0 and SOS header data into */
-	uint8_t hbuff[HBUFF_LEN];
+	/* The input huffman and quantisation tables */
+	uint8_t stbls[TBL_LEN + HBUFF_LEN];
+	uint8_t *sdht[2][2], *sdqt[2];
+	uint16_t stbl_len;
+	
+	/* The same for output */
+	uint8_t dtbls[TBL_LEN];
+	uint8_t *ddht[2][2], *ddqt[2];
+	uint16_t dtbl_len;
 	
 } ssdv_t;
 
 typedef struct {
+	uint32_t callsign;
 	uint8_t  image_id;
 	uint16_t packet_id;
 	uint16_t width;
 	uint16_t height;
-	uint16_t mcu_offset;
+	uint8_t  mcu_mode;
+	uint8_t  mcu_offset;
 	uint16_t mcu_id;
 	uint16_t mcu_count;
 } ssdv_packet_info_t;
 
 /* Encoding */
-extern char ssdv_enc_init(ssdv_t *s, uint8_t image_id);
+extern char ssdv_enc_init(ssdv_t *s, char *callsign, uint8_t image_id);
 extern char ssdv_enc_set_buffer(ssdv_t *s, uint8_t *buffer);
 extern char ssdv_enc_get_packet(ssdv_t *s);
 extern char ssdv_enc_feed(ssdv_t *s, uint8_t *buffer, size_t length);
 
 /* Decoding */
 extern char ssdv_dec_init(ssdv_t *s);
+extern char ssdv_dec_set_buffer(ssdv_t *s, uint8_t *buffer, size_t length);
 extern char ssdv_dec_feed(ssdv_t *s, uint8_t *packet);
 extern char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length);
 
 extern char ssdv_dec_is_packet(uint8_t *packet, int *errors);
 extern void ssdv_dec_header(ssdv_packet_info_t *info, uint8_t *packet);
+
+/* Callsign */
+extern uint32_t ssdv_encode_callsign(char *callsign);
+extern char *ssdv_decode_callsign(char *callsign, uint32_t code);
 
 #ifdef __cplusplus
 }

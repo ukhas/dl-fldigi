@@ -169,12 +169,21 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	int x2 = x1 + 75;
 	int x3 = x2 + 100;
 	
-	/* Current Image ID: */
+	/* Current Image Callsign: */
 	{
-		Fl_Box* o = new Fl_Box(x1 + 2, y + 2, 72, 20, "Image ID:");
+		Fl_Box* o = new Fl_Box(x1 + 2, y + 2, 72, 20, "Callsign:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flimageid = new Fl_Box(x1 + 71, y + 2, 60, 20, "");
+		flcallsign = new Fl_Box(x1 + 71, y + 2, 60, 20, "");
+		flcallsign->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+	}
+	
+	/* Current Image ID: */
+	{
+		Fl_Box* o = new Fl_Box(x2 + 2, y + 2, 72, 20, "ID:");
+		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+		
+		flimageid = new Fl_Box(x2 + 71, y + 2, 60, 20, "");
 		flimageid->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
@@ -189,28 +198,19 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	
 	/* Size: */
 	{
-		Fl_Box* o = new Fl_Box(x2 + 2, y + 2, 72, 20, "Size:");
+		Fl_Box* o = new Fl_Box(x3 + 2, y + 2, 72, 20, "Size:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flsize = new Fl_Box(x2 + 71, y + 2, 60, 20, "");
+		flsize = new Fl_Box(x3 + 71, y + 2, 60, 20, "");
 		flsize->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-	}
-	
-	/* Last: */
-	{
-		Fl_Box* o = new Fl_Box(x2 + 2, y + 22, 72, 20, "Last:");
-		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
-		
-		fllast = new Fl_Box(x2 + 71, y + 22, 60, 20, "");
-		fllast->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
 	/* Fixes: */
 	{
-		Fl_Box* o = new Fl_Box(x3 + 2, y + 2, 72, 20, "Fixes:");
+		Fl_Box* o = new Fl_Box(x2 + 2, y + 22, 72, 20, "Fixes:");
 		o->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 		
-		flfixes = new Fl_Box(x3 + 71, y + 2, 60, 20, "");
+		flfixes = new Fl_Box(x2 + 71, y + 22, 60, 20, "");
 		flfixes->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 	}
 	
@@ -405,15 +405,19 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	ssdv_dec_header(&pkt_info, b);
 	
 	/* Does this belong to the same image? */
-	if(pkt_info.image_id != image_id ||
+	if(pkt_info.callsign != image_callsign ||
+	   pkt_info.image_id != image_id ||
 	   pkt_info.width != image_width ||
-	   pkt_info.height != image_height)
+	   pkt_info.height != image_height ||
+	   pkt_info.mcu_mode != image_mcu_mode)
 	{
 		/* Prepare the new image */
 		image_timestamp      = time(NULL);
+		image_callsign       = pkt_info.callsign;
 		image_id             = pkt_info.image_id;
 		image_width          = pkt_info.width;
 		image_height         = pkt_info.height;
+		image_mcu_mode       = pkt_info.mcu_mode;
 		image_lost_packets   = 0;
 		image_errors         = 0;
 		
@@ -470,8 +474,9 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	put_status("SSDV: Decoded image packet!", 10);
 	if(bHAB)
 	{
-		char msg[100];
-		snprintf(msg, 100, "Decoded image packet. Image ID: %02X, Resolution: %dx%d, Packet ID: %d",
+		char msg[200], callsign[10];
+		snprintf(msg, 200, "Decoded image packet. Callsign: %s, Image ID: %02X, Resolution: %dx%d, Packet ID: %d",
+			ssdv_decode_callsign(callsign, pkt_info.callsign),
 			pkt_info.image_id,
 			pkt_info.width,
 			pkt_info.height,
@@ -489,10 +494,11 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	image_lost_packets = 0;
 	for(i = 0; i < packets_len; i++)
 	{
+		int r;
 		uint8_t *p = packets + (i * SSDV_PKT_SIZE);
 		if(p[0] != 0x55) { image_lost_packets++; continue; }
 		image_received_packets++;
-		ssdv_dec_feed(&dec, p);
+		r = ssdv_dec_feed(&dec, p);
 	}
 	
 	/* Store the last decoded MCU, for the progress bar */
@@ -517,11 +523,11 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	/* Update values on display */
 	char s[16];
 	
+	ssdv_decode_callsign(s, image_callsign);
+	flcallsign->copy_label(s);
+	
 	snprintf(s, 16, "%d", image_received_packets);
 	flreceived->copy_label(s);
-	
-	snprintf(s, 16, "%d", pkt_info.packet_id + 1);
-	fllast->copy_label(s);
 	
 	snprintf(s, 16, "0x%02X", pkt_info.image_id);
 	flimageid->copy_label(s);
@@ -544,7 +550,8 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 void ssdv_rx::save_image(uint8_t *jpeg, size_t length)
 {
 	char fname[FILENAME_MAX];
-	const char *payload, *savedir;
+	char payload[10];
+	const char *savedir;
 	struct tm tm;
 	FILE *f;
 	uint16_t l;
@@ -557,8 +564,8 @@ void ssdv_rx::save_image(uint8_t *jpeg, size_t length)
 		"." : progdefaults.ssdv_save_dir.c_str());
 	
 	/* Get the payload name */
-	payload = (progdefaults.tracking_payload.empty() ?
-		"UNKNOWN" : progdefaults.tracking_payload.c_str());
+	if(!image_callsign) strcpy(payload, "UNKNOWN");
+	ssdv_decode_callsign(payload, image_callsign);
 	
 	/* Construct the filename */
 	gmtime_r(&image_timestamp, &tm);
