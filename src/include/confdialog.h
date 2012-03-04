@@ -453,6 +453,7 @@ extern Fl_Input2 *txt_eqsl_default_message;
 extern Fl_Box *eqsl_txt1;
 extern Fl_Box *eqsl_txt2;
 extern Fl_Box *eqsl_txt3;
+extern Fl_Check_Button *btn_send_datetime_off;
 extern Fl_Group *tabDL;
 extern Fl_Tabs *tabsDL;
 extern Fl_Group *tabDLEnable;
@@ -463,8 +464,9 @@ extern Fl_Input *imagesavedir;
 extern Fl_Check_Button *btnTrackFreq;
 extern Fl_Counter2 *cntTrackFreqMin;
 extern Fl_Counter2 *cntTrackFreqMax;
-extern Fl_Input *stationary_lat;
-extern Fl_Input *stationary_lon;
+#include <FL/Fl_Float_Input.H>
+extern Fl_Float_Input *stationary_lat;
+extern Fl_Float_Input *stationary_lon;
 extern Fl_Input_Choice *inpGPSdev;
 #include <FL/Fl_Spinner.H>
 extern Fl_Output *gps_pos_lat;
@@ -480,7 +482,6 @@ extern Fl_Input *flight_search_text;
 extern Fl_Choice *payload_list;
 extern Fl_Button *payload_autoconfigure;
 extern Fl_Choice *payload_mode_list;
-extern Fl_Check_Button *btn_send_datetime_off;
 extern Fl_Button *btnSaveConfig;
 #include <FL/Fl_Return_Button.H>
 extern Fl_Return_Button *btnCloseConfig;
