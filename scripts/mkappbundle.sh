@@ -57,6 +57,8 @@ function copy_libs()
 	    for lib in `otool -L $obj | \
 	        sed -n 's!^.*[[:space:]]\([^[:space:]]*\.dylib\).*$!\1!p' | \
                 grep -Ev '^/(usr/lib|System)'`; do
+		echo $lib
+		pwd
 		libfn="`basename $lib`"
 		if ! test -f "Frameworks/$libfn"; then
 		    cp "$lib" "Frameworks/$libfn"
@@ -131,7 +133,6 @@ if test "x$WANT_FLARQ" = "xyes"; then
     bundle
 fi
 
-cp /opt/local/lib/libcurl.4.dylib Frameworks/
 cd "$build"
 echo $ECHO_N "creating disk image"
 hdiutil create -ov -srcfolder "$bundle_dir" -format UDZO -tgtimagekey zlib-level=9 "${APPBUNDLE}-nolibs.dmg"
