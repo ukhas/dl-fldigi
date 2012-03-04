@@ -6,14 +6,13 @@
 #include <FL/Fl_Tooltip.H>
 #include <FL/Fl_Box.H>
 #include <FL/filename.H>
-#include <sstream>
-#include <stdint.h>
 #include "main.h"
 #include "fl_digi.h"
 #include "dl_fldigi/dl_fldigi.h"
 #include "dl_fldigi/location.h"
 #include "dl_fldigi/flights.h"
 #include "dl_fldigi/hbtint.h"
+#include "soundconf.h"
 #include "soundconf.h"
 #include "colorsfonts.h"
 #include "waterfall.h"
@@ -3324,6 +3323,13 @@ Fl_Box *eqsl_txt2=(Fl_Box *)0;
 
 Fl_Box *eqsl_txt3=(Fl_Box *)0;
 
+Fl_Check_Button *btn_send_datetime_off=(Fl_Check_Button *)0;
+
+static void cb_btn_send_datetime_off(Fl_Check_Button* o, void*) {
+  progdefaults.eqsl_datetime_off = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Group *tabDL=(Fl_Group *)0;
 
 Fl_Tabs *tabsDL=(Fl_Tabs *)0;
@@ -3440,18 +3446,18 @@ static void cb_Stationary(Fl_Round_Button* o, void*) {
 };
 }
 
-Fl_Input *stationary_lat=(Fl_Input *)0;
+Fl_Float_Input *stationary_lat=(Fl_Float_Input *)0;
 
-static void cb_stationary_lat(Fl_Input* o, void*) {
+static void cb_stationary_lat(Fl_Float_Input* o, void*) {
   progdefaults.myLat = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();
 }
 
-Fl_Input *stationary_lon=(Fl_Input *)0;
+Fl_Float_Input *stationary_lon=(Fl_Float_Input *)0;
 
-static void cb_stationary_lon(Fl_Input* o, void*) {
+static void cb_stationary_lon(Fl_Float_Input* o, void*) {
   progdefaults.myLon = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
@@ -3553,13 +3559,6 @@ static void cb_payload_autoconfigure(Fl_Button*, void*) {
 
 Fl_Choice *payload_mode_list=(Fl_Choice *)0;
 
-Fl_Check_Button *btn_send_datetime_off=(Fl_Check_Button *)0;
-
-static void cb_btn_send_datetime_off(Fl_Check_Button* o, void*) {
-  progdefaults.eqsl_datetime_off = o->value();
-progdefaults.changed = true;
-}
-
 Fl_Button *btnSaveConfig=(Fl_Button *)0;
 
 static void cb_btnSaveConfig(Fl_Button*, void*) {
@@ -3615,7 +3614,6 @@ Fl_Double_Window* ConfigureDialog() {
       tabsConfigure->selection_color(FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
         tabOperator->tooltip(_("Operator information"));
-        tabOperator->labelsize(12);
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
         { Fl_Group* o = new Fl_Group(5, 35, 490, 210, _("Station"));
@@ -3680,14 +3678,14 @@ Fl_Double_Window* ConfigureDialog() {
           { inpMyAntenna = new Fl_Input2(110, 167, 320, 24, _("Antenna:"));
             inpMyAntenna->tooltip(_("Short description of antenna"));
             inpMyAntenna->box(FL_DOWN_BOX);
-            inpMyAntenna->color((Fl_Color)FL_BACKGROUND2_COLOR);
-            inpMyAntenna->selection_color((Fl_Color)FL_SELECTION_COLOR);
+            inpMyAntenna->color(FL_BACKGROUND2_COLOR);
+            inpMyAntenna->selection_color(FL_SELECTION_COLOR);
             inpMyAntenna->labeltype(FL_NORMAL_LABEL);
             inpMyAntenna->labelfont(0);
             inpMyAntenna->labelsize(14);
-            inpMyAntenna->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+            inpMyAntenna->labelcolor(FL_FOREGROUND_COLOR);
             inpMyAntenna->callback((Fl_Callback*)cb_inpMyAntenna);
-            inpMyAntenna->align(FL_ALIGN_LEFT);
+            inpMyAntenna->align(Fl_Align(FL_ALIGN_LEFT));
             inpMyAntenna->when(FL_WHEN_RELEASE);
             inpMyAntenna->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyAntenna
@@ -3697,20 +3695,6 @@ Fl_Double_Window* ConfigureDialog() {
           } // Fl_Input* MyRadio
           o->end();
         } // Fl_Group* o
-        { inpMyAntenna = new Fl_Input2(110, 167, 320, 24, _("Antenna:"));
-          inpMyAntenna->tooltip(_("Short description of antenna"));
-          inpMyAntenna->box(FL_DOWN_BOX);
-          inpMyAntenna->color(FL_BACKGROUND2_COLOR);
-          inpMyAntenna->selection_color(FL_SELECTION_COLOR);
-          inpMyAntenna->labeltype(FL_NORMAL_LABEL);
-          inpMyAntenna->labelfont(0);
-          inpMyAntenna->labelsize(14);
-          inpMyAntenna->labelcolor(FL_FOREGROUND_COLOR);
-          inpMyAntenna->callback((Fl_Callback*)cb_inpMyAntenna);
-          inpMyAntenna->align(Fl_Align(FL_ALIGN_LEFT));
-          inpMyAntenna->when(FL_WHEN_RELEASE);
-          inpMyAntenna->labelsize(FL_NORMAL_SIZE);
-        } // Fl_Input2* inpMyAntenna
         { grpNoise = new Fl_Group(5, 203, 490, 165, _("Test Signal - Do NOT use with transmitter"));
           grpNoise->box(FL_ENGRAVED_FRAME);
           grpNoise->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
@@ -3743,7 +3727,6 @@ Fl_Double_Window* ConfigureDialog() {
         tabOperator->end();
       } // Fl_Group* tabOperator
       { tabUI = new Fl_Group(0, 25, 506, 346, _("UI"));
-        tabUI->labelsize(12);
         tabUI->hide();
         { tabsUI = new Fl_Tabs(0, 25, 506, 346);
           tabsUI->selection_color(FL_LIGHT1);
@@ -5143,16 +5126,16 @@ an merging"));
                 valDominoEX_ADJ->tooltip(_("Tone-spacing adjust"));
                 valDominoEX_ADJ->type(1);
                 valDominoEX_ADJ->box(FL_UP_BOX);
-                valDominoEX_ADJ->color((Fl_Color)FL_BACKGROUND_COLOR);
-                valDominoEX_ADJ->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                valDominoEX_ADJ->color(FL_BACKGROUND_COLOR);
+                valDominoEX_ADJ->selection_color(FL_INACTIVE_COLOR);
                 valDominoEX_ADJ->labeltype(FL_NORMAL_LABEL);
                 valDominoEX_ADJ->labelfont(0);
                 valDominoEX_ADJ->labelsize(14);
-                valDominoEX_ADJ->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                valDominoEX_ADJ->labelcolor(FL_FOREGROUND_COLOR);
                 valDominoEX_ADJ->minimum(-100);
                 valDominoEX_ADJ->maximum(100);
                 valDominoEX_ADJ->callback((Fl_Callback*)cb_valDominoEX_ADJ);
-                valDominoEX_ADJ->align(FL_ALIGN_RIGHT);
+                valDominoEX_ADJ->align(Fl_Align(FL_ALIGN_RIGHT));
                 valDominoEX_ADJ->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.DOMINOEX_ADJ);
                 o->labelsize(FL_NORMAL_SIZE);
@@ -5881,7 +5864,6 @@ an merging"));
       } // Fl_Group* tabModems
       { tabRig = new Fl_Group(0, 23, 500, 345, _("Rig"));
         tabRig->tooltip(_("Transceiver control"));
-        tabRig->labelsize(12);
         tabRig->hide();
         { tabsRig = new Fl_Tabs(0, 23, 500, 345);
           tabsRig->selection_color(FL_LIGHT1);
@@ -6400,7 +6382,6 @@ an merging"));
       } // Fl_Group* tabRig
       { tabSoundCard = new Fl_Group(0, 25, 500, 345, _("Audio"));
         tabSoundCard->tooltip(_("Audio devices"));
-        tabSoundCard->labelsize(12);
         tabSoundCard->hide();
         { tabsSoundCard = new Fl_Tabs(0, 25, 500, 345);
           tabsSoundCard->selection_color(FL_LIGHT1);
@@ -6851,7 +6832,6 @@ d frequency"));
         tabID->end();
       } // Fl_Group* tabID
       { tabMisc = new Fl_Group(0, 25, 500, 345, _("Misc"));
-        tabMisc->labelsize(12);
         tabMisc->hide();
         { tabsMisc = new Fl_Tabs(0, 25, 500, 345);
           tabsMisc->selection_color(FL_LIGHT1);
@@ -7550,7 +7530,7 @@ d frequency"));
           { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
             { Fl_Group* o = new Fl_Group(5, 59, 490, 76, _("habitat"));
               o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { confdialog_dl_online = new Fl_Check_Button(15, 90, 70, 25, _("Online"));
                 confdialog_dl_online->down_box(FL_DOWN_BOX);
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
@@ -7569,7 +7549,7 @@ d frequency"));
             } // Fl_Group* o
             { Fl_Group* o = new Fl_Group(5, 140, 490, 80, _("SSDV Image Configuration"));
               o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { Fl_Input* o = imagepacketurl = new Fl_Input(165, 165, 300, 20, _("Packet Upload URL:"));
                 imagepacketurl->callback((Fl_Callback*)cb_imagepacketurl);
                 o->value(progdefaults.ssdv_packet_url.c_str());
@@ -7587,7 +7567,7 @@ d frequency"));
             } // Fl_Group* o
             { Fl_Group* o = new Fl_Group(5, 225, 490, 55, _("Waterfall PNG Export"));
               o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { Fl_Check_Button* o = new Fl_Check_Button(15, 250, 80, 20, _("Enable"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Enable);
@@ -7602,7 +7582,7 @@ d frequency"));
             } // Fl_Group* o
             { Fl_Group* o = new Fl_Group(5, 284, 490, 76, _("Frequency Tracking"));
               o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { Fl_Check_Button* o = btnTrackFreq = new Fl_Check_Button(15, 317, 125, 25, _("Enable"));
                 btnTrackFreq->tooltip(_("Adjust the radio frequency to keep the signal inside the specified limits"));
                 btnTrackFreq->down_box(FL_DOWN_BOX);
@@ -7612,18 +7592,18 @@ d frequency"));
               { Fl_Counter2* o = cntTrackFreqMin = new Fl_Counter2(145, 308, 105, 20, _("Minimum Waterfall Frequency"));
                 cntTrackFreqMin->tooltip(_("Low frequency limit in Hz"));
                 cntTrackFreqMin->box(FL_UP_BOX);
-                cntTrackFreqMin->color((Fl_Color)FL_BACKGROUND_COLOR);
-                cntTrackFreqMin->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntTrackFreqMin->color(FL_BACKGROUND_COLOR);
+                cntTrackFreqMin->selection_color(FL_INACTIVE_COLOR);
                 cntTrackFreqMin->labeltype(FL_NORMAL_LABEL);
                 cntTrackFreqMin->labelfont(0);
                 cntTrackFreqMin->labelsize(14);
-                cntTrackFreqMin->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntTrackFreqMin->labelcolor(FL_FOREGROUND_COLOR);
                 cntTrackFreqMin->minimum(0);
                 cntTrackFreqMin->maximum(4000);
                 cntTrackFreqMin->step(1);
                 cntTrackFreqMin->value(1000);
                 cntTrackFreqMin->callback((Fl_Callback*)cb_cntTrackFreqMin);
-                cntTrackFreqMin->align(FL_ALIGN_RIGHT);
+                cntTrackFreqMin->align(Fl_Align(FL_ALIGN_RIGHT));
                 cntTrackFreqMin->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.track_freq_min);
                 o->labelsize(FL_NORMAL_SIZE);
@@ -7632,18 +7612,18 @@ d frequency"));
               { Fl_Counter2* o = cntTrackFreqMax = new Fl_Counter2(145, 333, 105, 20, _("Maximum Waterfall Frequency"));
                 cntTrackFreqMax->tooltip(_("High frequency limit in Hz"));
                 cntTrackFreqMax->box(FL_UP_BOX);
-                cntTrackFreqMax->color((Fl_Color)FL_BACKGROUND_COLOR);
-                cntTrackFreqMax->selection_color((Fl_Color)FL_INACTIVE_COLOR);
+                cntTrackFreqMax->color(FL_BACKGROUND_COLOR);
+                cntTrackFreqMax->selection_color(FL_INACTIVE_COLOR);
                 cntTrackFreqMax->labeltype(FL_NORMAL_LABEL);
                 cntTrackFreqMax->labelfont(0);
                 cntTrackFreqMax->labelsize(14);
-                cntTrackFreqMax->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                cntTrackFreqMax->labelcolor(FL_FOREGROUND_COLOR);
                 cntTrackFreqMax->minimum(0);
                 cntTrackFreqMax->maximum(4000);
                 cntTrackFreqMax->step(1);
                 cntTrackFreqMax->value(2000);
                 cntTrackFreqMax->callback((Fl_Callback*)cb_cntTrackFreqMax);
-                cntTrackFreqMax->align(FL_ALIGN_RIGHT);
+                cntTrackFreqMax->align(Fl_Align(FL_ALIGN_RIGHT));
                 cntTrackFreqMax->when(FL_WHEN_CHANGED);
                 o->value(progdefaults.track_freq_max);
                 o->labelsize(FL_NORMAL_SIZE);
@@ -7657,18 +7637,18 @@ d frequency"));
             o->hide();
             { Fl_Group* o = new Fl_Group(5, 60, 490, 300, _("Listener Location"));
               o->box(FL_ENGRAVED_FRAME);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { Fl_Value_Input2* o = new Fl_Value_Input2(100, 200, 150, 25, _("Baud"));
                 o->type(2);
                 o->box(FL_DOWN_BOX);
-                o->color((Fl_Color)FL_BACKGROUND2_COLOR);
-                o->selection_color((Fl_Color)FL_SELECTION_COLOR);
+                o->color(FL_BACKGROUND2_COLOR);
+                o->selection_color(FL_SELECTION_COLOR);
                 o->labeltype(FL_NORMAL_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor((Fl_Color)FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_FOREGROUND_COLOR);
                 o->callback((Fl_Callback*)cb_Baud);
-                o->align(FL_ALIGN_LEFT);
+                o->align(Fl_Align(FL_ALIGN_LEFT));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gps_speed);
               } // Fl_Value_Input2* o
@@ -7681,16 +7661,16 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Stationary);
                 o->value(!progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { Fl_Input* o = stationary_lat = new Fl_Input(120, 110, 125, 25, _("Latitude"));
+              { Fl_Float_Input* o = stationary_lat = new Fl_Float_Input(120, 110, 125, 25, _("Latitude"));
                 stationary_lat->type(1);
                 stationary_lat->callback((Fl_Callback*)cb_stationary_lat);
                 o->value(progdefaults.myLat.c_str());
-              } // Fl_Input* stationary_lat
-              { Fl_Input* o = stationary_lon = new Fl_Input(335, 110, 125, 25, _("Longitude"));
+              } // Fl_Float_Input* stationary_lat
+              { Fl_Float_Input* o = stationary_lon = new Fl_Float_Input(335, 110, 125, 25, _("Longitude"));
                 stationary_lon->type(1);
                 stationary_lon->callback((Fl_Callback*)cb_stationary_lon);
                 o->value(progdefaults.myLon.c_str());
-              } // Fl_Input* stationary_lon
+              } // Fl_Float_Input* stationary_lon
               { Fl_Round_Button* o = new Fl_Round_Button(30, 140, 190, 25, _("Upload GPS Position"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
@@ -7714,7 +7694,7 @@ d frequency"));
               } // Fl_Spinner* o
               { Fl_Group* o = new Fl_Group(10, 265, 475, 90, _("Last GPS Position"));
                 o->box(FL_ENGRAVED_BOX);
-                o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+                o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
                 { gps_pos_lat = new Fl_Output(200, 290, 105, 25, _("Lat"));
                 } // Fl_Output* gps_pos_lat
                 { gps_pos_altitude = new Fl_Output(60, 320, 105, 25, _("Alt"));
@@ -7731,11 +7711,11 @@ d frequency"));
               } // Fl_Group* o
               { Fl_Box* o = new Fl_Box(290, 70, 190, 35, _("please enter coordinates as one number, in decimal degrees"));
                 o->labelsize(10);
-                o->align(FL_ALIGN_WRAP);
+                o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o
               { Fl_Box* o = new Fl_Box(160, 230, 270, 25, _("(number of seconds between position updates)"));
                 o->labelsize(10);
-                o->align(FL_ALIGN_WRAP);
+                o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o
               o->end();
             } // Fl_Group* o
@@ -7750,7 +7730,7 @@ d frequency"));
             } // Fl_Browser* flight_browser
             { Fl_Group* o = new Fl_Group(5, 290, 490, 75);
               o->box(FL_ENGRAVED_BOX);
-              o->align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { flight_docs_refresh = new Fl_Button(400, 300, 85, 25, _("Refresh"));
                 flight_docs_refresh->callback((Fl_Callback*)cb_flight_docs_refresh);
               } // Fl_Button* flight_docs_refresh
