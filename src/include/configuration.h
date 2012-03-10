@@ -1314,7 +1314,6 @@
         /* dl-fldigi network config stuff */                                            \
         ELEM_(std::string, habitat_uri, "HABITAT_URI",                                  \
                 "habitat CouchDB URI", "http://habitat.habhub.org")                     \
-        /* TODO HABITAT LATER: change the url above to http://habhub.org when setup */  \
         ELEM_(std::string, habitat_db, "HABITAT_DB",                                    \
                 "habitat CouchDB databse", "habitat")                                   \
                                                                                         \
