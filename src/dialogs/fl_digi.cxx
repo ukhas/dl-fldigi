@@ -370,6 +370,7 @@ Fl_Output			*habAlt;
 Fl_Output			*habChecksum;
 Fl_Output			*habBearing;
 Fl_Output			*habDistance;
+Fl_Output			*habElevation;
 Fl_Output			*habTimeSinceLastRx;
 Fl_Output			*habString;
 
@@ -387,9 +388,10 @@ int w_habLat = 90;
 int w_habLon = 90;
 int w_habAlt = 90;
 int w_habChecksum = 70;
-int w_habBearing = 70;
-int w_habDistance = 70;
-int w_habTimeSinceLastRx = 100;
+int w_habBearing = 50;
+int w_habDistance = 60;
+int w_habElevation = 50;
+int w_habTimeSinceLastRx = 80;
 int w_habString = 430;
 int HAB_height = 0;
 
@@ -5765,7 +5767,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habChecksum->labelcolor(FL_FOREGROUND_COLOR);
 		habChecksum->align(FL_ALIGN_TOP); }
 
-		{ habBearing = new Fl_Output((rightof(habChecksum) + 20), habRowTwoY, w_habBearing, Hentry, _("Bearing"));
+		{ habBearing = new Fl_Output((rightof(habChecksum) + 10), habRowTwoY, w_habBearing, Hentry, _("Bearing"));
 		habBearing->tooltip(_("Bearing from Rx Station to Payload"));
 		habBearing->box(FL_DOWN_BOX);
 		habBearing->color(FL_BACKGROUND2_COLOR);
@@ -5787,7 +5789,18 @@ void create_fl_digi_main_dl_fldigi() {
 		habDistance->labelcolor(FL_FOREGROUND_COLOR);
 		habDistance->align(FL_ALIGN_TOP); }
 	
-		{ habTimeSinceLastRx = new Fl_Output(rightof(habDistance) + 2, habRowTwoY, w_habTimeSinceLastRx, Hentry, _("Time since Rx"));
+		{ habElevation = new Fl_Output((rightof(habDistance) + 2), habRowTwoY, w_habElevation, Hentry, _("Elevation"));
+		habElevation->tooltip(_("Elevation of Payload from Rx Station"));
+		habElevation->box(FL_DOWN_BOX);
+		habElevation->color(FL_BACKGROUND2_COLOR);
+		habElevation->selection_color(FL_SELECTION_COLOR);
+		habElevation->labeltype(FL_NORMAL_LABEL);
+		habElevation->labelfont(0);
+		habElevation->labelsize(13);
+		habElevation->labelcolor(FL_FOREGROUND_COLOR);
+		habElevation->align(FL_ALIGN_TOP); }
+	
+		{ habTimeSinceLastRx = new Fl_Output(rightof(habElevation) + 2, habRowTwoY, w_habTimeSinceLastRx, Hentry, _("Time since Rx"));
 		habTimeSinceLastRx->tooltip(_("Elapsed time since last line of telemetry received"));
 		habTimeSinceLastRx->box(FL_DOWN_BOX);
 		habTimeSinceLastRx->color(FL_BACKGROUND2_COLOR);

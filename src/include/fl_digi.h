@@ -159,6 +159,7 @@ extern Fl_Output			*habAlt;
 extern Fl_Output			*habChecksum;
 extern Fl_Output			*habBearing;
 extern Fl_Output			*habDistance;
+extern Fl_Output			*habElevation;
 extern Fl_Output			*habTimeSinceLastRx;
 extern Fl_Output			*habString;
 
