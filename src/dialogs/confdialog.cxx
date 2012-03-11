@@ -3426,7 +3426,7 @@ if(progdefaults.track_freq_min > i)
 progdefaults.changed = true;
 }
 
-static void cb_Baud(Fl_Value_Input2* o, void*) {
+static void cb_Baud(Fl_Value_Input* o, void*) {
   progdefaults.gps_speed = o->value();
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
@@ -7662,7 +7662,7 @@ d frequency"));
                 o->align(Fl_Align(FL_ALIGN_LEFT));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gps_speed);
-              } // Fl_Value_Input2* o
+              } // Fl_Value_Input* o
               { Fl_Button* o = new Fl_Button(290, 195, 170, 25, _("Refresh Device List"));
                 o->callback((Fl_Callback*)cb_Refresh);
               } // Fl_Button* o
@@ -7724,7 +7724,7 @@ d frequency"));
                 o->labelsize(10);
                 o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o
-              { Fl_Box* o = new Fl_Box(380, 225, 105, 35, _("seconds between position updates"));
+              { Fl_Box* o = new Fl_Box(380, 220, 105, 35, _("seconds between position updates"));
                 o->labelsize(10);
                 o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o

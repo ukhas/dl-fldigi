@@ -4389,6 +4389,7 @@ dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
                 xywh {100 225 150 25} type Int
                 code0 {o->value(progdefaults.gps_speed);}
+                class Fl_Value_Input
               }
               Fl_Button {} {
                 label {Refresh Device List}
@@ -4496,7 +4497,7 @@ stationary_alt->do_callback();}
               }
               Fl_Box {} {
                 label {seconds between position updates}
-                xywh {380 225 105 35} labelsize 10 align 128
+                xywh {380 220 105 35} labelsize 10 align 128
               }
               Fl_Input stationary_alt {
                 label Altitude
