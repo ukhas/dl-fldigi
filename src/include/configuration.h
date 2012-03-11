@@ -1287,6 +1287,8 @@
         ELEM_(std::string, myAlt, "MYALT", "Stationary listener altitude", "0")         \
                                                                                         \
         /* habitat Flight selection stuff */                                            \
+        ELEM_(bool, show_testing_flights, "FLIGHT_SHOW_TESTING",                        \
+                "Show testing flight documents?", false)                                \
         ELEM_(std::string, tracking_flight, "FLIGHT_DOCID", "The selected flight", "")  \
         ELEM_(std::string, tracking_payload, "FLIGHT_PAYLOAD",                          \
                 "The payload selected in the current flight", "")                       \

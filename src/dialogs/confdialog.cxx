@@ -3546,7 +3546,7 @@ static void cb_flight_docs_refresh(Fl_Button*, void*) {
 }
 
 static void cb_Show(Fl_Check_Button* o, void*) {
-  dl_fldigi::flights::show_testing = o->value();
+  progdefaults.show_testing_flights = o->value();
 dl_fldigi::flights::populate_flights();
 }
 
@@ -7649,7 +7649,7 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 300, _("Listener Location"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 225, 150, 25, _("Baud"));
+              { Fl_Value_Input* o = new Fl_Value_Input(100, 225, 150, 25, _("Baud"));
                 o->type(2);
                 o->box(FL_DOWN_BOX);
                 o->color(FL_BACKGROUND2_COLOR);
@@ -7753,6 +7753,7 @@ d frequency"));
               { Fl_Check_Button* o = new Fl_Check_Button(265, 300, 130, 25, _("Show test docs"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Show);
+                o->value(progdefaults.show_testing_flights);
               } // Fl_Check_Button* o
               { flight_search_text = new Fl_Input(75, 300, 120, 25, _("Jump to:"));
                 flight_search_text->callback((Fl_Callback*)cb_flight_search_text);

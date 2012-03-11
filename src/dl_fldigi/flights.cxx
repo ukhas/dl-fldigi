@@ -18,6 +18,7 @@
 #include "main.h"
 #include "debug.h"
 #include "fl_digi.h"
+#include "configuration.h"
 #include "confdialog.h"
 
 #include "dl_fldigi/dl_fldigi.h"
@@ -28,7 +29,7 @@ using namespace std;
 namespace dl_fldigi {
 namespace flights {
 
-bool show_testing, downloaded_once;
+bool downloaded_once;
 
 static string cache_file;
 static vector<Json::Value> flight_docs;
@@ -304,7 +305,7 @@ void populate_flights()
             continue;
         }
 
-        if (is_testing_flight(root) && !show_testing)
+        if (is_testing_flight(root) && !progdefaults.show_testing_flights)
             continue;
 
         if (hab_ui_exists)

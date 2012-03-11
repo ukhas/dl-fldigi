@@ -4389,7 +4389,6 @@ dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
                 xywh {100 225 150 25} type Int
                 code0 {o->value(progdefaults.gps_speed);}
-                class Fl_Value_Input2
               }
               Fl_Button {} {
                 label {Refresh Device List}
@@ -4538,9 +4537,10 @@ if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
               }
               Fl_Check_Button {} {
                 label {Show test docs}
-                callback {dl_fldigi::flights::show_testing = o->value();
+                callback {progdefaults.show_testing_flights = o->value();
 dl_fldigi::flights::populate_flights();}
                 xywh {265 300 130 25} down_box DOWN_BOX
+                code0 {o->value(progdefaults.show_testing_flights);}
               }
               Fl_Input flight_search_text {
                 label {Jump to:}

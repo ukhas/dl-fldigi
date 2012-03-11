@@ -7,7 +7,7 @@
 namespace dl_fldigi {
 namespace flights {
 
-extern bool show_testing, downloaded_once;
+extern bool downloaded_once;
 
 void init();
 void cleanup();
