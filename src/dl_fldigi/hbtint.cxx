@@ -133,6 +133,9 @@ void DUploaderThread::listener_telemetry()
 
     location::update_stationary();
 
+    if (!location::listener_valid)
+        return;
+
     Json::Value data(Json::objectValue);
 
     /* TODO: HABITAT is it really a good idea to upload time like this? */
@@ -325,9 +328,12 @@ void DExtractorManager::data(const Json::Value &d)
     {
         istringstream lat_strm(d["latitude"].asString());
         istringstream lon_strm(d["longitude"].asString());
+        istringstream alt_strm(d["altitude"].asString());
         lat_strm >> location::balloon_latitude;
         lon_strm >> location::balloon_longitude;
-        location::balloon_valid = !lat_strm.fail() && !lon_strm.fail();
+        alt_strm >> location::balloon_altitude;
+        location::balloon_valid = !lat_strm.fail() && !lon_strm.fail() &&
+                                  !alt_strm.fail();
     }
     else
     {

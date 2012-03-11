@@ -12,6 +12,7 @@
 
 #include "configuration.h"
 #include "fl_digi.h"
+#include "confdialog.h"
 
 #include "dl_fldigi/dl_fldigi.h"
 #include "dl_fldigi/gps.h"
@@ -47,10 +48,11 @@ void update_distance_bearing()
     {
         habDistance->value("");
         habBearing->value("");
+        habElevation->value("");
         return;
     }
 
-    /* See /habitat_extensions/misc/earthmaths.py. This is a port */
+    /* See /habitat_extensions/misc/earthmaths.py. */
     double c = M_PI/180;
     double lat1, lon1, lat2, lon2, alt1, alt2;
     lat1 = listener_latitude * c;
@@ -60,8 +62,10 @@ void update_distance_bearing()
     lon2 = balloon_longitude * c;
     alt2 = balloon_altitude;
 
-    double d_lon, sa, sb, bearing, aa, ab, angle_at_centre, ta, tb, ea, eb,
-           elevation, distance;
+    double radius, d_lon, sa, sb, bearing, aa, ab, angle_at_centre,
+           great_circle_distance, ta, tb, ea, eb, elevation, distance;
+
+    radius = 6371000.0;
 
     d_lon = lon2 - lon1;
     sa = cos(lat2) * sin(d_lon);
@@ -70,6 +74,7 @@ void update_distance_bearing()
     aa = sqrt((sa * sa) + (sb * sb));
     ab = (sin(lat1) * sin(lat2)) + (cos(lat1) * cos(lat2) * cos(d_lon));
     angle_at_centre = atan2(aa, ab);
+    great_circle_distance = angle_at_centre * radius;
 
     ta = radius + alt1;
     tb = radius + alt2;
@@ -116,38 +121,43 @@ void update_stationary()
                             "while in GPS mode");
     }
 
-    istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon);
-
-    if (!progdefaults.myLat.size() || !progdefaults.myLon.size())
-    {
-        status_important("unable to set listener location: "
-                         "latitude or longitude missing");
-        goto fail;
-    }
+    istringstream lat_strm(progdefaults.myLat), lon_strm(progdefaults.myLon),
+                  alt_strm(progdefaults.myAlt);
 
     lat_strm >> listener_latitude;
     lon_strm >> listener_longitude;
-    listener_altitude = progdefaults.myAlt;
+    alt_strm >> listener_altitude;
 
     if (lat_strm.fail())
-    {
-        status_important("unable to parse stationary latitude");
-        goto fail;
-    }
+        stationary_lat->color(252);
+    else
+        stationary_lat->color(255);
 
     if (lon_strm.fail())
+        stationary_lon->color(252);
+    else
+        stationary_lon->color(255);
+
+    if (alt_strm.fail())
+        stationary_alt->color(252);
+    else
+        stationary_alt->color(255);
+
+    stationary_lat->redraw();
+    stationary_lon->redraw();
+    stationary_alt->redraw();
+
+    if (lat_strm.fail() || lon_strm.fail() || alt_strm.fail())
     {
-        status_important("unable to parse stationary longitude");
-        goto fail;
+        status_important("couldn't set stationary location: invalid float");
+        listener_valid = false;
+        update_distance_bearing();
     }
-
-    listener_valid = true;
-    update_distance_bearing();
-    return;
-
-fail:
-    listener_valid = false;
-    update_distance_bearing();
+    else
+    {
+        listener_valid = true;
+        update_distance_bearing();
+    }
 }
 
 } /* namespace location */

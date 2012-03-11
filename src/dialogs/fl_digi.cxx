@@ -3512,7 +3512,8 @@ int rightof(Fl_Widget* w)
 		else if (a & FL_ALIGN_RIGHT)
 			return  w->x() + w->w();
 		else
-			return  w->x() + ((lw > w->w()) ? (lw - w->w())/2 : w->w());
+			/* wtf? return  w->x() + ((lw > w->w()) ? (lw - w->w())/2 : w->w()); */
+			return  w->x() + max(lw, w->w());
 	} else
 		return w->x() + w->w() + lw;
 }

@@ -4484,7 +4484,7 @@ btnApplyConfig->activate();}
                   label {Save as stationary location}
                   callback {stationary_lat->value(gps_pos_lat->value());
 stationary_lon->value(gps_pos_lon->value());
-stationary_alt->value(gps_pos_alt->value());
+stationary_alt->value(gps_pos_altitude->value());
 stationary_lat->do_callback();
 stationary_lon->do_callback();
 stationary_alt->do_callback();}
@@ -4506,7 +4506,7 @@ progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
                 xywh {120 135 125 25} type Float
-                code0 {o->value(progdefaults.myAlt);}
+                code0 {o->value(progdefaults.myAlt.c_str());}
               }
             }
           }

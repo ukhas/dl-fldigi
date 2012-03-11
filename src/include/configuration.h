@@ -1284,7 +1284,7 @@
         ELEM_(std::string, myRadio, "MYRADIO", "Short radio description", "")           \
         ELEM_(std::string, myLat, "MYLAT", "Stationary listener latitude", "")          \
         ELEM_(std::string, myLon, "MYLON", "Stationary listener longitude", "")         \
-        ELEM_(double, myAlt, "MYALT", "Stationary listener altitude", 0.0)              \
+        ELEM_(std::string, myAlt, "MYALT", "Stationary listener altitude", "0")         \
                                                                                         \
         /* habitat Flight selection stuff */                                            \
         ELEM_(std::string, tracking_flight, "FLIGHT_DOCID", "The selected flight", "")  \

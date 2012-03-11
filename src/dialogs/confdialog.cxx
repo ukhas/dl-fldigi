@@ -3507,7 +3507,7 @@ Fl_Button *gps_pos_save=(Fl_Button *)0;
 static void cb_gps_pos_save(Fl_Button*, void*) {
   stationary_lat->value(gps_pos_lat->value());
 stationary_lon->value(gps_pos_lon->value());
-stationary_alt->value(gps_pos_alt->value());
+stationary_alt->value(gps_pos_altitude->value());
 stationary_lat->do_callback();
 stationary_lon->do_callback();
 stationary_alt->do_callback();
@@ -7731,7 +7731,7 @@ d frequency"));
               { Fl_Float_Input* o = stationary_alt = new Fl_Float_Input(120, 135, 125, 25, _("Altitude"));
                 stationary_alt->type(1);
                 stationary_alt->callback((Fl_Callback*)cb_stationary_alt);
-                o->value(progdefaults.myAlt);
+                o->value(progdefaults.myAlt.c_str());
               } // Fl_Float_Input* stationary_alt
               o->end();
             } // Fl_Group* o
