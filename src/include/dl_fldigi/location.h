@@ -14,8 +14,8 @@ extern enum location_mode new_location_mode, current_location_mode;
 
 /* Keep the last listener lat/lon that we uploaded. */
 /* Call update_distance_bearing whenever it is changed! */
-extern double listener_latitude, listener_longitude, 
-              balloon_latitude, balloon_longitude;
+extern double listener_latitude, listener_longitude, listener_altitude,
+              balloon_latitude, balloon_longitude, balloon_altitude;
 extern bool listener_valid, balloon_valid;
 
 void start();

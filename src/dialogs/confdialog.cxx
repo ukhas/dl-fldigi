@@ -3507,8 +3507,19 @@ Fl_Button *gps_pos_save=(Fl_Button *)0;
 static void cb_gps_pos_save(Fl_Button*, void*) {
   stationary_lat->value(gps_pos_lat->value());
 stationary_lon->value(gps_pos_lon->value());
+stationary_alt->value(gps_pos_alt->value());
 stationary_lat->do_callback();
 stationary_lon->do_callback();
+stationary_alt->do_callback();
+}
+
+Fl_Float_Input *stationary_alt=(Fl_Float_Input *)0;
+
+static void cb_stationary_alt(Fl_Float_Input* o, void*) {
+  progdefaults.myAlt = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
+btnApplyConfig->activate();
 }
 
 Fl_Group *tabDLPayload=(Fl_Group *)0;
@@ -3609,7 +3620,7 @@ Fl_Double_Window* ConfigureDialog() {
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(Fl_Align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE));
-    { tabsConfigure = new Fl_Tabs(-5, 0, 545, 372);
+    { tabsConfigure = new Fl_Tabs(-5, 0, 545, 375);
       tabsConfigure->color(FL_LIGHT1);
       tabsConfigure->selection_color(FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 500, 345, _("Operator"));
@@ -7638,7 +7649,7 @@ d frequency"));
             { Fl_Group* o = new Fl_Group(5, 60, 490, 300, _("Listener Location"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 200, 150, 25, _("Baud"));
+              { Fl_Value_Input2* o = new Fl_Value_Input2(100, 225, 150, 25, _("Baud"));
                 o->type(2);
                 o->box(FL_DOWN_BOX);
                 o->color(FL_BACKGROUND2_COLOR);
@@ -7652,71 +7663,76 @@ d frequency"));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gps_speed);
               } // Fl_Value_Input2* o
-              { Fl_Button* o = new Fl_Button(290, 170, 170, 25, _("Refresh Device List"));
+              { Fl_Button* o = new Fl_Button(290, 195, 170, 25, _("Refresh Device List"));
                 o->callback((Fl_Callback*)cb_Refresh);
               } // Fl_Button* o
-              { Fl_Round_Button* o = new Fl_Round_Button(30, 85, 190, 25, _("Stationary Listener"));
+              { Fl_Round_Button* o = new Fl_Round_Button(30, 80, 190, 25, _("Stationary Listener"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Stationary);
                 o->value(!progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { Fl_Float_Input* o = stationary_lat = new Fl_Float_Input(120, 110, 125, 25, _("Latitude"));
+              { Fl_Float_Input* o = stationary_lat = new Fl_Float_Input(120, 105, 125, 25, _("Latitude"));
                 stationary_lat->type(1);
                 stationary_lat->callback((Fl_Callback*)cb_stationary_lat);
                 o->value(progdefaults.myLat.c_str());
               } // Fl_Float_Input* stationary_lat
-              { Fl_Float_Input* o = stationary_lon = new Fl_Float_Input(335, 110, 125, 25, _("Longitude"));
+              { Fl_Float_Input* o = stationary_lon = new Fl_Float_Input(335, 105, 125, 25, _("Longitude"));
                 stationary_lon->type(1);
                 stationary_lon->callback((Fl_Callback*)cb_stationary_lon);
                 o->value(progdefaults.myLon.c_str());
               } // Fl_Float_Input* stationary_lon
-              { Fl_Round_Button* o = new Fl_Round_Button(30, 140, 190, 25, _("Upload GPS Position"));
+              { Fl_Round_Button* o = new Fl_Round_Button(30, 165, 190, 25, _("Upload GPS Position"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Upload);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { inpGPSdev = new Fl_Input_Choice(100, 170, 185, 25, _("Device"));
+              { inpGPSdev = new Fl_Input_Choice(100, 195, 185, 25, _("Device"));
                 inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
               } // Fl_Input_Choice* inpGPSdev
-              { Fl_Check_Button* o = new Fl_Check_Button(220, 140, 240, 25, _("Always enable GPS on startup"));
+              { Fl_Check_Button* o = new Fl_Check_Button(220, 165, 240, 25, _("Always enable GPS on startup"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Always);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Check_Button* o
-              { Fl_Spinner* o = new Fl_Spinner(100, 230, 45, 25, _("Period"));
+              { Fl_Spinner* o = new Fl_Spinner(330, 225, 45, 25, _("Period"));
                 o->box(FL_DOWN_BOX);
                 o->minimum(10);
                 o->maximum(300);
                 o->callback((Fl_Callback*)cb_Period);
                 o->value(progdefaults.gps_period);
               } // Fl_Spinner* o
-              { Fl_Group* o = new Fl_Group(10, 265, 475, 90, _("Last GPS Position"));
+              { Fl_Group* o = new Fl_Group(10, 260, 475, 90, _("Last GPS Position"));
                 o->box(FL_ENGRAVED_BOX);
                 o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-                { gps_pos_lat = new Fl_Output(200, 290, 105, 25, _("Lat"));
+                { gps_pos_lat = new Fl_Output(200, 285, 105, 25, _("Lat"));
                 } // Fl_Output* gps_pos_lat
-                { gps_pos_altitude = new Fl_Output(60, 320, 105, 25, _("Alt"));
+                { gps_pos_altitude = new Fl_Output(60, 315, 105, 25, _("Alt"));
                 } // Fl_Output* gps_pos_altitude
-                { gps_pos_time = new Fl_Output(60, 290, 105, 25, _("Time"));
+                { gps_pos_time = new Fl_Output(60, 285, 105, 25, _("Time"));
                 } // Fl_Output* gps_pos_time
-                { gps_pos_lon = new Fl_Output(345, 290, 105, 25, _("Lon"));
+                { gps_pos_lon = new Fl_Output(345, 285, 105, 25, _("Lon"));
                 } // Fl_Output* gps_pos_lon
-                { gps_pos_save = new Fl_Button(200, 320, 250, 25, _("Save as stationary location"));
+                { gps_pos_save = new Fl_Button(200, 315, 250, 25, _("Save as stationary location"));
                 gps_pos_save->callback((Fl_Callback*)cb_gps_pos_save);
                 gps_pos_save->deactivate();
                 } // Fl_Button* gps_pos_save
                 o->end();
               } // Fl_Group* o
-              { Fl_Box* o = new Fl_Box(290, 70, 190, 35, _("please enter coordinates as one number, in decimal degrees"));
+              { Fl_Box* o = new Fl_Box(275, 130, 190, 35, _("please enter lat/long as one number, in decimal degrees; altitude in metres"));
                 o->labelsize(10);
                 o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o
-              { Fl_Box* o = new Fl_Box(160, 230, 270, 25, _("(number of seconds between position updates)"));
+              { Fl_Box* o = new Fl_Box(380, 225, 105, 35, _("seconds between position updates"));
                 o->labelsize(10);
                 o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o
+              { Fl_Float_Input* o = stationary_alt = new Fl_Float_Input(120, 135, 125, 25, _("Altitude"));
+                stationary_alt->type(1);
+                stationary_alt->callback((Fl_Callback*)cb_stationary_alt);
+                o->value(progdefaults.myAlt);
+              } // Fl_Float_Input* stationary_alt
               o->end();
             } // Fl_Group* o
             o->end();

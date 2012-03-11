@@ -474,6 +474,7 @@ extern Fl_Output *gps_pos_altitude;
 extern Fl_Output *gps_pos_time;
 extern Fl_Output *gps_pos_lon;
 extern Fl_Button *gps_pos_save;
+extern Fl_Float_Input *stationary_alt;
 extern Fl_Group *tabDLPayload;
 #include <FL/Fl_Browser.H>
 extern Fl_Browser *flight_browser;

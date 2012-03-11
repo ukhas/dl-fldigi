@@ -129,7 +129,8 @@ for (size_t i = 0; i < sizeof(qrzbweb)/sizeof(*qrzbweb); i++)
 	qrzbweb[i]->value(b == qrzbweb[i]);} {}
 } 
 
-Function {ConfigureDialog()} {} {
+Function {ConfigureDialog()} {open
+} {
   code {static const char szShifts[]  = "23|85|160|170|182|200|240|350|425|600|_850|Custom";
 static const char szBauds[]  = "45|45.45|50|56|75|100|110|150|200|300|600|1200";
 static const char szSelBits[] = "5 (baudot)|7 (ascii)|8 (ascii)";
@@ -144,10 +145,10 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   code {static const int flight_browser_columns[] = { 170, 150, 170 };} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {729 57 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
+    xywh {523 57 500 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
-      xywh {-5 0 545 372} color 50 selection_color 50
+      xywh {-5 0 545 375} color 50 selection_color 50
     } {
       Fl_Group tabOperator {
         label Operator
@@ -4009,7 +4010,7 @@ progdefaults.changed = true;}
       Fl_Group tabQRZ {
         label Web open
         tooltip {Callsign database} xywh {0 25 500 345} labelsize 12 hide
-} {
+      } {
         Fl_Tabs {} {open
           xywh {0 25 500 345}
         } {
@@ -4386,14 +4387,14 @@ progdefaults.changed = true;}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
-                xywh {100 200 150 25} type Int
+                xywh {100 225 150 25} type Int
                 code0 {o->value(progdefaults.gps_speed);}
                 class Fl_Value_Input2
               }
               Fl_Button {} {
                 label {Refresh Device List}
                 callback {progdefaults.testCommPorts();}
-                xywh {290 170 170 25}
+                xywh {290 195 170 25}
               }
               Fl_Round_Button {} {
                 label {Stationary Listener}
@@ -4403,7 +4404,7 @@ btnApplyConfig->activate();}
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 }}
-                xywh {30 85 190 25} type Radio down_box ROUND_DOWN_BOX
+                xywh {30 80 190 25} type Radio down_box ROUND_DOWN_BOX
                 code0 {o->value(!progdefaults.gps_start_enabled);}
               }
               Fl_Input stationary_lat {
@@ -4412,7 +4413,7 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {120 110 125 25} type Float
+                xywh {120 105 125 25} type Float
                 code0 {o->value(progdefaults.myLat.c_str());}
               }
               Fl_Input stationary_lon {
@@ -4421,7 +4422,7 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();}
-                xywh {335 110 125 25} type Float
+                xywh {335 105 125 25} type Float
                 code0 {o->value(progdefaults.myLon.c_str());}
               }
               Fl_Round_Button {} {
@@ -4432,7 +4433,7 @@ btnApplyConfig->activate();}
     dl_fldigi::changed(dl_fldigi::CH_LOCATION_MODE);
     btnApplyConfig->activate();
 }}
-                xywh {30 140 190 25} type Radio down_box ROUND_DOWN_BOX
+                xywh {30 165 190 25} type Radio down_box ROUND_DOWN_BOX
                 code0 {o->value(progdefaults.gps_start_enabled);}
               }
               Fl_Input_Choice inpGPSdev {
@@ -4441,13 +4442,13 @@ btnApplyConfig->activate();}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();} open
-                xywh {100 170 185 25}
+                xywh {100 195 185 25}
               } {}
               Fl_Check_Button {} {
                 label {Always enable GPS on startup}
                 callback {progdefaults.gps_start_enabled = o->value();
 progdefaults.changed = true;}
-                xywh {220 140 240 25} down_box DOWN_BOX
+                xywh {220 165 240 25} down_box DOWN_BOX
                 code0 {o->value(progdefaults.gps_start_enabled);}
               }
               Fl_Spinner {} {
@@ -4456,45 +4457,56 @@ progdefaults.changed = true;}
 progdefaults.changed = true;
 dl_fldigi::changed(dl_fldigi::CH_GPS_SETTINGS);
 btnApplyConfig->activate();}
-                xywh {100 230 45 25} box DOWN_BOX minimum 10 maximum 300
+                xywh {330 225 45 25} box DOWN_BOX minimum 10 maximum 300
                 code0 {o->value(progdefaults.gps_period);}
               }
               Fl_Group {} {
                 label {Last GPS Position} open
-                xywh {10 265 475 90} box ENGRAVED_BOX align 21
+                xywh {10 260 475 90} box ENGRAVED_BOX align 21
               } {
                 Fl_Output gps_pos_lat {
                   label Lat
-                  xywh {200 290 105 25}
+                  xywh {200 285 105 25}
                 }
                 Fl_Output gps_pos_altitude {
                   label Alt
-                  xywh {60 320 105 25}
+                  xywh {60 315 105 25}
                 }
                 Fl_Output gps_pos_time {
                   label Time
-                  xywh {60 290 105 25}
+                  xywh {60 285 105 25}
                 }
                 Fl_Output gps_pos_lon {
                   label Lon
-                  xywh {345 290 105 25}
+                  xywh {345 285 105 25}
                 }
                 Fl_Button gps_pos_save {
                   label {Save as stationary location}
                   callback {stationary_lat->value(gps_pos_lat->value());
 stationary_lon->value(gps_pos_lon->value());
+stationary_alt->value(gps_pos_alt->value());
 stationary_lat->do_callback();
-stationary_lon->do_callback();}
-                  xywh {200 320 250 25} deactivate
+stationary_lon->do_callback();
+stationary_alt->do_callback();}
+                  xywh {200 315 250 25} deactivate
                 }
               }
               Fl_Box {} {
-                label {please enter coordinates as one number, in decimal degrees}
-                xywh {290 70 190 35} labelsize 10 align 128
+                label {please enter lat/long as one number, in decimal degrees; altitude in metres}
+                xywh {275 130 190 35} labelsize 10 align 128
               }
               Fl_Box {} {
-                label {(number of seconds between position updates)}
-                xywh {160 230 270 25} labelsize 10 align 128
+                label {seconds between position updates}
+                xywh {380 225 105 35} labelsize 10 align 128
+              }
+              Fl_Input stationary_alt {
+                label Altitude
+                callback {progdefaults.myAlt = o->value();
+progdefaults.changed = true;
+dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
+btnApplyConfig->activate();}
+                xywh {120 135 125 25} type Float
+                code0 {o->value(progdefaults.myAlt);}
               }
             }
           }

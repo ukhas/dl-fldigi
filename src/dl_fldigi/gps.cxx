@@ -382,6 +382,7 @@ void GPSThread::upload(int hour, int minute, int second,
     location::listener_valid = true;
     location::listener_latitude = latitude;
     location::listener_longitude = longitude;
+    location::listener_altitude = altitude;
     location::update_distance_bearing();
 
     Json::Value data(Json::objectValue);

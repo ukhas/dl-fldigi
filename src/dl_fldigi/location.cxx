@@ -22,8 +22,8 @@ namespace dl_fldigi {
 namespace location {
 
 enum location_mode new_location_mode, current_location_mode;
-double listener_latitude, listener_longitude,
-       balloon_latitude, balloon_longitude;
+double listener_latitude, listener_longitude, listener_altitude,
+       balloon_latitude, balloon_longitude, balloon_altitude;
 bool listener_valid, balloon_valid;
 
 void start()
@@ -50,43 +50,46 @@ void update_distance_bearing()
         return;
     }
 
-    /* Convert everything to radians */
+    /* See /habitat_extensions/misc/earthmaths.py. This is a port */
     double c = M_PI/180;
-
-    double lat1, lon1, lat2, lon2;
+    double lat1, lon1, lat2, lon2, alt1, alt2;
     lat1 = listener_latitude * c;
     lon1 = listener_longitude * c;
+    alt1 = listener_altitude;
     lat2 = balloon_latitude * c;
     lon2 = balloon_longitude * c;
+    alt2 = balloon_altitude;
 
-    double d_lat, d_lon;
-    d_lat = lat2 - lat1;
+    double d_lon, sa, sb, bearing, aa, ab, angle_at_centre, ta, tb, ea, eb,
+           elevation, distance;
+
     d_lon = lon2 - lon1;
+    sa = cos(lat2) * sin(d_lon);
+    sb = (cos(lat1) * sin(lat2)) - (sin(lat1) * cos(lat2) * cos(d_lon));
+    bearing = atan2(sa, sb);
+    aa = sqrt((sa * sa) + (sb * sb));
+    ab = (sin(lat1) * sin(lat2)) + (cos(lat1) * cos(lat2) * cos(d_lon));
+    angle_at_centre = atan2(aa, ab);
 
-    /* haversine formula */
-    double p = sin(d_lat / 2);
-    p *= p;
-    double q = sin(d_lon / 2);
-    q *= q;
-    double a = p + cos(lat1) * cos(lat2) * q;
+    ta = radius + alt1;
+    tb = radius + alt2;
+    ea = (cos(angle_at_centre) * tb) - ta;
+    eb = sin(angle_at_centre) * tb;
+    elevation = atan2(ea, eb);
 
-    double t = atan2(sqrt(a), sqrt(1 - a)) * 2;
-    /* 6371 = approx radius of earth in km */
-    double distance = t * 6371;
+    distance = sqrt((ta * ta) + (tb * tb) -
+                    2 * tb * ta * cos(angle_at_centre));
 
-    double y = sin(d_lon) * cos(lat2);
-    double x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(d_lon);
-    double bearing = atan2(y, x);
-
-    /* back to degrees */
     bearing *= (180/M_PI);
+    elevation *= (180/M_PI);
+    distance /= 1000;
+
+    if (bearing < 0)
+        bearing += 360;
 
     ostringstream str_distance;
     str_distance.precision(4);
     str_distance << distance << "km";
-
-    if (bearing < 0)
-        bearing += 360;
 
     ostringstream str_bearing;
     str_bearing.setf(ios::fixed, ios::floatfield);
@@ -95,8 +98,14 @@ void update_distance_bearing()
     str_bearing.width(3 + 1 + 1);
     str_bearing << bearing;
 
+    ostringstream str_elevation;
+    str_elevation.setf(ios::fixed, ios::floatfield);
+    str_elevation.precision(1);
+    str_elevation << elevation;
+
     habDistance->value(str_distance.str().c_str());
     habBearing->value(str_bearing.str().c_str());
+    habElevation->value(str_elevation.str().c_str());
 }
 
 void update_stationary()
@@ -118,6 +127,7 @@ void update_stationary()
 
     lat_strm >> listener_latitude;
     lon_strm >> listener_longitude;
+    listener_altitude = progdefaults.myAlt;
 
     if (lat_strm.fail())
     {

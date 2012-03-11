@@ -155,6 +155,7 @@ void DUploaderThread::listener_telemetry()
 
     data["latitude"] = location::listener_latitude;
     data["longitude"] = location::listener_longitude;
+    data["altitude"] = location::listener_altitude;
 
     UploaderThread::listener_telemetry(data);
 }
