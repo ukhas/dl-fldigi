@@ -1,1 +1,1 @@
-../../../habitat_extensions/cpp_connector/src/UploaderThread.h
+../../../habitat-cpp-connector/src/UploaderThread.h

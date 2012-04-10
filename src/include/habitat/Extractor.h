@@ -1,1 +1,1 @@
-../../../habitat_extensions/cpp_connector/src/Extractor.h
+../../../habitat-cpp-connector/src/Extractor.h

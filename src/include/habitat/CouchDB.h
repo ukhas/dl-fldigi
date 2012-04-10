@@ -1,1 +1,1 @@
-../../../habitat_extensions/cpp_connector/src/CouchDB.h
+../../../habitat-cpp-connector/src/CouchDB.h

@@ -1,1 +1,1 @@
-../../../habitat_extensions/cpp_connector/src/EZ.h
+../../../habitat-cpp-connector/src/EZ.h
