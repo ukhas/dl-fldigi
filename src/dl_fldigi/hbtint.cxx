@@ -9,7 +9,7 @@
 
 #include <string>
 #include <sstream>
-#include <jsoncpp/json.h>
+#include <json/json.h>
 
 #include <FL/Fl.H>
 

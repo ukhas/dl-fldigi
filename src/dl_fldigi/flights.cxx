@@ -13,7 +13,7 @@
 #include <sstream>
 #include <set>
 #include <unistd.h>
-#include <jsoncpp/json.h>
+#include <json/json.h>
 
 #include "main.h"
 #include "debug.h"

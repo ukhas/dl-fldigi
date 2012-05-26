@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <jsoncpp/json.h>
+#include <json/json.h>
 #include "habitat/Extractor.h"
 #include "habitat/UploaderThread.h"
 
