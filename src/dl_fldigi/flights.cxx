@@ -370,6 +370,9 @@ void flight_search(bool next)
 
     int n = flight_browser->size();
 
+    if (!n)
+        return;
+
     if (!next || flight_search_first > n)
         flight_search_first = 1;
 
