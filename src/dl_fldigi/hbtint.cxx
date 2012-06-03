@@ -2,7 +2,7 @@
  * Copyright (C) 2011 Daniel Richman
  * License: GNU GPL 3
  *
- * hbtint.cxx: habitat integration (see habitat_extensions/cpp_uploader)
+ * hbtint.cxx: habitat integration (see habitat-cpp-connector)
  */
 
 #include "dl_fldigi/hbtint.h"

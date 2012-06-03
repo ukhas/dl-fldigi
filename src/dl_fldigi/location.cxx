@@ -52,7 +52,7 @@ void update_distance_bearing()
         return;
     }
 
-    /* See /habitat_extensions/misc/earthmaths.py. */
+    /* See habitat-autotracker/autotracker/earthmaths.py. */
     double c = M_PI/180;
     double lat1, lon1, lat2, lon2, alt1, alt2;
     lat1 = listener_latitude * c;
