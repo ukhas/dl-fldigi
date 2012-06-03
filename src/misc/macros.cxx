@@ -48,6 +48,7 @@
 #include "logsupport.h"
 #include "icons.h"
 #include "weather.h"
+#include "utf8file_io.h"
 
 #include <FL/Fl.H>
 #include <FL/filename.H>
@@ -1618,19 +1619,19 @@ static void pEXEC(std::string &s, size_t &i, size_t endbracket)
 		return;
 	}
 
-	size_t start, end;
-	if ((start = s.find('>', i)) == std::string::npos ||
-		(end = s.rfind("</EXEC>")) == std::string::npos) {
+	size_t start = s.find(">", i);
+	size_t end = s.find("</EXEC>", start);
+
+	if (start == std::string::npos ||
+		end == std::string::npos) {
 		i++;
 		return;
 	}
-	start++;
-	i++;
 
-	std::string execstr = s.substr(start, end-start);
+	std::string execstr = s.substr(start+1, end-start-1);
 	within_exec = true;
 	MACROTEXT m;
-	execstr = m.expandMacro(execstr);
+	execstr = m.expandMacro(execstr, true);
 //	execstr.insert(0,ScriptsDir);
 	within_exec = false;
 
@@ -1656,8 +1657,12 @@ static void pEXEC(std::string &s, size_t &i, size_t endbracket)
 		perror("execl");
 		exit(EXIT_FAILURE);
 	}
-	// parent
+
+// parent
 	close(pfd[1]);
+	
+// give child process time to complete
+	MilliSleep(50);
 	FILE* fp = fdopen(pfd[0], "r");
 	if (!fp) {
 		LOG_PERROR("fdopen");
@@ -1665,26 +1670,26 @@ static void pEXEC(std::string &s, size_t &i, size_t endbracket)
 		return;
 	}
 
-	start = --i;
-	end = s.find('>', end) + 1;
-	s.erase(start, end-start);
+	s.erase(i, end - i + strlen("</EXEC>"));
+
 	char ln[BUFSIZ];
+	string lnbuff = "";
 	while (fgets(ln, sizeof(ln), fp)) {
-		end = strlen(ln);
-		s.insert(start, ln, end);
-		start += end;
+		lnbuff.append(ln);
 	}
-	// delete the trailing newline of what we read
-	if (start > i && s[start - 1] == '\n')
-		s.erase(start - 1, 1);
+// remove all trailing end-of-lines
+	while (lnbuff[lnbuff.length()-1] == '\n')
+		lnbuff.erase(lnbuff.length()-1,1);
+
+	if (!lnbuff.empty()) {
+		s.insert(i, lnbuff);
+		i += lnbuff.length();
+	} else
+		i++;
 
 	fclose(fp);
 	close(pfd[0]);
 
-	// what should we do with the shell-generated text?
-	// option 1: uncomment this line to skip & ignore it
-	// i = start;
-	// option 2: do nothing and allow it to be parsed for more macros
 }
 #else // !__MINGW32__
 
@@ -1705,7 +1710,7 @@ static void pEXEC(std::string& s, size_t& i, size_t endbracket)
 	std::string execstr = s.substr(start, end-start);
 	within_exec = true;
 	MACROTEXT m;
-	execstr = m.expandMacro(execstr);
+	execstr = m.expandMacro(execstr, true);
 	within_exec = false;
 
 	char* cmd = strdup(execstr.c_str());
@@ -1865,7 +1870,7 @@ void queue_reset()
 
 static void postQueue(std::string s)
 {
-	ReceiveText->add(s.c_str(), FTextBase::CTRL);
+	ReceiveText->addstr(s, FTextBase::CTRL);
 }
 
 void queue_execute()
@@ -2080,7 +2085,7 @@ LOG_INFO("loading: %s", Filename.c_str());
 	if (progdefaults.DisplayMacroFilename) {
 		string Macroset;
 		Macroset.assign("\nMacros: ").append(progStatus.LastMacroFile).append("\n");
-		ReceiveText->add(Macroset.c_str());
+		ReceiveText->addstr(Macroset);
 	}
 }
 
@@ -2088,10 +2093,11 @@ void MACROTEXT::openMacroFile()
 {
 	std::string deffilename = MacrosDir;
 
-	if (progStatus.LastMacroFile.find("/") == string::npos)
-		deffilename.append(progStatus.LastMacroFile);
-	else
+	if (progStatus.LastMacroFile.find("/") != string::npos ||
+		progStatus.LastMacroFile.find("\\") != string::npos)
 		deffilename.assign(progStatus.LastMacroFile);
+	else
+		deffilename.append(progStatus.LastMacroFile);
 
 	const char *p = FSEL::select(
 			_("Open macro file"),
@@ -2105,18 +2111,31 @@ void MACROTEXT::openMacroFile()
 	if (progdefaults.DisplayMacroFilename) {
 		string Macroset;
 		Macroset.assign("\nMacros: ").append(progStatus.LastMacroFile).append("\n");
-		ReceiveText->add(Macroset.c_str());
+		ReceiveText->addstr(Macroset);
 	}
+}
+
+void MACROTEXT::writeMacroFile()
+{
+	std::string deffilename = MacrosDir;
+	if (progStatus.LastMacroFile.find("/") != string::npos ||
+		progStatus.LastMacroFile.find("\\") != string::npos)
+		deffilename.assign(progStatus.LastMacroFile);
+	else
+		deffilename.append(progStatus.LastMacroFile);
+
+	saveMacros(deffilename.c_str());
 }
 
 void MACROTEXT::saveMacroFile()
 {
 	std::string deffilename = MacrosDir;
 
-	if (progStatus.LastMacroFile.find("/") == string::npos)
-		deffilename.append(progStatus.LastMacroFile);
-	else
+	if (progStatus.LastMacroFile.find("/") != string::npos ||
+		progStatus.LastMacroFile.find("\\") != string::npos)
 		deffilename.assign(progStatus.LastMacroFile);
+	else
+		deffilename.append(progStatus.LastMacroFile);
 
 	const char *p = FSEL::saveas(
 			_("Save macro file"), 
@@ -2141,12 +2160,14 @@ void MACROTEXT::loadnewMACROS(std::string &s, size_t &i, size_t endbracket)
 	showMacroSet();
 }
 
-std::string MACROTEXT::expandMacro(std::string &s)
+std::string MACROTEXT::expandMacro(std::string &s, bool recurse = false)
 {
 	size_t idx = 0;
 	expand = true;
-	TransmitON = false;
-	ToggleTXRX = false;
+	if (!recurse) {
+		TransmitON = false;
+		ToggleTXRX = false;
+	}
 //	mNbr = n;
 	expanded = s;//text[n];
 	const MTAGS *pMtags;
@@ -2273,7 +2294,8 @@ void MACROTEXT::timed_execute()
 	queue_reset();
 	TransmitText->clear();
 	text2send = expandMacro(exec_string);
-	TransmitText->add(text2send.c_str());
+	TransmitText->add_text(text2send);
+//	TransmitText->addstr(text2send);
 	exec_string.clear();
 	active_modem->set_stopflag(false);
 	start_tx();
@@ -2293,7 +2315,8 @@ void MACROTEXT::execute(int n)
 	}
 
 	if (progStatus.repeatMacro == -1)
-		TransmitText->add( text2send.c_str() );
+		TransmitText->add_text( text2send );
+//		TransmitText->addstr( text2send );
 	else {
 		size_t p = std::string::npos;
 		text2send = text[n];
@@ -2301,7 +2324,8 @@ void MACROTEXT::execute(int n)
 			text2send[p] = '[';
 		while ((p = text2send.find('>')) != std::string::npos)
 			text2send[p] = ']';
-		TransmitText->add( text2send.c_str() );
+		TransmitText->add_text( text2send );
+//		TransmitText->addstr( text2send );
 	}
 	text2send.clear();
 
@@ -2367,7 +2391,32 @@ static std::string mtext =
 ";
 
 void MACROTEXT::saveMacros(const std::string& fname) {
+
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+
 	std::string work;
+	std::string output;
+	char temp[200];
+	output.assign(mtext);
+	for (int i = 0; i < MAXMACROS; i++) {
+		snprintf(temp, sizeof(temp), "\n//\n// Macro # %d\n/$ %d %s\n",
+			i+1, i, macros.name[i].c_str());
+		output.append(temp);
+		work = macros.text[i];
+		size_t pos;
+		pos = work.find('\n');
+		while (pos != std::string::npos) {
+			work.insert(pos, "\\n");
+			pos = work.find('\n', pos + 3);
+		}
+		output.append(work).append("\n");
+	}
+	UTF8_writefile(fname.c_str(), output);
+
+#else
+
+	std::string work;
+
 	ofstream mfile(fname.c_str());
 	mfile << mtext;
 	for (int i = 0; i < MAXMACROS; i++) {
@@ -2384,6 +2433,9 @@ void MACROTEXT::saveMacros(const std::string& fname) {
 	}
 	mfile << "\n";
 	mfile.close();
+
+#endif
+
 	changed = false;
 }
 

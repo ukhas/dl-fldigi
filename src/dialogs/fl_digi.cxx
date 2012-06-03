@@ -160,6 +160,10 @@
 
 #include "arq_io.h"
 
+#include "notifydialog.h"
+#include "macroedit.h"
+#include "wefax-pic.h"
+
 #include "ssdv_rx.h"
 
 #include <iostream>
@@ -469,7 +473,7 @@ Pixmap				fldigi_icon_pixmap;
 
 Fl_Menu_Item *getMenuItem(const char *caption, Fl_Menu_Item* submenu = 0);
 void UI_select();
-bool clean_exit(void);
+bool clean_exit(bool ask);
 
 void cb_init_mode(Fl_Widget *, void *arg);
 
@@ -1009,15 +1013,103 @@ void cb_mnuSaveMacro(Fl_Menu_*, void*) {
 	restoreFocus();
 }
 
-void cb_E(Fl_Menu_*, void*) {
-	fl_digi_main->do_callback();
+void remove_windows()
+{
+	if (scopeview) {
+		scopeview->hide();
+		delete scopeview;
+	}
+	if (dlgViewer) {
+		dlgViewer->hide();
+		delete dlgViewer;
+	}
+	if (dlgLogbook) {
+		dlgLogbook->hide();
+		delete dlgLogbook;
+	}
+	if (dlgConfig) {
+		dlgConfig->hide();
+		delete cboHamlibRig;
+		delete dlgConfig;
+	}
+	if (dlgColorFont) {
+		dlgColorFont->hide();
+		delete dlgColorFont;
+	}
+	if (font_browser) {
+		font_browser->hide();
+		delete font_browser;
+	}
+	if (notify_window) {
+		notify_window->hide();
+		delete notify_window;
+	}
+	if (dxcc_window) {
+		dxcc_window->hide();
+		delete dxcc_window;
+	}
+	if (picRxWin) {
+		picRxWin->hide();
+		delete picRxWin;
+	}
+	if (picTxWin) {
+		picTxWin->hide();
+		delete picTxWin;
+	}
+	if (wefax_pic_rx_win) {
+		wefax_pic_rx_win->hide();
+		delete wefax_pic_rx_win;
+	}
+	if (wefax_pic_tx_win) {
+		wefax_pic_tx_win->hide();
+		delete wefax_pic_tx_win;
+	}
+	if (wExport) {
+		wExport->hide();
+		delete wExport;
+	}
+	if (wCabrillo) {
+		wCabrillo->hide();
+		delete wCabrillo;
+	}
+	if (MacroEditDialog) {
+		MacroEditDialog->hide();
+		delete MacroEditDialog;
+	}
+	debug::stop();
 }
+
+// callback executed from Escape / Window decoration 'X' or OS X cmd-Q
+// capture cmd-Q to allow a normal shutdown.
+// Red-X on OS X window decoration will crash with Signal 11 if a dialog
+// is opened post pressing the Red-X
+// Lion also does not allow any dialog other than the main dialog to
+// remain open after a Red-X exit
 
 void cb_wMain(Fl_Widget*, void*)
 {
-	if (!clean_exit())
+#ifdef __APPLE__
+	bool ret = false;
+	if (((Fl::event_state() & FL_COMMAND) == FL_COMMAND) && (Fl::event_key() == 'q'))
+		ret = clean_exit(true);
+	else
+		ret = clean_exit(false);
+	if (!ret) return;
+#else
+	if (!clean_exit(true))
 		return;
-	// this will make Fl::run return (clean_exit closes all other windows)
+#endif
+	remove_windows();  // more Apple Lion madness
+// this will make Fl::run return
+	fl_digi_main->hide();
+}
+
+// callback executed from menu item File/Exit
+void cb_E(Fl_Menu_*, void*) {
+	if (!clean_exit(true))
+		return;
+	remove_windows();
+// this will make Fl::run return
 	fl_digi_main->hide();
 }
 
@@ -2431,7 +2523,7 @@ void startTimedExecute(std::string &title)
 	btnMacroTimer->color(fl_rgb_color(240, 240, 0));
 	btnMacroTimer->redraw_label();
 	ReceiveText->clear();
-	ReceiveText->add(txt.c_str(), FTextBase::CTRL);
+	ReceiveText->addstr(txt, FTextBase::CTRL);
 }
 
 void cbMacroTimerButton(Fl_Widget*, void*)
@@ -2524,44 +2616,49 @@ int default_handler(int event)
 	return 0;
 }
 
-
-bool clean_exit(void) {
-	if (progdefaults.changed) {
-		switch (fl_choice2(_("Save changed configuration before exiting?"),
-				  _("Cancel"), _("Save"), _("Don't save"))) {
+bool save_on_exit() {
+	if (progdefaults.changed && progdefaults.SaveConfig) {
+		switch (fl_choice2(_("Save changed configuration?"),
+				_("Cancel"), _("Save"), _("Don't save"))) {
 		case 0:
 			return false;
 		case 1:
 			progdefaults.saveDefaults();
-			// fall through
+		// fall through
+		case 2:
+			break;
+		}
+	}
+	if (macros.changed && progdefaults.SaveMacros) {
+		switch (fl_choice2(_("Save changed macros?"),
+				_("Cancel"), _("Save"), _("Don't save"))) {
+		case 0:
+			return false;
+		case 1:
+			macros.writeMacroFile();
+		// fall through
 		case 2:
 			break;
 		}
 	}
 	if (!oktoclear && progdefaults.NagMe) {
-		switch (fl_choice2(_("Save log before exiting?"),
-				  _("Cancel"), _("Save"), _("Don't save"))) {
+		switch (fl_choice2(_("Save current log entry?"),
+			  _("Cancel"), _("Save"), _("Don't save"))) {
 		case 0:
 			return false;
 		case 1:
 			qsoSave_cb(0, 0);
-			// fall through
+		// fall through
 		case 2:
 			break;
 		}
 	}
-	if (macros.changed) {
-		switch (fl_choice2(_("Save changed macros before exiting?"),
-				  _("Cancel"), _("Save"), _("Don't save"))) {
-		case 0:
-			return false;
-		case 1:
-			macros.saveMacroFile();
-			// fall through
-		case 2:
-			break;
-		}
-	}
+	return true;
+}
+
+bool clean_exit(bool ask) {
+	if (ask)
+		if (!save_on_exit()) return false;
 
 	static bool double_exit = false;
 	if (double_exit)
@@ -2581,8 +2678,7 @@ bool clean_exit(void) {
 	if (logfile)
 		logfile->log_to_file_stop();
 
-//	if (bSaveFreqList)
-		saveFreqList();
+	saveFreqList();
 
 	progStatus.saveLastState();
 
@@ -2606,12 +2702,6 @@ bool clean_exit(void) {
 	while (trx_state != STATE_ENDED) {
 		REQ_FLUSH(GET_THREAD_ID());
 		Fl::wait();
-	}
-
-	if (dlgConfig) {
-		dlgConfig->hide();
-		delete cboHamlibRig;
-		delete dlgConfig;
 	}
 
 #if USE_HAMLIB
@@ -3782,7 +3872,7 @@ void showMacroSet() {
 void showDTMF(const string s) {
 	string dtmfstr = "\n<DTMF> ";
 	dtmfstr.append(s);
-	ReceiveText->add(dtmfstr.c_str());
+	ReceiveText->addstr(dtmfstr);
 }
 
 void setwfrange() {
@@ -3846,7 +3936,7 @@ static void cb_mainViewer(Fl_Hold_Browser*, void*) {
 				bHistory = true;
 			} else {
 				ReceiveText->addchr('\n', FTextBase::ALTR);
-				ReceiveText->addstr(mainViewer->line(sel).c_str(), FTextBase::ALTR);
+				ReceiveText->addstr(mainViewer->line(sel), FTextBase::ALTR);
 			}
 			active_modem->set_freq(mainViewer->freq(sel));
 			active_modem->set_sigsearch(SIGSEARCH);
@@ -6166,7 +6256,9 @@ void add_rxtx_char(int data)
 		memset(rxtx_raw_buff, 0, RAW_BUFF_LEN+1);
 		rxtx_raw_len = 0;
 	}
-	rxtx_raw_buff[rxtx_raw_len++] = (unsigned char)data;
+	if (data & 0xFF00) // UTF-8 character
+		rxtx_raw_buff[rxtx_raw_len++] = (data >> 8) & 0xFF;
+	rxtx_raw_buff[rxtx_raw_len++] = (unsigned char)(data & 0xFF);
 }
 
 //======================================================================
@@ -6191,6 +6283,8 @@ void add_rx_char(int data)
 		memset(rx_raw_buff, 0, RAW_BUFF_LEN+1);
 		rx_raw_len = 0;
 	}
+	if (data & 0xFF00) // UTF-8 character
+		rx_raw_buff[rx_raw_len++] = (data >> 8) & 0xFF;
 	rx_raw_buff[rx_raw_len++] = (unsigned char)data;
 }
 
@@ -6220,6 +6314,8 @@ void add_tx_char(int data)
 }
 
 //======================================================================
+static unsigned char firstUTF8 = 0;
+
 static void put_rx_char_flmain(unsigned int data, int style)
 {
 	ENSURE_THREAD(FLMAIN_TID);
@@ -6233,25 +6329,35 @@ static void put_rx_char_flmain(unsigned int data, int style)
 	if (mode == MODE_RTTY || mode == MODE_CW)
 		asc = ascii;
 
-	if (asc == ascii2 && iscntrl(data))
+	if (asc == ascii2 && (data < ' ') && iscntrl(data))
 		style = FTextBase::CTRL;
 	if (wf->tmp_carrier())
 		style = FTextBase::ALTR;
 
 	if (progdefaults.autoextract == true) rx_extract_add(data);
+
 	speak(data);
 
-	add_rx_char(data);
-
-	switch (data) {
-		case '\n':
-			if (last == '\r')
-				break;
-		case '\r':
+	if ((data & 0x80) == 0x80) {
+		if (firstUTF8 == 0)
+			firstUTF8 = data;
+		else {
+			add_rx_char(firstUTF8);
+			add_rx_char(data);
+			ReceiveText->add(firstUTF8, style);
+			ReceiveText->add(data, style);
+			firstUTF8 = 0;
+		}
+	} else {
+		firstUTF8 = 0;
+		if (data == '\n' && last == '\r');
+		else if (data == '\r') {
+			add_rx_char('\n');
 			ReceiveText->add('\n', style);
-			break;
-		default:
-			ReceiveText->add(data & 0x7F, style);
+		} else {
+			add_rx_char(data);
+			ReceiveText->add(data, style);
+		}
 	}
 
 	last = data;
@@ -6259,7 +6365,7 @@ static void put_rx_char_flmain(unsigned int data, int style)
 	WriteARQ(data);
 
 	string s;
-	if (iscntrl(data))
+	if (data < ' ' && iscntrl(data))
 		s = ascii2[data & 0x7F];
 	else {
 		s += data;
@@ -6630,8 +6736,10 @@ int get_tx_char(void)
 
 void put_echo_char(unsigned int data, int style)
 {
-//if (bWF_only) return;
-    if (progdefaults.QSKadjust) return;
+	if (!data) return;
+
+    if (progdefaults.QSKadjust && (active_modem->get_mode() == MODE_CW))
+		return;
 
 	static unsigned int last = 0;
 	const char **asc = ascii;
@@ -6651,9 +6759,21 @@ void put_echo_char(unsigned int data, int style)
 
 	if (asc == ascii2 && iscntrl(data))
 		style = FTextBase::CTRL;
-	REQ(&FTextBase::addchr, ReceiveText, data, style);
 
-	string s = iscntrl(data) ? ascii2[data & 0x7F] : string(1, data);
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+	string sch;
+	sch.clear();
+	if (data & 0xFF00) {
+		sch += (data >> 8) & 0xFF;
+		sch += (data & 0xFF);
+	} else
+		sch = (data & 0xFF);
+	REQ(&FTextRX::addstr, ReceiveText, sch, style);
+#else
+	REQ(&FTextBase::addchr, ReceiveText, data, style);
+#endif
+
+	string s = iscntrl(data & 0x7F) ? ascii2[data & 0x7F] : string(1, data);
 	if (Maillogfile)
 		Maillogfile->log_to_file(cLogfile::LOG_TX, s);
 
@@ -6879,11 +6999,11 @@ void note_qrg(bool no_dup, const char* prefix, const char* suffix, trx_mode mode
 
 	qrg_marks[buf] = m;
 	if (prefix && *prefix)
-		ReceiveText->add(prefix);
-	ReceiveText->add(buf, FTextBase::QSY);
+		ReceiveText->addstr(prefix);
+	ReceiveText->addstr(buf, FTextBase::QSY);
 	ReceiveText->mark();
 	if (suffix && *suffix)
-		ReceiveText->add(suffix);
+		ReceiveText->addstr(suffix);
 }
 
 void xmtrcv_selection_color()
@@ -7052,6 +7172,17 @@ void set_rtty_bw(float bw)
 {
 	sldrRTTYbandwidth->value(bw);
 	sldrRTTYbandwidth->do_callback();
+}
+
+int notch_frequency = 0;
+void notch_on(int freq)
+{
+	notch_frequency = freq;
+}
+
+void notch_off()
+{
+	notch_frequency = 0;
 }
 
 void set_menu_dl_online(bool val)

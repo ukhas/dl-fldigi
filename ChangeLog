@@ -1,8 +1,56 @@
 
 
-=Version 3.21.38=
+=Version 3.21.43=
 
-2012-02-01  David Freese  <w1hkj@w1hkj.com>
+2012-05-30  Kamal Mostafa  <kamal@whence.com>
+
+	39998f7: Fix TX text clear after macro
+
+2012-05-26  David Freese  <w1hkj@w1hkj.com>
+
+	0c113b6: Rigio thread
+
+
+=Version 3.21.42=
+
+	1089250: Auto file directory
+	8bdd45e: Cmd line help
+	ccc4d5d: FreqControl paste
+	fc870d5: Base directory
+	e298249: psk comments
+
+
+=Version 3.21.41=
+
+	1779db5: Check for updates
+	0d2e7c3: Notch indicator color
+	970b00d: ARQ Parse Mode
+	d4e5caa: Path separator
+	d7dfbdb: Debug changes
+	80d67e3: Clear sent text
+	815d27a: Control-Z fault
+	bd14450: Notch
+	d1defa3: EXEC macro
+
+
+=Version 3.21.40=
+
+	3318229: Save Macro - Windows
+	2dc3120: About copyright date
+
+
+=Version 3.21.39=
+
+	29ccdeb: Win7 Open Logbook
+	74da509: MFSK pic dnd
+	c2998df: Merge record logic error
+	24c470e: OSX Lion shutdown
+	b7ff115: Cyrillic-UTF8 chars
+	bf8046d: QSK test
+	1364186: Weather report
+
+
+=Version 3.21.38=
 
 	9327490: Control sizing
 	df3bf09: eQSL

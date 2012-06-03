@@ -333,10 +333,22 @@ extern void sync_cw_parameters();
 
 extern void open_recv_folder(const char *fname);
 
+// set notch parameter on flrig
+extern int  notch_frequency;
+extern void notch_on(int);
+extern void notch_off();
+
 // thread terminators
 extern void ADIF_RW_close(void);
 extern void EQSL_close(void);
 
+// notifier dialogs
+extern Fl_Double_Window *notify_window;
+extern Fl_Double_Window *dxcc_window;
+
+extern void cb_mnuCheckUpdate(Fl_Widget *, void *);
+
+// dl-fldigi
 void set_menu_dl_online(bool val);
 void set_menu_dl_refresh_active(bool active);
 

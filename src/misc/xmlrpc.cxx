@@ -1423,7 +1423,8 @@ public:
 	}
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
 	{
-		if (trx_state == STATE_TX || trx_state == STATE_TUNE)
+//		if (trx_state == STATE_TX || trx_state == STATE_TUNE)
+		if (btnTune->value() || wf->xmtrcv->value())
 			*retval = xmlrpc_c::value_string("TX");
 		else
 			*retval = xmlrpc_c::value_string("RX");
@@ -1630,6 +1631,41 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
 	{
 		*retval = xmlrpc_c::value_string(qso_opBW->value());
+	}
+};
+
+class Rig_get_notch : public xmlrpc_c::method
+{
+public:
+	Rig_get_notch()
+	{
+		_signature = "s:n";
+		_help = "Reports a notch filter frequency based on WF action";
+	}
+	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
+	{
+		*retval = xmlrpc_c::value_int(notch_frequency);
+	}
+};
+
+class Rig_set_notch : public xmlrpc_c::method
+{
+public:
+	Rig_set_notch()
+	{
+		_signature = "n:i";
+		_help = "Sets the notch filter position on WF";
+	}
+	static void set_notch(int freq)
+	{
+		notch_frequency = freq;
+	}
+	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
+	{
+		XMLRPC_LOCK;
+		int notch = notch_frequency;
+		REQ(set_notch, params.getInt(0));
+		*retval = xmlrpc_c::value_int(notch);
 	}
 };
 
@@ -2232,7 +2268,7 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
         {
 		XMLRPC_LOCK;
-		REQ_SYNC(&FTextTX::add_text, TransmitText, params.getString(0).c_str());
+		REQ_SYNC(&FTextTX::add_text, TransmitText, params.getString(0));
 		*retval = xmlrpc_c::value_nil();
 	}
 };
@@ -2250,7 +2286,7 @@ public:
 		XMLRPC_LOCK;
 		vector<unsigned char> bytes = params.getBytestring(0);
 		bytes.push_back(0);
-		REQ_SYNC(&FTextTX::add_text, TransmitText, (const char*)&bytes[0]);
+		REQ_SYNC(&FTextTX::add_text, TransmitText, string((const char*)&bytes[0]));
 
 		*retval = xmlrpc_c::value_nil();
 	}
@@ -2736,6 +2772,8 @@ struct Wefax_send_file : public xmlrpc_c::method
 	ELEM_(Rig_set_bandwidth, "rig.set_bandwidth")					\
 	ELEM_(Rig_get_bandwidth, "rig.get_bandwidth")					\
 	ELEM_(Rig_get_bandwidths, "rig.get_bandwidths")					\
+	ELEM_(Rig_get_notch, "rig.get_notch")							\
+	ELEM_(Rig_set_notch, "rig.set_notch")							\
 	ELEM_(Rig_take_control, "rig.take_control")						\
 	ELEM_(Rig_release_control, "rig.release_control")				\
 																	\

@@ -62,6 +62,9 @@
 #endif
 
 #define CONFIG_LIST                                                                     \
+        ELEM_(bool, SaveConfig, "SAVECONFIG",                                           \
+              "Save current configuration on exit",                                     \
+              false)                                                                    \
         ELEM_(bool, noise, "NOISETEST",                                                 \
               "Noise test on/off",                                                      \
               false)                                                                    \
@@ -541,6 +544,9 @@
         ELEM_(RGBI, bwTrackRGBI, "BWTCOLORS",                                           \
               "Color of bandwidth marker (RGBI)",                                       \
               {255, 0, 0, 255})                                                         \
+        ELEM_(RGBI, notchRGBI, "NOTCHCOLORS",                                           \
+              "Color of notch marker (RGBI)",                                           \
+              {255, 255, 255, 255})                                                     \
         ELEM_(RGBI, rttymarkRGBI, "RTTYMARKRGBI",                                       \
               "Color of RTTY MARK freq marker (RGBI)",                                  \
               {255, 128, 0, 255})                                                       \
@@ -990,6 +996,9 @@
         ELEM_(bool, DisplayMacroFilename, "DISPLAYMACROFILENAME",                       \
               "Display macro filename on startup",                                      \
               false)                                                                    \
+        ELEM_(bool, SaveMacros, "SAVEMACROS",                                           \
+              "Save current macros on exit",                                            \
+              false)                                                                    \
         ELEM_(bool, macro_wheel, "MACROWHEEL",                                          \
               "Enable mouse wheel rotation to control visible macro set",               \
               false)                                                                    \
@@ -1251,6 +1260,9 @@
               "Logbook server port",                                                    \
               "8421")                                                                   \
                                                                                         \
+        ELEM_(bool, check_for_updates, "CHECK_FOR_UPDATES",                             \
+              "Check for updates when starting program",                                \
+              false)                                                                    \
         /* XML-RPC/ARQ servers */                                                       \
         ELEM_(std::string, xmlrpc_address, "", "",  "127.0.0.1")                        \
         ELEM_(std::string, xmlrpc_port, "", "",  "7362")                                \

@@ -258,8 +258,8 @@ static notify_list_t notify_list;
 static notify_t notify_tmp;
 static const vector<dxcc*>* dxcc_list;
 
-static Fl_Double_Window* notify_window;
-static Fl_Double_Window* dxcc_window;
+Fl_Double_Window* notify_window;
+Fl_Double_Window* dxcc_window;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -830,7 +830,7 @@ static void notify_notify(const notify_t& n)
 			note_qrg(false, text.c_str(), text.c_str() + p + strlen("$RX_MARKER"), n.mode, 0LL, n.afreq);
 		}
 		else
-			ReceiveText->add(text.c_str());
+			ReceiveText->addstr(text);
 	}
 
 	// expand macros and append to transmit text

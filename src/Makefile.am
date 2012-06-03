@@ -423,6 +423,7 @@ dl_fldigi_SOURCES += \
 	include/habitat/Extractor.h \
 	include/habitat/UKHASExtractor.h \
 	include/habitat/EZ.h \
+	include/utf8file_io.h \
 	include/weather.h \
 	irrxml/CXMLReaderImpl.h \
 	irrxml/fast_atof.h \
@@ -473,6 +474,7 @@ dl_fldigi_SOURCES += \
 	misc/strutil.cxx \
 	misc/threads.cxx \
 	misc/timeops.cxx \
+	misc/utf8file_io.cxx \
 	misc/util.cxx \
 	misc/weather.cxx \
 	mt63/dsp.cxx \
