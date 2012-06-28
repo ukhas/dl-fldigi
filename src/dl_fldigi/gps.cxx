@@ -339,22 +339,26 @@ void GPSThread::read()
         throw runtime_error("Failed to parse data (fail)");
     }
 
-    update_ui(hour, minute, second, latitude, longitude, altitude);
-    upload(hour, minute, second, latitude, longitude, altitude);
-}
-
-void GPSThread::update_ui(int hour, int minute, int second,
-                          double latitude, double longitude, double altitude)
-{
-    ostringstream time_tmp, lat_tmp, lon_tmp, alt_tmp;
+    ostringstream time_tmp;
     time_tmp.fill('0');
     time_tmp.width(2);
     time_tmp << hour << ":" << minute << ":" << second;
+
+    string time_str = time_tmp.str()
+
     lat_tmp << latitude;
+    update_ui(time_str, latitude, longitude, altitude);
+    upload(time_str, latitude, longitude, altitude);
+}
+
+void GPSThread::update_ui(const string &time_str,
+                          double latitude, double longitude, double altitude)
+{
+    ostringstream lat_tmp, lon_tmp, alt_tmp;
     lon_tmp << longitude;
     alt_tmp << altitude;
 
-    gps_pos_time->value(time_tmp.str().c_str());
+    gps_pos_time->value(time_str.c_str());
     gps_pos_lat->value(lat_tmp.str().c_str());
     gps_pos_lon->value(lon_tmp.str().c_str());
     gps_pos_altitude->value(alt_tmp.str().c_str());
@@ -362,13 +366,13 @@ void GPSThread::update_ui(int hour, int minute, int second,
     gps_pos_save->activate();
 }
 
-void GPSThread::upload(int hour, int minute, int second,
+void GPSThread::upload(const string &time_str,
                        double latitude, double longitude, double altitude)
 {
     Fl_AutoLock lock;
 
-    LOG_DEBUG("GPS position: %02d:%02d:%02d %f %f, %fM",
-              hour, minute, second, latitude, longitude, altitude);
+    LOG_DEBUG("GPS position: %s %f %f, %fM",
+              time_str, latitude, longitude, altitude);
 
     if (time(NULL) - last_upload < rate)
         return;
@@ -385,13 +389,10 @@ void GPSThread::upload(int hour, int minute, int second,
     location::listener_altitude = altitude;
     location::update_distance_bearing();
 
-    Json::Value data(Json::objectValue);
-    data["time"] = Json::Value(Json::objectValue);
-    Json::Value &time = data["time"];
-    time["hour"] = hour;
-    time["minute"] = minute;
-    time["second"] = second;
+    ostringstream temp;
 
+    Json::Value data(Json::objectValue);
+    data["time"] = time_str;
     data["latitude"] = latitude;
     data["longitude"] = longitude;
     data["altitude"] = altitude;

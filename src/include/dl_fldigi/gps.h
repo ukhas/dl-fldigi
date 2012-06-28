@@ -38,8 +38,8 @@ class GPSThread : public EZ::SimpleThread
     void warning(const std::string &message);
 
     void read();
-    void update_ui(int h, int m, int s, double lat, double lon, double alt);
-    void upload(int h, int m, int s, double lat, double lon, double alt);
+    void update_ui(const string &time_str, double lat, double lon, double alt);
+    void upload(const string &time_str, double lat, double lon, double alt);
 
 public:
     GPSThread(const std::string &d, int b, int r)
