@@ -344,9 +344,8 @@ void GPSThread::read()
     time_tmp.width(2);
     time_tmp << hour << ":" << minute << ":" << second;
 
-    string time_str = time_tmp.str()
+    string time_str = time_tmp.str();
 
-    lat_tmp << latitude;
     update_ui(time_str, latitude, longitude, altitude);
     upload(time_str, latitude, longitude, altitude);
 }
@@ -372,7 +371,7 @@ void GPSThread::upload(const string &time_str,
     Fl_AutoLock lock;
 
     LOG_DEBUG("GPS position: %s %f %f, %fM",
-              time_str, latitude, longitude, altitude);
+              time_str.c_str(), latitude, longitude, altitude);
 
     if (time(NULL) - last_upload < rate)
         return;
