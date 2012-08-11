@@ -3671,7 +3671,8 @@ void update_main_title()
 	if (bWF_only)
 		buf.append(_("waterfall-only mode"));
 	else if (bHAB)
-		buf = "dl-fldigi for High Altitude Balloon Tracking";
+		buf.append(_("dl-fldigi for High Altitude Balloon Tracking"));
+		//buf = "dl-fldigi for High Altitude Balloon Tracking";
 	else
 		buf.append(progdefaults.myCall.empty() ? _("NO CALLSIGN SET") : progdefaults.myCall.c_str());
 	if (fl_digi_main)
