@@ -75,6 +75,7 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<MYNAME>\tmy name"));
 	w->add(_("<MYQTH>\tmy QTH"));
 	w->add(_("<MYRST>\tmy RST"));
+	w->add(_("<ANTENNA>\tmy antenna"));
 	w->add(_("<VER>\tFldigi version"));
 
 	w->add(LINE_SEP);
@@ -160,13 +161,14 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<TEXT>\tvideo text"));
 	w->add(_("<TXRSID:on|off|t>\tTx RSID on,off,toggle"));
 	w->add(_("<RXRSID:on|off|t>\tRx RSID on,off,toggle"));
+	w->add(_("<NRSID:NN>\tTransmit |NN| successive RsID bursts"));
 	w->add(_("<DTMF:[Wn:][Ln:]chrs>\t[Wait][Len](ms)"));
 
 	w->add(LINE_SEP);
 	w->add(_("<POST:+/-nn.n>\tCW QSK post-timing"));
 	w->add(_("<PRE:nn.n>\tCW QSK pre-timing"));
 	w->add(_("<RISE:nn.n>\tCW rise time"));
-	w->add(_("<WPM:NN>\tCW WPM"));
+	w->add(_("<WPM:NN:FF>\tCW WPM:Farnsworth"));
 
 	w->add(LINE_SEP);
 	w->add(_("<AFC:on|off|t>\tAFC  on,off,toggle"));
@@ -224,7 +226,12 @@ void loadBrowser(Fl_Widget *widget) {
 	}
 	w->add(LINE_SEP);
 	struct stat st;
+
+#  if defined(__OpenBSD__)
+	for (int i = 0; i < gbuf.gl_pathc; i++) {
+#  else
 	for (size_t i = 0; i < gbuf.gl_pathc; i++) {
+#  endif
 		if (!(stat(gbuf.gl_pathv[i], &st) == 0
 		      && S_ISREG(st.st_mode) && (st.st_mode & S_IXUSR)))
 			continue;

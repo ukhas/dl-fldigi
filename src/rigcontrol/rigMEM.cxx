@@ -22,6 +22,10 @@
 
 #include <config.h>
 
+#if defined(__OpenBSD__)
+#  include <sys/types.h>
+#endif
+
 #if !defined(__WOE32__) && !defined(__APPLE__)
 #  include <sys/ipc.h>
 #  include <sys/msg.h>
@@ -301,7 +305,7 @@ static void *rigMEM_loop(void *args)
 			break;
 
 		if (TogglePTT || rig_qsy || change_mode) {
-			IOout = fopen("c:/RIGCTL/ptt", "w");
+			IOout = fopen("c:/RIGCTL/ptt", "we");
 			if (IOout) {
 				LOG_VERBOSE("sent %d, %c, %s",
 					 (int)qsy_f,
@@ -318,7 +322,7 @@ static void *rigMEM_loop(void *args)
 			}
 		}
 
-		IOin = fopen("c:/RIGCTL/rig", "r");
+		IOin = fopen("c:/RIGCTL/rig", "re");
 		if (IOin) {
 			fscanf(IOin, "%ld\n", &IOfreq);
 			fscanf(IOin, "%s", szmode);

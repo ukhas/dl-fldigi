@@ -11,7 +11,7 @@ if WANT_FLARQ
 endif
 
 # The BUILD_* variables are defined in build.m4
-dl_fldigi_CPPFLAGS = -DBUILD_FLDIGI -DLOCALEDIR=\"$(localedir)\" @FLDIGI_BUILD_CPPFLAGS@
+dl_fldigi_CPPFLAGS = -DBUILD_FLDIGI -DLOCALEDIR=\"$(localedir)\" @FLDIGI_BUILD_CPPFLAGS@ -DPKGDATADIR=\"$(pkgdatadir)\"
 dl_fldigi_CXXFLAGS = @FLDIGI_BUILD_CXXFLAGS@
 dl_fldigi_CFLAGS = $(dl_fldigi_CXXFLAGS)
 dl_fldigi_LDFLAGS = @FLDIGI_BUILD_LDFLAGS@
@@ -136,6 +136,10 @@ if WANT_FLDIGI
 	if test -f $(srcdir)/../data/dl-fldigi-hab.desktop; then \
 	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/applications; \
 	    $(INSTALL_DATA) $(srcdir)/../data/dl-fldigi-hab.desktop $(DESTDIR)/$(datadir)/applications; \
+	fi
+	if test -f $(srcdir)/../data/NAVTEX_Stations.csv; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/fldigi; \
+	    $(INSTALL_DATA) $(srcdir)/../data/NAVTEX_Stations.csv $(DESTDIR)/$(pkgdatadir); \
 	fi
 endif
 if WANT_FLARQ
@@ -265,8 +269,8 @@ dl_fldigi_SOURCES += \
 	feld/feld.cxx \
 	feld/feldfonts.cxx \
 	fft/fft.cxx \
-	fileselector/FL/Fl_Native_File_Chooser.H \
-	fileselector/Fl_Native_File_Chooser.cxx \
+	fileselector/FL/Native_File_Chooser.H \
+	fileselector/Native_File_Chooser.cxx \
 	fileselector/fileselect.cxx \
 	filters/fftfilt.cxx \
 	filters/filters.cxx \
@@ -374,6 +378,7 @@ dl_fldigi_SOURCES += \
 	include/rsid.h \
 	include/rtty.h \
 	include/view_rtty.h \
+	include/navtex.h \
 	include/nullmodem.h \
 	include/rx_extract.h \
 	include/speak.h \
@@ -439,6 +444,8 @@ dl_fldigi_SOURCES += \
 	logbook/lgbook.cxx \
 	logbook/logbook.cxx \
 	logbook/logsupport.cxx \
+	logbook/lookupcall.cxx \
+	logbook/qrzlib.cxx \
 	logbook/qso_db.cxx \
 	logbook/table.cxx \
 	logbook/textio.cxx \
@@ -464,9 +471,8 @@ dl_fldigi_SOURCES += \
 	misc/network.cxx \
 	misc/newinstall.cxx \
 	misc/arq_io.cxx \
-	misc/lookupcall.cxx \
 	misc/pixmaps.cxx \
-	misc/qrzlib.cxx \
+	misc/pixmaps_tango.cxx \
 	misc/re.cxx \
 	misc/socket.cxx \
 	misc/stacktrace.cxx \
@@ -480,6 +486,7 @@ dl_fldigi_SOURCES += \
 	mt63/dsp.cxx \
 	mt63/mt63.cxx \
 	mt63/mt63base.cxx \
+	navtex/navtex.cxx \
 	olivia/olivia.cxx \
 	psk/psk.cxx \
 	psk/pskcoeff.cxx \
@@ -573,12 +580,12 @@ dl_fldigi_SOURCES += \
 EXTRA_dl_fldigi_SOURCES += \
 	blank/blank.cxx \
 	blank/blank.h \
-	fileselector/FL/Fl_Native_File_Chooser_FLTK.H \
-	fileselector/FL/MAC_chooser.h \
-	fileselector/FL/Fl_Native_File_Chooser_WIN32.H \
-	fileselector/Fl_Native_File_Chooser_FLTK.cxx \
-	fileselector/MAC_chooser.cxx \
-	fileselector/Fl_Native_File_Chooser_WIN32.cxx \
+	fileselector/FL/Native_File_Chooser_FLTK.H \
+	fileselector/FL/Native_File_Chooser_MAC.H \
+	fileselector/FL/Native_File_Chooser_WIN32.H \
+	fileselector/Native_File_Chooser_FLTK.cxx \
+	fileselector/Native_File_Chooser_WIN32.cxx \
+	fileselector/Native_File_Chooser_MAC.cxx \
 	fileselector/flnfc_common.cxx \
 	fileselector/fileselect_1_1.cxx \
 	fileselector/fileselect_1_3.cxx \
@@ -658,8 +665,8 @@ flarq_SOURCES += \
 	include/table.h \
 	include/util.h \
 	combo/combo.cxx \
-	fileselector/FL/Fl_Native_File_Chooser.H \
-	fileselector/Fl_Native_File_Chooser.cxx \
+	fileselector/FL/Native_File_Chooser.H \
+	fileselector/Native_File_Chooser.cxx \
 	fileselector/fileselect.cxx \
 	logbook/table.cxx \
 	misc/ascii.cxx \
@@ -672,6 +679,7 @@ flarq_SOURCES += \
 	widgets/flslider2.cxx \
 	misc/icons.cxx \
 	misc/pixmaps.cxx \
+	misc/pixmaps_tango.cxx \
 	misc/re.cxx \
 	misc/socket.cxx \
 	misc/util.cxx \
@@ -693,6 +701,7 @@ EXTRA_DIST = \
 	$(srcdir)/../data/fldigi.desktop \
 	$(srcdir)/../data/dl-fldigi.desktop \
 	$(srcdir)/../data/dl-fldigi-hab.desktop \
+	$(srcdir)/../data/NAVTEX_Stations.csv \
 	$(srcdir)/../data/mac/Info.plist.in \
 	$(srcdir)/../data/mac/fldigi.icns \
 	$(srcdir)/../data/win32/fldigi.ico \

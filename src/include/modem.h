@@ -143,6 +143,7 @@ public:
 	virtual void		decWPM() {};
 	virtual void		toggleWPM() {};
 	virtual void		sync_parameters() {};
+	virtual void		reset_rx_filter(bool) {};
 	virtual void		update_Status() {};
 
 // for waterfall id transmission
@@ -204,6 +205,9 @@ extern modem *mfsk64_modem;
 extern modem *wefax576_modem;
 extern modem *wefax288_modem;
 
+extern modem *navtex_modem;
+extern modem *sitorb_modem;
+
 extern modem *mt63_500_modem;
 extern modem *mt63_1000_modem;
 extern modem *mt63_2000_modem;
@@ -235,6 +239,7 @@ extern modem *psk250r_modem;
 extern modem *psk500r_modem;
 
 extern modem *rtty_modem;
+extern modem *pkt_modem;
 
 extern modem *olivia_modem;
 extern modem *contestia_modem;
@@ -243,9 +248,13 @@ extern modem *thor4_modem;
 extern modem *thor5_modem;
 extern modem *thor8_modem;
 extern modem *thor11_modem;
-//extern modem *tsor11_modem;
 extern modem *thor16_modem;
 extern modem *thor22_modem;
+
+extern modem *dominoex44_modem;
+extern modem *thor44_modem;
+extern modem *dominoex88_modem;
+extern modem *thor88_modem;
 
 extern modem *dominoex4_modem;
 extern modem *dominoex5_modem;

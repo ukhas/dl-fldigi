@@ -45,8 +45,12 @@
 #include <limits.h>
 
 #if USE_OSS
-#    include <sys/ioctl.h>
+#  include <sys/ioctl.h>
+#  if defined(__OpenBSD__)
+#    include <soundcard.h>
+#  else
 #    include <sys/soundcard.h>
+#  endif
 #endif
 #include <math.h>
 
@@ -159,7 +163,7 @@ int SoundBase::Capture(bool val)
 	// frames (ignored), freq, channels, format, sections (ignored), seekable (ignored)
 	SF_INFO info = { 0, sample_frequency, SNDFILE_CHANNELS, format, 0, 0 };
 	if ((ofCapture = sf_open(fname, SFM_WRITE, &info)) == NULL) {
-		LOG_ERROR("Could not write %s", fname);
+		LOG_ERROR("Could not write %s:%s", fname, sf_strerror(NULL) );
 		return 0;
 	}
 	if (sf_command(ofCapture, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE) != SF_TRUE)
@@ -186,16 +190,21 @@ int SoundBase::Playback(bool val)
 	int format;
 	get_file_params("playback.wav", &fname, &format);
 	if (!fname)
-		return 0;
+		return -1;
 
 	SF_INFO info = { 0, 0, 0, 0, 0, 0 };
 	if ((ifPlayback = sf_open(fname, SFM_READ, &info)) == NULL) {
-		LOG_ERROR("Could not read %s", fname);
-		return 0;
+		LOG_ERROR("Could not read %s:%s", fname, sf_strerror(NULL) );
+		return -2;
 	}
 
+ 	if (info.channels != 1) {
+ 		sf_close(ifPlayback);
+ 		return -3;
+ 	}
+
 	playback = true;
-	return 1;
+	return 0;
 }
 
 int SoundBase::Generate(bool val)
@@ -399,7 +408,12 @@ int SoundOSS::Open(int md, int freq)
 
 	mode = md;
 	try {
-		device_fd = open(device.c_str(), mode, 0);
+		int oflags = md;
+#		ifdef HAVE_O_CLOEXEC
+			oflags = oflags | O_CLOEXEC;
+#		endif
+
+		device_fd = open(device.c_str(), oflags, 0);
 		if (device_fd == -1)
 			throw SndException(errno);
 		Format(AFMT_S16_LE);	// default: 16 bit little endian
