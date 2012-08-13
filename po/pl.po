@@ -976,11 +976,12 @@ msgid "flmsg\t*"
 msgstr "flmsg\t*"
 
 #: src/logger/speak.cxx:42
+#, fuzzy
 msgid ""
 "Save all received text, one character at a time to the following file:\n"
 "\n"
-"    fldigi.files\\talk\\textout.txt (Windows)\n"
-"    ~/.fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
+"    dl-fldigi.files\\talk\\textout.txt (Windows)\n"
+"    ~/.dl-fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
 msgstr ""
 "Zapisz wszystkie otrzymane teksty, jeden znak na raz do następującego "
 "pliku:\n"
@@ -1001,11 +1002,12 @@ msgid "Always USB"
 msgstr "Zawsze USB"
 
 #: src/misc/configuration.cxx:741
+#, fuzzy
 msgid ""
 "Reset all options to their default values?\n"
 "\n"
 "Reset options will take effect at the next start\n"
-"Files: fldigi_def.xml and fldigi.prefs will be deleted!\n"
+"Files: dl-fldigi_def.xml and dl-fldigi.prefs will be deleted!\n"
 msgstr ""
 "Resetowac wszystkie opcje do ich wartosci domyslnych?\n"
 "Zresetowane opcje zostaną uwzględnione przy następnym uruchomieniu\n"
@@ -4748,7 +4750,8 @@ msgid "Connect/disconnect to Talker socket server"
 msgstr "Polacz / Rozlacz do gniazda serwera Talker "
 
 #: src/dialogs/confdialog.cxx:7285
-msgid "Auto connect when fldigi opens (server must be up)"
+#, fuzzy
+msgid "Auto connect when dl-fldigi opens (server must be up)"
 msgstr "Aktywuj podczas startu fldigi (serwer musi byc uruchomiony )"
 
 #: src/dialogs/confdialog.cxx:7292

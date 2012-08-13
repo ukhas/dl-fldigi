@@ -979,8 +979,8 @@ msgstr ""
 msgid ""
 "Save all received text, one character at a time to the following file:\n"
 "\n"
-"    fldigi.files\\talk\\textout.txt (Windows)\n"
-"    ~/.fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
+"    dl-fldigi.files\\talk\\textout.txt (Windows)\n"
+"    ~/.dl-fldigi/talk/textout.txt (Linux, OS X, Free BSD)"
 msgstr ""
 
 #: src/misc/configuration.cxx:548
@@ -1000,7 +1000,7 @@ msgid ""
 "Reset all options to their default values?\n"
 "\n"
 "Reset options will take effect at the next start\n"
-"Files: fldigi_def.xml and fldigi.prefs will be deleted!\n"
+"Files: dl-fldigi_def.xml and dl-fldigi.prefs will be deleted!\n"
 msgstr ""
 
 #: src/misc/configuration.cxx:746
@@ -4721,7 +4721,7 @@ msgid "Connect/disconnect to Talker socket server"
 msgstr ""
 
 #: src/dialogs/confdialog.cxx:7285
-msgid "Auto connect when fldigi opens (server must be up)"
+msgid "Auto connect when dl-fldigi opens (server must be up)"
 msgstr ""
 
 #: src/dialogs/confdialog.cxx:7292
