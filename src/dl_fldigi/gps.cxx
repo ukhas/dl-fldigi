@@ -354,6 +354,7 @@ void GPSThread::update_ui(const string &time_str,
                           double latitude, double longitude, double altitude)
 {
     ostringstream lat_tmp, lon_tmp, alt_tmp;
+	lat_tmp << latitude;
     lon_tmp << longitude;
     alt_tmp << altitude;
 
