@@ -46,9 +46,9 @@ void update_distance_bearing()
 
     if (!listener_valid || !balloon_valid)
     {
-        habDistance->value("");
-        habBearing->value("");
-        habElevation->value("");
+        //habDistance->value("");
+        //habBearing->value("");
+        //habElevation->value("");
         return;
     }
 
