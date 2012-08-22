@@ -239,6 +239,17 @@ static void split_nmea(const string &data, vector<string> &parts)
     }
 }
 
+static string parse_hms(const string &part)
+{
+    ostringstream temp;
+    temp << part.substr(0, 2) << ':'
+        << part.substr(2, 2) << ':'
+        << part.substr(4, 2);
+    if (temp.str().size() != 8)
+        throw runtime_error("bad NMEA time");
+    return temp.str();
+}
+
 static double parse_ddm(string part, const string &dirpart)
 {
     double degrees, mins;
@@ -261,21 +272,6 @@ static double parse_ddm(string part, const string &dirpart)
         return -value;
     else
         return value;
-}
-
-static void parse_hms(string part, int &hour, int &minute, int &second)
-{
-    /* Split HH MM SS with spaces */
-    part.insert(6, " ");
-    part.insert(4, " ");
-    part.insert(2, " ");
-
-    istringstream tmp(part);
-    tmp.exceptions(istringstream::failbit | istringstream::badbit);
-
-    tmp >> hour;
-    tmp >> minute;
-    tmp >> second;
 }
 
 static double parse_alt(const string &part, const string &unit_part)
@@ -320,12 +316,12 @@ void GPSThread::read()
     if (!check_gpgga(parts))
         return;
 
-    int hour, minute, second;
+    string time_str;
     double latitude, longitude, altitude;
 
     try
     {
-        parse_hms(parts[1], hour, minute, second);
+        time_str = parse_hms(parts[1]);
         latitude = parse_ddm(parts[2], parts[3]);
         longitude = parse_ddm(parts[4], parts[5]);
         altitude = parse_alt(parts[9], parts[10]);
@@ -339,13 +335,6 @@ void GPSThread::read()
         throw runtime_error("Failed to parse data (fail)");
     }
 
-    ostringstream time_tmp, lat_tmp;
-    time_tmp.fill('0');
-    time_tmp.width(2);
-    time_tmp << hour << ":" << minute << ":" << second;
-
-    string time_str = time_tmp.str();
-
     update_ui(time_str, latitude, longitude, altitude);
     upload(time_str, latitude, longitude, altitude);
 }
@@ -354,6 +343,7 @@ void GPSThread::update_ui(const string &time_str,
                           double latitude, double longitude, double altitude)
 {
     ostringstream lat_tmp, lon_tmp, alt_tmp;
+	lat_tmp << latitude;
     lon_tmp << longitude;
     alt_tmp << altitude;
 
