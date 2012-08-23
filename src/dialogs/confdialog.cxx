@@ -3717,6 +3717,8 @@ Fl_Browser *flight_browser=(Fl_Browser *)0;
 static void cb_flight_browser(Fl_Browser* o, void*) {
   if (habFlight)
     habFlight->value(o->value() - 1);
+payload_browser->deselect();
+
 dl_fldigi::flights::select_flight(o->value() - 1);
 
 /* Handle a double click and autoconfigure.
@@ -3748,7 +3750,11 @@ Fl_Group *tabDLPayloads=(Fl_Group *)0;
 Fl_Browser *payload_browser=(Fl_Browser *)0;
 
 static void cb_payload_browser(Fl_Browser* o, void*) {
-  dl_fldigi::flights::select_payload(o->value() - 1);
+  flight_browser->deselect();
+if (habFlight)
+    habFlight->value(-1);
+
+dl_fldigi::flights::select_payload(o->value() - 1);
 
 /* Handle a double click and autoconfigure.
  * This payload is ready for configuring iff dl_fldigi.cxx
@@ -3833,7 +3839,7 @@ Fl_Double_Window* ConfigureDialog() {
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(Fl_Align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE));
-    { tabsConfigure = new Fl_Tabs(-5, 0, 596, 375);
+    { tabsConfigure = new Fl_Tabs(-5, 0, 596, 372);
       tabsConfigure->color(FL_LIGHT1);
       tabsConfigure->selection_color(FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 540, 345, _("Operator"));

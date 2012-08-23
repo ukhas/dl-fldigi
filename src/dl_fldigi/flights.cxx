@@ -1272,6 +1272,8 @@ static void flight_choice_callback(Fl_Widget *w, void *a)
     int index = reinterpret_cast<intptr_t>(a);
     Fl_Choice *choice = static_cast<Fl_Choice *>(w);
     flight_browser->value(choice->value() + 1);
+
+    payload_browser->deselect();
     select_flight(index);
 }
 

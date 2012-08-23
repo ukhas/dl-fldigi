@@ -4763,6 +4763,8 @@ btnApplyConfig->activate();}
             Fl_Browser flight_browser {
               callback {if (habFlight)
     habFlight->value(o->value() - 1);
+payload_browser->deselect();
+
 dl_fldigi::flights::select_flight(o->value() - 1);
 
 /* Handle a double click and autoconfigure.
@@ -4801,7 +4803,11 @@ dl_fldigi::hbtint::uthr->payloads();}
             xywh {0 50 540 323} hide
           } {
             Fl_Browser payload_browser {
-              callback {dl_fldigi::flights::select_payload(o->value() - 1);
+              callback {flight_browser->deselect();
+if (habFlight)
+    habFlight->value(-1);
+
+dl_fldigi::flights::select_payload(o->value() - 1);
 
 /* Handle a double click and autoconfigure.
  * This payload is ready for configuring iff dl_fldigi.cxx
