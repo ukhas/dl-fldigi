@@ -184,9 +184,7 @@ void payload_search(bool next)
         if (line.find(search) != string::npos)
         {
             payload_browser->value(i);
-            int payload_index =
-                reinterpret_cast<intptr_t>(payload_browser->data(i));
-            select_payload(payload_index);
+            select_payload(i - 1);
 
             payload_search_first = i + 1;
             break;
@@ -1269,12 +1267,11 @@ static void flight_choice_callback(Fl_Widget *w, void *a)
 {
     Fl_AutoLock lock;
 
-    int index = reinterpret_cast<intptr_t>(a);
     Fl_Choice *choice = static_cast<Fl_Choice *>(w);
     flight_browser->value(choice->value() + 1);
 
     payload_browser->deselect();
-    select_flight(index);
+    select_flight(choice->value());
 }
 
 
