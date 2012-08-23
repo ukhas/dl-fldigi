@@ -381,7 +381,7 @@ void GPSThread::upload(const string &time_str,
     ostringstream temp;
 
     Json::Value data(Json::objectValue);
-    data["time"] = time_str;
+    // data["time"] = time_str;
     data["latitude"] = latitude;
     data["longitude"] = longitude;
     data["altitude"] = altitude;
