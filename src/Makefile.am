@@ -428,6 +428,7 @@ dl_fldigi_SOURCES += \
 	include/habitat/Extractor.h \
 	include/habitat/UKHASExtractor.h \
 	include/habitat/EZ.h \
+	include/habitat/RFC3339.h \
 	include/utf8file_io.h \
 	include/weather.h \
 	irrxml/CXMLReaderImpl.h \
@@ -566,6 +567,7 @@ dl_fldigi_SOURCES += \
 	habitat/CouchDB.cxx \
 	habitat/Extractor.cxx \
 	habitat/EZ.cxx \
+	habitat/RFC3339.cxx \
 	habitat/UKHASExtractor.cxx \
 	habitat/UploaderThread.cxx \
 	habitat/Uploader.cxx \
@@ -630,7 +632,8 @@ EXTRA_dl_fldigi_SOURCES += \
 	habitat/Uploader.h \
 	habitat/Extractor.h \
 	habitat/UKHASExtractor.h \
-	habitat/EZ.h
+	habitat/EZ.h \
+	habitat/RFC3339.h
 
 
 

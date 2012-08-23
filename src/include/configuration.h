@@ -1400,15 +1400,17 @@
         ELEM_(std::string, myRadio, "MYRADIO", "Short radio description", "")           \
         ELEM_(std::string, myLat, "MYLAT", "Stationary listener latitude", "")          \
         ELEM_(std::string, myLon, "MYLON", "Stationary listener longitude", "")         \
-        ELEM_(std::string, myAlt, "MYALT", "Stationary listener altitude", "0")         \
+        ELEM_(std::string, myAlt, "MYALT", "Stationary listener altitude", "")          \
                                                                                         \
         /* habitat Flight selection stuff */                                            \
-        ELEM_(bool, show_testing_flights, "FLIGHT_SHOW_TESTING",                        \
-                "Show testing flight documents?", false)                                \
-        ELEM_(std::string, tracking_flight, "FLIGHT_DOCID", "The selected flight", "")  \
-        ELEM_(std::string, tracking_payload, "FLIGHT_PAYLOAD",                          \
-                "The payload selected in the current flight", "")                       \
-        ELEM_(int, tracking_mode, "FLIGHT_MODE_INDEX", "The selected mode", -1)         \
+        ELEM_(int, tracking_type, "TRACKING_WHAT",                                      \
+                "Tracking 0: nothing, 1: a flight, 2: a testing payload", 0)            \
+        ELEM_(std::string, tracking_doc, "TRACKING_DOCID",                              \
+                "The selected flight or payload document id", "")                       \
+        ELEM_(int, tracking_flight_payload, "TRACKING_FLIGHT_PAYLOAD",                  \
+                "The selected payload (belonging to the tracked filght) (index)", -1)   \
+        ELEM_(int, tracking_transmission, "TRACKING_TRANSMISSION",                      \
+                "The selected transmission (index)", -1)                                \
                                                                                         \
         /* dl-fldigi GPS Device Info */                                                 \
         ELEM_(bool, gps_start_enabled, "GPSENABLED", "GPS Enabled on startup?", false)  \

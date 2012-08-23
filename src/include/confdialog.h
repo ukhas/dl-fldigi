@@ -502,14 +502,19 @@ extern Fl_Output *gps_pos_time;
 extern Fl_Output *gps_pos_lon;
 extern Fl_Button *gps_pos_save;
 extern Fl_Float_Input *stationary_alt;
-extern Fl_Group *tabDLPayload;
+extern Fl_Group *tabDLFlights;
 #include <FL/Fl_Browser.H>
 extern Fl_Browser *flight_browser;
-extern Fl_Button *flight_docs_refresh;
-extern Fl_Input *flight_search_text;
-extern Fl_Choice *payload_list;
-extern Fl_Button *payload_autoconfigure;
-extern Fl_Choice *payload_mode_list;
+extern Fl_Button *flight_docs_refresh_a;
+extern Fl_Choice *flight_payload_list;
+extern Fl_Button *payload_autoconfigure_a;
+extern Fl_Choice *flight_payload_transmission_list;
+extern Fl_Group *tabDLPayloads;
+extern Fl_Browser *payload_browser;
+extern Fl_Button *flight_docs_refresh_b;
+extern Fl_Button *payload_autoconfigure_b;
+extern Fl_Input *payload_search_text;
+extern Fl_Choice *payload_transmission_list;
 extern Fl_Button *btnSaveConfig;
 #include <FL/Fl_Return_Button.H>
 extern Fl_Return_Button *btnCloseConfig;

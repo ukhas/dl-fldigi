@@ -290,7 +290,7 @@ void ssdv_rx::upload_packet()
 	ssdv_post_data_t *t;
 	pthread_attr_t attr;
 	pthread_t thread;
-	const char *callsign, *payload;
+	const char *callsign;
 	char *packet;
 	struct curl_httppost* post = NULL;
 	struct curl_httppost* last = NULL;
@@ -303,11 +303,6 @@ void ssdv_rx::upload_packet()
 	callsign = (progdefaults.myCall.empty() ? "UNKNOWN" : progdefaults.myCall.c_str());
 	curl_formadd(&post, &last, CURLFORM_COPYNAME, "callsign",
 		CURLFORM_COPYCONTENTS, callsign, CURLFORM_END);
-	
-	/* Get the payload name */
-	payload = (progdefaults.tracking_payload.empty() ? "UNKNOWN" : progdefaults.tracking_payload.c_str());
-	curl_formadd(&post, &last, CURLFORM_COPYNAME, "payload",
-		CURLFORM_COPYCONTENTS, payload, CURLFORM_END);
 	
 	/* The encoding used on the packet */
 	curl_formadd(&post, &last, CURLFORM_COPYNAME, "encoding",

@@ -3710,53 +3710,77 @@ dl_fldigi::changed(dl_fldigi::CH_STATIONARY_LOCATION);
 btnApplyConfig->activate();
 }
 
-Fl_Group *tabDLPayload=(Fl_Group *)0;
+Fl_Group *tabDLFlights=(Fl_Group *)0;
 
 Fl_Browser *flight_browser=(Fl_Browser *)0;
 
 static void cb_flight_browser(Fl_Browser* o, void*) {
   if (habFlight)
     habFlight->value(o->value() - 1);
-int index = reinterpret_cast<intptr_t>(o->data(o->value()));
-dl_fldigi::flights::select_flight(index);
+dl_fldigi::flights::select_flight(o->value() - 1);
 
 /* Handle a double click and autoconfigure.
  * This payload is ready for configuring iff dl_fldigi.cxx
  * has activated the autoconfigure button. */
-if (Fl::event_clicks() > 0 && payload_autoconfigure->active())
+if (Fl::event_clicks() > 0 && payload_autoconfigure_a->active())
     dl_fldigi::flights::auto_configure();
 }
 
-Fl_Button *flight_docs_refresh=(Fl_Button *)0;
+Fl_Button *flight_docs_refresh_a=(Fl_Button *)0;
 
-static void cb_flight_docs_refresh(Fl_Button*, void*) {
+static void cb_flight_docs_refresh_a(Fl_Button*, void*) {
   dl_fldigi::hbtint::uthr->flights();
+dl_fldigi::hbtint::uthr->payloads();
 }
 
-static void cb_Show(Fl_Check_Button* o, void*) {
-  progdefaults.show_testing_flights = o->value();
-dl_fldigi::flights::populate_flights();
-}
+Fl_Choice *flight_payload_list=(Fl_Choice *)0;
 
-Fl_Input *flight_search_text=(Fl_Input *)0;
+Fl_Button *payload_autoconfigure_a=(Fl_Button *)0;
 
-static void cb_flight_search_text(Fl_Input*, void*) {
-  dl_fldigi::flights::flight_search(false);
-}
-
-static void cb_Next(Fl_Button*, void*) {
-  dl_fldigi::flights::flight_search(true);
-}
-
-Fl_Choice *payload_list=(Fl_Choice *)0;
-
-Fl_Button *payload_autoconfigure=(Fl_Button *)0;
-
-static void cb_payload_autoconfigure(Fl_Button*, void*) {
+static void cb_payload_autoconfigure_a(Fl_Button*, void*) {
   dl_fldigi::flights::auto_configure();
 }
 
-Fl_Choice *payload_mode_list=(Fl_Choice *)0;
+Fl_Choice *flight_payload_transmission_list=(Fl_Choice *)0;
+
+Fl_Group *tabDLPayloads=(Fl_Group *)0;
+
+Fl_Browser *payload_browser=(Fl_Browser *)0;
+
+static void cb_payload_browser(Fl_Browser* o, void*) {
+  dl_fldigi::flights::select_payload(o->value() - 1);
+
+/* Handle a double click and autoconfigure.
+ * This payload is ready for configuring iff dl_fldigi.cxx
+ * has activated the autoconfigure button. */
+if (Fl::event_clicks() > 0 && payload_autoconfigure_b->active())
+    dl_fldigi::flights::auto_configure();
+}
+
+Fl_Button *flight_docs_refresh_b=(Fl_Button *)0;
+
+static void cb_flight_docs_refresh_b(Fl_Button*, void*) {
+  dl_fldigi::hbtint::uthr->flights();
+dl_fldigi::hbtint::uthr->payloads();
+}
+
+Fl_Button *payload_autoconfigure_b=(Fl_Button *)0;
+
+static void cb_payload_autoconfigure_b(Fl_Button*, void*) {
+  dl_fldigi::flights::auto_configure();
+}
+
+Fl_Input *payload_search_text=(Fl_Input *)0;
+
+static void cb_payload_search_text(Fl_Input*, void*) {
+  dl_fldigi::flights::payload_search(false);
+}
+
+Fl_Choice *payload_transmission_list=(Fl_Choice *)0;
+
+static void cb_Next(Fl_Button*, void*) {
+  dl_fldigi::flights::payload_search(true);
+}
 
 Fl_Button *btnSaveConfig=(Fl_Button *)0;
 
@@ -3801,21 +3825,22 @@ Fl_Double_Window* ConfigureDialog() {
   static const char szContestiaBandwidth[] = "125|250|500|1000|2000";
   static const char szBaudRates[] = "300|600|1200|2400|4800|9600|19200|38400|57600|115200|230400|460800";
   static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
-  static const int flight_browser_columns[] = { 170, 150, 170 };
+  static const int flight_browser_columns[] = { 180, 160, 190 };
+  static const int payload_browser_columns[] = { 180, 350 };
   { Fl_Double_Window* o = new Fl_Double_Window(540, 400, _("Fldigi configuration"));
     w = o;
     o->color(FL_DARK2);
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(Fl_Align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE));
-    { tabsConfigure = new Fl_Tabs(-5, 0, 596, 372);
+    { tabsConfigure = new Fl_Tabs(-5, 0, 596, 375);
       tabsConfigure->color(FL_LIGHT1);
       tabsConfigure->selection_color(FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 540, 345, _("Operator"));
         tabOperator->tooltip(_("Operator information"));
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
-        { Fl_Group* o = new Fl_Group(27, 35, 490, 165, _("Station"));
+        { Fl_Group* o = new Fl_Group(27, 35, 490, 205, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
           { inpMyCallsign = new Fl_Input2(132, 64, 110, 24, _("Callsign:"));
@@ -3888,7 +3913,7 @@ Fl_Double_Window* ConfigureDialog() {
             inpMyAntenna->when(FL_WHEN_RELEASE);
             inpMyAntenna->labelsize(FL_NORMAL_SIZE);
           } // Fl_Input2* inpMyAntenna
-          { Fl_Input* o = MyRadio = new Fl_Input(110, 200, 320, 25, _("Radio:"));
+          { Fl_Input* o = MyRadio = new Fl_Input(132, 200, 320, 25, _("Radio:"));
             MyRadio->callback((Fl_Callback*)cb_MyRadio);
             o->value(progdefaults.myRadio.c_str());
           } // Fl_Input* MyRadio
@@ -7068,7 +7093,6 @@ nce.\nYou may change the state from either location.\n..."));
         tabSoundCard->end();
       } // Fl_Group* tabSoundCard
       { tabID = new Fl_Group(0, 25, 540, 346, _("ID"));
-        tabID->labelsize(12);
         tabID->hide();
         { Fl_Group* o = new Fl_Group(22, 35, 490, 103, _("Video Preamble ID"));
           o->box(FL_ENGRAVED_FRAME);
@@ -7718,7 +7742,6 @@ d frequency"));
       } // Fl_Group* tabMisc
       { tabQRZ = new Fl_Group(0, 25, 540, 345, _("Web"));
         tabQRZ->tooltip(_("Callsign database"));
-        tabQRZ->labelsize(12);
         tabQRZ->hide();
         { Fl_Tabs* o = new Fl_Tabs(0, 25, 540, 345);
           { Fl_Group* o = new Fl_Group(0, 46, 540, 324, _("Call Lookup"));
@@ -7952,36 +7975,35 @@ d frequency"));
         } // Fl_Tabs* o
         tabQRZ->end();
       } // Fl_Group* tabQRZ
-      { tabDL = new Fl_Group(0, 25, 500, 350, _("DL Client"));
+      { tabDL = new Fl_Group(0, 25, 540, 350, _("DL Client"));
         tabDL->selection_color((Fl_Color)48);
-        tabDL->labelsize(12);
         tabDL->hide();
-        { tabsDL = new Fl_Tabs(0, 25, 500, 348);
-          tabsDL->selection_color((Fl_Color)55);
-          { tabDLEnable = new Fl_Group(0, 50, 500, 320, _("Enable"));
-            { Fl_Group* o = new Fl_Group(5, 59, 490, 76, _("habitat"));
+        { tabsDL = new Fl_Tabs(0, 25, 540, 348);
+          { tabDLEnable = new Fl_Group(0, 50, 540, 320, _("Enable"));
+            tabDLEnable->hide();
+            { Fl_Group* o = new Fl_Group(5, 59, 530, 76, _("habitat"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { confdialog_dl_online = new Fl_Check_Button(15, 90, 70, 25, _("Online"));
                 confdialog_dl_online->down_box(FL_DOWN_BOX);
                 confdialog_dl_online->callback((Fl_Callback*)cb_confdialog_dl_online);
               } // Fl_Check_Button* confdialog_dl_online
-              { Fl_Input* o = new Fl_Input(165, 80, 300, 20, _("Couch URI"));
+              { Fl_Input* o = new Fl_Input(165, 80, 360, 20, _("Couch URI"));
                 o->tooltip(_("Address of the CouchDB server"));
                 o->callback((Fl_Callback*)cb_Couch);
                 o->value(progdefaults.habitat_uri.c_str());
               } // Fl_Input* o
-              { Fl_Input* o = new Fl_Input(165, 106, 300, 19, _("Couch DB"));
+              { Fl_Input* o = new Fl_Input(165, 106, 360, 19, _("Couch DB"));
                 o->tooltip(_("CouchDB database name"));
                 o->callback((Fl_Callback*)cb_Couch1);
                 o->value(progdefaults.habitat_db.c_str());
               } // Fl_Input* o
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(5, 140, 490, 80, _("SSDV Image Configuration"));
+            { Fl_Group* o = new Fl_Group(5, 140, 530, 80, _("SSDV Image Configuration"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Input* o = imagepacketurl = new Fl_Input(165, 165, 300, 20, _("Packet Upload URL:"));
+              { Fl_Input* o = imagepacketurl = new Fl_Input(165, 165, 360, 20, _("Packet Upload URL:"));
                 imagepacketurl->callback((Fl_Callback*)cb_imagepacketurl);
                 o->value(progdefaults.ssdv_packet_url.c_str());
               } // Fl_Input* imagepacketurl
@@ -7990,13 +8012,13 @@ d frequency"));
                 imagesave->callback((Fl_Callback*)cb_imagesave);
                 o->value(progdefaults.ssdv_save_image);
               } // Fl_Check_Button* imagesave
-              { Fl_Input* o = imagesavedir = new Fl_Input(235, 190, 230, 20, _("Location:"));
+              { Fl_Input* o = imagesavedir = new Fl_Input(235, 190, 290, 20, _("Location:"));
                 imagesavedir->callback((Fl_Callback*)cb_imagesavedir);
                 o->value(progdefaults.ssdv_save_dir.c_str());
               } // Fl_Input* imagesavedir
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(5, 225, 490, 55, _("Waterfall PNG Export"));
+            { Fl_Group* o = new Fl_Group(5, 225, 530, 55, _("Waterfall PNG Export"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { Fl_Check_Button* o = new Fl_Check_Button(15, 250, 80, 20, _("Enable"));
@@ -8004,14 +8026,14 @@ d frequency"));
                 o->callback((Fl_Callback*)cb_Enable);
                 o->value(progdefaults.png_wfall);
               } // Fl_Check_Button* o
-              { Fl_Input* o = new Fl_Input(235, 250, 230, 20, _("Location:"));
+              { Fl_Input* o = new Fl_Input(235, 250, 290, 20, _("Location:"));
                 o->tooltip(_("Please use full path including filename"));
                 o->callback((Fl_Callback*)cb_Location);
                 o->value(progdefaults.waterfall_png_location.c_str());
               } // Fl_Input* o
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(5, 284, 490, 76, _("Frequency Tracking"));
+            { Fl_Group* o = new Fl_Group(5, 284, 530, 76, _("Frequency Tracking"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { Fl_Check_Button* o = btnTrackFreq = new Fl_Check_Button(15, 317, 125, 25, _("Enable"));
@@ -8064,12 +8086,12 @@ d frequency"));
             } // Fl_Group* o
             tabDLEnable->end();
           } // Fl_Group* tabDLEnable
-          { Fl_Group* o = new Fl_Group(0, 50, 500, 317, _("Location"));
+          { Fl_Group* o = new Fl_Group(0, 50, 540, 317, _("Location"));
             o->hide();
-            { Fl_Group* o = new Fl_Group(5, 60, 490, 300, _("Listener Location"));
+            { Fl_Group* o = new Fl_Group(5, 60, 530, 300, _("Listener Location"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Value_Input* o = new Fl_Value_Input(100, 225, 150, 25, _("Baud"));
+              { Fl_Value_Input* o = new Fl_Value_Input(115, 225, 150, 25, _("Baud"));
                 o->type(2);
                 o->box(FL_DOWN_BOX);
                 o->color(FL_BACKGROUND2_COLOR);
@@ -8083,72 +8105,72 @@ d frequency"));
                 o->when(FL_WHEN_RELEASE);
                 o->value(progdefaults.gps_speed);
               } // Fl_Value_Input* o
-              { Fl_Button* o = new Fl_Button(290, 195, 170, 25, _("Refresh Device List"));
+              { Fl_Button* o = new Fl_Button(305, 195, 170, 25, _("Refresh Device List"));
                 o->callback((Fl_Callback*)cb_Refresh);
               } // Fl_Button* o
-              { Fl_Round_Button* o = new Fl_Round_Button(30, 80, 190, 25, _("Stationary Listener"));
+              { Fl_Round_Button* o = new Fl_Round_Button(45, 80, 190, 25, _("Stationary Listener"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Stationary);
                 o->value(!progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { Fl_Float_Input* o = stationary_lat = new Fl_Float_Input(120, 105, 125, 25, _("Latitude"));
+              { Fl_Float_Input* o = stationary_lat = new Fl_Float_Input(135, 105, 125, 25, _("Latitude"));
                 stationary_lat->type(1);
                 stationary_lat->callback((Fl_Callback*)cb_stationary_lat);
                 o->value(progdefaults.myLat.c_str());
               } // Fl_Float_Input* stationary_lat
-              { Fl_Float_Input* o = stationary_lon = new Fl_Float_Input(335, 105, 125, 25, _("Longitude"));
+              { Fl_Float_Input* o = stationary_lon = new Fl_Float_Input(350, 105, 125, 25, _("Longitude"));
                 stationary_lon->type(1);
                 stationary_lon->callback((Fl_Callback*)cb_stationary_lon);
                 o->value(progdefaults.myLon.c_str());
               } // Fl_Float_Input* stationary_lon
-              { Fl_Round_Button* o = new Fl_Round_Button(30, 165, 190, 25, _("Upload GPS Position"));
+              { Fl_Round_Button* o = new Fl_Round_Button(45, 165, 190, 25, _("Upload GPS Position"));
                 o->type(102);
                 o->down_box(FL_ROUND_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Upload);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Round_Button* o
-              { inpGPSdev = new Fl_Input_Choice(100, 195, 185, 25, _("Device"));
+              { inpGPSdev = new Fl_Input_Choice(115, 195, 185, 25, _("Device"));
                 inpGPSdev->callback((Fl_Callback*)cb_inpGPSdev);
               } // Fl_Input_Choice* inpGPSdev
-              { Fl_Check_Button* o = new Fl_Check_Button(220, 165, 240, 25, _("Always enable GPS on startup"));
+              { Fl_Check_Button* o = new Fl_Check_Button(235, 165, 240, 25, _("Always enable GPS on startup"));
                 o->down_box(FL_DOWN_BOX);
                 o->callback((Fl_Callback*)cb_Always);
                 o->value(progdefaults.gps_start_enabled);
               } // Fl_Check_Button* o
-              { Fl_Spinner* o = new Fl_Spinner(330, 225, 45, 25, _("Period"));
+              { Fl_Spinner* o = new Fl_Spinner(345, 225, 45, 25, _("Period"));
                 o->box(FL_DOWN_BOX);
                 o->minimum(10);
                 o->maximum(300);
                 o->callback((Fl_Callback*)cb_Period);
                 o->value(progdefaults.gps_period);
               } // Fl_Spinner* o
-              { Fl_Group* o = new Fl_Group(10, 260, 475, 90, _("Last GPS Position"));
+              { Fl_Group* o = new Fl_Group(10, 260, 520, 90, _("Last GPS Position"));
                 o->box(FL_ENGRAVED_BOX);
                 o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-                { gps_pos_lat = new Fl_Output(200, 285, 105, 25, _("Lat"));
+                { gps_pos_lat = new Fl_Output(235, 285, 105, 25, _("Lat"));
                 } // Fl_Output* gps_pos_lat
-                { gps_pos_altitude = new Fl_Output(60, 315, 105, 25, _("Alt"));
+                { gps_pos_altitude = new Fl_Output(95, 315, 105, 25, _("Alt"));
                 } // Fl_Output* gps_pos_altitude
-                { gps_pos_time = new Fl_Output(60, 285, 105, 25, _("Time"));
+                { gps_pos_time = new Fl_Output(95, 285, 105, 25, _("Time"));
                 } // Fl_Output* gps_pos_time
-                { gps_pos_lon = new Fl_Output(345, 285, 105, 25, _("Lon"));
+                { gps_pos_lon = new Fl_Output(380, 285, 105, 25, _("Lon"));
                 } // Fl_Output* gps_pos_lon
-                { gps_pos_save = new Fl_Button(200, 315, 250, 25, _("Save as stationary location"));
+                { gps_pos_save = new Fl_Button(235, 315, 250, 25, _("Save as stationary location"));
                 gps_pos_save->callback((Fl_Callback*)cb_gps_pos_save);
                 gps_pos_save->deactivate();
                 } // Fl_Button* gps_pos_save
                 o->end();
               } // Fl_Group* o
-              { Fl_Box* o = new Fl_Box(275, 130, 190, 35, _("please enter lat/long as one number, in decimal degrees; altitude in metres"));
+              { Fl_Box* o = new Fl_Box(290, 130, 190, 35, _("please enter lat/long as one number, in decimal degrees; altitude in metres"));
                 o->labelsize(10);
                 o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o
-              { Fl_Box* o = new Fl_Box(380, 220, 105, 35, _("seconds between position updates"));
+              { Fl_Box* o = new Fl_Box(395, 220, 105, 35, _("seconds between position updates"));
                 o->labelsize(10);
                 o->align(Fl_Align(FL_ALIGN_WRAP));
               } // Fl_Box* o
-              { Fl_Float_Input* o = stationary_alt = new Fl_Float_Input(120, 135, 125, 25, _("Altitude"));
+              { Fl_Float_Input* o = stationary_alt = new Fl_Float_Input(135, 135, 125, 25, _("Altitude"));
                 stationary_alt->type(1);
                 stationary_alt->callback((Fl_Callback*)cb_stationary_alt);
                 o->value(progdefaults.myAlt.c_str());
@@ -8157,60 +8179,77 @@ d frequency"));
             } // Fl_Group* o
             o->end();
           } // Fl_Group* o
-          { tabDLPayload = new Fl_Group(0, 50, 500, 323, _("Radio auto config"));
-            tabDLPayload->hide();
-            { Fl_Browser* o = flight_browser = new Fl_Browser(5, 60, 490, 225);
+          { tabDLFlights = new Fl_Group(0, 50, 540, 323, _("Active flights list"));
+            tabDLFlights->hide();
+            { Fl_Browser* o = flight_browser = new Fl_Browser(5, 60, 530, 225);
               flight_browser->type(2);
               flight_browser->callback((Fl_Callback*)cb_flight_browser);
               o->column_widths(flight_browser_columns);
             } // Fl_Browser* flight_browser
-            { Fl_Group* o = new Fl_Group(5, 290, 490, 75);
+            { Fl_Group* o = new Fl_Group(5, 290, 530, 75);
               o->box(FL_ENGRAVED_BOX);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { flight_docs_refresh = new Fl_Button(400, 300, 85, 25, _("Refresh"));
-                flight_docs_refresh->callback((Fl_Callback*)cb_flight_docs_refresh);
-              } // Fl_Button* flight_docs_refresh
-              { Fl_Check_Button* o = new Fl_Check_Button(265, 300, 130, 25, _("Show test docs"));
-                o->down_box(FL_DOWN_BOX);
-                o->callback((Fl_Callback*)cb_Show);
-                o->value(progdefaults.show_testing_flights);
-              } // Fl_Check_Button* o
-              { flight_search_text = new Fl_Input(75, 300, 120, 25, _("Jump to:"));
-                flight_search_text->callback((Fl_Callback*)cb_flight_search_text);
-                flight_search_text->when(FL_WHEN_CHANGED);
-              } // Fl_Input* flight_search_text
-              { Fl_Button* o = new Fl_Button(200, 300, 60, 25, _("Next"));
-                o->callback((Fl_Callback*)cb_Next);
-              } // Fl_Button* o
-              { payload_list = new Fl_Choice(75, 330, 140, 25, _("Payload:"));
-                payload_list->down_box(FL_BORDER_BOX);
-              } // Fl_Choice* payload_list
-              { payload_autoconfigure = new Fl_Button(330, 330, 155, 25, _("Autoconfigure"));
-                payload_autoconfigure->callback((Fl_Callback*)cb_payload_autoconfigure);
-              } // Fl_Button* payload_autoconfigure
-              { payload_mode_list = new Fl_Choice(220, 330, 105, 25);
-                payload_mode_list->down_box(FL_BORDER_BOX);
-              } // Fl_Choice* payload_mode_list
+              { flight_docs_refresh_a = new Fl_Button(122, 330, 295, 25, _("Refresh flights/payloads"));
+                flight_docs_refresh_a->callback((Fl_Callback*)cb_flight_docs_refresh_a);
+              } // Fl_Button* flight_docs_refresh_a
+              { flight_payload_list = new Fl_Choice(75, 300, 145, 25, _("Payload:"));
+                flight_payload_list->down_box(FL_BORDER_BOX);
+              } // Fl_Choice* flight_payload_list
+              { payload_autoconfigure_a = new Fl_Button(370, 300, 155, 25, _("Autoconfigure"));
+                payload_autoconfigure_a->callback((Fl_Callback*)cb_payload_autoconfigure_a);
+              } // Fl_Button* payload_autoconfigure_a
+              { flight_payload_transmission_list = new Fl_Choice(225, 300, 140, 25);
+                flight_payload_transmission_list->down_box(FL_BORDER_BOX);
+              } // Fl_Choice* flight_payload_transmission_list
               o->end();
             } // Fl_Group* o
-            tabDLPayload->end();
-          } // Fl_Group* tabDLPayload
+            tabDLFlights->end();
+          } // Fl_Group* tabDLFlights
+          { tabDLPayloads = new Fl_Group(0, 50, 540, 323, _("All payloads (testing)"));
+            { Fl_Browser* o = payload_browser = new Fl_Browser(5, 60, 530, 225);
+              payload_browser->type(2);
+              payload_browser->callback((Fl_Callback*)cb_payload_browser);
+              o->column_widths(payload_browser_columns);
+            } // Fl_Browser* payload_browser
+            { Fl_Group* o = new Fl_Group(5, 290, 530, 75);
+              o->box(FL_ENGRAVED_BOX);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+              { flight_docs_refresh_b = new Fl_Button(325, 300, 200, 25, _("Refresh flights/payloads"));
+                flight_docs_refresh_b->callback((Fl_Callback*)cb_flight_docs_refresh_b);
+              } // Fl_Button* flight_docs_refresh_b
+              { payload_autoconfigure_b = new Fl_Button(325, 330, 200, 25, _("Autoconfigure"));
+                payload_autoconfigure_b->callback((Fl_Callback*)cb_payload_autoconfigure_b);
+              } // Fl_Button* payload_autoconfigure_b
+              { payload_search_text = new Fl_Input(75, 300, 165, 25, _("Search:"));
+                payload_search_text->callback((Fl_Callback*)cb_payload_search_text);
+                payload_search_text->when(FL_WHEN_CHANGED);
+              } // Fl_Input* payload_search_text
+              { payload_transmission_list = new Fl_Choice(75, 330, 230, 25, _("Mode:"));
+                payload_transmission_list->down_box(FL_BORDER_BOX);
+              } // Fl_Choice* payload_transmission_list
+              { Fl_Button* o = new Fl_Button(245, 300, 60, 25, _("Next"));
+                o->callback((Fl_Callback*)cb_Next);
+              } // Fl_Button* o
+              o->end();
+            } // Fl_Group* o
+            tabDLPayloads->end();
+          } // Fl_Group* tabDLPayloads
           tabsDL->end();
         } // Fl_Tabs* tabsDL
         tabDL->end();
       } // Fl_Group* tabDL
       tabsConfigure->end();
     } // Fl_Tabs* tabsConfigure
-    { btnSaveConfig = new Fl_Button(251, 375, 130, 22, _("Save"));
+    { btnSaveConfig = new Fl_Button(290, 375, 115, 22, _("Save"));
       btnSaveConfig->callback((Fl_Callback*)cb_btnSaveConfig);
     } // Fl_Button* btnSaveConfig
-    { btnCloseConfig = new Fl_Return_Button(383, 375, 130, 22, _("Close"));
+    { btnCloseConfig = new Fl_Return_Button(405, 375, 115, 22, _("Close"));
       btnCloseConfig->callback((Fl_Callback*)cb_btnCloseConfig);
     } // Fl_Return_Button* btnCloseConfig
-    { btnResetConfig = new Fl_Button(20, 375, 130, 22, _("Restore defaults"));
+    { btnResetConfig = new Fl_Button(25, 375, 150, 22, _("Restore defaults"));
       btnResetConfig->callback((Fl_Callback*)cb_btnResetConfig);
     } // Fl_Button* btnResetConfig
-    { btnApplyConfig = new Fl_Button(150, 375, 105, 22, _("Apply (dl)"));
+    { btnApplyConfig = new Fl_Button(175, 375, 115, 22, _("Apply (dl)"));
       btnApplyConfig->callback((Fl_Callback*)cb_btnApplyConfig);
       btnApplyConfig->deactivate();
     } // Fl_Button* btnApplyConfig

@@ -359,7 +359,7 @@ Fl_Group			*TopFrameHAB;
 Fl_Choice			*habFlight;
 Fl_Button			*habOpenBrowser;
 Fl_Choice			*habCHPayload;
-Fl_Choice			*habCHMode;
+Fl_Choice			*habCHTransmission;
 Fl_Button			*habConfigureButton;
 Fl_Button			*habSwitchModes;
 Fl_Output			*habRXPayload;
@@ -381,7 +381,7 @@ int w_habOpenBrowser = 80;
 int w_habCHPayload = 100;
 int w_habConfigureButton = 120;
 int w_habSwitchModes = 120;
-int w_habCHMode = 100;
+int w_habCHTransmission = 100;
 int w_habRXPayload = 100;
 int w_habTime = 90;
 int w_habLat = 90;
@@ -1583,6 +1583,7 @@ void cb_mnuConfigWFcontrols(Fl_Menu_ *, void*) {
 void cb_dl_fldigi_refresh(Fl_Widget *, void *)
 {
     dl_fldigi::hbtint::uthr->flights();
+    dl_fldigi::hbtint::uthr->payloads();
 }
 
 void cb_toggle_dl_online(Fl_Widget *w, void *)
@@ -1602,18 +1603,17 @@ void cb_dlfldigi_autoswitchmode(Fl_Widget *w, void *)
 }
 
 void cb_mnuConfigDLClient(Fl_Widget *, void *a) {
-    Fl_Widget *open_tab = (Fl_Widget *) a;
-    if (open_tab == NULL)
-        open_tab = tabDLEnable;
-    else if (open_tab == (void *) 1)
-        open_tab = tabDLPayload;
 	progdefaults.loadDefaults();
 	tabsConfigure->value(tabDL);
+
+    intptr_t open_tab_num = reinterpret_cast<intptr_t>(a);
+    Fl_Widget *open_tab = tabsDL->child(open_tab_num);
+
     tabsDL->value(open_tab);
 	dlgConfig->show();
 }
 
-void cb_mnuVisitDLClient(Fl_Widget*, void*)
+void cb_mnuVisitDLHelp(Fl_Widget*, void*)
 {
 	cb_mnuVisitURL(0, (void *) "http://ukhas.org.uk/guides:tracking_guide");
 }
@@ -1621,12 +1621,12 @@ void cb_mnuVisitDLClient(Fl_Widget*, void*)
 void cb_mnuVisitTracker(Fl_Widget*, void*)
 {
     /* TODO: HABITAT-LATER update with habitat ui address */
-	cb_mnuVisitURL(0, (void *) "http://spacenear.us/tracker");
+	cb_mnuVisitURL(0, (void *) "http://spacenear.us/tracker/");
 }
 
-void cb_mnuVisitView(Fl_Widget*, void*)
+void cb_mnuVisitHabitat(Fl_Widget*, void*)
 {
-	// TODO HABITAT-LATER cb_mnuVisitURL(0, (void*)string(progdefaults.server_location).append("view.php").c_str());
+	cb_mnuVisitURL(0, (void *) "http://habitat.habhub.org/");
 }
 
 void cb_logfile(Fl_Widget* w, void*)
@@ -2698,12 +2698,26 @@ bool clean_exit(bool ask) {
 
 	double_exit = true;
 
-	/* close all windows while shutting down; disable main. */
-	Fl::first_window();
+	/* This is a bit kludgey. It's necessary since dl_fldigi might take a little
+	 * while to cleanup/shutdown - need to finish the queue of stuff to upload.
+	 *
+	 * Hide all windows except for main, and show shutting down label
+	 * Need to ensure the user can't produce any events on any widgets:
+	 * bad things might happen */
 	Fl::first_window(fl_digi_main);
-	fl_digi_main->deactivate();
 	while (Fl_Window* w = Fl::next_window(fl_digi_main))
-		w->do_callback();
+		w->hide();
+
+	/* clear deletes the widgets it removes: other modules or events in
+	 * the queue may have references they need while shutting down */
+	while (fl_digi_main->children())
+		fl_digi_main->remove(fl_digi_main->child(0));
+
+	Fl_Box *shutdown_label = new Fl_Box(0, 0, fl_digi_main->w(), fl_digi_main->h());
+	shutdown_label->label("Uploading any remaining queued items to server...");
+	shutdown_label->align(FL_ALIGN_CENTER);
+	fl_digi_main->add_resizable(*shutdown_label);
+	fl_digi_main->damage(FL_DAMAGE_ALL);
 
 	if (Maillogfile)
 		Maillogfile->log_to_file_stop();
@@ -3444,10 +3458,10 @@ Fl_Menu_Item menu_[] = {
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(DLFLDIGI_REFRESH_LABEL, pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("habitat"), pskr_icon), 0, cb_mnuVisitHabitat, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLHelp, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"     ", 0, 0, 0, FL_MENU_INACTIVE, FL_NORMAL_LABEL, 0, 14, 0},
@@ -5512,10 +5526,10 @@ Fl_Menu_Item alt_menu_[] = {
 {_("DL Client"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { DLFLDIGI_ONLINE_LABEL, 0, cb_toggle_dl_online, 0, FL_MENU_TOGGLE, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(DLFLDIGI_REFRESH_LABEL, pskr_icon), 0, cb_dl_fldigi_refresh, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Raw Data"), pskr_icon), 0, cb_mnuVisitView, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLClient, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Configure"), help_about_icon), 0, (Fl_Callback*)cb_mnuConfigDLClient, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Tracker"), pskr_icon), 0, cb_mnuVisitTracker, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("habitat"), pskr_icon), 0, cb_mnuVisitHabitat, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Help"), pskr_icon), 0, cb_mnuVisitDLHelp, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {0,0,0,0,0,0,0,0,0},
@@ -6013,7 +6027,7 @@ void create_fl_digi_main_dl_fldigi() {
 		habOpenBrowser->when(FL_WHEN_RELEASE);
 		habOpenBrowser->align(FL_ALIGN_INSIDE);
         habOpenBrowser->callback(cb_mnuConfigDLClient);
-        habOpenBrowser->user_data((void *) 1);
+        habOpenBrowser->user_data(reinterpret_cast<void *>(intptr_t(2)));
         }
 
 		{ habCHPayload = new Fl_Choice(rightof(habOpenBrowser) + 2, habRowOneY, w_habCHPayload, Hentry, _("Payload"));
@@ -6024,15 +6038,15 @@ void create_fl_digi_main_dl_fldigi() {
 		habCHPayload->deactivate();
 		}
 
-		{ habCHMode = new Fl_Choice(rightof(habCHPayload) + 2, habRowOneY, w_habCHMode, Hentry, _("Multi mode"));
-		habCHMode->tooltip(_("If applicable, select from the available transmission modes for this payload"));
-		habCHMode->down_box(FL_BORDER_BOX);
-		habCHMode->align(FL_ALIGN_TOP);
-		habCHMode->when(FL_WHEN_CHANGED);
-		habCHMode->deactivate();
+		{ habCHTransmission = new Fl_Choice(rightof(habCHPayload) + 2, habRowOneY, w_habCHTransmission, Hentry, _("Multi mode"));
+		habCHTransmission->tooltip(_("If applicable, select from the available transmission modes for this payload"));
+		habCHTransmission->down_box(FL_BORDER_BOX);
+		habCHTransmission->align(FL_ALIGN_TOP);
+		habCHTransmission->when(FL_WHEN_CHANGED);
+		habCHTransmission->deactivate();
 		}
 
-		{ habConfigureButton = new Fl_Button(rightof(habCHMode) + 2, habRowOneY, w_habConfigureButton, Hentry, _("Auto-configure"));
+		{ habConfigureButton = new Fl_Button(rightof(habCHTransmission) + 2, habRowOneY, w_habConfigureButton, Hentry, _("Auto-configure"));
 		habConfigureButton->tooltip(_("Automatically set the fldigi modem settings for the chosen payload"));
 		habConfigureButton->labeltype(FL_NORMAL_LABEL);
 		habConfigureButton->labelfont(0);

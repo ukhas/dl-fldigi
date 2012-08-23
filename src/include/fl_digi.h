@@ -148,7 +148,7 @@ extern Fl_Group				*TopFrameHAB;
 extern Fl_Choice			*habFlight;
 extern Fl_Button			*habOpenBrowser;
 extern Fl_Choice			*habCHPayload;
-extern Fl_Choice			*habCHMode;
+extern Fl_Choice			*habCHTransmission;
 extern Fl_Button			*habConfigureButton;
 extern Fl_Button			*habSwitchModes;
 extern Fl_Output			*habRXPayload;
