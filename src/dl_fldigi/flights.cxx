@@ -881,7 +881,11 @@ static void autoconfigure_rtty_stop(const Json::Value &value)
 
     if (value.isInt())
     {
+#ifdef JSON_HAS_INT64   /* test if jsoncpp 0.6 */
         int stop = value.asLargestInt();
+#else
+        int stop = value.asInt();
+#endif
         if (stop == 1)
             select = 0;
         else if (stop == 2)
@@ -908,7 +912,11 @@ static void autoconfigure_dominoex(const Json::Value &settings)
     if (!settings["speed"].isInt())
         return;
 
+#ifdef JSON_HAS_INT64   /* jsoncpp 0.6 */
     int type = settings["speed"].asLargestInt();
+#else
+    int type = settings["speed"].asInt();
+#endif
     int modem = -1;
 
     switch (type)
@@ -1113,13 +1121,17 @@ static string mode_menu_name(int index, const Json::Value &settings)
         name << "RTTY";
 
         if (settings["baud"].isInt())
+#ifdef JSON_HAS_INT64   /* jsoncpp 0.6 */
             name << ' ' << settings["baud"].asLargestInt();
+#else
+            name << ' ' << settings["baud"].asInt();
+#endif
         else if (settings["baud"].isDouble())
             name << ' ' << settings["baud"].asDouble();
     }
     else if (modulation == "DominoEX" && settings["speed"].isInt())
     {
-        name << "DomEX " << settings["speed"].asLargestInt();
+        name << "DomEX " << settings["speed"].asInt();
     }
     else if (modulation == "Hellschreiber" && settings["variant"].isString())
     {
