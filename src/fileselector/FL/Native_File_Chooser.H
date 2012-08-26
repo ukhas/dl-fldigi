@@ -1,5 +1,5 @@
 //
-// Fl_Native_File_Chooser.cxx -- FLTK native OS file chooser widget
+// Fl_Native_File_Chooser.H -- FLTK native OS file chooser widget
 //
 // Copyright 2004 by Greg Ercolano.
 //
@@ -19,32 +19,22 @@
 // USA.
 //
 
-
-#include <config.h>
-
-#if (FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR < 3) || (FLARQ_FLTK_API_MAJOR == 1 && FLARQ_FLTK_API_MINOR < 3)
+#ifndef FL_NATIVE_FILE_CHOOSER_H
+#define FL_NATIVE_FILE_CHOOSER_H
 
 // Use Windows' chooser
-#if defined(__WIN32__) || defined(__CYGWIN__)
-#include "Fl_Native_File_Chooser_WIN32.cxx"
+#if defined(_WIN32) || defined(__CYGWIN__)
+#include <FL/Native_File_Chooser_WIN32.H>
 #endif
 
-// Use Apple's chooser
+// Use Apple's chooser designed by Stelios
 #ifdef __APPLE__
-#include "MAC_chooser.cxx"
+#include "FL/Native_File_Chooser_MAC_chooser.h"
 #endif
 
 // All else falls back to FLTK's own chooser
 #if ! defined(__APPLE__) && !defined(_WIN32) && !defined(__CYGWIN__)
-#include "Fl_Native_File_Chooser_FLTK.cxx"
+#include <FL/Native_File_Chooser_FLTK.H>
 #endif
 
-#else
-
-// Use Apple's chooser
-#ifdef __APPLE__
-#include "MAC_chooser.cxx"
-#endif
-
-
-#endif
+#endif /*FL_NATIVE_FILE_CHOOSER_H*/

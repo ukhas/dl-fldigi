@@ -18,7 +18,7 @@ public:
     void settings();
     void listener_telemetry();
     void listener_telemetry(const Json::Value &data);
-    void listener_info();
+    void listener_information();
 
     /* Forward data to fldigi debug/log macros */
     void log(const std::string &message);
@@ -27,6 +27,7 @@ public:
 
     /* Update UI */
     void got_flights(const std::vector<Json::Value> &flights);
+    void got_payloads(const std::vector<Json::Value> &payloads);
 
     /* Modify run() to help us shutdown the thread */
     void *run();

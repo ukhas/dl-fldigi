@@ -40,6 +40,14 @@
 #  define DEFAULT_PTTDEV "/dev/ttyd0"
 #  define DEFAULT_CWFSKPORT "/dev/ttyd1"
 #  define DEFAULT_HAMRIGDEVICE "/dev/ttyd0"
+#elif defined(__NetBSD__)
+#  define DEFAULT_PTTDEV "/dev/tty00"
+#  define DEFAULT_CWFSKPORT "/dev/tty01"
+#  define DEFAULT_HAMRIGDEVICE "/dev/tty00"
+#elif defined(__OpenBSD__)
+#  define DEFAULT_PTTDEV "/dev/tty00"
+#  define DEFAULT_CWFSKPORT "/dev/tty01"
+#  define DEFAULT_HAMRIGDEVICE "/dev/tty00"
 #elif defined(__WOE32__)
 #  define DEFAULT_PTTDEV "COM1"
 #  define DEFAULT_CWFSKPORT "COM2"
@@ -92,7 +100,7 @@
               false)                                                                    \
         ELEM_(bool, rsid_auto_disable, "RSIDAUTODISABLE",                               \
               "Disable RSID detection when RsID signal is detected",                    \
-              false)                                                                      \
+              false)                                                                    \
         ELEM_(bool, rsid_post, "RSIDPOST",                                              \
               "Transmit an RSID signal when modem data is concluded",                   \
               false)                                                                    \
@@ -165,6 +173,9 @@
               1000)                                                                     \
         ELEM_(bool, StartAtSweetSpot, "STARTATSWEETSPOT",                               \
               "Always start new modems at sweet spot frequencies",                      \
+              false)                                                                    \
+        ELEM_(bool, CWOffset, "CWOFFSET",                                                 \
+              "Select if waterfall should compensate for BFO offset in CW",                        \
               false)                                                                    \
         ELEM_(bool, CWIsLSB, "CWISLSB",                                                 \
               "Select if BFO is injected as LSB instead of USB",                        \
@@ -324,9 +335,27 @@
         ELEM_(int, CWbandwidth, "CWBANDWIDTH",                                          \
               "Filter bandwidth (Hz)",                                                  \
               150)                                                                      \
+        ELEM_(double, CWlower, "CWLOWER",                                               \
+              "Detector hysterisis, lower threshold",                                   \
+              0.4)                                                                      \
+        ELEM_(double, CWupper, "CWUPPER",                                               \
+              "Detector hysterisis, upper threshold",                                   \
+              0.6)                                                                      \
+        ELEM_(int, CWmfiltlen, "CWMFILTLEN",                                            \
+              "Matched Filter length",                                                  \
+              100)                                                                      \
         ELEM_(bool, CWtrack, "CWTRACK",                                                 \
               "Automatic receive speed tracking",                                       \
               true)                                                                     \
+        ELEM_(bool, CWmfilt, "CWMFILT",                                                 \
+              "Matched Filter in use",                                                  \
+              false)                                                                    \
+        ELEM_(bool, CWuse_fft_filter, "CWUSEFFTFILTER",                                 \
+              "Use FFT overlap and add convolution filter",                             \
+              false)                                                                    \
+        ELEM_(bool, CWuseSOMdecoding, "CWUSESOMDECODING",                               \
+              "Self Organizing Map decoding",                                           \
+              false)                                                                    \
         ELEM_(int, CWrange, "CWRANGE",                                                  \
               "Tracking range for CWTRACK (WPM)",                                       \
               10)                                                                       \
@@ -457,6 +486,57 @@
         ELEM_(double, ThorCWI, "THORCWI",                                               \
               "CWI threshold (CWI detection and suppression)",                          \
               0.0)                                                                      \
+        ELEM_(bool, THOR_PREAMBLE, "THORPREAMBLE",                                 \
+              "Detect THOR preamble (and flush Rx pipeline)",                           \
+              true)                                                                     \
+        ELEM_(bool, THOR_SOFTSYMBOLS, "THORSOFTSYMBOLS",                                \
+              "Enable Soft-symbol decoding",                                            \
+              true)                                                                     \
+        ELEM_(bool, THOR_SOFTBITS, "THORSOFTBITS",                                      \
+              "Enable Soft-bit decoding",                                               \
+              true)                                                                     \
+        /* PACKET */                                                                    \
+        ELEM_(int, PKT_BAUD_SELECT, "PKTBAUDSELECT",                                                 \
+              "Packet baud rate. Values are as follows:\n"                              \
+              "  0: 1200 (V/UHF); 1: 300 (HF); 2: 2400 (V/UHF)",                        \
+              0)   /* 1200 baud (V/UHF) default. */                                     \
+        ELEM_(double, PKT_LOSIG_RXGAIN, "LOSIGRXGAIN",                                  \
+              "Signal gain for lower frequency (Mark) tone (in dB)",                    \
+              0.0)                                                                      \
+        ELEM_(double, PKT_HISIG_RXGAIN, "HISIGRXGAIN",                                  \
+              "Signal gain for higher frequency (Space) tone (in dB)",                  \
+              0.0)                                                                      \
+        ELEM_(double, PKT_LOSIG_TXGAIN, "LOSIGTXGAIN",                                  \
+              "Signal gain for Mark (lower frequency) tone (in dB)",                    \
+              0.0)                                                                      \
+        ELEM_(double, PKT_HISIG_TXGAIN, "HISIGTXGAIN",                                  \
+              "Signal gain for Space (higher frequency) tone (in dB)",                  \
+              0.0)                                                                      \
+        ELEM_(bool, PKT_PreferXhairScope, "PKTPREFERXHAIRSCOPE",                        \
+              "Default to syncscope (detected symbol scope)",                           \
+              false)                                                                    ELEM_(bool, PKT_AudioBoost, "PKTAUDIOBOOST",                                    \
+              "No extra input gain (similar to Mic Boost) by default",                  \
+              false)                                                                    \
+        \
+        ELEM_(bool, PKT_RXTimestamp, "PKTRXTIMESTAMP",                                  \
+              "No timestamps on RX packets by default",                                 \
+              false)                                                                    \
+        \
+        ELEM_(bool, PKT_expandMicE, "PKTEXPANDMICE",                                    \
+              "decode received Mic-E data",                                             \
+              false)                                                                    \
+        ELEM_(bool, PKT_expandPHG, "PKTEXPANDPHG",                                      \
+              "decode received PHG data",                                               \
+              false)                                                                    \
+        ELEM_(bool, PKT_expandCmp, "PKTEXPANDCMP",                                      \
+              "decode received Compressed Position data",                               \
+              false)                                                                    \
+        ELEM_(bool, PKT_unitsSI, "PKTUNITSSI",                                          \
+              "display decoded data in SI units",                                       \
+              false)                                                                    \
+        ELEM_(bool, PKT_unitsEnglish, "PKTUNITSENGLISH",                                \
+              "display decoded data in English units",                                  \
+              false)                                                                    \
         /* DOMINOEX */                                                                  \
         ELEM_(double, DOMINOEX_BW, "DOMINOEXBW",                                        \
               "Filter bandwidth factor (bandwidth relative to signal width)",           \
@@ -549,7 +629,7 @@
               {255, 255, 255, 255})                                                     \
         ELEM_(RGBI, rttymarkRGBI, "RTTYMARKRGBI",                                       \
               "Color of RTTY MARK freq marker (RGBI)",                                  \
-              {255, 128, 0, 255})                                                       \
+              {255, 120, 0, 255})                                                       \
         ELEM_(int, feldfontnbr, "FELDFONTNBR",                                          \
               "Index of raster font used for transmission",                             \
               4)                                                                        \
@@ -1153,6 +1233,30 @@
         ELEM_(int, WaterfallFontsize, "WATERFALLFONTSIZE",                              \
               "Waterfall font size",                                                    \
               12)                                                                       \
+        ELEM_(Fl_Color, LOGGINGtextcolor, "LOGGINGTEXTCOLOR",                           \
+              "Text color in logging controls",                                         \
+              FL_BLACK)                                                                 \
+        ELEM_(Fl_Color, LOGGINGcolor, "LOGGINGCOLOR",                                   \
+              "Background color in logging controls",                                   \
+              FL_BACKGROUND2_COLOR)                                                     \
+        ELEM_(Fl_Font, LOGGINGtextfont, "LOGGINGTEXTFONT",                              \
+              "Logging Controls font number",                                           \
+              FL_HELVETICA)                                                             \
+        ELEM_(int, LOGGINGtextsize, "LOGGINGTEXTSIZE",                                  \
+              "Logging Controls font size",                                             \
+              12)                                                                       \
+        ELEM_(Fl_Color, LOGBOOKtextcolor, "LOGBOOKTEXTCOLOR",                           \
+              "Text color in logbook dialog",                                           \
+              FL_BLACK)                                                                 \
+        ELEM_(Fl_Color, LOGBOOKcolor, "LOGBOOKCOLOR",                                   \
+              "Background color in logbook dialog",                                     \
+              FL_BACKGROUND2_COLOR)                                                     \
+        ELEM_(Fl_Font, LOGBOOKtextfont, "LOGBOOKTEXTFONT",                              \
+              "Logbook dialog controls font number",                                    \
+              FL_HELVETICA)                                                             \
+        ELEM_(int, LOGBOOKtextsize, "LOGBOOKTEXTSIZE",                                  \
+              "Logbook dialog controls font size",                                      \
+              12)                                                                       \
         ELEM_(std::string, FreqControlFontName, "FREQCONTROLFONTNAME",                  \
               "Frequency Control font name",                                            \
               "")                                                                       \
@@ -1296,15 +1400,17 @@
         ELEM_(std::string, myRadio, "MYRADIO", "Short radio description", "")           \
         ELEM_(std::string, myLat, "MYLAT", "Stationary listener latitude", "")          \
         ELEM_(std::string, myLon, "MYLON", "Stationary listener longitude", "")         \
-        ELEM_(std::string, myAlt, "MYALT", "Stationary listener altitude", "0")         \
+        ELEM_(std::string, myAlt, "MYALT", "Stationary listener altitude", "")          \
                                                                                         \
         /* habitat Flight selection stuff */                                            \
-        ELEM_(bool, show_testing_flights, "FLIGHT_SHOW_TESTING",                        \
-                "Show testing flight documents?", false)                                \
-        ELEM_(std::string, tracking_flight, "FLIGHT_DOCID", "The selected flight", "")  \
-        ELEM_(std::string, tracking_payload, "FLIGHT_PAYLOAD",                          \
-                "The payload selected in the current flight", "")                       \
-        ELEM_(int, tracking_mode, "FLIGHT_MODE_INDEX", "The selected mode", -1)         \
+        ELEM_(int, tracking_type, "TRACKING_WHAT",                                      \
+                "Tracking 0: nothing, 1: a flight, 2: a testing payload", 0)            \
+        ELEM_(std::string, tracking_doc, "TRACKING_DOCID",                              \
+                "The selected flight or payload document id", "")                       \
+        ELEM_(int, tracking_flight_payload, "TRACKING_FLIGHT_PAYLOAD",                  \
+                "The selected payload (belonging to the tracked filght) (index)", -1)   \
+        ELEM_(int, tracking_transmission, "TRACKING_TRANSMISSION",                      \
+                "The selected transmission (index)", -1)                                \
                                                                                         \
         /* dl-fldigi GPS Device Info */                                                 \
         ELEM_(bool, gps_start_enabled, "GPSENABLED", "GPS Enabled on startup?", false)  \
@@ -1353,10 +1459,40 @@
        ELEM_(int, wefax_filter, "WEFAXFILTER",                                          \
              "Input filter for image reception",                                        \
              0)                                                                         \
+       ELEM_(bool, WEFAX_EmbeddedGui, "WEFAXEMBEDDEDGUI",                               \
+             "Embedded GUI",                                                            \
+             true)                                                                      \
+       ELEM_(bool, WEFAX_HideTx, "WEFAXHIDETX",                                         \
+             "Hide transmission window",                                                \
+             true)                                                                      \
+       ELEM_(int, WEFAX_Shift, "WEFAXSHIFT",                                            \
+             "Shift (Standard 800Hz)",                                                  \
+             800 )                                                                      \
+       ELEM_(int, WEFAX_MaxRows, "WEFAXMAXROWS",                                        \
+             "Received fax maximum number of rows",                                     \
+             2900 )                                                                     \
+       ELEM_(int, WEFAX_NoiseMargin, "WEFAXNOISEMARGIN",                                \
+             "Pixel margin for noise removal",                                          \
+             1 )                                                                        \
+       ELEM_(int, WEFAX_NoiseThreshold, "WEFAXNOISETHRESHOLD",                          \
+             "Threshold level for noise detection and removal",                         \
+             5 )                                                                        \
+       ELEM_(int, WEFAX_SaveMonochrome, "WEFAXSAVEMONOCHROME",                          \
+             "Save fax image as monochrome",                                            \
+             true )                                                                     \
+       ELEM_(bool, WEFAX_AdifLog, "WEFAXADIFLOG",                                       \
+             "Logs wefax file names in Adif log file",                                  \
+             false)                                                                     \
        /* NAVTEX configuration items */                                                 \
        ELEM_(bool, NVTX_AdifLog, "NAVTEXADIFLOG",                                       \
              "Logs Navtex messages in Adig log file",                                   \
              false)                                                                     \
+       ELEM_(std::string, NVTX_Catalog, "NAVTEXCATALOG",                                \
+             "Catalog pathname of Navtex stations",                                     \
+             PKGDATADIR "/NAVTEX_Stations.txt")                                         \
+       ELEM_(int, NVTX_MinSizLoggedMsg, "NAVTEXMINSIZLOGGEDMSG",                        \
+             "Minimum length of logged messages",                                       \
+             0 )                                                                        \
         /* WX fetch from NOAA */                                                        \
         ELEM_(std::string, wx_sta, "WX_STA",                                            \
               "4 letter specifier for wx station",                                      \

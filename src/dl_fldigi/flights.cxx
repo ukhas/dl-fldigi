@@ -2,7 +2,7 @@
  * Copyright (C) 2011 Daniel Richman
  * License: GNU GPL 3
  *
- * flights.cxx: flight document management, selection, GUI and autoconfiguring
+ * flights.cxx: flight and payload document management, GUI and autoconfig.
  */
 
 #include "dl_fldigi/flights.h"
@@ -21,6 +21,7 @@
 #include "configuration.h"
 #include "confdialog.h"
 
+#include "habitat/RFC3339.h"
 #include "dl_fldigi/dl_fldigi.h"
 #include "dl_fldigi/hbtint.h"
 
@@ -29,53 +30,373 @@ using namespace std;
 namespace dl_fldigi {
 namespace flights {
 
-bool downloaded_once;
+bool downloaded_flights_once, downloaded_payloads_once;
 
-static string cache_file;
-static vector<Json::Value> flight_docs;
-static vector<string> payload_index;
+static string flight_cache_file, payload_cache_file;
+static vector<Json::Value> flight_docs, payload_docs;
 
 /* These pointers just point at some part of the heap allocated by something
- * in the flight_docs vector; they're invalidated when filght_docs is modified
- * but we make sure to update them when that happens (only happens when
- * new data is downloaded; populate_flights cleans up). */
-static const Json::Value *cur_flight, *cur_payload, *cur_mode;
-static int cur_mode_index, cur_payload_modecount;
-static int flight_search_first = 1;
+ * in either the flight_docs vector (if cur_heap == TRACKING_FLIGHT) or 
+ * the payload_docs vector (if cur_heap == TRACKING_PAYLOAD).
+ * They're invalidated when the relevant vector is modified. When new data is
+ * downloaded, the relvant populate_{flights,payloads} function will update
+ * these if necessary.
+ * hbtint::extrmgr->payload should be called when cur_payload is updated.
+ * The data pointed to must not be modified at all while extrmgr has a
+ * pointer to it. populate_*'s cleanup actions remove it before modifying. */
+static const Json::Value *cur_flight, *cur_payload, *cur_transmission;
+static int cur_transmission_index, cur_transmission_count;
+static int payload_search_first = 1;
+/* managed by select_flight and select_payload. Checked by
+ * select_flight_payload, populate_flights and populate_payloads */
+static enum tracking_type_enum cur_heap = TRACKING_NOTHING;
 
-static void select_payload(int index);
-static void select_mode(int index);
+static void load_cache_file(const string &name, vector<Json::Value> &target);
+static void write_cache_file(const string &name,
+                             const vector<Json::Value> &docs);
+
+/* Note: these functions, in the menus they populate, store the index of the
+ * Json::Value in the array it's contained in as the userdata of the item,
+ * cast (int) -> (void *) */
+static void populate_flights();
+static void populate_payloads();
+
+static void select_flight_payload(int index);
+static void do_select_payload(const Json::Value &payload);
+static void select_transmission(int index);
+
+static void autoconfigure_rtty(const Json::Value &settings);
+static void autoconfigure_rtty_shift(const Json::Value &value);
+static void autoconfigure_rtty_baud(const Json::Value &value);
+static void autoconfigure_rtty_encoding(const Json::Value &value);
+static void autoconfigure_rtty_parity(const Json::Value &value);
+static void autoconfigure_rtty_stop(const Json::Value &value);
+static void autoconfigure_dominoex(const Json::Value &settings);
+static void autoconfigure_hellschreiber(const Json::Value &settings);
+
+static string escape_menu_string(const string &s_);
+static string escape_browser_string(const string &s_);
+static string squash_string(const char *str);
+static string join_set(const set<string> &items, const string &sep=", ");
+
+static string flight_choice_item(const string &name,
+                                 const string &callsign_list,
+                                 int attempt);
+static string flight_browser_item(const string &name, const string &date,
+                                  const string &callsign_list);
+static string payload_browser_item(const string &name,
+                                   const string &callsign_list,
+                                   const string &description);
+static string flight_payload_menu_item(const string &name,
+                                       const string &callsign_list,
+                                       int attempt);
+static string mode_menu_name(int index, const Json::Value &settings);
+
+static string flight_callsign_list(const Json::Value &flight);
+static string flight_launch_date(const Json::Value &flight);
+static string payload_callsign_list(const Json::Value &payload);
+
+static void flight_choice_callback(Fl_Widget *w, void *a);
+static void flight_payload_choice_callback(Fl_Widget *w, void *a);
+static void mode_choice_callback(Fl_Widget *w, void *a);
 
 void init()
 {
-    cache_file = HomeDir + "flight_docs.json";
+    /* called with lock acquired */
+
+    flight_cache_file = HomeDir + "flight_docs.json";
+    payload_cache_file = HomeDir + "payload_configuration_docs.json";
 }
 
 void cleanup()
 {
+    /* called with lock acquired */
+
     flight_docs.clear();
-    payload_index.clear();
+    payload_docs.clear();
     cur_flight = NULL;
     cur_payload = NULL;
-    cur_mode = NULL;
-    cur_mode_index = 0;
-    cur_payload_modecount = 0;
+    cur_transmission = NULL;
+    cur_transmission_index = 0;
+    cur_transmission_count = 0;
+    cur_heap = TRACKING_NOTHING;
 }
 
 void load_cache()
 {
-    /* initialise an empty and disabled UI: */
-    populate_flights();
+    /* resets everything */
+    select_flight(-1);
 
-    ifstream cf(cache_file.c_str());
+    /* called with lock acquired */
+
+    load_cache_file(flight_cache_file, flight_docs);
+    load_cache_file(payload_cache_file, payload_docs);
+
+    populate_flights();
+    populate_payloads();
+}
+
+void new_flight_docs(const vector<Json::Value> &new_flights)
+{
+    Fl_AutoLock lock;
+    flight_docs = new_flights;
+    downloaded_flights_once = true;
+    write_cache_file(flight_cache_file, flight_docs);
+    populate_flights();
+}
+
+void new_payload_docs(const vector<Json::Value> &new_payloads)
+{
+    Fl_AutoLock lock;
+    payload_docs = new_payloads;
+    downloaded_payloads_once = true;
+    write_cache_file(payload_cache_file, payload_docs);
+    populate_payloads();
+}
+
+void payload_search(bool next)
+{
+    /* Searching the payload_browser rather than looking through our JSON docs?
+     * Well: it's easier in several ways, and quicker. We've already extracted
+     * the important strings in populate_flights and filtered for testing
+     * flights; that would have to be duplicated. */
+
+    Fl_AutoLock lock;
+
+    const string search(squash_string(payload_search_text->value()));
+    if (!search.size())
+        return;
+
+    int n = payload_browser->size();
+
+    if (!n)
+        return;
+
+    if (!next || payload_search_first > n)
+        payload_search_first = 1;
+
+    int i = payload_search_first;
+
+    do
+    {
+        const string line(squash_string(payload_browser->text(i)));
+
+        if (line.find(search) != string::npos)
+        {
+            payload_browser->value(i);
+            select_payload(i - 1);
+
+            payload_search_first = i + 1;
+            break;
+        }
+
+        i++;
+        if (i > n)
+            i = 1;
+    }
+    while (i != payload_search_first);
+}
+
+void select_flight(int index)
+{
+    Fl_AutoLock lock;
+
+    LOG_DEBUG("Selecting flight, index %i", index);
+
+    /* Reset */
+    cur_flight = NULL;
+    cur_heap = TRACKING_NOTHING;
+
+    if (hab_ui_exists)
+    {
+        habCHPayload->value(-1);
+        habCHPayload->clear();
+        habCHPayload->deactivate();
+    }
+
+    flight_payload_list->value(-1);
+    flight_payload_list->clear();
+    flight_payload_list->deactivate();
+
+    do_select_payload(Json::Value::null);
+
+    /* Tests */
+    if (index < 0 || index >= int(flight_docs.size()))
+        return;
+
+    const Json::Value &flight = flight_docs[index];
+
+    if (!flight.isObject() || !flight.size() || !flight["_id"].isString())
+        return;
+
+    const string id = flight["_id"].asString();
+    const Json::Value &payloads = flight["_payload_docs"];
+
+    if (!id.size() || !payloads.isArray() || !payloads.size())
+        return;
+
+    LOG_DEBUG("flight OK. contains %i payloads", payloads.size());
+
+    /* Doc looks ok, so set up */
+    cur_flight = &flight;
+    cur_heap = TRACKING_FLIGHT;
+
+    if (progdefaults.tracking_type != TRACKING_FLIGHT || 
+        progdefaults.tracking_doc != id)
+    {
+        progdefaults.tracking_type = TRACKING_FLIGHT;
+        progdefaults.tracking_doc = id;
+        progdefaults.tracking_flight_payload = -1;
+        progdefaults.tracking_transmission = -1;
+        progdefaults.changed = true;
+    }
+
+    set<string> choice_items;
+
+    for (Json::Value::const_iterator it = payloads.begin();
+            it != payloads.end(); ++it)
+    {
+        const Json::Value &root = *it;
+        string name, callsigns;
+
+        if (root.isObject() && root["name"].isString())
+        {
+            name = root["name"].asString();
+            callsigns = payload_callsign_list(root);
+        }
+        else
+        {
+            name = "Unknown";
+        }
+
+        int attempt = 1;
+        string item;
+
+        do
+        {
+            item = flight_payload_menu_item(name, callsigns, attempt);
+            attempt++;
+        }
+        while(choice_items.count(item));
+        choice_items.insert(item);
+
+        if (hab_ui_exists)
+            habCHPayload->add(item.c_str(), (int) 0,
+                              flight_payload_choice_callback, NULL);
+        flight_payload_list->add(item.c_str(), (int) 0,
+                                 flight_payload_choice_callback, NULL);
+    }
+
+    int auto_select = progdefaults.tracking_flight_payload;
+    if (auto_select < 0 || auto_select >= int(payloads.size()))
+        auto_select = 0;
+
+    if (hab_ui_exists)
+    {
+        habCHPayload->activate();
+        habCHPayload->value(auto_select);
+    }
+
+    flight_payload_list->activate();
+    flight_payload_list->value(auto_select);
+
+    select_flight_payload(auto_select);
+}
+
+void select_payload(int index)
+{
+    select_flight(-1);
+    do_select_payload(Json::Value::null);
+
+    cur_heap = TRACKING_NOTHING;
+
+    LOG_DEBUG("Selecting payload, index %i", index);
+
+    if (index < 0 || index >= int(payload_docs.size()))
+        return;
+
+    const Json::Value &payload = payload_docs[index];
+
+    if (!payload.isObject() || !payload.size() || !payload["_id"].isString())
+        return;
+
+    const string id = payload["_id"].asString();
+
+    if (progdefaults.tracking_type != TRACKING_PAYLOAD ||
+        progdefaults.tracking_doc != id)
+    {
+        progdefaults.tracking_type = TRACKING_PAYLOAD;
+        progdefaults.tracking_doc = id;
+        progdefaults.tracking_flight_payload = -1;
+        progdefaults.tracking_transmission = -1;
+        progdefaults.changed = true;
+    }
+
+    cur_heap = TRACKING_PAYLOAD;
+    do_select_payload(payload);
+}
+
+void auto_configure()
+{
+    Fl_AutoLock lock;
+
+    LOG_DEBUG("autoconfiguring");
+
+    if (!cur_transmission)
+        return;
+
+    const Json::Value &settings = *cur_transmission;
+
+    if (!settings.isObject() || !settings.size())
+        return;
+
+    if (!settings["modulation"].isString())
+        return;
+
+    const string modulation = settings["modulation"].asString();
+
+    if (modulation == "RTTY")
+        autoconfigure_rtty(settings);
+    else if (modulation == "DominoEX")
+        autoconfigure_dominoex(settings);
+    else if (modulation == "Hellschreiber")
+        autoconfigure_hellschreiber(settings);
+}
+
+void auto_switchmode()
+{
+    Fl_AutoLock lock;
+
+    LOG_DEBUG("autoswitchmoding");
+
+    int next = cur_transmission_index + 1;
+    if (next >= cur_transmission_count)
+        next = 0;
+
+    if (hab_ui_exists)
+        habCHTransmission->value(next);
+
+    if (cur_heap == TRACKING_PAYLOAD)
+        payload_transmission_list->value(next);
+
+    if (cur_heap == TRACKING_FLIGHT)
+        flight_payload_transmission_list->value(next);
+
+    select_transmission(next);
+    auto_configure();
+}
+
+static void load_cache_file(const string &name, vector<Json::Value> &target)
+{
+    ifstream cf(name.c_str());
 
     if (cf.fail())
     {
-        LOG_DEBUG("Failed to open cache file");
+        LOG_DEBUG("Failed to open cache file %s", name.c_str());
         return;
     }
 
-    flight_docs.clear();
+    target.clear();
 
     while (cf.good())
     {
@@ -91,7 +412,7 @@ void load_cache()
         if (!reader.parse(line, root, false))
             break;
 
-        flight_docs.push_back(root);
+        target.push_back(root);
     }
 
     bool failed = cf.fail() || !cf.eof();
@@ -100,49 +421,23 @@ void load_cache()
 
     if (failed)
     {
-        flight_docs.clear();
-        LOG_WARN("Failed to load flight doc cache from file");
+        target.clear();
+        LOG_WARN("Failed to load %s", name.c_str());
     }
     else
     {
-        long int n = flight_docs.size();
-        LOG_DEBUG("Loaded %li flight docs from file", n);
+        long int n = target.size();
+        LOG_DEBUG("Loaded %li docs from file %s", n, name.c_str());
     }
-
-    populate_flights();
 }
 
-static string escape_menu_string(const string &s_)
+static void write_cache_file(const string &name,
+                             const vector<Json::Value> &docs)
 {
-    string s(s_);
-    size_t pos = 0;
+    ofstream cf(name.c_str(), ios_base::out | ios_base::trunc);
 
-    do
-    {
-        pos = s.find_first_of("&/\\_", pos);
-
-        if (pos != string::npos)
-        {
-            s.insert(pos, 1, '\\');
-            pos += 2;
-        }
-    }
-    while (pos != string::npos);
-
-    return s;
-}
-
-void new_docs(const vector<Json::Value> &new_flight_docs)
-{
-    Fl_AutoLock lock;
-
-    flight_docs = new_flight_docs;
-    downloaded_once = true;
-
-    ofstream cf(cache_file.c_str(), ios_base::out | ios_base::trunc);
-
-    for (vector<Json::Value>::const_iterator it = flight_docs.begin();
-         it != flight_docs.end() && cf.good();
+    for (vector<Json::Value>::const_iterator it = docs.begin();
+         it != docs.end() && cf.good();
          it++)
     {
         Json::FastWriter writer;
@@ -155,11 +450,542 @@ void new_docs(const vector<Json::Value> &new_flight_docs)
 
     if (!success)
     {
-        LOG_WARN("unable to save flights data");
-        unlink(cache_file.c_str());
+        LOG_WARN("unable to save docs to %s", name.c_str());
+        unlink(name.c_str());
+    }
+}
+
+static void populate_flights()
+{
+    Fl_AutoLock lock;
+
+    LOG_DEBUG("populating flights (%zi)", flight_docs.size());
+
+    set<string> choice_items;
+
+    if (hab_ui_exists)
+    {
+        habFlight->value(-1);
+        habFlight->clear();
     }
 
-    populate_flights();
+    flight_browser->clear();
+
+    if (cur_heap == TRACKING_FLIGHT)
+        select_flight(-1);
+
+    for (int i = 0; i < int(flight_docs.size()); i++)
+    {
+        const Json::Value &root = flight_docs[i];
+
+        string id, name, callsign_list, date;
+        bool root_ok = false;
+
+        if (root.isObject() && root.size() &&
+            root["_id"].isString() && root["name"].isString())
+        {
+            id = root["_id"].asString();
+            name = root["name"].asString();
+            callsign_list = flight_callsign_list(root);
+            date = flight_launch_date(root);
+            root_ok = true;
+        }
+
+        if (!id.size() || !name.size())
+        {
+            root_ok = false;
+            name = "Invalid flight doc";
+            LOG_WARN("invalid flight doc");
+        }
+
+        if (hab_ui_exists)
+        {
+            string item;
+            int attempt = 1;
+
+            /* Avoid duplicate menu items: fltk removes them */
+            do
+            {
+                item = flight_choice_item(name, callsign_list, attempt);
+                attempt++;
+            }
+            while (choice_items.count(item));
+            choice_items.insert(item);
+
+            habFlight->add(item.c_str(), (int) 0, flight_choice_callback,
+                           NULL);
+        }
+
+        string browser_item = flight_browser_item(name, date, callsign_list);
+        flight_browser->add(browser_item.c_str(), NULL);
+
+        if (root_ok &&
+            progdefaults.tracking_type == TRACKING_FLIGHT &&
+            progdefaults.tracking_doc == id)
+        {
+            if (hab_ui_exists)
+                habFlight->value(i);
+            flight_browser->value(i + 1);
+            select_flight(i);
+        }
+    }
+}
+
+static void populate_payloads()
+{
+    Fl_AutoLock lock;
+
+    LOG_DEBUG("populating payloads (%zi)", payload_docs.size());
+
+    payload_browser->clear();
+
+    if (cur_heap == TRACKING_PAYLOAD)
+        select_payload(-1);
+
+    for (int i = 0; i < int(payload_docs.size()); i++)
+    {
+        const Json::Value &root = payload_docs[i];
+
+        string id, name, callsign_list, description;
+        bool root_ok;
+
+        if (root.isObject() && root.size() &&
+            root["_id"].isString() && root["name"].isString())
+        {
+            id = root["_id"].asString();
+            name = root["name"].asString();
+            callsign_list = payload_callsign_list(root);
+
+            if (root["metadata"]["description"].isString())
+                description = root["metadata"]["description"].asString();
+        }
+
+        if (!id.size() || !name.size())
+        {
+            LOG_WARN("invalid payload doc");
+            root_ok = false;
+        }
+
+        string browser_item = payload_browser_item(name, callsign_list,
+                                                   description);
+        payload_browser->add(browser_item.c_str(), NULL);
+
+        if (root_ok &&
+            progdefaults.tracking_type == TRACKING_PAYLOAD &&
+            progdefaults.tracking_doc == id)
+        {
+            payload_browser->value(i + 1);
+            select_payload(i);
+        }
+    }
+}
+
+static void select_flight_payload(int index)
+{
+    Fl_AutoLock lock;
+    LOG_DEBUG("Selecting flight payload %i", index);
+
+    if (!cur_flight || cur_heap != TRACKING_FLIGHT)
+        return;
+
+    const Json::Value &payload_list = (*cur_flight)["_payload_docs"];
+
+    if (!payload_list.isArray() || !payload_list.size())
+        return;
+
+    if (index < 0 || index >= int(payload_list.size()))
+        return;
+
+    if (progdefaults.tracking_flight_payload != index)
+    {
+        progdefaults.tracking_flight_payload = index;
+        progdefaults.tracking_transmission = -1;
+        progdefaults.changed = true;
+    }
+
+    do_select_payload(payload_list[index]);
+}
+
+static void do_select_payload(const Json::Value &payload)
+{
+    if (payload.isNull())
+        LOG_DEBUG("do_select_payload(null)");
+    else
+        LOG_DEBUG("do_select_payload(object)");
+
+    /* Disable stuff, incase tests fail */
+    cur_payload = NULL;
+    hbtint::extrmgr->payload(NULL);
+
+    if (hab_ui_exists)
+    {
+        habCHTransmission->value(-1);
+        habCHTransmission->clear();
+        habCHTransmission->deactivate();
+        habSwitchModes->deactivate();
+    }
+
+    payload_transmission_list->value(-1);
+    payload_transmission_list->clear();
+    payload_transmission_list->deactivate();
+
+    flight_payload_transmission_list->value(-1);
+    flight_payload_transmission_list->clear();
+    flight_payload_transmission_list->deactivate();
+
+    select_transmission(-1);
+
+    /* Sanity checks */
+    if (!payload.isObject() || !payload.size())
+        return;
+
+    /* OK. Setup */
+    cur_payload = &payload;
+    hbtint::extrmgr->payload(&payload);
+
+    LOG_DEBUG("payload OK, checking transmissions");
+
+    const Json::Value &transmissions = payload["transmissions"];
+
+    if (!transmissions.isArray() || !transmissions.size())
+        return;
+
+    cur_transmission_count = transmissions.size();
+    if (cur_transmission_count < 0)
+        cur_transmission_count = 0;
+
+    LOG_DEBUG("populating transmissions (%i)", cur_transmission_count);
+
+    for (int i = 0; i < cur_transmission_count; i++)
+    {
+        const Json::Value &transmission = transmissions[i];
+
+        const string name = mode_menu_name(i + 1, transmission);
+
+        if (hab_ui_exists)
+            habCHTransmission->add(name.c_str(), (int) 0,
+                                   mode_choice_callback, NULL);
+        if (cur_heap == TRACKING_FLIGHT)
+            flight_payload_transmission_list->add(name.c_str(), (int) 0,
+                                                  mode_choice_callback, NULL);
+        if (cur_heap == TRACKING_PAYLOAD)
+            payload_transmission_list->add(name.c_str(), (int) 0,
+                                           mode_choice_callback, NULL);
+    }
+
+    int auto_select = progdefaults.tracking_transmission;
+    if (auto_select < 0 || auto_select >= cur_transmission_count)
+        auto_select = 0;
+
+    if (hab_ui_exists)
+    {
+        if (cur_transmission_count > 1)
+            habSwitchModes->activate();
+
+        habCHTransmission->activate();
+        habCHTransmission->value(auto_select);
+    }
+
+    if (cur_heap == TRACKING_FLIGHT)
+    {
+        flight_payload_transmission_list->activate();
+        flight_payload_transmission_list->value(auto_select);
+    }
+
+    if (cur_heap == TRACKING_PAYLOAD)
+    {
+        payload_transmission_list->activate();
+        payload_transmission_list->value(auto_select);
+    }
+
+    select_transmission(auto_select);
+}
+
+static void select_transmission(int index)
+{
+    Fl_AutoLock lock;
+
+    LOG_DEBUG("selecting transmission %i", index);
+
+    /* Reset */
+    cur_transmission = NULL;
+    cur_transmission_index = 0;
+
+    if (hab_ui_exists)
+        habConfigureButton->deactivate();
+
+    payload_autoconfigure_a->deactivate();
+    payload_autoconfigure_b->deactivate();
+
+    /* Checks */
+    if (!cur_payload)
+        return;
+
+    const Json::Value &transmissions = (*cur_payload)["transmissions"];
+
+    if (!transmissions.isArray() ||
+            int(transmissions.size()) != cur_transmission_count)
+        return;
+
+    if (index < 0 || index >= cur_transmission_count)
+        return;
+
+    LOG_DEBUG("transmission OK");
+
+    /* OK. Set stuff */
+    cur_transmission = &(transmissions[index]);
+    cur_transmission_index = index;
+
+    if (progdefaults.tracking_transmission != index)
+    {
+        progdefaults.tracking_transmission = index;
+        progdefaults.changed = true;
+    }
+
+    if (hab_ui_exists)
+        habConfigureButton->activate();
+
+    payload_autoconfigure_a->activate();
+    payload_autoconfigure_b->activate();
+}
+
+static void autoconfigure_rtty(const Json::Value &settings)
+{
+    LOG_DEBUG("autoconfigure rtty");
+
+    autoconfigure_rtty_shift(settings["shift"]);
+    autoconfigure_rtty_baud(settings["baud"]);
+    autoconfigure_rtty_encoding(settings["encoding"]);
+    autoconfigure_rtty_parity(settings["parity"]);
+    autoconfigure_rtty_stop(settings["stop"]);
+
+    init_modem_sync(MODE_RTTY);
+    resetRTTY();
+    progdefaults.changed = true;
+}
+
+static void autoconfigure_rtty_shift(const Json::Value &value)
+{
+    if (!value.isNumeric())
+        return;
+
+    double shift = value.asDouble();
+
+    /* Look in the standard shifts first */
+    int search;
+    for (search = 0; rtty::SHIFT[search] != 0; search++)
+    {
+        double diff = rtty::SHIFT[search] - shift;
+        /* I love floats :-( */
+        if (diff < 0.1 && diff > -0.1)
+        {
+            selShift->value(search);
+            selCustomShift->deactivate();
+            progdefaults.rtty_shift = search;
+            return;
+        }
+    }
+
+    /* If not found (i.e., we found the terminating 0, and haven't returned)
+     * then search == the index of the "Custom" menu item */
+    selShift->value(search);
+    selCustomShift->activate();
+    progdefaults.rtty_shift = -1;
+    selCustomShift->value(shift);
+    progdefaults.rtty_custom_shift = shift;
+}
+
+static void autoconfigure_rtty_baud(const Json::Value &value)
+{
+    if (!value.isNumeric())
+        return;
+
+    double baud = value.asDouble();
+    int search;
+    for (search = 0; rtty::BAUD[search] != 0; search++)
+    {
+        double diff = rtty::BAUD[search] - baud;
+        if (diff < 0.01 && diff > -0.01)
+        {
+            selBaud->value(search);
+            progdefaults.rtty_baud = search;
+            return;
+        }
+    }
+}
+
+static void autoconfigure_rtty_encoding(const Json::Value &value)
+{
+    if (!value.isString())
+        return;
+
+    const string encoding = value.asString();
+    int select = -1;
+
+    /* rtty::BITS[] = {5, 7, 8}; */
+    if (encoding == "baudot")
+        select = 0;
+    else if (encoding == "ascii-7")
+        select = 1;
+    else if (encoding == "ascii-8")
+        select = 2;
+    else
+        return;
+
+    selBits->value(select);
+    progdefaults.rtty_bits = select;
+
+    /* From selBits' callback */
+    if (select == 0)
+    {
+        progdefaults.rtty_parity = RTTY_PARITY_NONE;
+        selParity->value(RTTY_PARITY_NONE);
+    }
+}
+
+static void autoconfigure_rtty_parity(const Json::Value &value)
+{
+    if (!value.isString())
+        return;
+
+    /* Parity is disabled when using baudot (rtty_bits == 0) */
+    if (progdefaults.rtty_bits == 0)
+        return;
+
+    const string parity = value.asString();
+    int select = -1;
+
+    if (parity == "none")
+        select = RTTY_PARITY_NONE;
+    else if (parity == "even")
+        select = RTTY_PARITY_EVEN;
+    else if (parity == "odd")
+        select = RTTY_PARITY_ODD;
+    else if (parity == "zero")
+        select = RTTY_PARITY_ZERO;
+    else if (parity == "one")
+        select = RTTY_PARITY_ONE;
+    else
+        return;
+
+    selParity->value(select);
+    progdefaults.rtty_parity = select;
+}
+
+static void autoconfigure_rtty_stop(const Json::Value &value)
+{
+    if (!value.isNumeric())
+        return;
+
+    int select = -1;
+
+    if (value.isInt())
+    {
+        int stop = value.asLargestInt();
+        if (stop == 1)
+            select = 0;
+        else if (stop == 2)
+            select = 2;
+    }
+    else
+    {
+        double stop = value.asDouble();
+        if (stop > 1.49 && stop < 1.51)
+            select = 1;
+    }
+
+    if (select == -1)
+        return;
+
+    progdefaults.rtty_stop = select;
+    selStopBits->value(select);
+}
+
+static void autoconfigure_dominoex(const Json::Value &settings)
+{
+    LOG_DEBUG("autoconfigure dominoex");
+
+    if (!settings["speed"].isInt())
+        return;
+
+    int type = settings["speed"].asLargestInt();
+    int modem = -1;
+
+    switch (type)
+    {
+        case 4:
+            modem = MODE_DOMINOEX4;
+            break;
+
+        case 5:
+            modem = MODE_DOMINOEX5;
+            break;
+
+        case 8:
+            modem = MODE_DOMINOEX8;
+            break;
+
+        case 11:
+            modem = MODE_DOMINOEX11;
+            break;
+
+        case 16:
+            modem = MODE_DOMINOEX16;
+            break;
+
+        case 22:
+            modem = MODE_DOMINOEX22;
+            break;
+    }
+
+    if (modem != -1)
+    {
+        init_modem_sync(modem);
+        resetDOMEX();
+    }
+}
+
+static void autoconfigure_hellschreiber(const Json::Value &settings)
+{
+    LOG_DEBUG("autoconfigure hellschreiber");
+
+    if (!settings["variant"].isString())
+        return;
+
+    const string variant = settings["variant"].asString();
+    int modem = -1;
+
+    if (variant == "slowhell")
+        modem = MODE_SLOWHELL;
+    else if (variant == "feldhell")
+        modem = MODE_FELDHELL;
+
+    if (modem != -1)
+        init_modem_sync(modem);
+}
+
+static string escape_menu_string(const string &orig_str)
+{
+    string new_str;
+    size_t pos = 0;
+
+    do
+    {
+        size_t start = pos;
+
+        pos = orig_str.find_first_of("&/\\_", start);
+        new_str.append(orig_str.substr(start, pos - start));
+
+        if (pos != string::npos)
+        {
+            new_str.push_back('\\');
+            new_str.push_back(orig_str[pos]);
+            pos++;
+        }
+    }
+    while (pos != string::npos);
+
+    return new_str;
 }
 
 static string escape_browser_string(const string &s_)
@@ -178,167 +1004,6 @@ static string escape_browser_string(const string &s_)
     return s;
 }
 
-static string get_payload_list(const Json::Value &flight)
-{
-    const Json::Value &payloads = flight["payloads"];
-
-    if (!payloads.isObject() || !payloads.size())
-        return "";
-
-    const vector<string> payload_names = payloads.getMemberNames();
-    ostringstream payload_list;
-    vector<string>::const_iterator it;
-
-    for (it = payload_names.begin(); it != payload_names.end(); it++)
-    {
-        if (it != payload_names.begin())
-            payload_list << ',';
-        payload_list << (*it);
-    }
-
-    return payload_list.str();
-}
-
-static string flight_launch_date(const Json::Value &flight)
-{
-    const Json::Value &launch = flight["launch"];
-
-    if (!launch.isObject() || !launch.size())
-        return "";
-
-    if (!launch.isMember("time") || !launch["time"].isInt())
-        return "";
-
-    time_t date = launch["time"].asInt();
-    char buf[20];
-    struct tm tm;
-
-    if (gmtime_r(&date, &tm) != &tm)
-        return "";
-
-    if (strftime(buf, sizeof(buf), "%a %d %b %y", &tm) <= 0)
-        return "";
-
-    return buf;
-}
-
-static bool is_testing_flight(const Json::Value &flight)
-{
-    /* TODO: HABITAT is this a testing flight? */
-    /* Crude test: */
-    return !(flight["end"].isInt() && flight["end"].asInt());
-}
-
-static string flight_choice_item(const string &name,
-                                 const string &payload_list,
-                                 int attempt)
-{
-    /* "<name>: <payload>,<payload>,<payload>" */
-
-    string attempt_suffix;
-
-    if (attempt != 1)
-    {
-        ostringstream sfx;
-        sfx << " (" << attempt << ")";
-        attempt_suffix = sfx.str();
-    }
-
-    return escape_menu_string(name + ": " + payload_list + attempt_suffix);
-}
-
-static string flight_browser_item(const string &name, const string &date,
-                                  const string &payload_list)
-{
-    /* "<name>\t<optional date>\t<payload>,<payload>" */
-    return "@." + escape_browser_string(name) + "\t" +
-           "@." + date + "\t" +
-           "@." + escape_browser_string(payload_list);
-}
-
-static void flight_choice_callback(Fl_Widget *w, void *a)
-{
-    int index = reinterpret_cast<intptr_t>(a);
-    Fl_Choice *choice = static_cast<Fl_Choice *>(w);
-    flight_browser->value(choice->value() + 1);
-    select_flight(index);
-}
-
-void populate_flights()
-{
-    Fl_AutoLock lock;
-
-    set<string> choice_items;
-
-    if (hab_ui_exists)
-    {
-        habFlight->value(-1);
-        habFlight->clear();
-    }
-
-    flight_browser->clear();
-
-    select_flight(-1);
-
-    vector<Json::Value>::const_iterator it;
-    intptr_t i;
-    for (it = flight_docs.begin(), i = 0; it != flight_docs.end(); it++, i++)
-    {
-        const Json::Value &root = (*it);
-
-        if (!root.isObject() || !root.size() ||
-            !root["_id"].isString() || !root["name"].isString())
-        {
-            LOG_WARN("invalid flight doc");
-            continue;
-        }
-
-        const string id = root["_id"].asString();
-        const string name = root["name"].asString();
-        const string payload_list = get_payload_list(root);
-        const string date = flight_launch_date(root);
-        void *userdata = reinterpret_cast<void *>(i);
-
-        if (!id.size() || !name.size() || !payload_list.size())
-        {
-            LOG_WARN("invalid flight doc");
-            continue;
-        }
-
-        if (is_testing_flight(root) && !progdefaults.show_testing_flights)
-            continue;
-
-        if (hab_ui_exists)
-        {
-            string item;
-            int attempt = 1;
-
-            /* Avoid duplicate menu items: fltk removes them */
-            do
-            {
-                item = flight_choice_item(name, payload_list, attempt);
-                attempt++;
-            }
-            while (choice_items.count(item));
-            choice_items.insert(item);
-
-            habFlight->add(item.c_str(), (int) 0, flight_choice_callback,
-                           userdata);
-        }
-
-        string browser_item = flight_browser_item(name, date, payload_list);
-        flight_browser->add(browser_item.c_str(), userdata);
-
-        if (progdefaults.tracking_flight == id)
-        {
-            if (hab_ui_exists)
-                habFlight->value(habFlight->size() - 2);
-            flight_browser->value(flight_browser->size());
-            select_flight(i);
-        }
-    }
-}
-
 static string squash_string(const char *str)
 {
     string result;
@@ -355,133 +1020,75 @@ static string squash_string(const char *str)
     return result;
 }
 
-void flight_search(bool next)
+static string join_set(const set<string> &items, const string &sep)
 {
-    /* Searching the flight_browser rather than looking through our JSON docs?
-     * Well: it's easier in several ways, and quicker. We've already extracted
-     * the important strings in populate_flights and filtered for testing
-     * flights; that would have to be duplicated. */
+    string result;
 
-    Fl_AutoLock lock;
-
-    const string search(squash_string(flight_search_text->value()));
-    if (!search.size())
-        return;
-
-    int n = flight_browser->size();
-
-    if (!n)
-        return;
-
-    if (!next || flight_search_first > n)
-        flight_search_first = 1;
-
-    int i = flight_search_first;
-
-    do
+    for (set<string>::const_iterator it = items.begin();
+            it != items.end(); ++it)
     {
-        const string line(squash_string(flight_browser->text(i)));
+        if (it != items.begin())
+            result.append(sep);
 
-        if (line.find(search) != string::npos)
-        {
-            flight_browser->value(i);
-            flight_browser->do_callback();
-            flight_search_first = i + 1;
-            break;
-        }
-
-        i++;
-        if (i > n)
-            i = 1;
+        result.append(*it);
     }
-    while (i != flight_search_first);
+
+    return result;
 }
 
-static void payload_choice_callback(Fl_Widget *w, void *a)
+static string flight_choice_item(const string &name,
+                                 const string &callsign_list,
+                                 int attempt)
 {
-    Fl_Choice *choice = static_cast<Fl_Choice *>(w);
-    Fl_Choice *other = static_cast<Fl_Choice *>(a);
+    /* "<name>: <payload>,<payload>,<payload>" */
 
-    if (other)
-        other->value(choice->value());
-    select_payload(choice->value());
+    string attempt_suffix;
+
+    if (attempt != 1)
+    {
+        ostringstream sfx;
+        sfx << " (" << attempt << ")";
+        attempt_suffix = sfx.str();
+    }
+
+    return escape_menu_string(name + ": " + callsign_list + attempt_suffix);
 }
 
-void select_flight(int index)
+static string flight_browser_item(const string &name, const string &date,
+                                  const string &callsign_list)
 {
-    Fl_AutoLock lock;
+    /* "<name>\t<optional date>\t<callsign>,<callsign>,..." */
+    return "@." + escape_browser_string(name) + "\t" +
+           "@." + date + "\t" +
+           "@." + escape_browser_string(callsign_list);
+}
 
-    LOG_DEBUG("Selecting flight, index %i", index);
+static string payload_browser_item(const string &name,
+                                   const string &callsign_list,
+                                   const string &description)
+{
+    return "@." + escape_browser_string(name) + "\t"
+         + "@." + "(" + escape_browser_string(callsign_list) + ") "
+                + escape_browser_string(description);
+}
 
-    cur_flight = NULL;
+static string flight_payload_menu_item(const string &name,
+                                       const string &callsign_list,
+                                       int attempt)
+{
+    /* "<name>" or "<name> (callsign)" + (attempt) */
 
-    if (hab_ui_exists)
+    string attempt_suffix;
+
+    if (attempt != 1)
     {
-        habCHPayload->value(-1);
-        habCHPayload->clear();
-        habCHPayload->deactivate();
+        ostringstream sfx;
+        sfx << " (" << attempt << ")";
+        attempt_suffix = sfx.str();
     }
 
-    payload_list->value(-1);
-    payload_list->clear();
-    payload_list->deactivate();
-
-    select_payload(-1);
-
-    int max = flight_docs.size();
-    if (index < 0 || index >= max)
-        return;
-
-    const Json::Value &flight = flight_docs[index];
-
-    if (!flight.isObject() || !flight.size() || !flight["_id"].isString())
-        return;
-
-    const string id = flight["_id"].asString();
-    const Json::Value &payloads = flight["payloads"];
-
-    if (!id.size() || !payloads.isObject() || !payloads.size())
-        return;
-
-    cur_flight = &flight;
-
-    if (progdefaults.tracking_flight != id)
-    {
-        progdefaults.tracking_flight = id;
-        progdefaults.tracking_payload = "";
-        progdefaults.tracking_mode = -1;
-        progdefaults.changed = true;
-    }
-
-    payload_index = payloads.getMemberNames();
-    int auto_select = 0;
-
-    vector<string>::const_iterator it;
-    int i;
-    for (it = payload_index.begin(), i = 0;
-         it != payload_index.end();
-         it++, i++)
-    {
-        if (hab_ui_exists)
-            habCHPayload->add(escape_menu_string(*it).c_str(), (int) 0,
-                              payload_choice_callback, payload_list);
-        payload_list->add(escape_menu_string(*it).c_str(), (int) 0,
-                          payload_choice_callback, habCHPayload);
-
-        if ((*it).size() && (*it) == progdefaults.tracking_payload)
-            auto_select = i;
-    }
-
-    if (hab_ui_exists)
-    {
-        habCHPayload->activate();
-        habCHPayload->value(auto_select);
-    }
-
-    payload_list->activate();
-    payload_list->value(auto_select);
-
-    select_payload(auto_select);
+    return escape_menu_string(name + " (" + callsign_list + ") "
+                               + attempt_suffix);
 }
 
 static string mode_menu_name(int index, const Json::Value &settings)
@@ -491,449 +1098,182 @@ static string mode_menu_name(int index, const Json::Value &settings)
 
     ostringstream name;
 
-    name << (index + 1) << ": ";
+    name << index << ": ";
 
-    if (false)
+    string modulation;
+
+    if (settings.isObject() && settings.size() &&
+        settings["modulation"].isString())
     {
-bad:
-        name << "Unknown";
-        return escape_menu_string(name.str());
+        modulation = settings["modulation"].asString();
     }
 
-    if (!settings.isObject() || !settings.size())
-        goto bad;
-
-    if (!settings["modulation"].isString())
-        goto bad;
-
-    string modulation = settings["modulation"].asString();
-    string type_key;
-
-    if (modulation == "rtty")
+    if (modulation == "RTTY")
     {
-        modulation = "RTTY";
-        type_key = "baud";
+        name << "RTTY";
+
+        if (settings["baud"].isInt())
+            name << ' ' << settings["baud"].asLargestInt();
+        else if (settings["baud"].isDouble())
+            name << ' ' << settings["baud"].asDouble();
     }
-    else if (modulation == "dominoex")
+    else if (modulation == "DominoEX" && settings["speed"].isInt())
     {
-        modulation = "DOMEX";
-        type_key = "type";
+        name << "DomEX " << settings["speed"].asLargestInt();
+    }
+    else if (modulation == "Hellschreiber" && settings["variant"].isString())
+    {
+        string variant = settings["variant"].asString();
+        if (variant == "feldhell")
+            name << "FeldHell";
+        else if (variant == "slowhell")
+            name << "SlowHell";
+        else
+            name << "Hellschreiber";
     }
     else
     {
-        goto bad;
+        name << "Unknown";
     }
-
-    name << modulation;
-
-    const Json::Value &type = settings[type_key];
-    if (type.isInt())
-        name << " " << type.asInt();
-    else if (type.isDouble())
-        name << " " << type.asDouble();
 
     return escape_menu_string(name.str());
 }
 
+static string flight_callsign_list(const Json::Value &flight)
+{
+    const Json::Value &payloads = flight["_payload_docs"];
+
+    if (!payloads.isArray() || !payloads.size())
+        return "";
+
+    set<string> callsigns;
+
+    for (Json::Value::const_iterator it = payloads.begin();
+            it != payloads.end(); ++it)
+    {
+        const Json::Value &payload = *it;
+
+        if (!payload.isObject())
+            continue;
+
+        const Json::Value &sentences = payload["sentences"];
+
+        if (!sentences.isArray())
+            continue;
+
+        for (Json::Value::const_iterator it2 = sentences.begin();
+                it2 != sentences.end(); ++it2)
+        {
+            const Json::Value &sentence = *it2;
+
+            if (!sentence.isObject())
+                continue;
+
+            const Json::Value &callsign = sentence["callsign"];
+
+            if (!callsign.isString())
+                continue;
+
+            callsigns.insert(callsign.asString());
+        }
+    }
+
+    /* sets are sorted, so this comes out in the right order: */
+    return join_set(callsigns);
+}
+
+static string flight_launch_date(const Json::Value &flight)
+{
+    const Json::Value &launch = flight["launch"];
+
+    if (!launch.isObject() || !launch.size())
+        return "";
+
+    if (!launch.isMember("time") || !launch["time"].isString())
+        return "";
+
+    time_t date = RFC3339::rfc3339_to_timestamp(launch["time"].asString());
+    char buf[20];
+    struct tm tm;
+
+    if (localtime_r(&date, &tm) != &tm)
+        return "";
+
+    if (strftime(buf, sizeof(buf), "%a %d %b %y", &tm) <= 0)
+        return "";
+
+    return buf;
+}
+
+static string payload_callsign_list(const Json::Value &payload)
+{
+    const Json::Value &sentences = payload["sentences"];
+    if (!sentences.isArray())
+        return "";
+
+    set<string> callsign_list;
+
+    for (Json::Value::const_iterator it = sentences.begin();
+            it != sentences.end(); ++it)
+    {
+        const Json::Value &sentence = *it;
+
+        if (!sentence.isObject())
+            continue;
+
+        const Json::Value &callsign = sentence["callsign"];
+
+        if (!callsign.isString())
+            continue;
+
+        callsign_list.insert(callsign.asString());
+    }
+
+    return join_set(callsign_list);
+}
+
+static void flight_payload_choice_callback(Fl_Widget *w, void *a)
+{
+    Fl_AutoLock lock;
+
+    Fl_Choice *choice = static_cast<Fl_Choice *>(w);
+
+    if (choice != flight_payload_list)
+        flight_payload_list->value(choice->value());
+    if (hab_ui_exists && choice != habCHPayload)
+        habCHPayload->value(choice->value());
+
+    select_flight_payload(choice->value());
+}
+
 static void mode_choice_callback(Fl_Widget *w, void *a)
 {
+    Fl_AutoLock lock;
+
     Fl_Choice *choice = static_cast<Fl_Choice *>(w);
-    Fl_Choice *other = static_cast<Fl_Choice *>(a);
 
-    if (other)
-        other->value(choice->value());
-    select_mode(choice->value());
+    if (hab_ui_exists && choice != habCHTransmission)
+        habCHTransmission->value(choice->value());
+    if (cur_heap == TRACKING_FLIGHT &&
+            choice != flight_payload_transmission_list)
+        flight_payload_transmission_list->value(choice->value());
+    if (cur_heap == TRACKING_PAYLOAD && choice != payload_transmission_list)
+        payload_transmission_list->value(choice->value());
+
+    select_transmission(choice->value());
 }
 
-static void select_payload(int index)
-{
-    Fl_AutoLock lock;
-    LOG_DEBUG("Selecting payload %i", index);
-
-    cur_payload = NULL;
-    hbtint::extrmgr->payload(NULL);
-    cur_payload_modecount = -1;
-
-    if (hab_ui_exists)
-    {
-        habCHMode->value(-1);
-        habCHMode->clear();
-        habCHMode->deactivate();
-        habSwitchModes->deactivate();
-    }
-
-    payload_mode_list->value(-1);
-    payload_mode_list->clear();
-    payload_mode_list->deactivate();
-
-    select_mode(-1);
-
-    if (!cur_flight)
-        return;
-
-    int max = payload_index.size();
-    if (index < 0 || index >= max)
-        return;
-
-    const string name(payload_index[index]);
-    if (progdefaults.tracking_payload != name)
-    {
-        progdefaults.tracking_payload = name;
-        progdefaults.tracking_mode = -1;
-        progdefaults.changed = true;
-    }
-
-    if (!name.size())
-        return;
-
-    const Json::Value &payloads = (*cur_flight)["payloads"];
-    if (!payloads.isObject() || !payloads.size())
-        return;
-
-    const Json::Value &payload = payloads[name];
-    if (!payload.isObject() || !payload.size())
-        return;
-
-    cur_payload = &payload;
-    hbtint::extrmgr->payload(&payload);
-
-    const Json::Value *telemetry_settings = &(payload["telemetry"]);
-
-    if (!telemetry_settings->size())
-        return;
-
-    Json::Value temporary(Json::arrayValue);
-
-    /* If telemetry_settings is an array, it's a list of possible choices.
-     * Otherwise, it's the only choice. */
-    if (telemetry_settings->isObject())
-    {
-        temporary.append(*telemetry_settings);
-        telemetry_settings = &temporary;
-    }
-
-    if (!telemetry_settings->isArray())
-        return;
-
-    Json::Value::const_iterator it;
-    int i;
-    for (it = telemetry_settings->begin(), i = 0;
-         it != telemetry_settings->end();
-         it++, i++)
-    {
-        const string name = mode_menu_name(i, (*it));
-
-        if (hab_ui_exists)
-            habCHMode->add(name.c_str(), (int) 0,
-                           mode_choice_callback, payload_mode_list);
-        payload_mode_list->add(name.c_str(), (int) 0,
-                               mode_choice_callback, habCHMode);
-    }
-
-    cur_payload_modecount = i; /* i == telemetry_settings.size() */
-
-    int auto_select = progdefaults.tracking_mode;
-    if (auto_select < 0 || auto_select >= i)
-    {
-        auto_select = 0;
-    }
-
-    if (hab_ui_exists)
-    {
-        if (i > 1)
-            habSwitchModes->activate();
-
-        habCHMode->activate();
-        habCHMode->value(auto_select);
-    }
-
-    payload_mode_list->activate();
-    payload_mode_list->value(auto_select);
-
-    select_mode(auto_select);
-}
-
-static void select_mode(int index)
+static void flight_choice_callback(Fl_Widget *w, void *a)
 {
     Fl_AutoLock lock;
 
-    cur_mode = NULL;
-    cur_mode_index = -1;
+    Fl_Choice *choice = static_cast<Fl_Choice *>(w);
+    flight_browser->value(choice->value() + 1);
 
-    if (hab_ui_exists)
-        habConfigureButton->deactivate();
-
-    payload_autoconfigure->deactivate();
-
-    if (!cur_flight || !cur_payload)
-        return;
-
-    const Json::Value &telemetry_settings = (*cur_payload)["telemetry"];
-
-    if (!telemetry_settings.size())
-        return;
-
-    if (telemetry_settings.isObject())
-    {
-        if (index != 0)
-            return;
-
-        cur_mode = &telemetry_settings;
-    }
-    else if (telemetry_settings.isArray())
-    {
-        int max = telemetry_settings.size();
-        if (index < 0 || index >= max)
-            return;
-
-        cur_mode = &(telemetry_settings[index]);
-    }
-
-    if (!cur_mode->isObject() || !cur_mode->size())
-    {
-        cur_mode = NULL;
-        return;
-    }
-
-    cur_mode_index = index;
-
-    if (progdefaults.tracking_mode != index)
-    {
-        progdefaults.tracking_mode = index;
-        progdefaults.changed = true;
-    }
-
-    if (hab_ui_exists)
-        habConfigureButton->activate();
-
-    payload_autoconfigure->activate();
+    payload_browser->deselect();
+    select_flight(choice->value());
 }
 
-void auto_configure()
-{
-    Fl_AutoLock lock;
-
-    if (!cur_mode)
-        return;
-
-    const Json::Value &settings = *cur_mode;
-
-    if (!settings.isObject() || !settings.size())
-        return;
-
-    if (!settings["modulation"].isString())
-        return;
-
-    const string modulation = settings["modulation"].asString();
-
-    if (modulation == "rtty")
-    {
-        bool configured_something = false;
-
-        /* Shift */
-        if (settings["shift"].isNumeric())
-        {
-            double shift = settings["shift"].asDouble();
-
-            /* Look in the standard shifts first */
-            int search;
-            for (search = 0; rtty::SHIFT[search] != 0; search++)
-            {
-                double diff = rtty::SHIFT[search] - shift;
-                /* I love floats :-( */
-                if (diff < 0.1 && diff > -0.1)
-                {
-                    selShift->value(search);
-                    selCustomShift->deactivate();
-                    progdefaults.rtty_shift = search;
-                    break;
-                }
-            }
-
-            /* If not found (i.e., we found the terminating 0) then
-             * search == the index of the "Custom" menu item */
-            if (rtty::SHIFT[search] == 0)
-            {
-                selShift->value(search);
-                selCustomShift->activate();
-                progdefaults.rtty_shift = -1;
-                selCustomShift->value(shift);
-                progdefaults.rtty_custom_shift = shift;
-            }
-
-            configured_something = true;
-        }
-
-        /* Baud */
-        if (settings["baud"].isNumeric())
-        {
-            double baud = settings["baud"].asDouble();
-            int search;
-            for (search = 0; rtty::BAUD[search] != 0; search++)
-            {
-                double diff = rtty::BAUD[search] - baud;
-                if (diff < 0.01 && diff > -0.01)
-                {
-                    selBaud->value(search);
-                    progdefaults.rtty_baud = search;
-                    configured_something = true;
-                    break;
-                }
-            }
-        }
-
-        /* Encoding */
-        if (settings["encoding"].isString())
-        {
-            const string encoding = settings["encoding"].asString();
-            int select = -1;
-
-            /* rtty::BITS[] = {5, 7, 8}; */
-            if (encoding == "baudot")
-                select = 0;
-            else if (encoding == "ascii-7")
-                select = 1;
-            else if (encoding == "ascii-8")
-                select = 2;
-
-            if (select != -1)
-            {
-                selBits->value(select);
-                progdefaults.rtty_bits = select;
-
-                /* From selBits' callback */
-                if (select == 0)
-                {
-                    progdefaults.rtty_parity = RTTY_PARITY_NONE;
-                    selParity->value(RTTY_PARITY_NONE);
-                }
-
-                configured_something = true;
-            }
-        }
-
-        /* Parity: "none|even|odd|zero|one". Also, parity is disabled when
-         * using baudot (rtty_bits == 0) */
-        if (settings["parity"].isString() && progdefaults.rtty_bits != 0)
-        {
-            const string parity = settings["parity"].asString();
-            int select = -1;
-
-            if (parity == "none")
-                select = RTTY_PARITY_NONE;
-            else if (parity == "even")
-                select = RTTY_PARITY_EVEN;
-            else if (parity == "odd")
-                select = RTTY_PARITY_ODD;
-            else if (parity == "zero")
-                select = RTTY_PARITY_ZERO;
-            else if (parity == "one")
-                select = RTTY_PARITY_ONE;
-
-            if (select != -1)
-            {
-                selParity->value(select);
-                progdefaults.rtty_parity = select;
-
-                configured_something = true;
-            }
-        }
-
-        /* Stop: "1|1.5|2". */
-        if (settings["stop"].isNumeric())
-        {
-            int select = -1;
-
-            if (settings["stop"].isInt())
-            {
-                int stop = settings["stop"].asInt();
-                if (stop == 1)
-                    select = 0;
-                else if (stop == 2)
-                    select = 2;
-            }
-            else
-            {
-                double stop = settings["stop"].asDouble();
-                if (stop > 1.49 && stop < 1.51)
-                    select = 1;
-            }
-
-            if (select != -1)
-            {
-                progdefaults.rtty_stop = select;
-                selStopBits->value(select);
-
-                configured_something = true;
-            }
-        }
-
-        /* Finish up... */
-        if (configured_something)
-        {
-            init_modem_sync(MODE_RTTY);
-            resetRTTY();
-            progdefaults.changed = true;
-        }
-    }
-    else if (modulation == "dominoex")
-    {
-        if (settings["type"].isInt())
-        {
-            int type = settings["type"].asInt();
-            int modem = -1;
-
-            switch (type)
-            {
-                case 4:
-                    modem = MODE_DOMINOEX4;
-                    break;
-
-                case 5:
-                    modem = MODE_DOMINOEX5;
-                    break;
-
-                case 8:
-                    modem = MODE_DOMINOEX8;
-                    break;
-
-                case 11:
-                    modem = MODE_DOMINOEX11;
-                    break;
-
-                case 16:
-                    modem = MODE_DOMINOEX16;
-                    break;
-
-                case 22:
-                    modem = MODE_DOMINOEX22;
-                    break;
-            }
-
-            if (modem != -1)
-            {
-                init_modem_sync(modem);
-                resetDOMEX();
-            }
-        }
-    }
-}
-
-void auto_switchmode()
-{
-    Fl_AutoLock lock;
-
-    int next = cur_mode_index + 1;
-    if (next >= cur_payload_modecount)
-        next = 0;
-
-    if (hab_ui_exists)
-        habCHMode->value(next);
-    payload_mode_list->value(next);
-
-    select_mode(next);
-    auto_configure();
-}
 
 } /* namespace flights */
 } /* namespace dl_fldigi */

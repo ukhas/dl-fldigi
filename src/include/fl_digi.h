@@ -148,7 +148,7 @@ extern Fl_Group				*TopFrameHAB;
 extern Fl_Choice			*habFlight;
 extern Fl_Button			*habOpenBrowser;
 extern Fl_Choice			*habCHPayload;
-extern Fl_Choice			*habCHMode;
+extern Fl_Choice			*habCHTransmission;
 extern Fl_Button			*habConfigureButton;
 extern Fl_Button			*habSwitchModes;
 extern Fl_Output			*habRXPayload;
@@ -178,6 +178,11 @@ extern int Qidle_time;
 
 extern void toggleRSID();
 
+extern int rightof(Fl_Widget* w);
+extern int leftof(Fl_Widget* w);
+extern int above(Fl_Widget* w);
+extern int below(Fl_Widget* w);
+
 extern void set_menus();
 extern void create_fl_digi_main(int argc, char** argv);
 extern void update_main_title();
@@ -203,6 +208,12 @@ extern void set_phase(double phase, double quality, bool highlight);
 extern void set_rtty(double, double, double);
 extern void set_video(double *, int, bool = true);
 extern void set_zdata(complex *, int);
+
+extern void set_scope_xaxis_1(double y1);
+extern void set_scope_xaxis_2(double y2);
+extern void set_scope_yaxis_1(double x1);
+extern void set_scope_yaxis_2(double x2);
+extern void set_scope_clear_axis();
 
 extern void set_CWwpm();
 extern void put_rx_char(unsigned int data, int style = FTextBase::RECV, bool extracted = false);
@@ -279,6 +290,9 @@ extern void init_modem_squelch(trx_mode mode, int freq = 0);
 
 extern void start_tx();
 extern void abort_tx();
+
+extern void LOGGING_colors_font();
+extern void LOGBOOK_colors_font();
 
 extern void colorize_macro(int i);
 extern void colorize_macros();

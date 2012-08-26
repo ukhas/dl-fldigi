@@ -139,10 +139,12 @@ void online(bool val)
 
     if (changed && dl_online)
     {
-        if (!flights::downloaded_once)
+        if (!flights::downloaded_flights_once)
             hbtint::uthr->flights();
+        if (!flights::downloaded_payloads_once)
+            hbtint::uthr->payloads();
 
-        hbtint::uthr->listener_info();
+        hbtint::uthr->listener_information();
         hbtint::uthr->listener_telemetry();
     }
 
@@ -151,9 +153,15 @@ void online(bool val)
     set_menu_dl_refresh_active(dl_online);
 
     if (dl_online)
-        flight_docs_refresh->activate();
+    {
+        flight_docs_refresh_a->activate();
+        flight_docs_refresh_b->activate();
+    }
     else
-        flight_docs_refresh->deactivate();
+    {
+        flight_docs_refresh_a->deactivate();
+        flight_docs_refresh_b->deactivate();
+    }
 }
 
 bool online()
@@ -175,10 +183,12 @@ void commit()
     /* Update something if its settings change; fairly simple: */
     if (dirty & CH_UTHR_SETTINGS)
     {
-        flights::downloaded_once = false;
+        flights::downloaded_flights_once = false;
+        flights::downloaded_payloads_once = false;
 
         hbtint::uthr->settings();
         hbtint::uthr->flights();
+        hbtint::uthr->payloads();
     }
 
     if (dirty & CH_LOCATION_MODE)
@@ -194,7 +204,7 @@ void commit()
     /* If the info has been updated, or the upload settings changed... */
     if (dirty & (CH_UTHR_SETTINGS | CH_INFO))
     {
-        hbtint::uthr->listener_info();
+        hbtint::uthr->listener_information();
     }
 
     /* if stationary and (settings changed, or if we just switched to

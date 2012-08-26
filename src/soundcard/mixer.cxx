@@ -36,8 +36,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 #if USE_OSS
-#    include <sys/ioctl.h>
+#  include <sys/ioctl.h>
+#  if defined(__OpenBSD__)
+#    include <soundcard.h>
+#  else
 #    include <sys/soundcard.h>
+#  endif
 #endif
 #include <math.h>
 
@@ -73,7 +77,13 @@ void MixerOSS::openMixer(const char *dev)
 	if (mixer_fd != -1) closeMixer();
 	mixer = dev;
 	try {
-		mixer_fd =  open(mixer.c_str(), O_RDWR);
+
+	int oflags = O_RDWR;
+#	ifdef HAVE_O_CLOEXEC
+		oflags = oflags | O_CLOEXEC;
+#	endif
+
+		mixer_fd =  open(mixer.c_str(), oflags);
 		if (mixer_fd == -1)
 			throw MixerException(errno);
 		if ((err = initMask()) != 0)
@@ -144,7 +154,12 @@ void MixerOSS::findNumMixers()
 			szDevice[10] = 0;
 		else
 			szDevice[10] = '0'+(i-1);
-		fd = open(szDevice, O_RDWR);
+		int oflags = O_RDWR;
+#		ifdef HAVE_O_CLOEXEC
+			oflags = oflags | O_CLOEXEC;
+#		endif
+
+		fd = open(szDevice, oflags);
 		if (fd >= 0) {
 			Devices[NumMixers] = i;
 			NumMixers++;

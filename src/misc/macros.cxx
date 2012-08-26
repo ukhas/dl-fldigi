@@ -185,14 +185,32 @@ static void pWPM(std::string &s, size_t &i, size_t endbracket)
 		return;
 	}
 	int number;
-	std::string sTime = s.substr(i+5, endbracket - i - 5);
-	if (sTime.length() > 0) {
-		sscanf(sTime.c_str(), "%d", &number);
+	std::string snumber = s.substr(i+5, endbracket - i - 5);
+
+	if (snumber.length() > 0) {
+
+// first value = WPM
+		sscanf(snumber.c_str(), "%d", &number);
 		if (number < 5) number = 5;
 		if (number > 200) number = 200;
 		progdefaults.CWspeed = number;
 		sldrCWxmtWPM->value(number);
+printf("wpm %d\n", number);
+
+// second value = Farnsworth WPM
+		size_t pos;
+		if ((pos = snumber.find(":")) != std::string::npos) {
+			snumber.erase(0, pos+1);
+			if (snumber.length())
+				sscanf(snumber.c_str(), "%d", &number);
+			if (number < 15) number = 15;
+			if (number > 200) number = 200;
+			progdefaults.CWfarnsworth = number;
+			sldrCWfarnsworth->value(number);
+printf("fwpm %d\n", number);
+		}
 	}
+
 	s.replace(i, endbracket - i + 1, "");
 }
 
@@ -256,17 +274,40 @@ static void setwpm(int d)
 	cntCW_WPM->value(d);
 }
 
+static void setfwpm(int d)
+{
+	sldrCWfarnsworth->value(d);
+	progdefaults.CWusefarnsworth = true;
+	btnCWusefarnsworth->value(1);
+}
+
 static void doWPM(std::string s)
 {
 	int number;
-	std::string sTime = s.substr(6);
-	if (sTime.length() > 0) {
-		sscanf(sTime.c_str(), "%d", &number);
+	std::string snumber = s.substr(6);
+
+	if (snumber.length() > 0) {
+
+// first value = WPM
+		sscanf(snumber.c_str(), "%d", &number);
 		if (number < 5) number = 5;
 		if (number > 200) number = 200;
 		progdefaults.CWspeed = number;
 		REQ(setwpm, number);
+
+// second value = Farnsworth WPM
+		size_t pos;
+		if ((pos = snumber.find(":")) != std::string::npos) {
+			snumber.erase(0, pos+1);
+			if (snumber.length())
+				sscanf(snumber.c_str(), "%d", &number);
+			if (number < 15) number = 15;
+			if (number > 200) number = 200;
+			progdefaults.CWfarnsworth = number;
+			REQ(setfwpm, number);
+		}
 	}
+
 }
 
 static void pQueWPM(std::string &s, size_t &i, size_t endbracket)
@@ -431,6 +472,21 @@ static void pTUNE(std::string &s, size_t &i, size_t endbracket)
 	s.replace(i, endbracket - i + 1, "");
 }
 
+static void pNRSID(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	int number = 0;
+	std::string sNumber = s.substr(i+7, endbracket - i - 7);
+	if (sNumber.length() > 0) {
+		sscanf(sNumber.c_str(), "%d", &number);
+		progStatus.n_rsids = number;
+	}
+	s.replace(i, endbracket - i + 1, "");
+}
+
 static bool useWait = false;
 static int  waitTime = 0;
 
@@ -561,27 +617,32 @@ static void pRST(std::string &s, size_t &i, size_t endbracket)
 
 static void pMYCALL(std::string &s, size_t &i, size_t endbracket)
 {
-	s.replace( i, 8, inpMyCallsign->value() );
+	s.replace( i, 8, progdefaults.myCall.c_str() );
 }
 
 static void pMYLOC(std::string &s, size_t &i, size_t endbracket)
 {
-	s.replace( i, 7, inpMyLocator->value() );
+	s.replace( i, 7, progdefaults.myLocator.c_str() );
 }
 
 static void pMYNAME(std::string &s, size_t &i, size_t endbracket)
 {
-	s.replace( i, 8, inpMyName->value() );
+	s.replace( i, 8, progdefaults.myName.c_str() );
 }
 
 static void pMYQTH(std::string &s, size_t &i, size_t endbracket)
 {
-	s.replace( i, 7, inpMyQth->value() );
+	s.replace( i, 7, progdefaults.myQth.c_str() );
 }
 
 static void pMYRST(std::string &s, size_t &i, size_t endbracket)
 {
 	s.replace( i, 7, inpRstIn->value() );
+}
+
+static void pANTENNA(std::string &s, size_t &i, size_t endbracket)
+{
+	s.replace( i, 9, progdefaults.myAntenna.c_str() );
 }
 
 static void pLDT(std::string &s, size_t &i, size_t endbracket)
@@ -1913,6 +1974,7 @@ static const MTAGS mtags[] = {
 {"<MYNAME>",	pMYNAME},
 {"<MYQTH>",		pMYQTH},
 {"<MYRST>",		pMYRST},
+{"<ANTENNA>",	pANTENNA},
 {"<QSOTIME>",	pQSOTIME},
 {"<INFO1>",		pINFO1},
 {"<INFO2>",		pINFO2},
@@ -1948,6 +2010,7 @@ static const MTAGS mtags[] = {
 {"<IDLE:",		pIDLE},
 {"<TUNE:",		pTUNE},
 {"<WAIT:",		pWAIT},
+{"<NRSID:",		pNRSID},
 {"<MODEM>",		pMODEM_compSKED},
 {"<MODEM:",		pMODEM},
 {"<EXEC>",		pEXEC},

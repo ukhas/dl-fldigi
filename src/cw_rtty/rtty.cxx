@@ -460,10 +460,8 @@ bool rtty::rx(bool bit)
 char snrmsg[80];
 void rtty::Metric()
 {
-	double delta = rtty_baud/2.0;
-	double np = 
-		wf->powerDensity(frequency - shift * 1.5, delta) +
-	 	wf->powerDensity(frequency + shift * 1.5, delta) + 1e-10;
+	double delta = rtty_baud/8.0;
+	double np = wf->powerDensity(frequency, delta);
 	double sp =
 		wf->powerDensity(frequency - shift/2, delta) +
 		wf->powerDensity(frequency + shift/2, delta) + 1e-10;
@@ -471,7 +469,7 @@ void rtty::Metric()
 
 	sigpwr = decayavg( sigpwr, sp, sp - sigpwr > 0 ? 2 : 8);
 	noisepwr = decayavg( noisepwr, np, 32 );
-	snr = 10*log10(sigpwr / ( noisepwr * (1500 / delta))); // 3000 Hz noise bw
+	snr = 10*log10(sigpwr / noisepwr);//( noisepwr * (1500 / delta))); // 3000 Hz noise bw
 
 	snprintf(snrmsg, sizeof(snrmsg), "s/n %3.0f dB", snr);
 	put_Status2(snrmsg);
@@ -758,7 +756,8 @@ void rtty::send_char(int c)
 			c = figures[c];
 		if (c)
 			put_echo_char(progdefaults.rx_lowercase ? tolower(c) : c);
-	}
+	} else if (c)
+		put_echo_char(c);
 }
 
 void rtty::send_idle()

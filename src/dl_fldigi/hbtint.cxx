@@ -137,28 +137,11 @@ void DUploaderThread::listener_telemetry()
         return;
 
     Json::Value data(Json::objectValue);
-
-    /* TODO: HABITAT is it really a good idea to upload time like this? */
-    struct tm tm;
-    time_t now;
-
-    now = time(NULL);
-    if (now < 0)
-        throw runtime_error("time() failed");
-
-    struct tm *tm_p = gmtime_r(&now, &tm);
-    if (tm_p != &tm)
-        throw runtime_error("gmtime() failed");
-
-    data["time"] = Json::Value(Json::objectValue);
-    Json::Value &time = data["time"];
-    time["hour"] = tm.tm_hour;
-    time["minute"] = tm.tm_min;
-    time["second"] = tm.tm_sec;
-
     data["latitude"] = location::listener_latitude;
     data["longitude"] = location::listener_longitude;
-    data["altitude"] = location::listener_altitude;
+
+    if (location::listener_altitude != 0)
+        data["altitude"] = location::listener_altitude;
 
     UploaderThread::listener_telemetry(data);
 }
@@ -180,7 +163,7 @@ static void info_add(Json::Value &data, const string &key, const string &value)
         data[key] = value;
 }
 
-void DUploaderThread::listener_info()
+void DUploaderThread::listener_information()
 {
     Fl_AutoLock lock;
 
@@ -189,15 +172,9 @@ void DUploaderThread::listener_info()
     info_add(data, "location", progdefaults.myQth);
     info_add(data, "radio", progdefaults.myRadio);
     info_add(data, "antenna", progdefaults.myAntenna);
-
-    if (!data.size())
-    {
-        warning("not uploading empty listener info");
-        return;
-    }
-
     data["dl_fldigi"] = git_short_commit;
-    UploaderThread::listener_info(data);
+
+    UploaderThread::listener_information(data);
 }
 
 /* These functions absolutely must be thread safe. */
@@ -221,13 +198,22 @@ void DUploaderThread::saved_id(const string &type, const string &id)
     status("Uploaded " + type + " successfully");
 }
 
-void DUploaderThread::got_flights(const vector<Json::Value> &new_flight_docs)
+void DUploaderThread::got_flights(const vector<Json::Value> &new_flights)
 {
     ostringstream ltmp;
-    ltmp << "Downloaded " << new_flight_docs.size() << " flight docs";
+    ltmp << "Downloaded " << new_flights.size() << " flight docs";
     log(ltmp.str());
 
-    flights::new_docs(new_flight_docs);
+    flights::new_flight_docs(new_flights);
+}
+
+void DUploaderThread::got_payloads(const vector<Json::Value> &new_payloads)
+{
+    ostringstream ltmp;
+    ltmp << "Downloaded " << new_payloads.size() << " payload docs";
+    log(ltmp.str());
+
+    flights::new_payload_docs(new_payloads);
 }
 
 /* Be careful not to call this function instead of dl_fldigi::status() */
