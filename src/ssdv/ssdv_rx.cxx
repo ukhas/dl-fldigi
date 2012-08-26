@@ -145,6 +145,7 @@ ssdv_rx::ssdv_rx(int w, int h, const char *title)
 	: Fl_Double_Window(w, h, title)
 {
 	buffer = new uint8_t[BUFFER_SIZE];
+	erasures = new uint8_t[BUFFER_SIZE];
 	
 	/* Empty receive buffer */
 	clear_buffer();
@@ -240,14 +241,20 @@ ssdv_rx::~ssdv_rx()
 	if(flrgb) delete flrgb;
 	if(image) delete image;
 	if(buffer) delete buffer;
+	if(erasures) delete erasures;
 }
 
-void ssdv_rx::feed_buffer(uint8_t byte)
+void ssdv_rx::feed_buffer(uint8_t byte, uint8_t erasure)
 {
 	int bp = bc + bl;
 	
 	buffer[bp] = byte;
-	if((bp -= SSDV_PKT_SIZE) >= 0) buffer[bp] = byte;
+	erasures[bp] = (erasure ? 1 : 0);
+	if((bp -= SSDV_PKT_SIZE) >= 0)
+	{
+		buffer[bp] = byte;
+		erasures[bp] = (erasure ? 1 : 0);
+	}
 	
 	if(bl < SSDV_PKT_SIZE) bl++;
 	else if(++bc == SSDV_PKT_SIZE) bc = 0;
@@ -373,22 +380,22 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 {
 	int i;
 	
-	/* If more than 16 bytes where lost clear the buffer */
-	if(lost > 16) clear_buffer();
+	/* If more than 32 bytes where lost clear the buffer */
+	if(lost > 32) clear_buffer();
 	
 	/* Fill in the lost bytes */
 	for(i = 0; i < lost; i++)
-		feed_buffer(0x00);
+		feed_buffer(0x00, 1);
 	
 	/* Feed the byte into the buffer */
-	feed_buffer(byte);
+	feed_buffer(byte, 0);
 	
 	/* Enough data yet to form a packet? */
 	if(bl < SSDV_PKT_SIZE) return;
 	
 	/* Test if this is a packet and is valid */
 	uint8_t *b = &buffer[bc];
-	if(ssdv_dec_is_packet(b, &i) != 0) return;
+	if(ssdv_dec_is_packet(b, &i, &erasures[bc]) != 0) return;
 	
 	/* Make a note of the number of errors */
 	image_errors += i;

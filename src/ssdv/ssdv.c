@@ -1278,10 +1278,11 @@ char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length)
 	return(SSDV_OK);
 }
 
-char ssdv_dec_is_packet(uint8_t *packet, int *errors)
+char ssdv_dec_is_packet(uint8_t *packet, int *errors, uint8_t *erasures)
 {
 	uint8_t pkt[SSDV_PKT_SIZE];
 	ssdv_packet_info_t p;
+	int eras_pos[32], no_eras;
 	uint16_t x;
 	int i;
 	
@@ -1290,8 +1291,19 @@ char ssdv_dec_is_packet(uint8_t *packet, int *errors)
 	pkt[0] = 0x55;
 	pkt[1] = 0x66;
 	
+	/* Find the erasure positions */
+	no_eras = 0;
+	if(erasures)
+	{
+		for(i = 1; i < SSDV_PKT_SIZE; i++)
+		{
+			if(erasures[i]) eras_pos[no_eras++] = i - 1;
+			if(no_eras == 32) break;
+		}
+	}
+	
 	/* Run the reed-solomon decoder */
-	i = decode_rs_8(&pkt[1], 0, 0, 0);
+	i = decode_rs_8(&pkt[1], eras_pos, no_eras, 0);
 	if(i < 0) return(-1); /* Reed-solomon decoder failed */
 	if(errors) *errors = i;
 	
