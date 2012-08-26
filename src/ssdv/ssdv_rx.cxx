@@ -414,7 +414,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		image_height         = pkt_info.height;
 		image_mcu_mode       = pkt_info.mcu_mode;
 		image_lost_packets   = 0;
-		image_errors         = 0;
+		image_errors         = i;
 		
 		/* Initialise and clear the image buffer */
 		if(image) delete image;
