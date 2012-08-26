@@ -220,7 +220,7 @@ void rtty::restart()
 	posfreq = negfreq = 0.0;
 
 	/* The length of a byte (including start, stop and parity bits */
-	bytelen = (1 + nbits + stl + (rtty_parity == RTTY_PARITY_NONE ? 0 : 1)) * symbollen;
+	bytelen = (1 + nbits + stl + (rtty_parity == RTTY_PARITY_NONE ? 0 : 1)) * samplerate / rtty_baud + 0.5;
 
 	metric = 0.0;
 
