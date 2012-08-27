@@ -385,6 +385,7 @@ void GPSThread::upload(const string &time_str,
     data["latitude"] = latitude;
     data["longitude"] = longitude;
     data["altitude"] = altitude;
+    data["chase"] = true;
 
     hbtint::uthr->listener_telemetry(data);
 }
