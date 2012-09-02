@@ -301,6 +301,8 @@ void DExtractorManager::data(const Json::Value &d)
         habChecksum->value("BAD :-(");
     }
 
+    habString->damage(FL_DAMAGE_ALL);
+
     /* UKHAS crude parser doesn't split up the time, like the real one does */
     set_jvalue(habRXPayload, d["payload"]);
     set_jvalue(habTime, d["time"]);
