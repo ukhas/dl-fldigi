@@ -34,6 +34,7 @@ private:
 	static const int BUFFER_SIZE = SSDV_PKT_SIZE * 2;
 	
 	uint8_t *buffer;
+	uint8_t *erasures;
 	int bc;
 	int bl;
 	
@@ -58,7 +59,7 @@ private:
 	int image_errors;
 	
 	/* Private functions */
-	void feed_buffer(uint8_t byte);
+	void feed_buffer(uint8_t byte, uint8_t erasure);
 	void clear_buffer();
 	void upload_packet();
 	void save_image(uint8_t *jpeg, size_t length);

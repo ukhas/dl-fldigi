@@ -140,7 +140,7 @@ extern char ssdv_dec_set_buffer(ssdv_t *s, uint8_t *buffer, size_t length);
 extern char ssdv_dec_feed(ssdv_t *s, uint8_t *packet);
 extern char ssdv_dec_get_jpeg(ssdv_t *s, uint8_t **jpeg, size_t *length);
 
-extern char ssdv_dec_is_packet(uint8_t *packet, int *errors);
+extern char ssdv_dec_is_packet(uint8_t *packet, int *errors, uint8_t *erasures);
 extern void ssdv_dec_header(ssdv_packet_info_t *info, uint8_t *packet);
 
 /* Callsign */
