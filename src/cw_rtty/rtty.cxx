@@ -25,6 +25,7 @@
 
 #include <config.h>
 #include <iostream>
+#include <algorithm>
 using namespace std;
 
 #include "view_rtty.h"
@@ -185,10 +186,13 @@ void rtty::restart()
 	symbollen = (int) (samplerate / rtty_baud + 0.5);
 	set_bandwidth(shift);
 
-	if (progdefaults.RTTY_BW < rtty_baud)
-		progdefaults.RTTY_BW = rtty_baud;
+	if (progdefaults.RTTY_BW_AUTO)
+	{
+		progdefaults.RTTY_BW = max(rtty_baud, 68.0);
+		sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
+	}
+
 	rtty_BW = progdefaults.RTTY_BW;
-	sldrRTTYbandwidth->value(rtty_BW);
 
 	wf->redraw_marker();
 
