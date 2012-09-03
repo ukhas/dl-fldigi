@@ -191,6 +191,14 @@ void DUploaderThread::warning(const string &message)
     status_important(message);
 }
 
+void DUploaderThread::caught_exception(const habitat::NotInitialisedError &e)
+{
+    Fl_AutoLock lock;
+    LOG_WARN("NotInitialisedError");
+    status_important("Can't upload! Either in offline mode, or "
+                        "your callsign is not set.");
+}
+
 void DUploaderThread::saved_id(const string &type, const string &id)
 {
     /* Log as normal, but also set status */

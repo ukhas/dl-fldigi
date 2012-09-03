@@ -25,6 +25,10 @@ public:
     void warning(const std::string &message);
     void saved_id(const std::string &type, const std::string &id);
 
+    /* Default actions for other types of error are okay, but replace
+     * the warning with different text for not initialised */
+    void caught_exception(const habitat::NotInitialisedError &e);
+
     /* Update UI */
     void got_flights(const std::vector<Json::Value> &flights);
     void got_payloads(const std::vector<Json::Value> &payloads);

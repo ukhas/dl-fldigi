@@ -234,7 +234,7 @@ void status_important(const string &message)
     Fl_AutoLock lock;
     LOG_DEBUG("warn status: %s", message.c_str());
 
-    string temp = "WARNING " + message;
+    string temp = "WARNING! " + message;
     put_status_safe(temp.c_str(), 10);
     last_warn = time(NULL);
 }
