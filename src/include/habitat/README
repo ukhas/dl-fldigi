@@ -1,6 +1,0 @@
-Note: In order to build habitat-cpp-connector directly into fldigi, the
-includes are both here (so that they are are available to dl-fldigi as
-#include "habitat/*.h"), and in dl-fldigi/src/habitat/ via the symlink to
-habitat-cpp-connector/src/ (since when the habitat-cpp-connector cpp files
-themselves are compiled they expect the headers to be available in the same
-directory).
