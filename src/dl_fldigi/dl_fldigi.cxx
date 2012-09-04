@@ -22,6 +22,7 @@
 #include "dl_fldigi/hbtint.h"
 #include "dl_fldigi/location.h"
 #include "dl_fldigi/gps.h"
+#include "dl_fldigi/update.h"
 
 using namespace std;
 
@@ -139,6 +140,8 @@ void online(bool val)
 
     if (changed && dl_online)
     {
+        update::check(); // N.B. only checks once
+
         if (!flights::downloaded_flights_once)
             hbtint::uthr->flights();
         if (!flights::downloaded_payloads_once)

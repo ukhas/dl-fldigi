@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2012 Daniel Richman
 # DL-Fldigi update check server
 
@@ -25,15 +27,19 @@ def load_config():
 def check():
     load_config()
 
-    # KeyError becomes 400 Bad Request; good.
-    platform = request.args["platform"]
-    commit = request.args["commit"]
-    expect = config["expect"][platform]
+    try:
+        platform = request.args["platform"]
+        commit = request.args["commit"]
+        expect = config["expect"][platform]
 
-    if expect == commit:
-        return ""
-    else:
-        return config["update_text"]
+        if expect == commit:
+            return ""
+        else:
+            return json.dumps(config["update"])
+
+    except KeyError:
+        # bad platform or missing arg
+        abort(400)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

@@ -1,7 +1,7 @@
-update_text: |
-    There is a new version of dl-fldigi available!
-    Go to http://ukhas.org.uk/projects:dl-fldigi to upgrade.
+update:
+    url: "http://ukhas.org.uk/projects:dl-fldigi"
+    text: "There is a new version of dl-fldigi available!"
 expect:
-    win32: "dcf3804ec3c006ab99867e053ec6996fb17ec50e"
-    linux: "dcf3804ec3c006ab99867e053ec6996fb17ec50e"
-    macosx: "dcf3804ec3c006ab99867e053ec6996fb17ec50e"
+    win32: "that would be self description"
+    linux: "which is unfortunately not possible"
+    macosx: "well, technically it is, but I don't have a super computer"

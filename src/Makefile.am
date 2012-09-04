@@ -422,6 +422,7 @@ dl_fldigi_SOURCES += \
 	include/dl_fldigi/location.h \
 	include/dl_fldigi/gps.h \
 	include/dl_fldigi/hbtint.h \
+	include/dl_fldigi/update.h \
 	include/dl_fldigi/version.h \
 	include/habitat/CouchDB.h \
 	include/habitat/UploaderThread.h \
@@ -578,6 +579,7 @@ dl_fldigi_SOURCES += \
 	dl_fldigi/location.cxx \
 	dl_fldigi/gps.cxx \
 	dl_fldigi/hbtint.cxx \
+	dl_fldigi/update.cxx \
 	dl_fldigi/version.cxx
 
 # Sources that are part of the distribution but are not compiled directly
