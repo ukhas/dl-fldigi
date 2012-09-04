@@ -2,7 +2,7 @@
 #define DL_FLDIGI_FLIGHTS_H
 
 #include <vector>
-#include <json/json.h>
+#include "jsoncpp.h"
 
 namespace dl_fldigi {
 namespace flights {

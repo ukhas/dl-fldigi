@@ -13,7 +13,6 @@
 #include <sstream>
 #include <set>
 #include <unistd.h>
-#include <json/json.h>
 
 #include "main.h"
 #include "debug.h"
@@ -21,6 +20,7 @@
 #include "configuration.h"
 #include "confdialog.h"
 
+#include "jsoncpp.h"
 #include "habitat/RFC3339.h"
 #include "dl_fldigi/dl_fldigi.h"
 #include "dl_fldigi/hbtint.h"

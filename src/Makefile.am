@@ -416,6 +416,7 @@ dl_fldigi_SOURCES += \
 	include/table.h \
 	include/textio.h \
 	include/psk_browser.h \
+	include/jsoncpp.h \
 	include/dl_fldigi/dl_fldigi.h \
 	include/dl_fldigi/flights.h \
 	include/dl_fldigi/location.h \
@@ -564,6 +565,7 @@ dl_fldigi_SOURCES += \
 	xmlrpcpp/XmlRpcValue.cpp \
 	xmlrpcpp/XmlRpcValue.h \
 	xmlrpcpp/base64.h \
+	misc/jsoncpp.cpp \
 	habitat/CouchDB.cxx \
 	habitat/Extractor.cxx \
 	habitat/EZ.cxx \

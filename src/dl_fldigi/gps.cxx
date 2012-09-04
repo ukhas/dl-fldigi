@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <json/json.h>
 
 #ifndef __MINGW32__
 #include <sys/types.h>
@@ -30,6 +29,8 @@
 #include "confdialog.h"
 #include "debug.h"
 #include "fl_digi.h"
+
+#include "jsoncpp.h"
 
 #include "dl_fldigi/dl_fldigi.h"
 #include "dl_fldigi/location.h"

@@ -286,12 +286,6 @@ if test "x$ac_cv_want_fldigi" = "xyes"; then
     AC_FLDIGI_JPEG
 fi
 
-### jsoncpp
-if test "x$ac_cv_want_fldigi" = "xyes"; then
-    AC_FLDIGI_PKG_CHECK([jsoncpp], [jsoncpp >= 0.5], [no], [no])
-fi
-
-
 ### libssl
 if test "x$ac_cv_want_fldigi" = "xyes"; then
     AC_FLDIGI_PKG_CHECK([ssl], [libssl], [no], [no])

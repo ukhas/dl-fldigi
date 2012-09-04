@@ -9,7 +9,6 @@
 
 #include <string>
 #include <sstream>
-#include <json/json.h>
 
 #include <FL/Fl.H>
 
@@ -17,6 +16,7 @@
 #include "debug.h"
 #include "fl_digi.h"
 
+#include "jsoncpp.h"
 #include "habitat/EZ.h"
 #include "habitat/UKHASExtractor.h"
 
