@@ -628,14 +628,7 @@ EXTRA_dl_fldigi_SOURCES += \
 	widgets/Fl_Text_Display_mod_1_1.cxx \
 	widgets/Fl_Text_Display_mod_1_3.cxx \
 	widgets/Fl_Text_Editor_mod_1_1.cxx \
-	widgets/Fl_Text_Editor_mod_1_3.cxx \
-	habitat/CouchDB.h \
-	habitat/UploaderThread.h \
-	habitat/Uploader.h \
-	habitat/Extractor.h \
-	habitat/UKHASExtractor.h \
-	habitat/EZ.h \
-	habitat/RFC3339.h
+	widgets/Fl_Text_Editor_mod_1_3.cxx
 
 
 
