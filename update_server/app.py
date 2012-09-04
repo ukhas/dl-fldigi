@@ -4,9 +4,8 @@
 # DL-Fldigi update check server
 
 import os.path
-import json
 import yaml
-from flask import Flask, abort, request
+from flask import Flask, abort, request, jsonify
 
 app_dir = os.path.dirname(__file__)
 config_file = os.path.join(app_dir, "config.yml")
@@ -35,7 +34,7 @@ def check():
         if expect == commit:
             return ""
         else:
-            return json.dumps(config["update"])
+            return jsonify(config["update"])
 
     except KeyError:
         # bad platform or missing arg
