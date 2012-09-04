@@ -1,0 +1,7 @@
+update_text: |
+    There is a new version of dl-fldigi available!
+    Go to http://ukhas.org.uk/projects:dl-fldigi to upgrade.
+expect:
+    win32: "dcf3804ec3c006ab99867e053ec6996fb17ec50e"
+    linux: "dcf3804ec3c006ab99867e053ec6996fb17ec50e"
+    macosx: "dcf3804ec3c006ab99867e053ec6996fb17ec50e"
