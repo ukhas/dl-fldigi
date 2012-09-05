@@ -43,7 +43,7 @@ void check()
     LOG_INFO("checking for dl-fldigi updates");
 
     thr = new UpdateThread();
-    thr->start(); // EZ::SimpleThread won't start more than once
+    thr->start();
 }
 
 void cleanup()
