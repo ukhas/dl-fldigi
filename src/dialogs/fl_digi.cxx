@@ -6338,7 +6338,6 @@ void create_fl_digi_main_dl_fldigi() {
 	createConfig();
 	if (withnoise)
 		grpNoise->show();
-	altTabs();
 }
 
 void create_fl_digi_main(int argc, char** argv)
