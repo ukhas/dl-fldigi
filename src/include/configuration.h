@@ -1367,9 +1367,9 @@
               "Logbook server port",                                                    \
               "8421")                                                                   \
                                                                                         \
-        ELEM_(bool, check_for_updates, "CHECK_FOR_UPDATES",                             \
+        ELEM_(bool, check_for_updates, "DL_CHECK_FOR_UPDATES",                          \
               "Check for updates when starting program",                                \
-              false)                                                                    \
+              true)                                                                     \
         /* XML-RPC/ARQ servers */                                                       \
         ELEM_(std::string, xmlrpc_address, "", "",  "127.0.0.1")                        \
         ELEM_(std::string, xmlrpc_port, "", "",  "7362")                                \

@@ -31,7 +31,7 @@ namespace dl_fldigi {
 bool hab_ui_exists, shutting_down;
 time_t last_rx;
 
-static bool dl_online;
+static bool dl_online, first_online;
 static int dirty;
 static time_t last_warn;
 
@@ -140,7 +140,12 @@ void online(bool val)
 
     if (changed && dl_online)
     {
-        update::check(); // N.B. only checks once
+        if (!first_online)
+        {
+            if (progdefaults.check_for_updates)
+                update::check();
+            first_online = true;
+        }
 
         if (!flights::downloaded_flights_once)
             hbtint::uthr->flights();

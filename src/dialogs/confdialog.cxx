@@ -4298,7 +4298,7 @@ ndow decoration close button pressed."));
             { Fl_Group* o = new Fl_Group(21, 311, 496, 56, _("Check for updates"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Check_Button* o = btn_check_for_updates = new Fl_Check_Button(56, 335, 324, 20, _("Check for updates when starting program"));
+              { Fl_Check_Button* o = btn_check_for_updates = new Fl_Check_Button(56, 335, 324, 20, _("Check for updates when online"));
                 btn_check_for_updates->down_box(FL_DOWN_BOX);
                 btn_check_for_updates->callback((Fl_Callback*)cb_btn_check_for_updates);
                 o->value(progdefaults.check_for_updates);

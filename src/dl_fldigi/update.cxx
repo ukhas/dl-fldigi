@@ -29,27 +29,31 @@ using namespace std;
 namespace dl_fldigi {
 namespace update {
 
-// Designed to be run once only
-static UpdateThread thr;
+static UpdateThread *thr;
 static string update_text, update_url;
 
 static void got_update(void *);
 
+/* check, cleanup are called by main thread only, while holding lock */
 void check()
 {
-    thr.start(); // EZ::SimpleThread won't start more than once
+    if (thr)
+        return;
+
+    LOG_INFO("checking for dl-fldigi updates");
+
+    thr = new UpdateThread();
+    thr->start(); // EZ::SimpleThread won't start more than once
 }
 
 void cleanup()
 {
-    try
-    {
-        thr.join();
-    }
-    catch (runtime_error &e)
-    {
-        // throws error if joined before started. Ignore.
-    }
+    if (!thr)
+        return;
+
+    thr->join();
+    delete thr;
+    thr = NULL;
 }
 
 #ifdef __MINGW32__
@@ -120,10 +124,9 @@ void *UpdateThread::run()
     return NULL;
 }
 
+/* Called by main thread only, while holding lock */
 static void got_update(void *)
 {
-    cleanup();
-
     int c = fl_choice2("Test %s", "Close", "Open in browser", NULL,
                        update_text.c_str());
     if (c)
@@ -132,6 +135,8 @@ static void got_update(void *)
         // from fl_digi.h
         cb_mnuVisitURL(0, (void *) update_url.c_str());
     }
+
+    cleanup();
 }
 
 } /* namespace update */

@@ -638,7 +638,7 @@ Not active if window decoration close button pressed.}
               xywh {21 311 496 56} box ENGRAVED_FRAME align 21
             } {
               Fl_Check_Button btn_check_for_updates {
-                label {Check for updates when starting program}
+                label {Check for updates when online}
                 callback {progdefaults.check_for_updates = o->value();
 progdefaults.changed = true;}
                 xywh {56 335 324 20} down_box DOWN_BOX
