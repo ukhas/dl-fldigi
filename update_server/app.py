@@ -31,7 +31,9 @@ def check():
         commit = request.args["commit"]
         expect = config["expect"][platform]
 
-        if expect == commit:
+        if isinstance(expect, list) and commit in expect:
+            return ""
+        elif isinstance(expect, basestring) and expect == commit:
             return ""
         else:
             return jsonify(config["update"])

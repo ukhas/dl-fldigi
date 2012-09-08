@@ -4,4 +4,6 @@ update:
 expect:
     win32: "that would be self description"
     linux: "which is unfortunately not possible"
-    macosx: "well, technically it is, but I don't have a super computer"
+    macosx:
+        - "well, technically it is,"
+        - "but I don't have a super computer"
