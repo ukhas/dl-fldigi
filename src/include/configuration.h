@@ -1492,7 +1492,7 @@
              false)                                                                     \
        ELEM_(std::string, NVTX_Catalog, "NAVTEXCATALOG",                                \
              "Catalog pathname of Navtex stations",                                     \
-             PKGDATADIR "/NAVTEX_Stations.txt")                                         \
+             PKGDATADIR "/NAVTEX_Stations.csv")                                         \
        ELEM_(int, NVTX_MinSizLoggedMsg, "NAVTEXMINSIZLOGGEDMSG",                        \
              "Minimum length of logged messages",                                       \
              0 )                                                                        \

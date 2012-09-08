@@ -138,7 +138,7 @@ if WANT_FLDIGI
 	    $(INSTALL_DATA) $(srcdir)/../data/dl-fldigi-hab.desktop $(DESTDIR)/$(datadir)/applications; \
 	fi
 	if test -f $(srcdir)/../data/NAVTEX_Stations.csv; then \
-	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/fldigi; \
+	    $(mkinstalldirs) $(DESTDIR)/$(pkgdatadir); \
 	    $(INSTALL_DATA) $(srcdir)/../data/NAVTEX_Stations.csv $(DESTDIR)/$(pkgdatadir); \
 	fi
 endif
