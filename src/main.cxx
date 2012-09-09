@@ -987,6 +987,7 @@ int parse_args(int argc, char **argv, int& idx)
 
 		case OPT_WINDOW_WIDTH:
 			WNOM = strtol(optarg, NULL, 10);
+			HAB_width = WNOM;
 			break;
 
 		case OPT_WINDOW_HEIGHT:

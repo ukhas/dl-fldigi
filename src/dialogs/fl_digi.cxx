@@ -394,6 +394,7 @@ int w_habDistance = 60;
 int w_habElevation = 50;
 int w_habTimeSinceLastRx = 80;
 int w_habString = 430;
+int HAB_width = -1;
 int HAB_height = 0;
 
 int pad = 1;
