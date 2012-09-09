@@ -660,6 +660,12 @@ void generate_option_help(void) {
 	     << "  --hab\n"
 	     << "    High Altitude Balloon Setup (dl-fldigi)\n\n"
 
+	     << "  --window-width PIXELS\n"
+	     << "    Set the window width\n\n"
+
+	     << "  --window-height PIXELS\n"
+	     << "    Set the window height\n\n"
+
 	     << "  --debug-level LEVEL\n"
 	     << "    Set the event log verbosity\n\n"
 
@@ -692,10 +698,10 @@ void generate_option_help(void) {
 	     << "   -fg COLOR, -foreground COLOR\n"
 	     << "    Set the foreground color\n\n"
 
-	     << "   -g GEOMETRY, -geometry GEOMETRY\n"
-	     << "    Set the initial window size and position\n"
-	     << "    GEOMETRY format is ``WxH+X+Y''\n"
-	     << "    ** " << PACKAGE_NAME << " may override this setting **\n\n"
+//	     << "   -g GEOMETRY, -geometry GEOMETRY\n"
+//	     << "    Set the initial window size and position\n"
+//	     << "    GEOMETRY format is ``WxH+X+Y''\n"
+//	     << "    ** " << PACKAGE_NAME << " may override this setting **\n\n"
 
 	     << "   -i, -iconic\n"
 	     << "    Start " << PACKAGE_NAME << " in iconified state\n\n"
