@@ -171,6 +171,7 @@
 #include "dl_fldigi/dl_fldigi.h"
 #include "dl_fldigi/flights.h"
 #include "dl_fldigi/hbtint.h"
+#include "dl_fldigi/update.h"
 bool bHAB = false;
 
 #define LOG_TO_FILE_MLABEL     _("Log all RX/TX text")
@@ -393,6 +394,7 @@ int w_habDistance = 60;
 int w_habElevation = 50;
 int w_habTimeSinceLastRx = 80;
 int w_habString = 430;
+int HAB_width = -1;
 int HAB_height = 0;
 
 int pad = 1;
@@ -1842,50 +1844,7 @@ void cb_mnuBeginnersURL(Fl_Widget*, void*)
 
 void cb_mnuCheckUpdate(Fl_Widget*, void*)
 {
-	struct {
-		const char* url;
-		const char* re;
-		string version_str;
-		unsigned long version;
-	} sites[] = {
-		{ PACKAGE_DL, "downloads/fldigi/fldigi-([0-9.]+).tar.gz", "", 0 },
-		{ PACKAGE_PROJ, "fldigi/fldigi-([0-9.]+).tar.gz", "", 0 }
-	}, *latest;
-	string reply;
-
-	put_status(_("Checking for updates..."));
-	for (size_t i = 0; i < sizeof(sites)/sizeof(*sites); i++) { // fetch .url, grep for .re
-		reply.clear();
-		if (!fetch_http_gui(sites[i].url, reply, 20.0, busy_cursor, 0, default_cursor, 0))
-			continue;
-		re_t re(sites[i].re, REG_EXTENDED | REG_ICASE | REG_NEWLINE);
-		if (!re.match(reply.c_str()) || re.nsub() != 2)
-			continue;
-
-		sites[i].version = ver2int((sites[i].version_str = re.submatch(1)).c_str());
-	}
-	put_status("");
-
-	latest = sites[1].version > sites[0].version ? &sites[1] : &sites[0];
-	if (sites[0].version == 0 && sites[1].version == 0) {
-		fl_alert2(_("Could not check for updates:\n%s"), reply.c_str());
-		return;
-	}
-	if (latest->version > ver2int(PACKAGE_VERSION)) {
-		switch (fl_choice2(_("Version %s is available at\n\n%s\n\nWhat would you like to do?"),
-				  _("Close"), _("Visit URL"), _("Copy URL"),
-				  latest->version_str.c_str(), latest->url)) {
-		case 1:
-			cb_mnuVisitURL(NULL, (void*)latest->url);
-			break;
-		case 2:
-			size_t n = strlen(latest->url);
-			Fl::copy(latest->url, n, 0);
-			Fl::copy(latest->url, n, 1);
-		}
-	}
-	else
-		fl_message2(_("You are running the latest version"));
+    dl_fldigi::update::check();
 }
 
 void cb_mnuAboutURL(Fl_Widget*, void*)
@@ -6380,7 +6339,6 @@ void create_fl_digi_main_dl_fldigi() {
 	createConfig();
 	if (withnoise)
 		grpNoise->show();
-	altTabs();
 }
 
 void create_fl_digi_main(int argc, char** argv)

@@ -9,7 +9,6 @@
 
 #include <string>
 #include <sstream>
-#include <json/json.h>
 
 #include <FL/Fl.H>
 
@@ -17,6 +16,7 @@
 #include "debug.h"
 #include "fl_digi.h"
 
+#include "jsoncpp.h"
 #include "habitat/EZ.h"
 #include "habitat/UKHASExtractor.h"
 
@@ -191,6 +191,14 @@ void DUploaderThread::warning(const string &message)
     status_important(message);
 }
 
+void DUploaderThread::caught_exception(const habitat::NotInitialisedError &e)
+{
+    Fl_AutoLock lock;
+    LOG_WARN("NotInitialisedError");
+    status_important("Can't upload! Either in offline mode, or "
+                        "your callsign is not set.");
+}
+
 void DUploaderThread::saved_id(const string &type, const string &id)
 {
     /* Log as normal, but also set status */
@@ -300,6 +308,8 @@ void DExtractorManager::data(const Json::Value &d)
         habString->color(FL_RED);
         habChecksum->value("BAD :-(");
     }
+
+    habString->damage(FL_DAMAGE_ALL);
 
     /* UKHAS crude parser doesn't split up the time, like the real one does */
     set_jvalue(habRXPayload, d["payload"]);

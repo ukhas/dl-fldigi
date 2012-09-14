@@ -256,6 +256,9 @@
         ELEM_(double, RTTY_BW, "RTTYBW",                                                \
               "Receive filter bandwidth (Hz)",                                          \
               68.0)                                                                     \
+        ELEM_(bool, RTTY_BW_AUTO, "RTTYBW",                                             \
+              "Was RTTY_BW set automatically?",                                         \
+              true)                                                                     \
         ELEM_(int, rtty_baud, "RTTYBAUD",                                               \
               "Carrier baud rate. Values are as follows:\n"                             \
               "  1: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"      \
@@ -1364,9 +1367,9 @@
               "Logbook server port",                                                    \
               "8421")                                                                   \
                                                                                         \
-        ELEM_(bool, check_for_updates, "CHECK_FOR_UPDATES",                             \
+        ELEM_(bool, check_for_updates, "DL_CHECK_FOR_UPDATES",                          \
               "Check for updates when starting program",                                \
-              false)                                                                    \
+              true)                                                                     \
         /* XML-RPC/ARQ servers */                                                       \
         ELEM_(std::string, xmlrpc_address, "", "",  "127.0.0.1")                        \
         ELEM_(std::string, xmlrpc_port, "", "",  "7362")                                \
@@ -1489,7 +1492,7 @@
              false)                                                                     \
        ELEM_(std::string, NVTX_Catalog, "NAVTEXCATALOG",                                \
              "Catalog pathname of Navtex stations",                                     \
-             PKGDATADIR "/NAVTEX_Stations.txt")                                         \
+             PKGDATADIR "/NAVTEX_Stations.csv")                                         \
        ELEM_(int, NVTX_MinSizLoggedMsg, "NAVTEXMINSIZLOGGEDMSG",                        \
              "Minimum length of logged messages",                                       \
              0 )                                                                        \

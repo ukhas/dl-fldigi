@@ -638,7 +638,7 @@ Not active if window decoration close button pressed.}
               xywh {21 311 496 56} box ENGRAVED_FRAME align 21
             } {
               Fl_Check_Button btn_check_for_updates {
-                label {Check for updates when starting program}
+                label {Check for updates when online}
                 callback {progdefaults.check_for_updates = o->value();
 progdefaults.changed = true;}
                 xywh {56 335 324 20} down_box DOWN_BOX
@@ -2458,11 +2458,20 @@ progdefaults.changed = true;}
               }
               Fl_Value_Slider sldrRTTYbandwidth {
                 label {Receive filter bandwidth}
-                callback {progdefaults.RTTY_BW = o->value();}
-                tooltip {Adjust the DSP bandwidth} xywh {100 325 300 20} type Horizontal align 5 minimum 5 maximum 1000 step 1 value 25 textsize 14
+                callback {progdefaults.RTTY_BW = o->value();
+progdefaults.RTTY_BW_AUTO = false;
+progdefaults.changed = true;}
+                tooltip {Adjust the DSP bandwidth} xywh {85 325 300 20} type Horizontal align 5 minimum 5 maximum 1000 step 1 value 25 textsize 14
                 code0 {o->value(progdefaults.RTTY_BW);}
                 code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
+              }
+              Fl_Button RTTYbandwidthAuto {
+                label Auto
+                callback {progdefaults.RTTY_BW_AUTO = true;
+resetRTTY();
+progdefaults.changed = true;}
+                xywh {390 325 65 20}
               }
               Fl_Counter selCustomShift {
                 label {Custom shift}

@@ -233,9 +233,6 @@ void delayed_startup(void *)
 	if (progdefaults.usepskrep)
 		if (!pskrep_start())
 			LOG_ERROR("Could not start PSK reporter: %s", pskrep_error());
-
-	if (progdefaults.check_for_updates)
-		cb_mnuCheckUpdate((Fl_Widget *)0, NULL);
 }
 
 int main(int argc, char ** argv)
@@ -663,6 +660,12 @@ void generate_option_help(void) {
 	     << "  --hab\n"
 	     << "    High Altitude Balloon Setup (dl-fldigi)\n\n"
 
+	     << "  --window-width PIXELS\n"
+	     << "    Set the window width\n\n"
+
+	     << "  --window-height PIXELS\n"
+	     << "    Set the window height\n\n"
+
 	     << "  --debug-level LEVEL\n"
 	     << "    Set the event log verbosity\n\n"
 
@@ -695,10 +698,10 @@ void generate_option_help(void) {
 	     << "   -fg COLOR, -foreground COLOR\n"
 	     << "    Set the foreground color\n\n"
 
-	     << "   -g GEOMETRY, -geometry GEOMETRY\n"
-	     << "    Set the initial window size and position\n"
-	     << "    GEOMETRY format is ``WxH+X+Y''\n"
-	     << "    ** " << PACKAGE_NAME << " may override this setting **\n\n"
+//	     << "   -g GEOMETRY, -geometry GEOMETRY\n"
+//	     << "    Set the initial window size and position\n"
+//	     << "    GEOMETRY format is ``WxH+X+Y''\n"
+//	     << "    ** " << PACKAGE_NAME << " may override this setting **\n\n"
 
 	     << "   -i, -iconic\n"
 	     << "    Start " << PACKAGE_NAME << " in iconified state\n\n"
@@ -990,6 +993,7 @@ int parse_args(int argc, char **argv, int& idx)
 
 		case OPT_WINDOW_WIDTH:
 			WNOM = strtol(optarg, NULL, 10);
+			HAB_width = WNOM;
 			break;
 
 		case OPT_WINDOW_HEIGHT:

@@ -1890,6 +1890,16 @@ Fl_Value_Slider2 *sldrRTTYbandwidth=(Fl_Value_Slider2 *)0;
 
 static void cb_sldrRTTYbandwidth(Fl_Value_Slider2* o, void*) {
   progdefaults.RTTY_BW = o->value();
+progdefaults.RTTY_BW_AUTO = false;
+progdefaults.changed = true;
+}
+
+Fl_Button *RTTYbandwidthAuto=(Fl_Button *)0;
+
+static void cb_RTTYbandwidthAuto(Fl_Button*, void*) {
+  progdefaults.RTTY_BW_AUTO = true;
+resetRTTY();
+progdefaults.changed = true;
 }
 
 Fl_Counter2 *selCustomShift=(Fl_Counter2 *)0;
@@ -4288,7 +4298,7 @@ ndow decoration close button pressed."));
             { Fl_Group* o = new Fl_Group(21, 311, 496, 56, _("Check for updates"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Check_Button* o = btn_check_for_updates = new Fl_Check_Button(56, 335, 324, 20, _("Check for updates when starting program"));
+              { Fl_Check_Button* o = btn_check_for_updates = new Fl_Check_Button(56, 335, 324, 20, _("Check for updates when online"));
                 btn_check_for_updates->down_box(FL_DOWN_BOX);
                 btn_check_for_updates->callback((Fl_Callback*)cb_btn_check_for_updates);
                 o->value(progdefaults.check_for_updates);
@@ -6089,7 +6099,7 @@ an merging"));
                 o->value(progdefaults.Xagc);
                 o->hide();
               } // Fl_Check_Button* chkXagc
-              { Fl_Value_Slider2* o = sldrRTTYbandwidth = new Fl_Value_Slider2(100, 325, 300, 20, _("Receive filter bandwidth"));
+              { Fl_Value_Slider2* o = sldrRTTYbandwidth = new Fl_Value_Slider2(85, 325, 300, 20, _("Receive filter bandwidth"));
                 sldrRTTYbandwidth->tooltip(_("Adjust the DSP bandwidth"));
                 sldrRTTYbandwidth->type(1);
                 sldrRTTYbandwidth->box(FL_DOWN_BOX);
@@ -6110,6 +6120,9 @@ an merging"));
                 o->value(progdefaults.RTTY_BW);
                 o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* sldrRTTYbandwidth
+              { RTTYbandwidthAuto = new Fl_Button(390, 325, 65, 20, _("Auto"));
+                RTTYbandwidthAuto->callback((Fl_Callback*)cb_RTTYbandwidthAuto);
+              } // Fl_Button* RTTYbandwidthAuto
               { Fl_Counter2* o = selCustomShift = new Fl_Counter2(36, 103, 100, 20, _("Custom shift"));
                 selCustomShift->tooltip(_("Input carrier shift"));
                 selCustomShift->box(FL_UP_BOX);

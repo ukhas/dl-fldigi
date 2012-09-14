@@ -138,7 +138,7 @@ if WANT_FLDIGI
 	    $(INSTALL_DATA) $(srcdir)/../data/dl-fldigi-hab.desktop $(DESTDIR)/$(datadir)/applications; \
 	fi
 	if test -f $(srcdir)/../data/NAVTEX_Stations.csv; then \
-	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/fldigi; \
+	    $(mkinstalldirs) $(DESTDIR)/$(pkgdatadir); \
 	    $(INSTALL_DATA) $(srcdir)/../data/NAVTEX_Stations.csv $(DESTDIR)/$(pkgdatadir); \
 	fi
 endif
@@ -416,11 +416,13 @@ dl_fldigi_SOURCES += \
 	include/table.h \
 	include/textio.h \
 	include/psk_browser.h \
+	include/jsoncpp.h \
 	include/dl_fldigi/dl_fldigi.h \
 	include/dl_fldigi/flights.h \
 	include/dl_fldigi/location.h \
 	include/dl_fldigi/gps.h \
 	include/dl_fldigi/hbtint.h \
+	include/dl_fldigi/update.h \
 	include/dl_fldigi/version.h \
 	include/habitat/CouchDB.h \
 	include/habitat/UploaderThread.h \
@@ -564,6 +566,7 @@ dl_fldigi_SOURCES += \
 	xmlrpcpp/XmlRpcValue.cpp \
 	xmlrpcpp/XmlRpcValue.h \
 	xmlrpcpp/base64.h \
+	misc/jsoncpp.cpp \
 	habitat/CouchDB.cxx \
 	habitat/Extractor.cxx \
 	habitat/EZ.cxx \
@@ -576,6 +579,7 @@ dl_fldigi_SOURCES += \
 	dl_fldigi/location.cxx \
 	dl_fldigi/gps.cxx \
 	dl_fldigi/hbtint.cxx \
+	dl_fldigi/update.cxx \
 	dl_fldigi/version.cxx
 
 # Sources that are part of the distribution but are not compiled directly
@@ -626,14 +630,7 @@ EXTRA_dl_fldigi_SOURCES += \
 	widgets/Fl_Text_Display_mod_1_1.cxx \
 	widgets/Fl_Text_Display_mod_1_3.cxx \
 	widgets/Fl_Text_Editor_mod_1_1.cxx \
-	widgets/Fl_Text_Editor_mod_1_3.cxx \
-	habitat/CouchDB.h \
-	habitat/UploaderThread.h \
-	habitat/Uploader.h \
-	habitat/Extractor.h \
-	habitat/UKHASExtractor.h \
-	habitat/EZ.h \
-	habitat/RFC3339.h
+	widgets/Fl_Text_Editor_mod_1_3.cxx
 
 
 

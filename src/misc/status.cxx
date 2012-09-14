@@ -630,8 +630,15 @@ void status::initLastState()
 
 	if (bWF_only) 
 		fl_digi_main->resize(mainX, mainY, mainW, Hmenu + Hwfall + Hstatus + 4);
-	else if (bHAB)
-		fl_digi_main->resize(mainX, mainY, Fl::w(), HAB_height);
+	else if (bHAB) {
+		if (HAB_width < 0)
+			HAB_width = Fl::w();
+		if (HAB_width < WMIN_hab)
+			HAB_width = WMIN_hab;
+		if (HAB_width > Fl::w())
+			HAB_width = Fl::w();
+		fl_digi_main->resize(mainX, mainY, HAB_width, HAB_height);
+	}
 	else {
 		fl_digi_main->resize(mainX, mainY, mainW, mainH);
 

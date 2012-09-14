@@ -22,6 +22,7 @@
 #include "dl_fldigi/hbtint.h"
 #include "dl_fldigi/location.h"
 #include "dl_fldigi/gps.h"
+#include "dl_fldigi/update.h"
 
 using namespace std;
 
@@ -30,7 +31,7 @@ namespace dl_fldigi {
 bool hab_ui_exists, shutting_down;
 time_t last_rx;
 
-static bool dl_online;
+static bool dl_online, first_online;
 static int dirty;
 static time_t last_warn;
 
@@ -139,6 +140,13 @@ void online(bool val)
 
     if (changed && dl_online)
     {
+        if (!first_online)
+        {
+            if (progdefaults.check_for_updates)
+                update::check();
+            first_online = true;
+        }
+
         if (!flights::downloaded_flights_once)
             hbtint::uthr->flights();
         if (!flights::downloaded_payloads_once)
@@ -234,7 +242,7 @@ void status_important(const string &message)
     Fl_AutoLock lock;
     LOG_DEBUG("warn status: %s", message.c_str());
 
-    string temp = "WARNING " + message;
+    string temp = "WARNING! " + message;
     put_status_safe(temp.c_str(), 10);
     last_warn = time(NULL);
 }

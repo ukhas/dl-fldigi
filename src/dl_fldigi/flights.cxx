@@ -13,7 +13,6 @@
 #include <sstream>
 #include <set>
 #include <unistd.h>
-#include <json/json.h>
 
 #include "main.h"
 #include "debug.h"
@@ -21,6 +20,7 @@
 #include "configuration.h"
 #include "confdialog.h"
 
+#include "jsoncpp.h"
 #include "habitat/RFC3339.h"
 #include "dl_fldigi/dl_fldigi.h"
 #include "dl_fldigi/hbtint.h"
@@ -823,11 +823,11 @@ static void autoconfigure_rtty_encoding(const Json::Value &value)
     int select = -1;
 
     /* rtty::BITS[] = {5, 7, 8}; */
-    if (encoding == "baudot")
+    if (encoding == "BAUDOT")
         select = 0;
-    else if (encoding == "ascii-7")
+    else if (encoding == "ASCII-7")
         select = 1;
-    else if (encoding == "ascii-8")
+    else if (encoding == "ASCII-8")
         select = 2;
     else
         return;

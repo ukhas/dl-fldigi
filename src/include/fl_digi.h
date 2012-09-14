@@ -167,6 +167,7 @@ extern bool			withnoise;
 extern int			altMacros;
 
 extern int			HAB_height;
+extern int			HAB_width;
 
 extern waterfall		*wf;
 extern Digiscope		*digiscope;
