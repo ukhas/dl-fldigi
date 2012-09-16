@@ -535,9 +535,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	snprintf(s, 16, "0x%02X", pkt_info.image_id);
 	flimageid->copy_label(s);
 	
-	snprintf(s, 16, "%d (%d%%)",
-		image_lost_packets, image_lost_packets * 100 /
-		MAX(image_received_packets, pkt_info.packet_id + 1));
+	snprintf(s, 16, "%d", image_lost_packets);
 	flmissing->copy_label(s);
 	
 	snprintf(s, 16, "%d byte%s", image_errors, (image_errors == 1 ? "" : "s"));
