@@ -292,13 +292,14 @@ static void *upload_packet_thread(void *arg)
 }
 
 /* TODO: HABITAT-LATER upload using habitat */
-void ssdv_rx::upload_packet()
+void ssdv_rx::upload_packet(int fixes)
 {
 	ssdv_post_data_t *t;
 	pthread_attr_t attr;
 	pthread_t thread;
 	const char *callsign;
 	char *packet;
+	char data[10];
 	struct curl_httppost* post = NULL;
 	struct curl_httppost* last = NULL;
 	CURL *curl;
@@ -314,6 +315,11 @@ void ssdv_rx::upload_packet()
 	/* The encoding used on the packet */
 	curl_formadd(&post, &last, CURLFORM_COPYNAME, "encoding",
 		CURLFORM_COPYCONTENTS, "hex", CURLFORM_END);
+	
+	/* Include the number of bytes corrected by the FEC */
+	snprintf(data, 10, "%i", fixes);
+	curl_formadd(&post, &last, CURLFORM_COPYNAME, "fixes",
+		CURLFORM_COPYCONTENTS, data, CURLFORM_END);
 	
 	/* URL-encode the packet */
 	packet = (char *) malloc((SSDV_PKT_SIZE * 2) + 1);
@@ -401,7 +407,7 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 	image_errors += i;
 	
 	/* Packet received.. upload to server */
-	if (dl_fldigi::online()) upload_packet();
+	if (dl_fldigi::online()) upload_packet(i);
 	
 	/* Read the header */
 	ssdv_dec_header(&pkt_info, b);

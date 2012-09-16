@@ -61,7 +61,7 @@ private:
 	/* Private functions */
 	void feed_buffer(uint8_t byte, uint8_t erasure);
 	void clear_buffer();
-	void upload_packet();
+	void upload_packet(int fixes);
 	void save_image(uint8_t *jpeg, size_t length);
 	void render_image(uint8_t *jpeg, size_t length);
 	
