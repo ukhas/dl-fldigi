@@ -1891,14 +1891,7 @@ Fl_Value_Slider2 *sldrRTTYbandwidth=(Fl_Value_Slider2 *)0;
 static void cb_sldrRTTYbandwidth(Fl_Value_Slider2* o, void*) {
   progdefaults.RTTY_BW = o->value();
 progdefaults.RTTY_BW_AUTO = false;
-progdefaults.changed = true;
-}
-
-Fl_Button *RTTYbandwidthAuto=(Fl_Button *)0;
-
-static void cb_RTTYbandwidthAuto(Fl_Button*, void*) {
-  progdefaults.RTTY_BW_AUTO = true;
-resetRTTY();
+RTTYbandwidthAuto->value(false);
 progdefaults.changed = true;
 }
 
@@ -1906,6 +1899,14 @@ Fl_Counter2 *selCustomShift=(Fl_Counter2 *)0;
 
 static void cb_selCustomShift(Fl_Counter2* o, void*) {
   progdefaults.rtty_custom_shift = o->value();
+resetRTTY();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *RTTYbandwidthAuto=(Fl_Check_Button *)0;
+
+static void cb_RTTYbandwidthAuto(Fl_Check_Button* o, void*) {
+  progdefaults.RTTY_BW_AUTO = o->value();
 resetRTTY();
 progdefaults.changed = true;
 }
@@ -6120,9 +6121,6 @@ an merging"));
                 o->value(progdefaults.RTTY_BW);
                 o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
               } // Fl_Value_Slider2* sldrRTTYbandwidth
-              { RTTYbandwidthAuto = new Fl_Button(390, 325, 65, 20, _("Auto"));
-                RTTYbandwidthAuto->callback((Fl_Callback*)cb_RTTYbandwidthAuto);
-              } // Fl_Button* RTTYbandwidthAuto
               { Fl_Counter2* o = selCustomShift = new Fl_Counter2(36, 103, 100, 20, _("Custom shift"));
                 selCustomShift->tooltip(_("Input carrier shift"));
                 selCustomShift->box(FL_UP_BOX);
@@ -6142,6 +6140,11 @@ an merging"));
                 o->lstep(10.0);
                 o->labelsize(FL_NORMAL_SIZE);
               } // Fl_Counter2* selCustomShift
+              { Fl_Check_Button* o = RTTYbandwidthAuto = new Fl_Check_Button(395, 325, 70, 20, _("Auto"));
+                RTTYbandwidthAuto->down_box(FL_DOWN_BOX);
+                RTTYbandwidthAuto->callback((Fl_Callback*)cb_RTTYbandwidthAuto);
+                o->value(progdefaults.RTTY_BW_AUTO);
+              } // Fl_Check_Button* RTTYbandwidthAuto
               o->end();
             } // Fl_Group* o
             tabRTTY->end();

@@ -2460,18 +2460,12 @@ progdefaults.changed = true;}
                 label {Receive filter bandwidth}
                 callback {progdefaults.RTTY_BW = o->value();
 progdefaults.RTTY_BW_AUTO = false;
+RTTYbandwidthAuto->value(false);
 progdefaults.changed = true;}
                 tooltip {Adjust the DSP bandwidth} xywh {85 325 300 20} type Horizontal align 5 minimum 5 maximum 1000 step 1 value 25 textsize 14
                 code0 {o->value(progdefaults.RTTY_BW);}
                 code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
-              }
-              Fl_Button RTTYbandwidthAuto {
-                label Auto
-                callback {progdefaults.RTTY_BW_AUTO = true;
-resetRTTY();
-progdefaults.changed = true;}
-                xywh {390 325 65 20}
               }
               Fl_Counter selCustomShift {
                 label {Custom shift}
@@ -2482,6 +2476,14 @@ progdefaults.changed = true;}
                 code0 {o->lstep(10.0);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Counter2
+              }
+              Fl_Check_Button RTTYbandwidthAuto {
+                label Auto
+                callback {progdefaults.RTTY_BW_AUTO = o->value();
+resetRTTY();
+progdefaults.changed = true;}
+                xywh {395 325 70 20} down_box DOWN_BOX
+                code0 {o->value(progdefaults.RTTY_BW_AUTO);}
               }
             }
           }

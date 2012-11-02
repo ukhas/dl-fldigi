@@ -127,7 +127,7 @@ void *UpdateThread::run()
 /* Called by main thread only, while holding lock */
 static void got_update(void *)
 {
-    int c = fl_choice2("Test %s", "Close", "Open in browser", NULL,
+    int c = fl_choice2("%s", "Close", "Open in browser", NULL,
                        update_text.c_str());
     if (c)
     {
