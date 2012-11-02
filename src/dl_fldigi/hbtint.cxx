@@ -15,6 +15,7 @@
 #include "configuration.h"
 #include "debug.h"
 #include "fl_digi.h"
+#include "trx.h"
 
 #include "jsoncpp.h"
 #include "habitat/EZ.h"
@@ -152,11 +153,11 @@ void DUploaderThread::payload_telemetry(const string &data,
         rig_info["frequency"] = rig_freq;
     if (rig_mode_updated >= time(NULL) - 30)
         rig_info["mode"] = rig_mode;
+    rig_info["audio_frequency"] = active_modem->get_freq();
+    rig_info["reversed"] = active_modem->get_reverse();
 
     Json::Value new_metadata = metadata;
-
-    if (rig_mode.size())
-        new_metadata["rig_info"] = rig_info;
+    new_metadata["rig_info"] = rig_info;
 
     UploaderThread::payload_telemetry(data, new_metadata, time_created);
 }
