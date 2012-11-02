@@ -49,6 +49,8 @@
 
 #include "debug.h"
 
+#include "dl_fldigi/hbtint.h"
+
 using namespace std;
 
 LOG_FILE_SOURCE(debug::LOG_RIGCONTROL);
@@ -228,6 +230,9 @@ static void *rigMEM_loop(void *args)
 			show_frequency(freqflag->freq);
 			wf->USB(sb);
 			REQ (&Fl_ComboBox::put_value, qso_opMODE, sb ? "USB" : "LSB");
+
+			dl_fldigi::hbtint::rig_set_freq(freqflag->freq);
+			dl_fldigi::hbtint::rig_set_mode(sb ? "USB" : "LSB");
 		}
 	}
 

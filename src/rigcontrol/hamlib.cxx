@@ -51,6 +51,8 @@
 #include "debug.h"
 #include "re.h"
 
+#include "dl_fldigi/hbtint.h"
+
 LOG_FILE_SOURCE(debug::LOG_RIGCONTROL);
 
 using namespace std;
@@ -540,6 +542,9 @@ static void *hamlib_loop(void *args)
 			wf->rfcarrier(hamlib_freq);
 		}
 
+		if (freqok && freq)
+			dl_fldigi::hbtint::rig_set_freq(freq);
+
 		if (modeok && (hamlib_rmode != numode)) {
 			hamlib_rmode = numode;
 			show_mode(modeString(hamlib_rmode));
@@ -552,6 +557,9 @@ static void *hamlib_loop(void *args)
 					  hamlib_rmode == RIG_MODE_ECSSLSB ||
 					  hamlib_rmode == RIG_MODE_RTTY));
 		}
+
+		if (modeok)
+			dl_fldigi::hbtint::rig_set_mode(modeString(numode));
 
 		if (hamlib_exit)
 			break;
