@@ -3829,6 +3829,8 @@ void cb_qso_opBrowser(Fl_Browser*, void*)
 
 void show_frequency(long long freq)
 {
+	dl_fldigi::hbtint::rig_set_freq(freq);
+
 	qsoFreqDisp1->value(freq);
 	qsoFreqDisp2->value(freq);
 	qsoFreqDisp3->value(freq);
@@ -3836,6 +3838,8 @@ void show_frequency(long long freq)
 
 void show_mode(const string& sMode)
 {
+	dl_fldigi::hbtint::rig_set_mode(sMode);
+
 	REQ_SYNC(&Fl_ComboBox::put_value, qso_opMODE, sMode.c_str());
 }
 

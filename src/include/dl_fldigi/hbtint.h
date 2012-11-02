@@ -16,6 +16,9 @@ public:
     /* These functions call super() functions, but with data grabbed from
      * progdefaults and other globals. */
     void settings();
+    void payload_telemetry(const string &data,
+                           const Json::Value &metadata=Json::Value::null,
+                           int time_created=-1);
     void listener_telemetry();
     void listener_telemetry(const Json::Value &data);
     void listener_information();
@@ -53,6 +56,11 @@ extern DUploaderThread *uthr;
 void init();
 void start();
 void cleanup();
+
+/* Called by a line in dialog/fl-digi.cxx, which is called when any rig
+ * management gets the current frequency from the rig. */
+void rig_set_freq(long long freq);
+void rig_set_mode(const string &mode);
 
 } /* namespace hbtint */
 } /* namespace dl_fldigi */

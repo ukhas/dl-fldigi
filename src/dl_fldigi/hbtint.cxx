@@ -35,6 +35,10 @@ DExtractorManager *extrmgr;
 DUploaderThread *uthr;
 static habitat::UKHASExtractor *ukhas;
 
+static time_t rig_freq_updated, rig_mode_updated;
+static long long rig_freq;
+static string rig_mode;
+
 void init()
 {
     cgl = new EZ::cURLGlobal();
@@ -69,6 +73,20 @@ void cleanup()
     cgl = 0;
 }
 
+void rig_set_freq(long long freq)
+{
+    Fl_AutoLock lock;
+    rig_freq_updated = time(NULL);
+    rig_freq = freq;
+}
+
+void rig_set_mode(const string &mode)
+{
+    Fl_AutoLock lock;
+    rig_mode_updated = time(NULL);
+    rig_mode = mode;
+}
+
 static void uthr_thread_death(void *what)
 {
     if (what != uthr)
@@ -91,9 +109,11 @@ void *DUploaderThread::run()
     return ret;
 }
 
-/* All these functions are called via a DUploaderThread pointer so
+/* Some functions below are called via a DUploaderThread pointer so
  * the fact that they are non virtual is OK. Having a different set of
- * arguments even prevents the wrong function from being selected */
+ * arguments even prevents the wrong function from being selected.
+ * payload_telemetry() is actually virtual, so that the ExtractorManager
+ * can call it */
 
 void DUploaderThread::settings()
 {
@@ -117,6 +137,30 @@ void DUploaderThread::settings()
     UploaderThread::settings(progdefaults.myCall, progdefaults.habitat_uri,
                              progdefaults.habitat_db);
 }
+
+void DUploaderThread::payload_telemetry(const string &data,
+        const Json::Value &metadata, int time_created)
+{
+    Fl_AutoLock lock;
+
+    /* If the frequency/mode from the rig is recent, upload it.
+     * null metadata is automatically converted to an object by jsoncpp */
+
+    Json::Value rig_info(Json::objectValue);
+    
+    if (rig_freq_updated >= time(NULL) - 30)
+        rig_info["frequency"] = rig_freq;
+    if (rig_mode_updated >= time(NULL) - 30)
+        rig_info["mode"] = rig_mode;
+
+    Json::Value new_metadata = metadata;
+
+    if (rig_mode.size())
+        new_metadata["rig_info"] = rig_info;
+
+    UploaderThread::payload_telemetry(data, new_metadata, time_created);
+}
+
 
 /* This function is used for stationary listener telemetry only */
 
