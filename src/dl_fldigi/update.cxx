@@ -30,11 +30,14 @@ namespace dl_fldigi {
 namespace update {
 
 static UpdateThread *thr;
+static bool update_new;
 static string update_text, update_url;
 
-static void got_update(void *);
+static void update_check();
+static void update_thread_done(void *what);
+static void show_update();
 
-/* check, cleanup are called by main thread only, while holding lock */
+/* check, cleanup are called by main thread only, while holding Fl lock */
 void check()
 {
     if (thr)
@@ -48,12 +51,36 @@ void check()
 
 void cleanup()
 {
-    if (!thr)
-        return;
+    while (thr)
+        Fl::wait();
+}
 
+void *UpdateThread::run()
+{
+    update_check();
+    Fl::awake(update_thread_done, this);
+    return NULL;
+}
+
+/* invoked via Fl::awake; so we have the main Fl lock */
+static void update_thread_done(void *what)
+{
+    if (what != thr)
+    {
+        LOG_ERROR("unknown thread");
+        return;
+    }
+
+    if (update_new)
+    {
+        show_update();
+        update_new = false;
+    }
+
+    LOG_INFO("cleaning up");
     thr->join();
     delete thr;
-    thr = NULL;
+    thr = 0;
 }
 
 #ifdef __MINGW32__
@@ -72,7 +99,7 @@ void cleanup()
 #error "Couldn't work out what the platform should be for update checking :-("
 #endif
 
-void *UpdateThread::run()
+static void update_check()
 {
     map<string,string> args;
     args["platform"] = PLATFORM;
@@ -92,7 +119,7 @@ void *UpdateThread::run()
     {
         Fl_AutoLock lock;
         LOG_WARN("Error in update check: %s", e.what());
-        return NULL;
+        return;
     }
 
     /* blocking download done, now get the lock: */
@@ -101,7 +128,7 @@ void *UpdateThread::run()
     if (response == "")
     {
         LOG_INFO("dl-fldigi is up to date");
-        return NULL;
+        return;
     }
 
     Json::Reader reader;
@@ -112,20 +139,18 @@ void *UpdateThread::run()
         !val["text"].isString() || !val["url"].isString())
     {
         LOG_WARN("Error in update check: Bad JSON");
-        return NULL;
+        return;
     }
 
     update_text = val["text"].asString();
     update_url = val["url"].asString();
 
     // Strange bug causing empty dialog boxes and unresponse process
-    // requires running got_update in the main thread, but whatever:
-    Fl::awake(got_update, NULL);
-    return NULL;
+    // requires running got_update in the main thread, but whatever.
+    update_new = true;
 }
 
-/* Called by main thread only, while holding lock */
-static void got_update(void *)
+static void show_update()
 {
     int c = fl_choice2("%s", "Close", "Open in browser", NULL,
                        update_text.c_str());
@@ -135,8 +160,6 @@ static void got_update(void *)
         // from fl_digi.h
         cb_mnuVisitURL(0, (void *) update_url.c_str());
     }
-
-    cleanup();
 }
 
 } /* namespace update */

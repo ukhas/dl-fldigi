@@ -36,6 +36,7 @@ DExtractorManager *extrmgr;
 DUploaderThread *uthr;
 static habitat::UKHASExtractor *ukhas;
 
+static EZ::Mutex rig_mutex;
 static time_t rig_freq_updated, rig_mode_updated;
 static long long rig_freq;
 static string rig_mode;
@@ -64,6 +65,9 @@ void cleanup()
     extrmgr = 0;
     ukhas = 0;
 
+    /* This prevents deadlocks with our use of Fl::lock in the uploader
+     * thread (which is a necessary evil since we're accessing loads of
+     * global fldigi stuff) */
     if (uthr)
         uthr->shutdown();
 
@@ -76,14 +80,14 @@ void cleanup()
 
 void rig_set_freq(long long freq)
 {
-    Fl_AutoLock lock;
+    EZ::MutexLock lock(rig_mutex);
     rig_freq_updated = time(NULL);
     rig_freq = freq;
 }
 
 void rig_set_mode(const string &mode)
 {
-    Fl_AutoLock lock;
+    EZ::MutexLock lock(rig_mutex);
     rig_mode_updated = time(NULL);
     rig_mode = mode;
 }

@@ -41,7 +41,8 @@ static void periodically(void *);
 
 /*
  * Functions init, ready and cleanup should only be called from main().
- * thread_death and periodically are called by FLTK, which will have the lock.
+ * thread_death and periodically are called by FLTK, which will have the Fl
+ * lock.
  */
 void init()
 {
