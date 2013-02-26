@@ -492,7 +492,11 @@ void ssdv_rx::put_byte(uint8_t byte, int lost)
 		
 		habString->value(msg);
 		habString->color(FL_GREEN);
-        habString->damage(FL_DAMAGE_ALL);
+		habString->damage(FL_DAMAGE_ALL);
+		
+		ReceiveText->addstr("\n");
+		ReceiveText->addstr(msg, FTextBase::QSY);
+		ReceiveText->addstr("\n");
 	}
 	
 	/* Initialise the decoder */
