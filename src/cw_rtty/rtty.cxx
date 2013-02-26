@@ -433,7 +433,7 @@ bool rtty::rx(bool bit)
 					lb = (lost - bytelen / 2) / bytelen;
 
 					/* HOOKS */
-					put_rx_ssdv(c, lb);
+					if(nbits == 8) put_rx_ssdv(c, lb);
 
 					if (lb != 0)
 						dl_fldigi::hbtint::extrmgr->skipped(lb);
