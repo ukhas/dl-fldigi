@@ -503,11 +503,16 @@ bool rtty::rx(bool bit)
 				if ((metric >= progStatus.sldrSquelchValue && progStatus.sqlonoff) || !progStatus.sqlonoff) {
 					c = decode_char();
 
+					if ( c != 0 && c != '\r') {
+						put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c, FTextBase::RECV, true);
+					}
+					flag = true;
+
 					/* lb = estimated bytes lost */
 					lb = (lost - bytelen / 2) / bytelen;
 
 					/* HOOKS */
-					put_rx_ssdv(c, lb);
+					if(nbits == 8) put_rx_ssdv(c, lb);
 
 					if (lb != 0)
 						dl_fldigi::hbtint::extrmgr->skipped(lb);
@@ -516,11 +521,6 @@ bool rtty::rx(bool bit)
 						dl_fldigi::hbtint::extrmgr->push(c, habitat::PUSH_BAUDOT_HACK);
 					else
 						dl_fldigi::hbtint::extrmgr->push(c);
-
-					if ( c != 0 && c != '\r') {
-						put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c);
-					}
-					flag = true;
 				}
 				lost = 0;
 			}
