@@ -1,6 +1,189 @@
 
 
+=Version 3.21.67=
+
+2013-01-29  David Freese  <w1hkj@w1hkj.com>
+
+	645acab: PSK viewer
+	63323a4: Contest fields
+	f3abd4c: RigCAT INIT/CLOSE
+	4af6dcd: Olivia FEC reset
+	f220d36: RTTY FSK modem
+	b8fd4db: Status / Tx Level Controls
+
+
+=Version 3.21.66=
+
+	305fa6d: Thor reset
+	d2dea40: File Selector
+	f83a413: Macros
+	d12f7da: CW modem
+	282886b: User configurable items
+
+
+=Version 3.21.65=
+
+	7680b05: High Speed / Multi-Carrier Modems
+
+
+=Version 3.21.64=
+
+
+2012-12-26  Makoto Fujiwara  <makoto@ki.nu>
+
+	0322dc9: NetBSD compile error
+
+2012-12-15  David Freese  <w1hkj@w1hkj.com>
+
+	05b3ad0: Dup Cty lookup
+	b02da36: Get RX buffer
+	d52579b: Capture Alt-F4
+
+
+=Version 3.21.63=
+
+	972865e: Macros LOG LNW EXEC
+	01ef002: ARQ Socket
+	261b7fb: Default char set
+	614a542: NBEMS.DIR
+	cb820ae: RTTY CR-CR-LF
+	de390ac: Control-V/Z
+
+
+=Version 3.21.62=
+
+	fec0ead: Pause-break
+	2ca1bf7: WF-only-escape
+	326a75d: REPEAT Macro
+	44e6ae6: MT63 Long
+
+
+=Version 3.21.61=
+
+
+2012-11-08  Dave Freese (none)  <dave@compaq>
+
+	c7f2918: ARQ server
+
+2012-11-04  David Freese  <w1hkj@w1hkj.com>
+
+	e388b7b: DistCheck cleanup
+
+
+=Version 3.21.60=
+
+	a239363: FLTK-1.1.x
+	7bd9355: Libtiniconv
+
+2012-10-31  John Phelps  <kl4yfd@gmail.com>
+
+	13fa1a0: Allow xmit of EOT character
+
+
+=Version 3.21.59=
+
+
+2012-10-29  Andrej Lajovic  <s57ln@hamradio.si>
+
+	0c1f371: UTF-8 overhaul
+
+2012-10-26  David Freese  <w1hkj@w1hkj.com>
+
+	1d6469f: Thumbdrive
+
+
+=Version 3.21.58=
+
+	6875022: Escape aborts
+
+
+=Version 3.21.57=
+
+	d925c85: Escape aborts clean start
+	0366447: TLF arq
+	d85631b: Logbook Dialogs
+
+
+=Version 3.21.56=
+
+	320fc54: ARQ rx/tx
+
+
+=Version 3.21.55=
+
+	06e5ed5: View browser
+	1390d0b: FLAMP interface fix
+
+
+=Version 3.21.54=
+
+
+2012-10-04  Andrej Lajovic  <s57ln@hamradio.si>
+
+	1abb9b9: UTF-8 wide characters
+	1b8cccd: flarq bug fix
+	bad1660: Add_tx_char
+
+
+=Version 3.21.53=
+
+
+2012-10-02  Kamal Mostafa  <kamal@whence.com>
+
+	199978a: Fix crash if no OSS mixer support
+
+2012-10-02  David Freese  <w1hkj@w1hkj.com>
+
+	a698359: Logbook Call width
+
+2012-09-29  Andrej Lajovic  <s57ln@hamradio.si>
+
+	a8a148f: Log file update
+	946bbb8: UTF-8 char echo
+	bab4a53: Hamlib sideband menu
+
+
+=Version 3.21.52=
+
+
+2012-09-21  David Freese  <w1hkj@w1hkj.com>
+
+	f8a6e1c: ASCII table correction
+
+
+=Version 3.21.51=
+
+	638a3c2: flmsg/flamp stream processing
+	8a41aad: DominoEX varicode
+	de95906: WRAP binary files
+
+2012-08-31  Andrej Lajovic  <s57ln@hamradio.si>
+
+	8fdb2ca: Backspaces patch
+
+2012-08-31  Daniel F1RMB  <f1rmb.daniel@gmail.com>
+
+	8d38260: UI enhancements
+
+2012-08-31  David Freese  <w1hkj@w1hkj.com>
+
+	29c9c6a: Combo update
+	a30ad34: Extract timeout
+	7286512: ASCII tables
+	e765c4e: Socket send on Linux
+
+2012-08-07  Kamal Mostafa  <kamal@whence.com>
+
+	8ab2f6e: fix spelling error
+
+2012-08-04  David Freese  <w1hkj@w1hkj.com>
+
+	2f7de4d: Logbook dialog initial size
+
+
 =Version 3.21.50=
+
+	5b175c1: RsID Multiple
 
 2012-08-02  David J Vanecek  <marmot@pennswoods.net>
 

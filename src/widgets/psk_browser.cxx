@@ -42,11 +42,13 @@
 #include "icons.h"
 #include "Viewer.h"
 
+#include <string>
+
 using namespace std;
 
-string pskBrowser::dkred;
-string pskBrowser::dkblue;
-string pskBrowser::dkgreen;
+string pskBrowser::hilite_color_1;
+string pskBrowser::hilite_color_3;
+string pskBrowser::hilite_color_2;
 string pskBrowser::bkselect;
 string pskBrowser::white;
 string pskBrowser::bkgnd[2];
@@ -56,7 +58,7 @@ int pskBrowser::cheight = 12;
 int pskBrowser::sbarwidth = 16;
 
 pskBrowser::pskBrowser(int x, int y, int w, int h, const char *l)
-	:Fl_Hold_Browser(x,y,w,h,l) 
+	:Fl_Hold_Browser(x,y,w,h,l)
 {
 	fnt = FL_COURIER;
 	siz = 12;
@@ -65,7 +67,13 @@ pskBrowser::pskBrowser(int x, int y, int w, int h, const char *l)
 	seek_re = NULL;
 	cols[0] = 80; cols[1] = 0;
 	evalcwidth();
+
+	HiLite_1 = fl_rgb_color(128, 0, 0);
+	HiLite_2 = fl_rgb_color(0, 128, 0);
+	HiLite_3 = fl_rgb_color(0, 0, 128);
+
 	makecolors();
+	cdistiller = reinterpret_cast<CharsetDistiller*>(operator new(MAXCHANNELS*sizeof(CharsetDistiller)));
 
 	string bline;
 	for (int i = 0; i < MAXCHANNELS; i++) {
@@ -74,11 +82,19 @@ pskBrowser::pskBrowser(int x, int y, int w, int h, const char *l)
 		bline = freqformat(i);
 		if ( i < progdefaults.VIEWERchannels) add(bline.c_str());
 		linechars[i] = 0;
-		firstUTF8[i] = 0;
+		new(&cdistiller[i]) CharsetDistiller(rxtx_charset);
 	}
 	nchars = (w - cols[0] - (sbarwidth + 2*BWSR_BORDER)) / cwidth;
 	nchars = nchars < 1 ? 1 : nchars;
 
+}
+
+pskBrowser::~pskBrowser()
+{
+	for (int i = MAXCHANNELS-1; i >= 0; i--)
+		cdistiller[i].~CharsetDistiller();
+	
+	operator delete(cdistiller);
 }
 
 void pskBrowser::evalcwidth()
@@ -149,6 +165,15 @@ void pskBrowser::swap(int i, int j)
 
 }
 
+static size_t case_find(string &haystack, string &needle)
+{
+	string Uhaystack = haystack;
+	string Uneedle = needle;
+	for (size_t i = 0; i < Uhaystack.length(); i++ ) Uhaystack[i] = toupper(Uhaystack[i]);
+	for (size_t i = 0; i < Uneedle.length(); i++ ) Uneedle[i] = toupper(Uneedle[i]);
+	return Uhaystack.find(Uneedle);
+}
+
 void pskBrowser::resize(int x, int y, int w, int h)
 {
 	if (w) {
@@ -162,19 +187,13 @@ void pskBrowser::resize(int x, int y, int w, int h)
 			if (progdefaults.VIEWERascend) j = progdefaults.VIEWERchannels - 1 - i;
 			else j = i;
 			bwsrline[j].clear();
-			firstUTF8[j] = 0;
 			linechars[j] = 0;
-//		size_t len = bwsrline[j].length();
-//		if (len > nchars)
-//			bwsrline[j] = bwsrline[j].substr(len - nchars);
 			bline = freqformat(j);
-			if (seek_re) {
-				if (seek_re->match(bwsrline[j].c_str(), REG_NOTBOL | REG_NOTEOL))
-					bline.append(dkred);
-			} else if (!progdefaults.myCall.empty() &&
-					strcasestr(bwsrline[j].c_str(), progdefaults.myCall.c_str()))
-				bline.append(dkgreen);
-//		bline.append(bwsrline[j]);
+			if (seek_re  && seek_re->match(bwsrline[j].c_str(), REG_NOTBOL | REG_NOTEOL))
+				bline.append(hilite_color_1);
+			else if (	!progdefaults.myCall.empty() && 
+						case_find (bwsrline[j], progdefaults.myCall ) != string::npos)
+				bline.append(hilite_color_2);
 			Fl_Hold_Browser::add(bline.c_str());
 		}
 	}
@@ -184,26 +203,14 @@ void pskBrowser::makecolors()
 {
 	char tempstr[20];
 
-	snprintf(tempstr, sizeof(tempstr), "@b@C%d",
-		 adjust_color(fl_color_cube(128 * (FL_NUM_RED - 1) / 255,
-					    0 * (FL_NUM_GREEN - 1) / 255,
-					    0 * (FL_NUM_BLUE - 1) / 255),
-			      FL_BACKGROUND2_COLOR)); // dark red
-	dkred = tempstr;
+	snprintf(tempstr, sizeof(tempstr), "@C%d", HiLite_1);
+	hilite_color_1 = tempstr;
 
-	snprintf(tempstr, sizeof(tempstr), "@b@C%d",
-		 adjust_color(fl_color_cube(0 * (FL_NUM_RED - 1) / 255,
-					    128 * (FL_NUM_GREEN - 1) / 255,
-					    0 * (FL_NUM_BLUE - 1) / 255),
-			      FL_BACKGROUND2_COLOR)); // dark green
-	dkgreen = tempstr;
+	snprintf(tempstr, sizeof(tempstr), "@C%d", HiLite_2);
+	hilite_color_2 = tempstr;
 
-	snprintf(tempstr, sizeof(tempstr), "@b@C%d",
-		 adjust_color(fl_color_cube(0 * (FL_NUM_RED - 1) / 255,
-					    0 * (FL_NUM_GREEN - 1) / 255,
-					    128 * (FL_NUM_BLUE - 1) / 255),
-			      FL_BACKGROUND2_COLOR)); // dark blue
-	dkblue = tempstr;
+	snprintf(tempstr, sizeof(tempstr), "@C%d", HiLite_3);
+	hilite_color_3 = tempstr;
 
 	snprintf(tempstr, sizeof(tempstr), "@C%d", FL_FOREGROUND_COLOR); // foreground
 	white = tempstr;
@@ -238,46 +245,39 @@ void pskBrowser::addchr(int ch, int freq, unsigned char c, int md) // 0 < ch < c
 	if (bwsrline[ch].length() == 1 && bwsrline[ch][0] == ' ') {
 		bwsrline[ch].clear();
 		linechars[ch] = 0;
-		firstUTF8[ch] = 0;
+	}
+	
+	cdistiller[ch].rx(c);
+
+	if (cdistiller[ch].data_length() > 0) {
+		bwsrline[ch] += cdistiller[ch].data();
+		linechars[ch] += cdistiller[ch].num_chars();
+		cdistiller[ch].clear();
 	}
 
-	if ((linechars[ch] > nchars) && (firstUTF8[ch] == 0)) {
+	if (linechars[ch] > nchars) {
 		if (progdefaults.VIEWERmarquee) {
 			while (linechars[ch] > nchars) {
-				if ((bwsrline[ch][0] & 0x80) == 0x80) // UTF-8 character
-					bwsrline[ch].erase(0,2);
-				else
-					bwsrline[ch].erase(0,1);
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+				bwsrline[ch].erase(0, fl_utf8len1(bwsrline[ch][0]));
+#else
+				bwsrline[ch].erase(0, 1);
+#endif
 				linechars[ch]--;
 			}
 		} else {
 			bwsrline[ch].clear();
 			linechars[ch] = 0;
-			firstUTF8[ch] = 0;
 		}
-	}
-
-	if (firstUTF8[ch] != 0) {
-		bwsrline[ch] += firstUTF8[ch];
-		bwsrline[ch] += c;
-		linechars[ch]++;
-		firstUTF8[ch] = 0;
-	} else if ((c & 0x80) == 0x80) {
-			firstUTF8[ch] = c;
-			return;
-	} else {
-		bwsrline[ch] += c;
-		linechars[ch]++;
 	}
 
 	nuline = freqformat(ch);
 
-	if (seek_re) {
-		if (seek_re->match(bwsrline[ch].c_str(), REG_NOTBOL | REG_NOTEOL))
-			nuline.append(dkred);
-	} else if (!progdefaults.myCall.empty() &&
-		 strcasestr(bwsrline[ch].c_str(), progdefaults.myCall.c_str()))
-		nuline.append(dkgreen);
+	if (seek_re  && seek_re->match(bwsrline[ch].c_str(), REG_NOTBOL | REG_NOTEOL))
+		nuline.append(hilite_color_1);
+	else if (	!progdefaults.myCall.empty() && 
+				case_find (bwsrline[ch], progdefaults.myCall ) != string::npos)
+		nuline.append(hilite_color_2);
 
 	nuline.append("@.").append(bwsrline[ch]);
 
@@ -334,3 +334,8 @@ int pskBrowser::freq(int i) { // 1 < i < progdefaults.VIEWERchannels
 		return (i < 1 ? 0 : i > MAXCHANNELS ? 0 : bwsrfreq[i - 1]); 
 }
 
+void pskBrowser::set_input_encoding(int encoding_id)
+{
+	for (int i = 0; i < MAXCHANNELS; i++)
+		cdistiller[i].set_input_encoding(encoding_id);
+}

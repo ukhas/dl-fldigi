@@ -30,6 +30,7 @@
 
 #include "gettext.h"
 #include "main.h"
+#include "misc.h"
 
 #include "fl_digi.h"
 #include "configuration.h"
@@ -131,6 +132,12 @@ static size_t mystrftime( char *s, size_t max, const char *fmt, const struct tm 
 	return strftime(s, max, fmt, tm);
 }
 
+static void pCOMMENT(std::string &s, size_t &i, size_t endbracket)
+{
+	s.replace(i, endbracket - i + 1, "");
+	if (s[i] == '\n') i++;
+}
+
 static void pFILE(std::string &s, size_t &i, size_t endbracket)
 {
 	std::string fname = s.substr(i+6, endbracket - i - 6);
@@ -195,7 +202,6 @@ static void pWPM(std::string &s, size_t &i, size_t endbracket)
 		if (number > 200) number = 200;
 		progdefaults.CWspeed = number;
 		sldrCWxmtWPM->value(number);
-printf("wpm %d\n", number);
 
 // second value = Farnsworth WPM
 		size_t pos;
@@ -207,7 +213,6 @@ printf("wpm %d\n", number);
 			if (number > 200) number = 200;
 			progdefaults.CWfarnsworth = number;
 			sldrCWfarnsworth->value(number);
-printf("fwpm %d\n", number);
 		}
 	}
 
@@ -404,6 +409,51 @@ static void pQuePOST(std::string &s, size_t &i, size_t endbracket)
 		return;
 	}
 	struct CMDS cmd = { s.substr(i, endbracket - i + 1), doPOST };
+	pushcmd(cmd);
+	s.replace(i, endbracket - i + 1, "^!");
+}
+
+static void setTXATTEN(float v)
+{
+	int d = (int)(v * 10);
+	v = d / 10.0;
+	v = clamp(v, -30.0, 0.0);
+	progdefaults.txlevel = v;
+	cntTxLevel->value(progdefaults.txlevel);;
+}
+
+static void pTXATTEN(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	float number;
+	std::string sVal = s.substr(i+9, endbracket - i - 9);
+	if (sVal.length() > 0) {
+		sscanf(sVal.c_str(), "%f", &number);
+		setTXATTEN(number);
+	}
+	s.replace(i, endbracket - i + 1, "");
+}
+
+static void doTXATTEN(std::string s)
+{
+	float number;
+	std::string sVal = s.substr(10);
+	if (sVal.length() > 0) {
+		sscanf(sVal.c_str(), "%f", &number);
+		REQ(setTXATTEN, number);
+	}
+}
+
+static void pQueTXATTEN(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	struct CMDS cmd = { s.substr(i, endbracket - i + 1), doTXATTEN };
 	pushcmd(cmd);
 	s.replace(i, endbracket - i + 1, "^!");
 }
@@ -779,6 +829,15 @@ static void pDTMF(std::string &s, size_t &i, size_t endbracket)
 	s.replace(i, endbracket - i + 1, "^!");
 }
 
+static void pPAUSE(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	s.replace (i, 7, "^p");
+}
+
 static void pRX(std::string &s, size_t &i, size_t endbracket)
 {
 	if (within_exec) {
@@ -906,8 +965,15 @@ static void pLOG(std::string &s, size_t &i, size_t endbracket)
 		s.replace(i, endbracket - i + 1, "");
 		return;
 	}
+	size_t start = s.find(':', i);
+	if (start != std::string::npos) {
+		string msg = inpNotes->value();
+		if (!msg.empty()) msg.append("\n");
+		msg.append(s.substr(start + 1, endbracket-start-1));
+		inpNotes->value(msg.c_str());
+	}
+	s.replace(i, endbracket - i + 1, "");
 	qsoSave_cb(0, 0);
-	s.replace(i, 5, "");
 }
 
 static void pLNW(std::string &s, size_t &i, size_t endbracket)
@@ -916,7 +982,14 @@ static void pLNW(std::string &s, size_t &i, size_t endbracket)
 		s.replace(i, endbracket - i + 1, "");
 		return;
 	}
-	s.replace(i, 5, "^L");
+	size_t start = s.find(':', i);
+	if (start != std::string::npos) {
+		string msg = inpNotes->value();
+		if (!msg.empty()) msg.append("\n");
+		msg.append(s.substr(start + 1, endbracket-start-1));
+		inpNotes->value(msg.c_str());
+	}
+	s.replace(i, endbracket - i + 1, "^L");
 }
 
 static void pCLRLOG(std::string &s, size_t &i, size_t endbracket)
@@ -1016,10 +1089,23 @@ static void doMODEM(std::string s)
 				set_contestia_tones((int)args[1]);
 			break;
 		case MODE_OLIVIA: // bandwidth, tones
-			if (args.at(0) != DBL_MIN)
-				set_olivia_bw((int)args[0]);
-			if (args.at(1) != DBL_MIN)
-				set_olivia_tones((int)args[1]);
+			if (args.at(0) != DBL_MIN && args.at(1) != DBL_MIN) {
+				int bw = (int)args[0];
+				int tones = (int)args[1];
+				if (bw == 250 && tones == 4) m = MODE_OLIVIA_4_250;
+				else if (bw == 250 && tones == 8) m = MODE_OLIVIA_8_250;
+				else if (bw == 500 && tones == 4) m = MODE_OLIVIA_4_500;
+				else if (bw == 500 && tones == 8) m = MODE_OLIVIA_8_500;
+				else if (bw == 500 && tones == 16) m = MODE_OLIVIA_16_500;
+				else if (bw == 1000 && tones == 8) m = MODE_OLIVIA_8_1000;
+				else if (bw == 1000 && tones == 16) m = MODE_OLIVIA_16_1000;
+				else if (bw == 1000 && tones == 32) m = MODE_OLIVIA_32_1000;
+				else if (bw == 2000 && tones == 64) m = MODE_OLIVIA_64_2000;
+				else {
+					set_olivia_bw(bw);
+					set_olivia_tones(tones);
+				}
+			}
 			break;
 		default:
 			break;
@@ -1107,10 +1193,23 @@ static void pMODEM(std::string &s, size_t &i, size_t endbracket)
 				set_contestia_tones((int)args[1]);
 			break;
 		case MODE_OLIVIA: // bandwidth, tones
-			if (args.at(0) != DBL_MIN)
-				set_olivia_bw((int)args[0]);
-			if (args.at(1) != DBL_MIN)
-				set_olivia_tones((int)args[1]);
+			if (args.at(0) != DBL_MIN && args.at(1) != DBL_MIN) {
+				int bw = (int)args[0];
+				int tones = (int)args[1];
+				if (bw == 250 && tones == 4) m = MODE_OLIVIA_4_250;
+				else if (bw == 250 && tones == 8) m = MODE_OLIVIA_8_250;
+				else if (bw == 500 && tones == 4) m = MODE_OLIVIA_4_500;
+				else if (bw == 500 && tones == 8) m = MODE_OLIVIA_8_500;
+				else if (bw == 500 && tones == 16) m = MODE_OLIVIA_16_500;
+				else if (bw == 1000 && tones == 8) m = MODE_OLIVIA_8_1000;
+				else if (bw == 1000 && tones == 16) m = MODE_OLIVIA_16_1000;
+				else if (bw == 1000 && tones == 32) m = MODE_OLIVIA_32_1000;
+				else if (bw == 2000 && tones == 64) m = MODE_OLIVIA_64_2000;
+				else {
+					set_olivia_bw(bw);
+					set_olivia_tones(tones);
+				}
+			}
 			break;
 		default:
 			break;
@@ -1361,6 +1460,18 @@ static void pQueGOFREQ(std::string &s, size_t &i, size_t endbracket)
 	s.replace(i, endbracket - i + 1, "^!");
 }
 
+static void pQRG(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	std::string prefix = "\n";
+	prefix.append(s.substr(i+5, endbracket - i - 5));
+	if (prefix.length()) note_qrg ( false, prefix.c_str(), "\n" );
+	s.replace(i, endbracket - i + 1, "");
+}
+
 static void pQSYTO(std::string &s, size_t &i, size_t endbracket)
 {
 	if (within_exec) {
@@ -1561,6 +1672,8 @@ void set_macro_env(void)
 	       FLDIGI_MODEM, FLDIGI_MODEM_LONG_NAME, FLDIGI_DIAL_FREQUENCY,
 	       FLDIGI_AUDIO_FREQUENCY, FLDIGI_FREQUENCY,
 
+	       FLDIGI_MACRO_FILE,
+	       FLDIGI_LOG_FILE,
 	       FLDIGI_LOG_FREQUENCY, FLDIGI_LOG_TIME_ON, FLDIGI_LOG_TIME_OFF, FLDIGI_LOG_CALL, FLDIGI_LOG_NAME,
 	       FLDIGI_LOG_RST_IN, FLDIGI_LOG_RST_OUT, FLDIGI_LOG_QTH, FLDIGI_LOG_LOCATOR,
 	       FLDIGI_LOG_NOTES, FLDIGI_AZ, ENV_SIZE
@@ -1595,6 +1708,9 @@ void set_macro_env(void)
 		{ "FLDIGI_FREQUENCY", "" },
 
 		// logging frame
+		{ "FLDIGI_MACRO_FILE", progStatus.LastMacroFile.c_str() },
+
+		{ "FLDIGI_LOG_FILE", progdefaults.logbookfilename.c_str() },
 		{ "FLDIGI_LOG_FREQUENCY", inpFreq->value() },
 		{ "FLDIGI_LOG_TIME_ON", inpTimeOn->value() },
 		{ "FLDIGI_LOG_TIME_OFF", inpTimeOff->value() },
@@ -1693,7 +1809,6 @@ static void pEXEC(std::string &s, size_t &i, size_t endbracket)
 	within_exec = true;
 	MACROTEXT m;
 	execstr = m.expandMacro(execstr, true);
-//	execstr.insert(0,ScriptsDir);
 	within_exec = false;
 
 	int pfd[2];
@@ -1721,7 +1836,7 @@ static void pEXEC(std::string &s, size_t &i, size_t endbracket)
 
 // parent
 	close(pfd[1]);
-	
+
 // give child process time to complete
 	MilliSleep(50);
 	FILE* fp = fdopen(pfd[0], "r");
@@ -1743,6 +1858,7 @@ static void pEXEC(std::string &s, size_t &i, size_t endbracket)
 		lnbuff.erase(lnbuff.length()-1,1);
 
 	if (!lnbuff.empty()) {
+		lnbuff = m.expandMacro(lnbuff, false);
 		s.insert(i, lnbuff);
 		i += lnbuff.length();
 	} else
@@ -1832,11 +1948,11 @@ static void MAPIT(int how)
 			if (sLOC[0] -'A' > 17 || sLOC[4] - 'A' > 23 ||
 				sLOC[1] -'A' > 17 || sLOC[5] - 'A' > 23 ||
 				!isdigit(sLOC[2]) || !isdigit(sLOC[3])) return;
-			lon =	-180.0 + 
+			lon =	-180.0 +
 					(sLOC[0] - 'A') * 20 +
 					(sLOC[2] - '0') * 2 +
 					(sLOC[4] - 'A' + 0.5) / 12;
-			lat = -90.0 + 
+			lat = -90.0 +
 					(sLOC[1] - 'A') * 10 +
 					(sLOC[3] - '0') +
 					(sLOC[5] - 'A' + 0.5) / 24;
@@ -1962,6 +2078,7 @@ static std::string rxcmds = "<!MOD<!WAI<!GOH<!QSY<!GOF<!RIG<!FIL";
 struct MTAGS { const char *mTAG; void (*fp)(std::string &, size_t&, size_t );};
 
 static const MTAGS mtags[] = {
+{"<COMMENT:",	pCOMMENT},
 {"<CALL>",		pCALL},
 {"<FREQ>",		pFREQ},
 {"<LOC>",		pLOC},
@@ -2002,8 +2119,8 @@ static const MTAGS mtags[] = {
 {"<XBEG>",		pXBEG},
 {"<XEND>",		pXEND},
 {"<SAVEXCHG>",	pSAVEXCHG},
-{"<LOG>",		pLOG},
-{"<LNW>",		pLNW},
+{"<LOG",		pLOG},
+{"<LNW",		pLNW},
 {"<CLRLOG>",	pCLRLOG},
 {"<EQSL",		pEQSL},
 {"<TIMER:",		pTIMER},
@@ -2017,6 +2134,7 @@ static const MTAGS mtags[] = {
 {"</EXEC>",		pEND_EXEC},
 {"<STOP>",		pSTOP},
 {"<CONT>",		pCONT},
+{"<PAUSE>",		pPAUSE},
 {"<GET>",		pGET},
 {"<CLRRX>",		pCLRRX},
 {"<CLRTX>",		pCLRTX},
@@ -2035,6 +2153,7 @@ static const MTAGS mtags[] = {
 {"<SRCHDN>",	pSRCHDN},
 {"<GOHOME>",	pGOHOME},
 {"<GOFREQ:",	pGOFREQ},
+{"<QRG:",		pQRG},
 {"<QSY:",		pQSY},
 {"<QSYTO>",		pQSYTO},
 {"<QSYFM>",		pQSYFM},
@@ -2044,6 +2163,7 @@ static const MTAGS mtags[] = {
 {"<MAPIT>",		pMAPIT},
 {"<REPEAT>",	pREPEAT},
 {"<SKED:",		pSKED},
+{"<TXATTEN:",	pTXATTEN},
 #ifdef __WIN32__
 {"<TALK:",		pTALK},
 #endif
@@ -2061,6 +2181,7 @@ static const MTAGS mtags[] = {
 {"<!MODEM:",	pQueMODEM},
 {"<!RIGMODE:",	pQueRIGMODE},
 {"<!FILWID:",	pQueFILWID},
+{"<!TXATTEN:",	pQueTXATTEN},
 {0, 0}
 };
 
@@ -2201,8 +2322,8 @@ void MACROTEXT::saveMacroFile()
 		deffilename.append(progStatus.LastMacroFile);
 
 	const char *p = FSEL::saveas(
-			_("Save macro file"), 
-			_("Fldigi macro definition file\t*.{mdf}"), 
+			_("Save macro file"),
+			_("Fldigi macro definition file\t*.{mdf}"),
 			deffilename.c_str());
     if (p) {
 		string sp = p;
@@ -2210,6 +2331,12 @@ void MACROTEXT::saveMacroFile()
 		saveMacros(sp.c_str());
 		progStatus.LastMacroFile = sp;
 	}
+}
+
+void MACROTEXT::savecurrentMACROS(std::string &s, size_t &i, size_t endbracket)
+{
+	saveMacros(progStatus.LastMacroFile.c_str());
+	s.replace(i, endbracket - i + 1, "");
 }
 
 void MACROTEXT::loadnewMACROS(std::string &s, size_t &i, size_t endbracket)
@@ -2232,7 +2359,7 @@ std::string MACROTEXT::expandMacro(std::string &s, bool recurse = false)
 		ToggleTXRX = false;
 	}
 //	mNbr = n;
-	expanded = s;//text[n];
+	expanded = s;
 	const MTAGS *pMtags;
 
 	xbeg = xend = -1;
@@ -2245,6 +2372,11 @@ std::string MACROTEXT::expandMacro(std::string &s, bool recurse = false)
 
 	while ((idx = expanded.find('<', idx)) != std::string::npos) {
 		size_t endbracket = expanded.find('>',idx);
+		if (expanded.find("<SAVE", idx) == idx) {
+			savecurrentMACROS(expanded, idx, endbracket);
+			idx++;
+			continue;
+		}
  		if (expanded.find("<MACROS:",idx) == idx) {
 			loadnewMACROS(expanded, idx, endbracket);
 			idx++;
@@ -2358,7 +2490,6 @@ void MACROTEXT::timed_execute()
 	TransmitText->clear();
 	text2send = expandMacro(exec_string);
 	TransmitText->add_text(text2send);
-//	TransmitText->addstr(text2send);
 	exec_string.clear();
 	active_modem->set_stopflag(false);
 	start_tx();
@@ -2379,7 +2510,6 @@ void MACROTEXT::execute(int n)
 
 	if (progStatus.repeatMacro == -1)
 		TransmitText->add_text( text2send );
-//		TransmitText->addstr( text2send );
 	else {
 		size_t p = std::string::npos;
 		text2send = text[n];
@@ -2388,7 +2518,6 @@ void MACROTEXT::execute(int n)
 		while ((p = text2send.find('>')) != std::string::npos)
 			text2send[p] = ']';
 		TransmitText->add_text( text2send );
-//		TransmitText->addstr( text2send );
 	}
 	text2send.clear();
 
@@ -2426,7 +2555,7 @@ void MACROTEXT::execute(int n)
 void MACROTEXT::repeat(int n)
 {
 	expandMacro(text[n]);
-	LOG_WARN("%s",text2repeat.c_str());
+	LOG_INFO("%s",text2repeat.c_str());
 	macro_idle_on = false;
 	if (idleTime) progStatus.repeatIdleTime = idleTime;
 }

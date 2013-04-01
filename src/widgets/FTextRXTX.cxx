@@ -214,7 +214,7 @@ int FTextRX::handle(int event)
 	case FL_MOVE: {
 		int p = xy_to_position(Fl::event_x(), Fl::event_y(), Fl_Text_Display_mod::CURSOR_POS);
 #if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-		if (sbuf->char_at(p) >= CLICK_START + FTEXT_DEF) {
+		if ((unsigned char)sbuf->byte_at(p) >= CLICK_START + FTEXT_DEF) {
 #else
 		if (sbuf->character(p) >= CLICK_START + FTEXT_DEF) {
 #endif
@@ -275,17 +275,13 @@ void FTextRX::add(unsigned int c, int attr)
 	case '\b':
 		// we don't call kf_backspace because it kills selected text
 		if (s_text.length()) {
-			if (tbuf->byte_at(tbuf->length() - 1 ) & 0x80) { //UTF-8 character
-				s_text.erase(s_text.end() - 2);
-				s_style.erase(s_style.end() - 2);
-				tbuf->remove(tbuf->length() - 2, tbuf->length());
-				sbuf->remove(sbuf->length() - 2, sbuf->length());
-			} else {
-				s_text.erase(s_text.end() - 1);
-				s_style.erase(s_style.end() - 1);
-				tbuf->remove(tbuf->length() - 1, tbuf->length());
-				sbuf->remove(sbuf->length() - 1, sbuf->length());
-			}
+			int character_start = tbuf->utf8_align(tbuf->length() - 1);
+			int character_length = fl_utf8len1(tbuf->byte_at(character_start));
+
+			tbuf->remove(character_start, tbuf->length());
+			sbuf->remove(character_start, sbuf->length());
+			s_text.resize(s_text.length() - character_length);
+			s_style.resize(s_style.length() - character_length);
 		}
 		break;
 	case '\n':
@@ -458,7 +454,7 @@ void FTextRX::handle_clickable(int x, int y)
 	pos = xy_to_position(x + this->x(), y + this->y(), CURSOR_POS);
 	// return unless clickable style
 #if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-	if ((style = sbuf->char_at(pos)) < CLICK_START + FTEXT_DEF)
+	if ((style = (unsigned char)sbuf->byte_at(pos)) < CLICK_START + FTEXT_DEF)
 #else
 	if ((style = sbuf->character(pos)) < CLICK_START + FTEXT_DEF)
 #endif
@@ -467,7 +463,7 @@ void FTextRX::handle_clickable(int x, int y)
 	int start, end;
 	for (start = pos-1; start >= 0; start--)
 #if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-		if (sbuf->char_at(start) != style)
+		if ((unsigned char)sbuf->byte_at(start) != style)
 #else
 		if (sbuf->character(start) != style)
 #endif
@@ -476,7 +472,7 @@ void FTextRX::handle_clickable(int x, int y)
 	int len = sbuf->length();
 	for (end = pos+1; end < len; end++)
 #if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-		if (sbuf->char_at(end) != style)
+		if ((unsigned char)sbuf->byte_at(end) != style)
 #else
 		if (sbuf->character(end) != style)
 #endif
@@ -917,9 +913,9 @@ bool FTextTX::eot(void)
 /// @return The next character, or ETX if the transmission has been paused, or
 /// NUL if no text should be transmitted.
 ///
-unsigned int FTextTX::nextChar(void)
+int FTextTX::nextChar(void)
 {
-	unsigned int c;
+	int c;
 
 	if (bkspaces) {
 		--bkspaces;
@@ -927,16 +923,14 @@ unsigned int FTextTX::nextChar(void)
 	}
 	else if (PauseBreak) {
 		PauseBreak = false;
-		c = 0x03;
-	}
+		c = GET_TX_CHAR_ETX;//0x03;
 #if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-	else if (insert_position() <= utf8_txpos) { // empty buffer or cursor inside transmitted text
+	} else if (insert_position() <= utf8_txpos) { // empty buffer or cursor inside transmitted text
 		c = -1;
 	} else {
-		int n;
-		if ((c = tbuf->get_char_at(utf8_txpos, n))) {
-//LOG_DEBUG("%04X, %d, %d ", c & 0xFFFF, utf8_txpos, n);
-			if (n == 1) c &= 0xFF;
+		if ((c = tbuf->char_at(utf8_txpos)) > 0) {
+			int n = fl_utf8bytes(c);
+
 			REQ(FTextTX::changed_cb, utf8_txpos, 0, 0, -1, static_cast<const char *>(0), this);
 			REQ(FTextTX::changed_cb, utf8_txpos+1, 0, 0, -1, static_cast<const char *>(0), this);
 			++txpos;
@@ -944,7 +938,7 @@ unsigned int FTextTX::nextChar(void)
 		} else
 			c = -1;
 #else
-	else if (insert_position() <= txpos) { // empty buffer or cursor inside transmitted text
+	} else if (insert_position() <= txpos) { // empty buffer or cursor inside transmitted text
 		c = -1;
 	} else {
 		if ((c = static_cast<unsigned char>(tbuf->character(txpos)))) {
@@ -990,6 +984,73 @@ void FTextTX::setFont(Fl_Font f, int attr)
 	show_font_warning(this);
 }
 
+/// Handles keyboard shorcuts
+///
+/// @param key
+//   pressed key
+///
+/// @return
+//   1 if shortcut is handled, otherwise 0.
+///
+int FTextTX::handle_key_shortcuts(int key)
+{
+	std::string etag = "";
+
+	switch (key) {
+	case 'c': // add <CALL> for SC-c
+	case 'm': // add <MYCALL> for SC-m
+	case 'n': // add <NAME> for SC-n
+	case 'r': // add <RST> for SC-r
+	case 'l': // add <MYLOC> for SC-l
+	case 'h': // add <MYQTH> for SC-h
+	case 'a': // add <ANTENNA> for SC-a
+		if ((Fl::event_state() & FL_CTRL) && (Fl::event_state() & FL_SHIFT))
+//		if ((Fl::event_state() & (FL_CTRL | FL_SHIFT))) // investigate why this doesn't work...
+		{
+			switch (key)
+			{
+			case 'c':
+				etag = inpCall->value();
+				break;
+			case 'm':
+				etag = progdefaults.myCall;
+				break;
+			case 'n':
+				etag = inpName->value();
+				break;
+			case 'r':
+			        {
+					std::string s;
+					etag = (s = inpRstIn->value()).length() ? s : std::string("599");
+				}
+				break;
+			case 'l':
+				etag = progdefaults.myLocator;
+				break;
+			case 'h':
+				etag = progdefaults.myQth;
+				break;
+			case 'a':
+				etag = progdefaults.myAntenna;
+			default:
+				break;
+			}
+			
+			// Add text + space if length is > 0
+			if (etag.length())
+				add_text(etag + std::string(" "));
+			
+			return 1;
+		}
+		break;
+		
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 /// Handles keyboard events to override Fl_Text_Editor_mod's handling of some
 /// keystrokes.
 ///
@@ -999,6 +1060,10 @@ void FTextTX::setFont(Fl_Font f, int attr)
 ///
 int FTextTX::handle_key(int key)
 {
+
+	if (handle_key_shortcuts(key))
+	    return 1;
+
 	switch (key) {
 	case FL_Escape: // set stop flag and clear
 	{
@@ -1014,6 +1079,8 @@ int FTextTX::handle_key(int key)
 	}
 
 		if (trx_state == STATE_TX && active_modem->get_stopflag() == false) {
+			kf_select_all(0, this);
+			kf_copy(0, this);
 			clear();
 			if (arq_text_available)
 				AbortARQ();
@@ -1025,6 +1092,7 @@ int FTextTX::handle_key(int key)
 
 		stopMacroTimer();
 		return 1;
+
 	case 't': // transmit for C-t
 		if (trx_state == STATE_RX && Fl::event_state() & FL_CTRL) {
 			menu_cb(TX_MENU_TX);
@@ -1039,6 +1107,7 @@ int FTextTX::handle_key(int key)
 		else if (!(Fl::event_state() & (FL_META | FL_ALT)))
 			break;
 		// fall through to (un)pause for M-r or A-r
+	
 	case FL_Pause:
 		if (trx_state != STATE_TX) {
 			start_tx();
@@ -1113,10 +1182,9 @@ int FTextTX::handle_key(int key)
 	{
 		int ipos = insert_position();
 #if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-		if (utf8_txpos == ipos) {
+		if (utf8_txpos > 0 && utf8_txpos == ipos) {
 			bkspaces++;
-			if (tbuf->byte_at(ipos - 1) & 0x80) utf8_txpos -= 2;
-			else utf8_txpos--;
+			utf8_txpos = tbuf->prev_char(ipos);
 			txpos--;
 		}
 #else

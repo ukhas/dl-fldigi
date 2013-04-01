@@ -1607,10 +1607,8 @@ void waterfall::Carrier(int f)
 	active_modem->set_freq(f);
 }
 
-extern void viewer_redraw();
 void waterfall::rfcarrier(long long cf) {
 	wfdisp->rfcarrier(cf);
-//	REQ(&viewer_redraw);
 }
 
 long long waterfall::rfcarrier() {

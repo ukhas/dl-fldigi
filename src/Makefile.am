@@ -3,6 +3,7 @@
 # License: GPLv3+: GNU GPL version 3 or later.
 
 bin_PROGRAMS =
+SUBDIRS =
 if WANT_FLDIGI
     bin_PROGRAMS += dl-fldigi
 endif
@@ -159,6 +160,7 @@ if WANT_FLDIGI
 	rm -f $(DESTDIR)/$(datadir)/pixmaps/dl-fldigi.xpm
 	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi.desktop
 	rm -f $(DESTDIR)/$(datadir)/applications/dl-fldigi-hab.desktop
+	rm -fr $(DESTDIR)/$(datadir)/dl-fldigi
 endif
 if WANT_FLARQ
 	rm -f $(DESTDIR)/$(datadir)/pixmaps/flarq.xpm
@@ -290,6 +292,8 @@ dl_fldigi_SOURCES += \
 	include/FreqControl.h \
 	include/analysis.h \
 	include/ascii.h \
+	include/charsetdistiller.h \
+	include/charsetlist.h \
 	include/colorbox.h \
 	include/colorsfonts.h \
 	include/combo.h \
@@ -412,6 +416,7 @@ dl_fldigi_SOURCES += \
 	include/logbook.h \
 	include/lgbook.h \
 	include/logsupport.h \
+	include/outputencoder.h \
 	include/qso_db.h \
 	include/table.h \
 	include/textio.h \
@@ -462,6 +467,8 @@ dl_fldigi_SOURCES += \
 	wefax/wefax.cxx \
 	wefax/wefax-pic.cxx \
 	misc/ascii.cxx \
+	misc/charsetdistiller.cxx \
+	misc/charsetlist.cxx \
 	misc/configuration.cxx \
 	misc/debug.cxx \
 	misc/dxcc.cxx \
@@ -473,6 +480,7 @@ dl_fldigi_SOURCES += \
 	misc/misc.cxx \
 	misc/network.cxx \
 	misc/newinstall.cxx \
+	misc/outputencoder.cxx \
 	misc/arq_io.cxx \
 	misc/pixmaps.cxx \
 	misc/pixmaps_tango.cxx \
@@ -580,7 +588,9 @@ dl_fldigi_SOURCES += \
 	dl_fldigi/gps.cxx \
 	dl_fldigi/hbtint.cxx \
 	dl_fldigi/update.cxx \
-	dl_fldigi/version.cxx
+	dl_fldigi/version.cxx \
+	libtiniconv/tiniconv.c \
+	libtiniconv/tiniconv_desc.c
 
 # Sources that are part of the distribution but are not compiled directly
 EXTRA_dl_fldigi_SOURCES += \
@@ -623,6 +633,7 @@ EXTRA_dl_fldigi_SOURCES += \
 	mt63/symbol.dat \
 	mt63/alias_k5.dat \
 	mt63/mt63intl.dat \
+	rsid/rsid_defs.cxx \
 	trx/tune.cxx \
 	dialogs/guide.cxx \
 	widgets/Fl_Text_Buffer_mod_1_1.cxx \
@@ -630,8 +641,62 @@ EXTRA_dl_fldigi_SOURCES += \
 	widgets/Fl_Text_Display_mod_1_1.cxx \
 	widgets/Fl_Text_Display_mod_1_3.cxx \
 	widgets/Fl_Text_Editor_mod_1_1.cxx \
-	widgets/Fl_Text_Editor_mod_1_3.cxx
-
+	widgets/Fl_Text_Editor_mod_1_3.cxx \
+	libtiniconv/tiniconv.h \
+	libtiniconv/tiniconv_int.h \
+	libtiniconv/encdec/ascii.h \
+	libtiniconv/encdec/big5.h \
+	libtiniconv/encdec/ces_big5.h \
+	libtiniconv/encdec/ces_gbk.h \
+	libtiniconv/encdec/cp1250.h \
+	libtiniconv/encdec/cp1251.h \
+	libtiniconv/encdec/cp1252.h \
+	libtiniconv/encdec/cp1253.h \
+	libtiniconv/encdec/cp1254.h \
+	libtiniconv/encdec/cp1255.h \
+	libtiniconv/encdec/cp1256.h \
+	libtiniconv/encdec/cp1257.h \
+	libtiniconv/encdec/cp1258.h \
+	libtiniconv/encdec/cp866.h \
+	libtiniconv/encdec/cp936ext.h \
+	libtiniconv/encdec/cp936.h \
+	libtiniconv/encdec/euc_cn.h \
+	libtiniconv/encdec/flushwc.h \
+	libtiniconv/encdec/gb2312.h \
+	libtiniconv/encdec/gbkext1.h \
+	libtiniconv/encdec/gbkext2.h \
+	libtiniconv/encdec/gbkext_inv.h \
+	libtiniconv/encdec/gbk.h \
+	libtiniconv/encdec/iso2022_jp.h \
+	libtiniconv/encdec/iso8859_10.h \
+	libtiniconv/encdec/iso8859_11.h \
+	libtiniconv/encdec/iso8859_13.h \
+	libtiniconv/encdec/iso8859_14.h \
+	libtiniconv/encdec/iso8859_15.h \
+	libtiniconv/encdec/iso8859_16.h \
+	libtiniconv/encdec/iso8859_1.h \
+	libtiniconv/encdec/iso8859_2.h \
+	libtiniconv/encdec/iso8859_3.h \
+	libtiniconv/encdec/iso8859_4.h \
+	libtiniconv/encdec/iso8859_5.h \
+	libtiniconv/encdec/iso8859_6.h \
+	libtiniconv/encdec/iso8859_7.h \
+	libtiniconv/encdec/iso8859_8.h \
+	libtiniconv/encdec/iso8859_9.h \
+	libtiniconv/encdec/jisx0201.h \
+	libtiniconv/encdec/jisx0208.h \
+	libtiniconv/encdec/koi8_r.h \
+	libtiniconv/encdec/koi8_ru.h \
+	libtiniconv/encdec/koi8_u.h \
+	libtiniconv/encdec/mac_cyrillic.h \
+	libtiniconv/encdec/ucs2.h \
+	libtiniconv/encdec/utf7.h \
+	libtiniconv/encdec/utf8.h \
+	libtiniconv/encdec/vietcomb.h \
+	libtiniconv/AUTHORS \
+	libtiniconv/COPYING \
+	libtiniconv/README \
+	libtiniconv/README.FLDIGI
 
 
 flarq_SOURCES += \

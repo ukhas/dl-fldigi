@@ -65,10 +65,24 @@ LOG_FILE_SOURCE(debug::LOG_ARQCONTROL);
 
 using namespace std;
 
+// ============================================================================
+// Implementation using thread vice the fldigi timeout facility
+// ============================================================================
+static pthread_t arq_thread;
+static pthread_mutex_t arq_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t tosend_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void *arq_loop(void *args);
+
+static bool arq_exit = false;
+static bool arq_enabled;
+
+static string tosend = "";
+static string enroute = "";
 //======================================================================
 // test code for pskmail eol issues
 
-const char *asc[256] = {
+static const char *asc[128] = {
 	"<NUL>", "<SOH>", "<STX>", "<ETX>",
 	"<EOT>", "<ENQ>", "<ACK>", "<BEL>",
 	"<BS>",  "<TAB>", "<LF>",  "<VT>", 
@@ -107,20 +121,18 @@ string noctrl(string src)
 {
 	static string retstr;
 	retstr.clear();
-	for (size_t i = 0; i < src.length(); i++) retstr.append(asc[(int)src[i]]);
+	for (size_t i = 0; i < src.length(); i++) retstr.append(asc[(int)src[i] & 0x7F]);
 	return retstr;
 }
 
 //======================================================================
 
 static string arqtext;
-//string::iterator pText;
 size_t pText;
 
 bool arq_text_available = false;
 string txstring;
 
-extern void send0x06();
 extern void parse_arqtext(string &toparse);
 
 static void set_button(Fl_Button* button, bool value)
@@ -200,8 +212,8 @@ void ParseTxRSID(string src)
 
 void parse_arqtext(string &toparse)
 {
-	string strCmdText;
-	string strSubCmd;
+static	string strCmdText;
+static	string strSubCmd;
 	unsigned long int idxCmd, idxCmdEnd, idxSubCmd, idxSubCmdEnd;
 
 	LOG_DEBUG("Arq text: %s", noctrl(toparse).c_str());
@@ -216,8 +228,9 @@ void parse_arqtext(string &toparse)
 		if (strCmdText == "server" && mailserver == false && mailclient == false) {
 			mailserver = true;
 			mailclient = false;
-			string PskMailLogName = PskMailDir;
-			PskMailLogName += "gMFSK.log";
+			string PskMailLogName;
+			PskMailLogName.assign(PskMailDir);
+			PskMailLogName.append("gMFSK.log");
 			Maillogfile = new cLogfile(PskMailLogName.c_str());
 			Maillogfile->log_to_file_start();
 			REQ(set_button, wf->xmtlock, 1);
@@ -228,8 +241,9 @@ void parse_arqtext(string &toparse)
 		} else if (strCmdText == "client" && mailclient == false && mailserver == false) {
 			mailclient = true;
 			mailserver = false;
-			string PskMailLogName = PskMailDir;
-			PskMailLogName += "gMFSK.log";
+			string PskMailLogName;
+			PskMailLogName.assign(PskMailDir);
+			PskMailLogName.append("gMFSK.log");
 			Maillogfile = new cLogfile(PskMailLogName.c_str());
 			Maillogfile->log_to_file_start();
 			REQ(set_button, wf->xmtlock, 0);
@@ -331,22 +345,22 @@ bool SysV_arqRx()
 // in $HOME
 
 void checkTLF() {
-	string TLFfile;
-	string TLFlogname;
+static	string TLFfile;
+static	string TLFlogname;
 	ifstream testFile;
 
 	tlfio = mailserver = mailclient = false;
 
-	TLFfile = PskMailDir;
-	TLFfile += "TLFfldigi";
+	TLFfile.assign(PskMailDir);
+	TLFfile.append("TLFfldigi");
 
 	testFile.open(TLFfile.c_str());
 	if (testFile.is_open()) {
 		testFile.close();
 		mailclient = true;
 		tlfio = true;
-		TLFlogname = PskMailDir;
-		TLFlogname += "gMFSK.log";
+		TLFlogname.assign(PskMailDir);
+		TLFlogname.append("gMFSK.log");
 		Maillogfile = new cLogfile(TLFlogname.c_str());
 		Maillogfile->log_to_file_start();
 	}
@@ -356,8 +370,9 @@ bool TLF_arqRx()
 {
 	time_t start_time, prog_time;
 	static char mailline[1000];
-	string sAutoFile = PskMailDir;
-	sAutoFile += "gmfsk_autofile";
+	static string sAutoFile;
+	sAutoFile.assign(PskMailDir);
+	sAutoFile.append("gmfsk_autofile");
 
 	ifstream autofile(sAutoFile.c_str());
 	if(autofile) {
@@ -403,7 +418,7 @@ bool WRAP_auto_arqRx()
 {
 	time_t start_time, prog_time;
 	static char mailline[1000];
-	string sAutoFile;
+	static string sAutoFile;
 	sAutoFile.assign(FLMSG_WRAP_auto_dir);
 	sAutoFile.append("wrap_auto_file");
 
@@ -434,7 +449,7 @@ bool WRAP_auto_arqRx()
 		std::remove (sAutoFile.c_str());
 
 		if (!txstring.empty()) {
-			arqtext = "\n....start\n";
+			arqtext.assign("\n....start\n");
 			arqtext.append(txstring);
 			arqtext.append("\n......end\n");
 			pText = 0;
@@ -452,22 +467,14 @@ bool WRAP_auto_arqRx()
 // Socket ARQ i/o used on all platforms
 //-----------------------------------------------------------------------------
 
-extern void arq_run(Socket s);
-extern void arq_stop();
-
-string errstring;
-string cmdstring;
-string response;
-bool isTxChar = false;
-bool isCmdChar = false;
-
-bool isNotMULTIPSK = true;
+static string errstring;
+static string cmdstring;
 
 static pthread_t* arq_socket_thread = 0;
 ARQ_SOCKET_Server* ARQ_SOCKET_Server::inst = 0;
+static std::vector<Socket> arqclient;
 
-Socket arqclient;
-bool isSocketConnected = false;
+void arq_run(Socket);
 
 ARQ_SOCKET_Server::ARQ_SOCKET_Server()
 {
@@ -490,8 +497,7 @@ ARQ_SOCKET_Server::~ARQ_SOCKET_Server()
 
 bool ARQ_SOCKET_Server::start(const char* node, const char* service)
 {
-	if (inst)
-		return false;
+	if (inst) return false;
 
 	inst = new ARQ_SOCKET_Server;
 
@@ -504,7 +510,7 @@ bool ARQ_SOCKET_Server::start(const char* node, const char* service)
 #endif
 	}
 	catch (const SocketException& e) {
-		errstring = "Could not start ARQ server (";
+		errstring.assign("Could not start ARQ server (");
 		errstring.append(e.what()).append(")");
 		if (e.error() == EADDRINUSE)
 			errstring.append("\nMultiple instances of fldigi??");
@@ -542,9 +548,11 @@ void* ARQ_SOCKET_Server::thread_func(void*)
 		try {
 #ifdef __WOE32__
 			if (inst->server_socket->wait(0))
-#endif
 				arq_run(inst->server_socket->accept());
+#else
+			arq_run(inst->server_socket->accept());
 			TEST_THREAD_CANCEL();
+#endif
 		}
 		catch (const SocketException& e) {
 			if (e.error() != EINTR) {
@@ -557,51 +565,79 @@ void* ARQ_SOCKET_Server::thread_func(void*)
 			break;
 		}
 	}
-	arq_stop();
+	if (!arqclient.empty()) {
+		vector<Socket>::iterator p = arqclient.begin();
+		while (p != arqclient.end()) {
+			try {
+				(*p).close();
+				arqclient.erase(p);
+			}
+			catch (...) {;}
+			p++;
+		}
+	}
 	inst->server_socket->close();
 	return NULL;
 }
 
 void arq_run(Socket s)
 {
+	pthread_mutex_lock (&arq_mutex);
+	LOG_INFO("Adding ARQ client %d", s.fd());
 	struct timeval t = { 0, 20000 };
-	arqclient = s;
-	arqclient.set_timeout(t);
-	arqclient.set_nonblocking();
-	isSocketConnected = true;
+	s.set_timeout(t);
+	s.set_nonblocking();
+	arqclient.push_back(s);
 	arqmode = true;
-}
-
-void arq_stop()
-{
-	arqclient.close();
-	isSocketConnected = false;
-	arqmode = false;
+	pthread_mutex_unlock (&arq_mutex);
 }
 
 void WriteARQsocket(unsigned char* data, size_t len)
 {
-	if (!isSocketConnected) return;
+	if (arqclient.empty()) return;
+	static string instr;
+	instr.clear();
+	vector<Socket>::iterator p;
 	try {
-		arqclient.send(data, len);
+		p = arqclient.begin();
+		while (p != arqclient.end()) {
+			(*p).wait(1);
+			(*p).send(data, len);
+			LOG_DEBUG("Wrote to socket %d", (*p).fd());
+			p++;
+		}
 	}
 	catch (const SocketException& e) {
-		LOG_ERROR("%s", e.what());
-		arq_stop();
+		LOG_ERROR("socket fd %d %s", (*p).fd(), e.what());
+		try {
+			(*p).close();
+			arqclient.erase(p);
+		} catch (...) {;}
+		if (arqclient.empty()) arqmode = false;
 	}
 }
 
 bool Socket_arqRx()
 {
-	if (!isSocketConnected) return false;
+	if (arqclient.empty()) return false;
 
-	string instr;
+	static string instr;
+	vector<Socket>::iterator p = arqclient.begin();
+	size_t n = 0;
+	instr.clear();
+
+	pthread_mutex_lock (&arq_mutex);
 
 	try {
-		size_t n = arqclient.recv(instr);
-		if ( n > 0)
-			txstring.append(instr);
-
+		while (p != arqclient.end()) {
+			LOG_DEBUG("Query %d", (*p).fd());
+			(*p).wait(0);
+			n = (*p).recv(instr);
+			if ( n > 0) {
+				txstring.append(instr);
+			}
+			p++;
+		}
 		if (!bSend0x06 && arqtext.empty() && !txstring.empty()) {
 			arqtext = txstring;
 			parse_arqtext(arqtext);
@@ -616,15 +652,24 @@ bool Socket_arqRx()
 			}
 			txstring.clear();
 			cmdstring.clear();
+			pthread_mutex_unlock (&arq_mutex);
 			return true;
 		}
 		cmdstring.clear();
+		pthread_mutex_unlock (&arq_mutex);
 		return false;
 	}
 	catch (const SocketException& e) {
-		arq_stop();
+		LOG_ERROR("socket fd %d %s", (*p).fd(), e.what());
+		try {
+			(*p).close();
+			arqclient.erase(p);
+		} catch (...) {;}
+		pthread_mutex_unlock (&arq_mutex);
 		return false;
 	}
+	pthread_mutex_unlock (&arq_mutex);
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -642,36 +687,17 @@ void WriteARQSysV(unsigned char data)
 }
 #endif
 
-void WriteARQ(unsigned char data)
-{
-	WriteARQsocket(&data, 1);
-#if !defined(__WOE32__) && !defined(__APPLE__)
-	WriteARQSysV(data);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-// Write End of Transmit character to ARQ client
-//-----------------------------------------------------------------------------
-
-void send0x06()
-{
-	if (trx_state == STATE_RX) {
-		bSend0x06 = false;
-		WriteARQ(0x06);
-	}
-}
-
 // ============================================================================
 // Implementation using thread vice the fldigi timeout facility
 // ============================================================================
-static pthread_t arq_thread;
-static pthread_mutex_t arq_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void *arq_loop(void *args);
-
-static bool arq_exit = false;
-static bool arq_enabled;
+void WriteARQ(unsigned char data)
+{
+	pthread_mutex_lock (&tosend_mutex);
+	tosend += data;
+	pthread_mutex_unlock (&tosend_mutex);
+	return;
+}
 
 static void *arq_loop(void *args)
 {
@@ -682,23 +708,42 @@ static void *arq_loop(void *args)
 		if (arq_exit)
 			break;
 
-		pthread_mutex_lock (&arq_mutex);
+		if (!tosend.empty()) {
+			pthread_mutex_lock(&tosend_mutex);
+			enroute = tosend;
+			tosend.clear();
+			pthread_mutex_unlock(&tosend_mutex);
 
-		if (bSend0x06)
-			send0x06();
+			pthread_mutex_lock (&arq_mutex);
+			WriteARQsocket((unsigned char*)enroute.c_str(), enroute.length());
+#if !defined(__WOE32__) && !defined(__APPLE__)
+			for (size_t i = 0; i < enroute.length(); i++)
+				WriteARQSysV((unsigned char)enroute[i]);
+#endif
+			pthread_mutex_unlock (&arq_mutex);
+		}
+
+		if (bSend0x06) {
+			pthread_mutex_lock (&arq_mutex);
+			string xmtdone;
+			xmtdone += 0x06;
+			WriteARQsocket((unsigned char*)xmtdone.c_str(), xmtdone.length());
+			bSend0x06 = false;
+			pthread_mutex_unlock (&arq_mutex);
+		}
 
 #if !defined(__WOE32__) && !defined(__APPLE__)
 		// order of precedence; Socket, Wrap autofile, TLF autofile
 		if (!Socket_arqRx())
 			if (!SysV_arqRx())
+				WRAP_auto_arqRx();
 				if (!WRAP_auto_arqRx())
 					TLF_arqRx();
 #else
 		if (!Socket_arqRx())
 			WRAP_auto_arqRx();
 #endif
-		pthread_mutex_unlock (&arq_mutex);
-		MilliSleep(50);
+		MilliSleep(100);
 
 	}
 // exit the arq thread
@@ -739,19 +784,19 @@ void arq_close(void)
 	arq_exit = false;
 }
 
-char arq_get_char()
+int arq_get_char()
 {
-	char c = 0;
+	int c = 0;
 	pthread_mutex_lock (&arq_mutex);
 	if (arq_text_available) {
-		if (pText != arqtext.length())
-			c = arqtext[pText++];
-		else {
+		if (pText != arqtext.length()) {
+			c = arqtext[pText++] & 0xFF;
+		} else {
 			arqtext.clear();
 			pText = 0;
 			bSend0x06 = true;
 			arq_text_available = false;
-			c = 0x03;
+			c = GET_TX_CHAR_ETX;
 		}
 	}
 	pthread_mutex_unlock (&arq_mutex);

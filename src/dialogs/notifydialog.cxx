@@ -9,9 +9,9 @@ Fl_Group *grpNotifyEvent=(Fl_Group *)0;
 
 Fl_Choice *mnuNotifyEvent=(Fl_Choice *)0;
 
-Fl_Light_Button *btnNotifyEnabled=(Fl_Light_Button *)0;
-
 Fl_Input2 *inpNotifyRE=(Fl_Input2 *)0;
+
+Fl_Light_Button *btnNotifyEnabled=(Fl_Light_Button *)0;
 
 Fl_Group *grpNotifyFilter=(Fl_Group *)0;
 
@@ -109,8 +109,6 @@ Fl_Double_Window* make_notify_window() {
       { mnuNotifyEvent = new Fl_Choice(10, 29, 205, 22);
         mnuNotifyEvent->down_box(FL_BORDER_BOX);
       } // Fl_Choice* mnuNotifyEvent
-      { btnNotifyEnabled = new Fl_Light_Button(131, 94, 80, 23, _("Enabled"));
-      } // Fl_Light_Button* btnNotifyEnabled
       { Fl_Input2* o = inpNotifyRE = new Fl_Input2(36, 61, 175, 23, _("RE:"));
         inpNotifyRE->box(FL_DOWN_BOX);
         inpNotifyRE->color(FL_BACKGROUND2_COLOR);
@@ -123,6 +121,8 @@ Fl_Double_Window* make_notify_window() {
         inpNotifyRE->when(FL_WHEN_RELEASE);
         o->labelsize(FL_NORMAL_SIZE);
       } // Fl_Input2* inpNotifyRE
+      { btnNotifyEnabled = new Fl_Light_Button(131, 94, 80, 23, _("Enabled"));
+      } // Fl_Light_Button* btnNotifyEnabled
       grpNotifyEvent->end();
     } // Fl_Group* grpNotifyEvent
     { grpNotifyFilter = new Fl_Group(2, 130, 219, 176, _("Filter"));

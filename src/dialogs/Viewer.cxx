@@ -66,23 +66,67 @@ static bool usb;
 
 void initViewer()
 {
-//	if (!pskviewer) return;
 	usb = wf->USB();
 	rfc = wf->rfcarrier();
 	if (mainViewer) {
 		mainViewer->usb = usb;
 		mainViewer->rfc = rfc;
 		mainViewer->setfont(progdefaults.ViewerFontnbr, progdefaults.ViewerFontsize);
+		mainViewer->HighLight_1(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight1.R,
+				progdefaults.bwsrHiLight1.B,
+				progdefaults.bwsrHiLight1.G));
+		mainViewer->HighLight_2(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight2.R,
+				progdefaults.bwsrHiLight2.B,
+				progdefaults.bwsrHiLight2.G));
+		mainViewer->HighLight_3(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight3.R,
+				progdefaults.bwsrHiLight3.B,
+				progdefaults.bwsrHiLight1.G));
+		mainViewer->makecolors();
 		mainViewer->clear();
+		if (active_modem->get_mode() == MODE_RTTY) {
+			mvsquelch->range(-12.0, 6.0);
+			mvsquelch->value(progStatus.VIEWER_rttysquelch);
+		} else {
+			mvsquelch->range(-3.0, 6.0);
+			mvsquelch->value(progStatus.VIEWER_psksquelch);
+		}
 	}
 	if (brwsViewer) {
 		brwsViewer->usb = usb;
 		brwsViewer->rfc = rfc;
-		sldrViewerSquelch->value(progStatus.VIEWERsquelch);
 		brwsViewer->setfont(progdefaults.ViewerFontnbr, progdefaults.ViewerFontsize);
+		brwsViewer->HighLight_1(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight1.R,
+				progdefaults.bwsrHiLight1.B,
+				progdefaults.bwsrHiLight1.G));
+		brwsViewer->HighLight_2(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight2.R,
+				progdefaults.bwsrHiLight2.B,
+				progdefaults.bwsrHiLight2.G));
+		brwsViewer->HighLight_3(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight3.R,
+				progdefaults.bwsrHiLight3.B,
+				progdefaults.bwsrHiLight1.G));
+		brwsViewer->makecolors();
+		brwsViewer->clear();
 		dlgViewer->size(dlgViewer->w(), dlgViewer->h() - brwsViewer->h() +
 			pskBrowser::cheight * progdefaults.VIEWERchannels + 4);
-		brwsViewer->clear();
+		if (active_modem->get_mode() == MODE_RTTY) {
+			sldrViewerSquelch->range(-12.0, 6.0);
+			sldrViewerSquelch->value(progStatus.VIEWER_rttysquelch);
+		} else {
+			sldrViewerSquelch->range(-3.0, 6.0);
+			sldrViewerSquelch->value(progStatus.VIEWER_psksquelch);
+		}
 	}
 	if (pskviewer) pskviewer->clear();
 	if (rttyviewer) rttyviewer->clear();
@@ -134,6 +178,22 @@ void viewer_redraw()
 	if (mainViewer) {
 		mainViewer->usb = usb;
 		mainViewer->rfc = rfc;
+		mainViewer->HighLight_1(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight1.R,
+				progdefaults.bwsrHiLight1.B,
+				progdefaults.bwsrHiLight1.G));
+		mainViewer->HighLight_2(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight2.R,
+				progdefaults.bwsrHiLight2.B,
+				progdefaults.bwsrHiLight2.G));
+		mainViewer->HighLight_3(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight3.R,
+				progdefaults.bwsrHiLight3.B,
+				progdefaults.bwsrHiLight1.G));
+		mainViewer->makecolors();
 		mainViewer->resize(mainViewer->x(), mainViewer->y(), mainViewer->w(), mainViewer->h());
 	}
 	if (dlgViewer) {
@@ -141,6 +201,22 @@ void viewer_redraw()
 		brwsViewer->rfc = rfc;
 		brwsViewer->resize(
 			brwsViewer->x(), brwsViewer->y(), brwsViewer->w(), brwsViewer->h());
+		brwsViewer->HighLight_1(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight1.R,
+				progdefaults.bwsrHiLight1.B,
+				progdefaults.bwsrHiLight1.G));
+		brwsViewer->HighLight_2(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight2.R,
+				progdefaults.bwsrHiLight2.B,
+				progdefaults.bwsrHiLight2.G));
+		brwsViewer->HighLight_3(
+			fl_rgb_color(
+				progdefaults.bwsrHiLight3.R,
+				progdefaults.bwsrHiLight3.B,
+				progdefaults.bwsrHiLight1.G));
+		brwsViewer->makecolors();
 		dlgViewer->redraw();
 	}
 }
@@ -202,9 +278,13 @@ static void cb_brwsViewer(Fl_Hold_Browser*, void*) {
 
 static void cb_Squelch(Fl_Slider *, void *)
 {
-	progStatus.VIEWERsquelch = sldrViewerSquelch->value();
+	if (active_modem->get_mode() == MODE_RTTY)
+		progStatus.VIEWER_rttysquelch = sldrViewerSquelch->value();
+	else
+		progStatus.VIEWER_psksquelch = sldrViewerSquelch->value();
+
 	if (mainViewer)
-		mvsquelch->value(progStatus.VIEWERsquelch);
+		mvsquelch->value(sldrViewerSquelch->value());
 }
 
 static void cb_Seek(Fl_Input *, void *)
@@ -231,9 +311,7 @@ Fl_Double_Window* createViewer(void)
 	int pad = BWSR_BORDER / 2;
 
 	int viewerwidth = progStatus.VIEWERwidth - 2*BWSR_BORDER;
-//		(progStatus.VIEWERnchars * pskBrowser::cwidth) + pskBrowser::sbarwidth;
 	int viewerheight = progStatus.VIEWERheight - 2 * BWSR_BORDER - pad - 20;
-//		pskBrowser::cheight * progdefaults.VIEWERchannels;
 
 	Fl_Double_Window* w = new Fl_Double_Window(progStatus.VIEWERxpos, progStatus.VIEWERypos,
 						   viewerwidth + 2 * BWSR_BORDER,
@@ -254,7 +332,6 @@ Fl_Double_Window* createViewer(void)
 	gseek->resizable(0);
 	gseek->end();
 
-//	brwsViewer = new pskBrowser(BWSR_BORDER, BWSR_BORDER, viewerwidth, viewerheight);
 	brwsViewer = new pskBrowser(BWSR_BORDER, viewer_inp_seek->y() + viewer_inp_seek->h(), viewerwidth, viewerheight);
 
 	brwsViewer->callback((Fl_Callback*)cb_brwsViewer);
@@ -284,9 +361,9 @@ Fl_Double_Window* createViewer(void)
 	sldrViewerSquelch->align(FL_ALIGN_RIGHT);
 	sldrViewerSquelch->tooltip(_("Set Viewer Squelch"));
 	sldrViewerSquelch->type(FL_HOR_NICE_SLIDER);
-	sldrViewerSquelch->range(-6.0, 20.0);
-	sldrViewerSquelch->step(0.5);
-	sldrViewerSquelch->value(progStatus.VIEWERsquelch);
+	sldrViewerSquelch->range(-12.0, 6.0);
+	sldrViewerSquelch->step(0.1);
+	sldrViewerSquelch->value(progStatus.VIEWER_psksquelch);
 	sldrViewerSquelch->callback((Fl_Callback*)cb_Squelch);
 	sldrViewerSquelch->color( fl_rgb_color(
 		progdefaults.bwsrSliderColor.R, 

@@ -245,42 +245,43 @@ char *Fl_Text_Buffer_mod::text_range(int start, int end) const {
  Pos must be at a character boundary.
  */
 unsigned int Fl_Text_Buffer_mod::char_at(int pos) const {  
-	if (pos < 0 || pos >= mLength)
-		return '\0';
+  if (pos < 0 || pos >= mLength)
+    return '\0';
   
-	IS_UTF8_ALIGNED2(this, (pos))
+  IS_UTF8_ALIGNED2(this, (pos))
   
-	const char *src = address(pos);
-	return *src;
-}
+  const char *src = address(pos);
+  return fl_utf8decode(src, 0, 0);
+} 
 
 /*
  Return a UTF-8 character at the given index.
  Pos must be at a character boundary.
  */
+
 unsigned int Fl_Text_Buffer_mod::get_char_at(int pos, int &len) const {  
-	if (pos < 0 || pos >= mLength) {
-		len = 1;
-		return 0;
-	}
+  if (pos < 0 || pos >= mLength)
+    return '\0';
   
-	IS_UTF8_ALIGNED2(this, (pos))
+  IS_UTF8_ALIGNED2(this, (pos))
   
-	const char *src = address(pos);
-	unsigned int code;
-	int codelen;
-	if (*src & 0x80) {              // what should be a multibyte encoding
-		fl_utf8decode(src, src+2, &codelen);
-		if (codelen == 2)
-			code = (*src << 8) | (*(src+1) & 0xFF);
-		else
-			code = *src & 0xFF;
-    } else {                      // handle the 1-byte utf8 encoding:
-      code = (*src & 0xFF);
-      codelen = 1;
+  const char *src = address(pos);
+  unsigned int code = 0;
+
+  if (*src & 0x80) {
+    fl_utf8decode(src, 0, &len);
+    
+    for (int i = 0; i < len && i < 4; i++) {
+      code <<= 8;
+      code |= (unsigned char)*(src + i) & 0xFF;
     }
-    len = codelen;
-	return code;
+  }
+  else {
+    code = *src;
+    len = 1;
+  }
+  
+  return code;
 }
 
 
@@ -337,10 +338,10 @@ void Fl_Text_Buffer_mod::replace(int start, int end, const char *text)
     return;
   if (start < 0)
     start = 0;
-  if (end < 0) // needed to prevent control-Z crash
-    end = 0;
   if (end > mLength)
     end = mLength;
+  if (end < start)
+    end = start;
 
   IS_UTF8_ALIGNED2(this, (start))
   IS_UTF8_ALIGNED2(this, (end))
@@ -895,7 +896,7 @@ int Fl_Text_Buffer_mod::findchars_backward( int startPos, const char *searchChar
     return 0;
   }
   while ( pos > 0 ) {
-    ch = char_at(pos);
+    ch = byte_at(pos);
     for ( c = searchChars; *c != '\0'; c++ ) {
       if ( ch == *c ) {
         *foundPos = pos;
@@ -934,7 +935,7 @@ int Fl_Text_Buffer_mod::findchars_forward( int startPos, const char *searchChars
   char ch = 0;
 
   while ( pos < length() ) {
-    ch = char_at(pos);
+    ch = byte_at(pos);
     for ( c = searchChars; *c != '\0'; c++ ) {
       if ( ch == *c ) {
         *foundPos = pos;

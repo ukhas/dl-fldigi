@@ -163,7 +163,11 @@
 
 #include "notifydialog.h"
 #include "macroedit.h"
+#include "rx_extract.h"
 #include "wefax-pic.h"
+#include "charsetdistiller.h"
+#include "charsetlist.h"
+#include "outputencoder.h"
 
 #include "ssdv_rx.h"
 
@@ -473,19 +477,18 @@ Fl_Pixmap 			*addrbookpixmap = 0;
 Pixmap				fldigi_icon_pixmap;
 #endif
 
+// for character set conversion
+int rxtx_charset = 0;
+static CharsetDistiller rx_chd(charset_list[rxtx_charset].tiniconv_id);
+static CharsetDistiller echo_chd(charset_list[rxtx_charset].tiniconv_id);
+static OutputEncoder    tx_encoder(charset_list[rxtx_charset].tiniconv_id);
+
 Fl_Menu_Item *getMenuItem(const char *caption, Fl_Menu_Item* submenu = 0);
 void UI_select();
 bool clean_exit(bool ask);
 
 void cb_init_mode(Fl_Widget *, void *arg);
 
-void cb_oliviaA(Fl_Widget *w, void *arg);
-void cb_oliviaB(Fl_Widget *w, void *arg);
-void cb_oliviaC(Fl_Widget *w, void *arg);
-void cb_oliviaD(Fl_Widget *w, void *arg);
-void cb_oliviaE(Fl_Widget *w, void *arg);
-void cb_oliviaF(Fl_Widget *w, void *arg);
-void cb_oliviaG(Fl_Widget *w, void *arg);
 void cb_oliviaCustom(Fl_Widget *w, void *arg);
 
 void cb_contestiaA(Fl_Widget *w, void *arg);
@@ -517,6 +520,7 @@ Fl_Menu_Item quick_change_psk[] = {
 	{ mode_info[MODE_PSK125].name, 0, cb_init_mode, (void *)MODE_PSK125 },
 	{ mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250 },
 	{ mode_info[MODE_PSK500].name, 0, cb_init_mode, (void *)MODE_PSK500 },
+	{ mode_info[MODE_PSK1000].name, 0, cb_init_mode, (void *)MODE_PSK1000 },
 	{ 0 }
 };
 
@@ -533,6 +537,46 @@ Fl_Menu_Item quick_change_pskr[] = {
 	{ mode_info[MODE_PSK125R].name, 0, cb_init_mode, (void *)MODE_PSK125R },
 	{ mode_info[MODE_PSK250R].name, 0, cb_init_mode, (void *)MODE_PSK250R },
 	{ mode_info[MODE_PSK500R].name, 0, cb_init_mode, (void *)MODE_PSK500R },
+	{ mode_info[MODE_PSK1000R].name, 0, cb_init_mode, (void *)MODE_PSK1000R },
+	{ 0 }
+};
+
+Fl_Menu_Item quick_change_psk_multiR[] = {
+	{ mode_info[MODE_4X_PSK63R].name, 0, cb_init_mode, (void *)MODE_4X_PSK63R },
+	{ mode_info[MODE_5X_PSK63R].name, 0, cb_init_mode, (void *)MODE_5X_PSK63R },
+	{ mode_info[MODE_10X_PSK63R].name, 0, cb_init_mode, (void *)MODE_10X_PSK63R },
+	{ mode_info[MODE_20X_PSK63R].name, 0, cb_init_mode, (void *)MODE_20X_PSK63R },
+	{ mode_info[MODE_32X_PSK63R].name, 0, cb_init_mode, (void *)MODE_32X_PSK63R },
+
+	{ mode_info[MODE_4X_PSK125R].name, 0, cb_init_mode, (void *)MODE_4X_PSK125R },
+	{ mode_info[MODE_5X_PSK125R].name, 0, cb_init_mode, (void *)MODE_5X_PSK125R },
+	{ mode_info[MODE_10X_PSK125R].name, 0, cb_init_mode, (void *)MODE_10X_PSK125R },
+	{ mode_info[MODE_12X_PSK125R].name, 0, cb_init_mode, (void *)MODE_12X_PSK125R },
+	{ mode_info[MODE_16X_PSK125R].name, 0, cb_init_mode, (void *)MODE_16X_PSK125R },
+
+	{ mode_info[MODE_2X_PSK250R].name, 0, cb_init_mode, (void *)MODE_2X_PSK250R },
+	{ mode_info[MODE_3X_PSK250R].name, 0, cb_init_mode, (void *)MODE_3X_PSK250R },
+	{ mode_info[MODE_5X_PSK250R].name, 0, cb_init_mode, (void *)MODE_5X_PSK250R },
+	{ mode_info[MODE_6X_PSK250R].name, 0, cb_init_mode, (void *)MODE_6X_PSK250R },
+	{ mode_info[MODE_7X_PSK250R].name, 0, cb_init_mode, (void *)MODE_7X_PSK250R },
+
+	{ mode_info[MODE_2X_PSK500R].name, 0, cb_init_mode, (void *)MODE_2X_PSK500R },
+	{ mode_info[MODE_3X_PSK500R].name, 0, cb_init_mode, (void *)MODE_3X_PSK500R },
+	{ mode_info[MODE_4X_PSK500R].name, 0, cb_init_mode, (void *)MODE_4X_PSK500R },
+
+	{ mode_info[MODE_2X_PSK800R].name, 0, cb_init_mode, (void *)MODE_2X_PSK800R },
+
+	{ mode_info[MODE_2X_PSK1000R].name, 0, cb_init_mode, (void *)MODE_2X_PSK1000R },
+	{ 0 }
+};
+
+Fl_Menu_Item quick_change_psk_multi[] = {
+	{ mode_info[MODE_12X_PSK125].name, 0, cb_init_mode, (void *)MODE_12X_PSK125 },
+	{ mode_info[MODE_6X_PSK250].name, 0, cb_init_mode, (void *)MODE_6X_PSK250 },
+	{ mode_info[MODE_2X_PSK500].name, 0, cb_init_mode, (void *)MODE_2X_PSK500 },
+	{ mode_info[MODE_4X_PSK500].name, 0, cb_init_mode, (void *)MODE_4X_PSK500 },
+	{ mode_info[MODE_2X_PSK800].name, 0, cb_init_mode, (void *)MODE_2X_PSK800 },
+	{ mode_info[MODE_2X_PSK1000].name, 0, cb_init_mode, (void *)MODE_2X_PSK1000 },
 	{ 0 }
 };
 
@@ -545,6 +589,7 @@ Fl_Menu_Item quick_change_mfsk[] = {
 	{ mode_info[MODE_MFSK31].name, 0, cb_init_mode, (void *)MODE_MFSK31 },
 	{ mode_info[MODE_MFSK32].name, 0, cb_init_mode, (void *)MODE_MFSK32 },
 	{ mode_info[MODE_MFSK64].name, 0, cb_init_mode, (void *)MODE_MFSK64 },
+	{ mode_info[MODE_MFSK128].name, 0, cb_init_mode, (void *)MODE_MFSK128 },
 	{ 0 }
 };
 
@@ -574,6 +619,10 @@ Fl_Menu_Item quick_change_thor[] = {
 	{ mode_info[MODE_THOR11].name, 0, cb_init_mode, (void *)MODE_THOR11 },
 	{ mode_info[MODE_THOR16].name, 0, cb_init_mode, (void *)MODE_THOR16 },
 	{ mode_info[MODE_THOR22].name, 0, cb_init_mode, (void *)MODE_THOR22 },
+	{ mode_info[MODE_THOR25x4].name, 0, cb_init_mode, (void *)MODE_THOR25x4 },
+	{ mode_info[MODE_THOR50x1].name, 0, cb_init_mode, (void *)MODE_THOR50x1 },
+	{ mode_info[MODE_THOR50x2].name, 0, cb_init_mode, (void *)MODE_THOR50x2 },
+	{ mode_info[MODE_THOR100].name, 0, cb_init_mode, (void *)MODE_THOR100 },
 	{ 0 }
 };
 
@@ -584,6 +633,8 @@ Fl_Menu_Item quick_change_domino[] = {
 	{ mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11 },
 	{ mode_info[MODE_DOMINOEX16].name, 0, cb_init_mode, (void *)MODE_DOMINOEX16 },
 	{ mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22 },
+	{ mode_info[MODE_DOMINOEX44].name, 0, cb_init_mode, (void *)MODE_DOMINOEX44 },
+	{ mode_info[MODE_DOMINOEX88].name, 0, cb_init_mode, (void *)MODE_DOMINOEX88 },
 	{ 0 }
 };
 
@@ -609,13 +660,15 @@ Fl_Menu_Item quick_change_throb[] = {
 };
 
 Fl_Menu_Item quick_change_olivia[] = {
-	{ "8/250", 0, cb_oliviaA, (void *)MODE_OLIVIA },
-	{ "4/500", 0, cb_oliviaF, (void *)MODE_OLIVIA },
-	{ "8/500", 0, cb_oliviaB, (void *)MODE_OLIVIA },
-	{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA },
-	{ "8/1000", 0, cb_oliviaD, (void *)MODE_OLIVIA },
-	{ "32/1000", 0, cb_oliviaE, (void *)MODE_OLIVIA },
-	{ "64/2000", 0, cb_oliviaG, (void *)MODE_OLIVIA },
+	{ mode_info[MODE_OLIVIA_4_250].name, 0, cb_init_mode, (void *)MODE_OLIVIA_4_250 },
+	{ mode_info[MODE_OLIVIA_8_250].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_250 },
+	{ mode_info[MODE_OLIVIA_4_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_4_500 },
+	{ mode_info[MODE_OLIVIA_8_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_500 },
+	{ mode_info[MODE_OLIVIA_16_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_16_500 },
+	{ mode_info[MODE_OLIVIA_8_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_1000 },
+	{ mode_info[MODE_OLIVIA_16_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_16_1000 },
+	{ mode_info[MODE_OLIVIA_32_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_32_1000 },
+	{ mode_info[MODE_OLIVIA_64_2000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_64_2000 },
 	{ _("Custom..."), 0, cb_oliviaCustom, (void *)MODE_OLIVIA },
 	{ 0 }
 };
@@ -653,6 +706,8 @@ inline int minmax(int val, int min, int max)
 // Olivia
 void set_olivia_default_integ()
 {
+	if (!progdefaults.olivia_reset_fec) return;
+
 	int tones = progdefaults.oliviatones;
 	int bw = progdefaults.oliviabw;
 
@@ -668,62 +723,6 @@ void set_olivia_tab_widgets()
 	mnuOlivia_Bandwidth->value(progdefaults.oliviabw);
 	mnuOlivia_Tones->value(progdefaults.oliviatones);
 	set_olivia_default_integ();
-}
-
-void cb_oliviaA(Fl_Widget *w, void *arg)
-{
-	progdefaults.oliviatones = 2;
-	progdefaults.oliviabw = 1;
-	set_olivia_tab_widgets();
-	cb_init_mode(w, arg);
-}
-
-void cb_oliviaB(Fl_Widget *w, void *arg)
-{
-	progdefaults.oliviatones = 2;
-	progdefaults.oliviabw = 2;
-	set_olivia_tab_widgets();
-	cb_init_mode(w, arg);
-}
-
-void cb_oliviaC(Fl_Widget *w, void *arg)
-{
-	progdefaults.oliviatones = 3;
-	progdefaults.oliviabw = 2;
-	set_olivia_tab_widgets();
-	cb_init_mode(w, arg);
-}
-
-void cb_oliviaD(Fl_Widget *w, void *arg)
-{
-	progdefaults.oliviatones = 2;
-	progdefaults.oliviabw = 3;
-	set_olivia_tab_widgets();
-	cb_init_mode(w, arg);
-}
-
-void cb_oliviaE(Fl_Widget *w, void *arg)
-{
-	progdefaults.oliviatones = 4;
-	progdefaults.oliviabw = 3;
-	set_olivia_tab_widgets();
-	cb_init_mode(w, arg);
-}
-
-void cb_oliviaF(Fl_Widget *w, void *arg)
-{
-	progdefaults.oliviatones = 1;
-	progdefaults.oliviabw = 2;
-	set_olivia_tab_widgets();
-	cb_init_mode(w, arg);
-}
-
-void cb_oliviaG(Fl_Widget *w, void *arg)
-{
-	progdefaults.oliviatones = 5;
-	progdefaults.oliviabw = 4;
-	set_olivia_tab_widgets();
-	cb_init_mode(w, arg);
 }
 
 void cb_oliviaCustom(Fl_Widget *w, void *arg)
@@ -985,10 +984,27 @@ void startup_modem(modem* m, int f)
 		wefax_pic::hide_both();
 	}
 
-	if (id == MODE_RTTY)
-	    sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
-	else if (id >= MODE_PSK_FIRST && id <= MODE_PSK_LAST)
+	if (id == MODE_RTTY) {
+		sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
+		if (mvsquelch) {
+			mvsquelch->value(progStatus.VIEWER_rttysquelch);
+			mvsquelch->range(-12.0, 6.0);
+		}
+		if (sldrViewerSquelch) {
+			sldrViewerSquelch->value(progStatus.VIEWER_rttysquelch);
+			sldrViewerSquelch->range(-12.0, 6.0);
+		}
+	} else if (id >= MODE_PSK_FIRST && id <= MODE_PSK_LAST) {
 		m->set_sigsearch(SIGSEARCH);
+		if (mvsquelch) {
+			mvsquelch->value(progStatus.VIEWER_psksquelch);
+			mvsquelch->range(-3.0, 6.0);
+		}
+		if (sldrViewerSquelch) {
+			sldrViewerSquelch->value(progStatus.VIEWER_psksquelch);
+			sldrViewerSquelch->range(-3.0, 6.0);
+		}
+	}
 
 	if (m->get_cap() & modem::CAP_AFC) {
 		btnAFC->value(progStatus.afconoff);
@@ -1180,6 +1196,7 @@ void init_modem(trx_mode mode, int freq)
 
 	case MODE_THOR4: case MODE_THOR5: case MODE_THOR8:
 	case MODE_THOR11:case MODE_THOR16: case MODE_THOR22: 
+	case MODE_THOR25x4: case MODE_THOR50x1: case MODE_THOR50x2: case MODE_THOR100: 
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new thor(mode), freq);
 		quick_change = quick_change_thor;
@@ -1188,6 +1205,7 @@ void init_modem(trx_mode mode, int freq)
 
 	case MODE_DOMINOEX4: case MODE_DOMINOEX5: case MODE_DOMINOEX8:
 	case MODE_DOMINOEX11: case MODE_DOMINOEX16: case MODE_DOMINOEX22:
+	case MODE_DOMINOEX44: case MODE_DOMINOEX88:
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new dominoex(mode), freq);
 		quick_change = quick_change_domino;
@@ -1215,6 +1233,7 @@ void init_modem(trx_mode mode, int freq)
 	case MODE_MFSK8:
 	case MODE_MFSK16:
 	case MODE_MFSK32:
+	case MODE_MFSK128 :
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new mfsk(mode), freq);
 		quick_change = quick_change_mfsk;
@@ -1245,6 +1264,7 @@ void init_modem(trx_mode mode, int freq)
 
 	case MODE_PSK31: case MODE_PSK63: case MODE_PSK63F:
 	case MODE_PSK125: case MODE_PSK250: case MODE_PSK500:
+	case MODE_PSK1000:
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new psk(mode), freq);
 		quick_change = quick_change_psk;
@@ -1257,15 +1277,67 @@ void init_modem(trx_mode mode, int freq)
 		modem_config_tab = tabPSK;
 		break;
 	case MODE_PSK125R: case MODE_PSK250R: case MODE_PSK500R:
+	case MODE_PSK1000R:
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new psk(mode), freq);
 		quick_change = quick_change_pskr;
 		modem_config_tab = tabPSK;
 		break;
 
-	case MODE_OLIVIA:
+	case MODE_12X_PSK125 :
+	case MODE_6X_PSK250 :
+	case MODE_2X_PSK500 :
+	case MODE_4X_PSK500 :
+	case MODE_2X_PSK800 :
+	case MODE_2X_PSK1000 :
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
-			      *mode_info[mode].modem = new olivia, freq);
+			      *mode_info[mode].modem = new psk(mode), freq);
+		quick_change = quick_change_psk_multi;
+		modem_config_tab = tabPSK;
+		break;
+
+	case MODE_4X_PSK63R :
+	case MODE_5X_PSK63R :
+	case MODE_10X_PSK63R :
+	case MODE_20X_PSK63R :
+	case MODE_32X_PSK63R :
+
+	case MODE_4X_PSK125R :
+	case MODE_5X_PSK125R :
+	case MODE_10X_PSK125R :
+	case MODE_12X_PSK125R :
+	case MODE_16X_PSK125R :
+
+	case MODE_2X_PSK250R :
+	case MODE_3X_PSK250R :
+	case MODE_5X_PSK250R :
+	case MODE_6X_PSK250R :
+	case MODE_7X_PSK250R :
+
+	case MODE_2X_PSK500R :
+	case MODE_3X_PSK500R :
+	case MODE_4X_PSK500R :
+
+	case MODE_2X_PSK800R :
+	case MODE_2X_PSK1000R :
+		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
+			      *mode_info[mode].modem = new psk(mode), freq);
+		quick_change = quick_change_psk_multiR;
+		modem_config_tab = tabPSK;
+		break;
+
+	case MODE_OLIVIA:
+	case MODE_OLIVIA_4_250:
+	case MODE_OLIVIA_8_250:
+	case MODE_OLIVIA_4_500:
+	case MODE_OLIVIA_8_500:
+	case MODE_OLIVIA_16_500:
+	case MODE_OLIVIA_8_1000:
+	case MODE_OLIVIA_16_1000:
+	case MODE_OLIVIA_32_1000:
+	case MODE_OLIVIA_64_2000:
+		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
+			      *mode_info[mode].modem = new olivia(mode), freq);
 		modem_config_tab = tabOlivia;
 		quick_change = quick_change_olivia;
 		break;
@@ -1346,6 +1418,46 @@ void cb_init_mode(Fl_Widget *, void *mode)
 	init_modem(reinterpret_cast<trx_mode>(mode));
 }
 
+// character set selection menu
+
+void cb_charset_menu(Fl_Widget *, void *charset)
+{
+	rxtx_charset = reinterpret_cast<intptr_t>(charset);
+	int tiniconv_id = charset_list[rxtx_charset].tiniconv_id;
+
+	// order all converters to switch to the new encoding
+	rx_chd.set_input_encoding(tiniconv_id);
+	echo_chd.set_input_encoding(tiniconv_id);
+	tx_encoder.set_output_encoding(tiniconv_id);
+
+	if (mainViewer)
+		mainViewer->set_input_encoding(tiniconv_id);
+	if (brwsViewer)
+		brwsViewer->set_input_encoding(tiniconv_id);
+
+	// update the button
+	CHARSETstatus->label(charset_list[rxtx_charset].name);
+	progdefaults.charset_name = charset_list[rxtx_charset].name;
+	restoreFocus();
+}
+
+void populate_charset_menu(void)
+{
+	for (unsigned int i = 0; i < number_of_charsets; i++)
+		CHARSETstatus->add(charset_list[i].name, 0, cb_charset_menu, (void *)charset_list[i].tiniconv_id);
+}
+
+void set_default_charset(void)
+{
+	// find the position of the default charset in charset_list[] and
+	// trigger the callback
+	for (unsigned int i = 0; i < number_of_charsets; i++) {
+		if (strcmp(charset_list[i].name, progdefaults.charset_name.c_str()) == 0) {
+			cb_charset_menu(0, (void *)charset_list[i].tiniconv_id);
+			return;
+		}
+	}
+}
 
 void restoreFocus(Fl_Widget* w)
 {
@@ -1637,7 +1749,7 @@ void cb_logfile(Fl_Widget* w, void*)
 	if (progStatus.LOGenabled == true) {
     	Date tdy;
 	    string lfname = HomeDir;
-	    lfname.append("fldigi");
+	    lfname.append("dl-fldigi");
 	    lfname.append(tdy.szDate(2));
 	    lfname.append(".log");
 	   	logfile = new cLogfile(lfname);
@@ -2277,30 +2389,25 @@ if (bHAB) return;
 	if (inpTimeOn == inpTimeOn1) inpTimeOn2->value(inpTimeOn->value());
 	else inpTimeOn1->value(inpTimeOn->value());
 
-	if (progdefaults.EnableDupCheck) {
-		DupCheck();
-		return restoreFocus(w);
-	}
-
 	SearchLastQSO(inpCall->value());
 
-	if (inpAZ->value()[0])
-		return restoreFocus(w);
-
-	if (!progdefaults.autofill_qso_fields)
-		return restoreFocus(w);
-	const struct dxcc* e = dxcc_lookup(inpCall->value());
-	if (!e)
-		return restoreFocus(w);
-	double lon, lat, distance, azimuth;
-	if (locator2longlat(&lon, &lat, progdefaults.myLocator.c_str()) == RIG_OK &&
-	    qrb(lon, lat, -e->longitude, e->latitude, &distance, &azimuth) == RIG_OK) {
-		char az[4];
-		snprintf(az, sizeof(az), "%3.0f", azimuth);
-		inpAZ->value(az, sizeof(az) - 1);
+	if (!inpAZ->value()[0] && progdefaults.autofill_qso_fields) {
+		const struct dxcc* e = dxcc_lookup(inpCall->value());
+		if (e) {
+			double lon, lat, distance, azimuth;
+			if (locator2longlat(&lon, &lat, progdefaults.myLocator.c_str()) == RIG_OK &&
+				qrb(lon, lat, -e->longitude, e->latitude, &distance, &azimuth) == RIG_OK) {
+				char az[4];
+				snprintf(az, sizeof(az), "%3.0f", azimuth);
+				inpAZ->value(az, sizeof(az) - 1);
+			}
+			inpCountry->value(e->country);
+			inpCountry->position(0);
+		}
 	}
-	inpCountry->value(e->country);
-	inpCountry->position(0);
+
+	if (progdefaults.EnableDupCheck)
+		DupCheck();
 
 	restoreFocus(w);
 }
@@ -2368,6 +2475,8 @@ void qsoClear_cb(Fl_Widget *b, void *)
 void qsoSave_cb(Fl_Widget *b, void *)
 {
 	string havecall = inpCall->value();
+	string timeon = inpTimeOn->value();
+
 	while (!havecall.empty() && havecall[0] == ' ') havecall.erase(0,1);
 	if (havecall.empty()) {
 		fl_message2(_("Enter a CALL !"));
@@ -2376,6 +2485,12 @@ void qsoSave_cb(Fl_Widget *b, void *)
 	}
 	sDate_off = zdate();
 	sTime_off = ztime();
+
+	if (!timeon.empty())
+	  sTime_on = timeon.c_str();
+	else
+	  sTime_on = sTime_off;
+
 	submit_log();
 	if (progdefaults.ClearOnSave)
 		clearQSO();
@@ -2544,9 +2659,13 @@ void cb_XmtMixer(Fl_Widget *w, void *d)
 
 void cb_mvsquelch(Fl_Widget *w, void *d)
 {
-	progStatus.VIEWERsquelch = mvsquelch->value();
+	if (active_modem->get_mode() == MODE_RTTY)
+		progStatus.VIEWER_rttysquelch = mvsquelch->value();
+	else
+		progStatus.VIEWER_psksquelch = mvsquelch->value();
+
 	if (sldrViewerSquelch)
-		sldrViewerSquelch->value(progStatus.VIEWERsquelch);
+		sldrViewerSquelch->value(mvsquelch->value());
 }
 
 void cb_btnClearMViewer(Fl_Widget *w, void *d)
@@ -2560,6 +2679,8 @@ void cb_btnClearMViewer(Fl_Widget *w, void *d)
 
 int default_handler(int event)
 {
+	if (bWF_only) return 1;
+
 	if (event != FL_SHORTCUT)
 		return 0;
 
@@ -2570,14 +2691,16 @@ int default_handler(int event)
 	}
 
 	Fl_Widget* w = Fl::focus();
+	int key = Fl::event_key();
+
+	if ((key == FL_F + 4) && Fl::event_alt()) clean_exit(true);
 
 	if (w == fl_digi_main || w->window() == fl_digi_main) {
-		int key = Fl::event_key();
 		if (key == FL_Escape || (key >= FL_F && key <= FL_F_Last) ||
 			((key == '1' || key == '2' || key == '3' || key == '4') && Fl::event_alt())) {
 			TransmitText->take_focus();
 			TransmitText->handle(FL_KEYBOARD);
-			w->take_focus(); // remove this to leave tx text focused
+//			w->take_focus(); // remove this to leave tx text focused
 			return 1;
 		}
 #ifdef __APPLE__
@@ -2603,6 +2726,13 @@ int default_handler(int event)
 	}
 	else if (w == dlgLogbook || w->window() == dlgLogbook)
 		return log_search_handler(event);
+
+	else if ((Fl::event_key() == FL_Escape) ||
+			(Fl::event_ctrl() && ((key == 'z' || key == 'Z')) &&
+			TransmitText->visible_focus()))
+		return 1;
+
+	else if (Fl::event_ctrl()) return w->handle(FL_KEYBOARD);
 
 	return 0;
 }
@@ -2648,6 +2778,22 @@ bool save_on_exit() {
 }
 
 bool clean_exit(bool ask) {
+
+	
+	if (progdefaults.confirmExit && (!(progdefaults.changed && progdefaults.SaveConfig) ||
+					 !(macros.changed && progdefaults.SaveMacros) ||
+					 !(!oktoclear && progdefaults.NagMe)))
+	{
+		switch (fl_choice2(_("Really want to quit?"), NULL, _("No"), _("Yes")))
+		{
+		case 0:
+		case 1:
+			return false;
+		case 2:
+			break;
+		}
+	}
+		
 	if (ask)
 		if (!save_on_exit()) return false;
 
@@ -3229,8 +3375,10 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_DOMINOEX5].name, 0, cb_init_mode, (void *)MODE_DOMINOEX5, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX8].name, 0, cb_init_mode, (void *)MODE_DOMINOEX8, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_DOMINOEX16].name, 0, cb_init_mode, (void *)MODE_DOMINOEX16, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_DOMINOEX16].name, 0, cb_init_mode, (void *)MODE_DOMINOEX16, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_DOMINOEX44].name, 0,  cb_init_mode, (void *)MODE_DOMINOEX44, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_DOMINOEX88].name, 0,  cb_init_mode, (void *)MODE_DOMINOEX88, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"Hell", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3248,10 +3396,11 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_MFSK8].name, 0,  cb_init_mode, (void *)MODE_MFSK8, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK11].name, 0,  cb_init_mode, (void *)MODE_MFSK11, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK16].name, 0,  cb_init_mode, (void *)MODE_MFSK16, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MFSK22].name, 0,  cb_init_mode, (void *)MODE_MFSK22, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MFSK22].name, 0,  cb_init_mode, (void *)MODE_MFSK22, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK31].name, 0,  cb_init_mode, (void *)MODE_MFSK31, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK32].name, 0,  cb_init_mode, (void *)MODE_MFSK32, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_MFSK64].name, 0,  cb_init_mode, (void *)MODE_MFSK64, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MFSK128].name, 0,  cb_init_mode, (void *)MODE_MFSK128, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"MT63", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3261,13 +3410,15 @@ Fl_Menu_Item menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 { OLIVIA_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "8/250", 0, cb_oliviaA, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ "4/500", 0, cb_oliviaF, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "8/500", 0, cb_oliviaB, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ "8/1000", 0, cb_oliviaD, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "32/1000", 0, cb_oliviaE, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ "64/2000", 0, cb_oliviaG, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_4_250].name, 0, cb_init_mode, (void *)MODE_OLIVIA_4_250, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_8_250].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_250, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_4_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_4_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_8_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_16_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_16_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_8_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_16_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_16_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_32_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_32_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_64_2000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_64_2000, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { _("Custom..."), 0, cb_oliviaCustom, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -3278,6 +3429,15 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_PSK125].name, 0, cb_init_mode, (void *)MODE_PSK125, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_PSK500].name, 0, cb_init_mode, (void *)MODE_PSK500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_PSK1000].name, 0, cb_init_mode, (void *)MODE_PSK1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{"MultiCarrier", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_12X_PSK125].name, 0, cb_init_mode, (void *)MODE_12X_PSK125, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_6X_PSK250].name, 0, cb_init_mode, (void *)MODE_6X_PSK250, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_2X_PSK500].name, 0, cb_init_mode, (void *)MODE_2X_PSK500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_4X_PSK500].name, 0, cb_init_mode, (void *)MODE_4X_PSK500, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_2X_PSK800].name, 0, cb_init_mode, (void *)MODE_2X_PSK800, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_2X_PSK1000].name, 0, cb_init_mode, (void *)MODE_2X_PSK1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
 {0,0,0,0,0,0,0,0,0},
 
 {"QPSK", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3292,6 +3452,29 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_PSK125R].name, 0, cb_init_mode, (void *)MODE_PSK125R, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_PSK250R].name, 0, cb_init_mode, (void *)MODE_PSK250R, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_PSK500R].name, 0, cb_init_mode, (void *)MODE_PSK500R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_PSK1000R].name, 0, cb_init_mode, (void *)MODE_PSK1000R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{"MultiCarrier", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_4X_PSK63R].name, 0, cb_init_mode, (void *)MODE_4X_PSK63R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_5X_PSK63R].name, 0, cb_init_mode, (void *)MODE_5X_PSK63R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_10X_PSK63R].name, 0, cb_init_mode, (void *)MODE_10X_PSK63R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_20X_PSK63R].name, 0, cb_init_mode, (void *)MODE_20X_PSK63R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_32X_PSK63R].name, 0, cb_init_mode, (void *)MODE_32X_PSK63R, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_4X_PSK125R].name, 0, cb_init_mode, (void *)MODE_4X_PSK125R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_5X_PSK125R].name, 0, cb_init_mode, (void *)MODE_5X_PSK125R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_10X_PSK125R].name, 0, cb_init_mode, (void *)MODE_10X_PSK125R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_12X_PSK125R].name, 0, cb_init_mode, (void *)MODE_12X_PSK125R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_16X_PSK125R].name, 0, cb_init_mode, (void *)MODE_16X_PSK125R, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_2X_PSK250R].name, 0, cb_init_mode, (void *)MODE_2X_PSK250R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_3X_PSK250R].name, 0, cb_init_mode, (void *)MODE_3X_PSK250R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_5X_PSK250R].name, 0, cb_init_mode, (void *)MODE_5X_PSK250R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_6X_PSK250R].name, 0, cb_init_mode, (void *)MODE_6X_PSK250R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_7X_PSK250R].name, 0, cb_init_mode, (void *)MODE_7X_PSK250R, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_2X_PSK500R].name, 0, cb_init_mode, (void *)MODE_2X_PSK500R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_3X_PSK500R].name, 0, cb_init_mode, (void *)MODE_3X_PSK500R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_4X_PSK500R].name, 0, cb_init_mode, (void *)MODE_4X_PSK500R, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_2X_PSK800R].name, 0, cb_init_mode, (void *)MODE_2X_PSK800R, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_2X_PSK1000R].name, 0, cb_init_mode, (void *)MODE_2X_PSK1000R, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{0,0,0,0,0,0,0,0,0},
 {0,0,0,0,0,0,0,0,0},
 
 { RTTY_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3307,8 +3490,12 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_THOR5].name, 0, cb_init_mode, (void *)MODE_THOR5, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_THOR8].name, 0, cb_init_mode, (void *)MODE_THOR8, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_THOR11].name, 0, cb_init_mode, (void *)MODE_THOR11, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_THOR16].name, 0, cb_init_mode, (void *)MODE_THOR16, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_THOR16].name, 0, cb_init_mode, (void *)MODE_THOR16, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_THOR22].name, 0, cb_init_mode, (void *)MODE_THOR22, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_THOR25x4].name, 0,  cb_init_mode, (void *)MODE_THOR25x4, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_THOR50x1].name, 0,  cb_init_mode, (void *)MODE_THOR50x1, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_THOR50x2].name, 0,  cb_init_mode, (void *)MODE_THOR50x2, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_THOR100].name, 0,  cb_init_mode, (void *)MODE_THOR100, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"Throb", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -3325,26 +3512,17 @@ Fl_Menu_Item menu_[] = {
 { mode_info[MODE_WEFAX_288].name, 0,  cb_init_mode, (void *)MODE_WEFAX_288, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"Navtex/SitorB", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{"Navtex/SitorB", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_NAVTEX].name, 0,  cb_init_mode, (void *)MODE_NAVTEX, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_SITORB].name, 0,  cb_init_mode, (void *)MODE_SITORB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"NBEMS modes", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MFSK16].name, 0,  cb_init_mode, (void *)MODE_MFSK16, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MFSK32].name, 0,  cb_init_mode, (void *)MODE_MFSK32, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_PSK125].name, 0, cb_init_mode, (void *)MODE_PSK125, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{0,0,0,0,0,0,0,0,0},
+{ mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_ANALYSIS].name, 0, cb_init_mode, (void *)MODE_ANALYSIS, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 
 { mode_info[MODE_NULL].name, 0, cb_init_mode, (void *)MODE_NULL, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_SSB].name, 0, cb_init_mode, (void *)MODE_SSB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
-{ mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
-
-{ mode_info[MODE_ANALYSIS].name, 0, cb_init_mode, (void *)MODE_ANALYSIS, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { OPMODES_FEWER, 0, cb_opmode_show, 0, FL_MENU_INVISIBLE, FL_NORMAL_LABEL, FL_HELVETICA_ITALIC, 14, 0 },
 {0,0,0,0,0,0,0,0,0},
 
@@ -3353,7 +3531,8 @@ Fl_Menu_Item menu_[] = {
 { make_icon_label(_("Colors && Fonts"), preferences_desktop_font_icon), 0, (Fl_Callback*)cb_mnuConfigFonts, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("User Interface")), 0,  (Fl_Callback*)cb_mnuUI, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Waterfall"), waterfall_icon), 0,  (Fl_Callback*)cb_mnuConfigWaterfall, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
-{ make_icon_label(_("Waterfall controls")), 0,  (Fl_Callback*)cb_mnuConfigWFcontrols, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
+{ make_icon_label(_("Waterfall controls")), 0,  (Fl_Callback*)cb_mnuConfigWFcontrols, 0, FL_MENU_DIVIDER, 
+_FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Modems"), emblems_system_icon), 0, (Fl_Callback*)cb_mnuConfigModems, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(RIGCONTROL_MLABEL, multimedia_player_icon), 0, (Fl_Callback*)cb_mnuConfigRigCtrl, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Sound Card"), audio_card_icon), 0, (Fl_Callback*)cb_mnuConfigSoundCard, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
@@ -3367,7 +3546,7 @@ Fl_Menu_Item menu_[] = {
 
 { VIEW_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 
-{"View/Hide Channels", 'v', (Fl_Callback*)cb_view_hide_channels, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("View/Hide Channels")), 'v', (Fl_Callback*)cb_view_hide_channels, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 
 { make_icon_label(_("Floating scope"), utilities_system_monitor_icon), 'd', (Fl_Callback*)cb_mnuDigiscope, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(MFSK_IMAGE_MLABEL, image_icon), 'm', (Fl_Callback*)cb_mnuPicViewer, 0, FL_MENU_INACTIVE, _FL_MULTI_LABEL, 0, 14, 0},
@@ -3392,15 +3571,15 @@ Fl_Menu_Item menu_[] = {
 
 {0,0,0,0,0,0,0,0,0},
 
-{_("&Logbook"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ _("&Logbook"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
 { make_icon_label(_("View")), 'l', (Fl_Callback*)cb_mnuShowLogbook, 0, FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 
-{"ADIF", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("ADIF")), 0, 0, 0, FL_SUBMENU, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Merge...")), 0, (Fl_Callback*)cb_mnuMergeADIF_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Export...")), 0, (Fl_Callback*)cb_mnuExportADIF_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"Reports", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ make_icon_label(_("Reports")), 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Text...")), 0, (Fl_Callback*)cb_mnuExportTEXT_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("CSV...")), 0, (Fl_Callback*)cb_mnuExportCSV_log, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
 { make_icon_label(_("Cabrillo...")), 0, (Fl_Callback*)cb_Export_Cabrillo, 0, 0, _FL_MULTI_LABEL, 0, 14, 0},
@@ -4092,7 +4271,7 @@ void LOGBOOK_colors_font()
 	int width_date = fl_width("888888888") + wh;
 	int width_time = fl_width("23:59:599");
 //	int width_call = fl_width("WW/WW8WWW/WW.");
-	int width_freq = fl_width("99.9999999");
+	int width_freq = fl_width("WW/WW8WWW/WW.");//fl_width("99.9999999");
 	int width_rst  = fl_width("5999");
 	int width_pwr  = fl_width("0000");
 	int width_loc  = fl_width("XX88XXX");
@@ -4212,10 +4391,27 @@ void LOGBOOK_colors_font()
 // browser (table)
 	ypos += btns[0]->h() + 4;
 
+	wBrowser->font(progdefaults.LOGBOOKtextfont);
+	wBrowser->fontsize(progdefaults.LOGBOOKtextsize);
 	wBrowser->color(progdefaults.LOGBOOKcolor);
 	wBrowser->selection_color(FL_SELECTION_COLOR);
 
 	wBrowser->resize(wBrowser->x(), ypos, dlgLogbook->w() - 2*wBrowser->x(), dlgLogbook->h() - 2 - ypos);
+
+	int twidth = wBrowser->w() - wBrowser->scrollbSize() - 4;
+	int datewidth = fl_width( "8", 9 ) + 4;
+	int timewidth = fl_width( "8", 6 ) + 4;
+	int callwidth = fl_width( "W", 12) + 4;
+	int freqwidth = fl_width( "8", 10) + 4;
+	int modewidth = fl_width( "W", 20) + 4;
+	int namewidth = twidth - datewidth - timewidth - callwidth - freqwidth - modewidth;
+
+	wBrowser->columnWidth (0, datewidth); // Date column
+	wBrowser->columnWidth (1, timewidth); // Time column
+	wBrowser->columnWidth (2, callwidth); // Callsign column
+	wBrowser->columnWidth (3, namewidth); // Name column
+	wBrowser->columnWidth (4, freqwidth); // Frequency column
+	wBrowser->columnWidth (5, modewidth); // Mode column
 
 	dlgLogbook->init_sizes();
 	dlgLogbook->damage();
@@ -4747,7 +4943,7 @@ void create_fl_digi_main_primary() {
 			qsoSave3->callback(qsoSave_cb, 0);
 			qsoSave3->tooltip(_("Save"));
 
-			fl_font(FL_HELVETICA, FL_NORMAL_SIZE);
+			fl_font(FL_HELVETICA, 14);//FL_NORMAL_SIZE);
 			const char *label2a = _("On");
 			const char *label3a = _("Off");
 			const char *label4a = _("Call");
@@ -4755,7 +4951,7 @@ void create_fl_digi_main_primary() {
 			const char *label6a = _("# R");
 			const char *label7a = _("Ex");
 			const char *xData = "00000";
-			const char *xCall = "WW8WWW";//"WW8WWW/WWWW";
+			const char *xCall = "WW8WWW/WW";//"WW8WWW/WWWW";
 			int   wData = static_cast<int>(fl_width(xData));
 			int   wCall = static_cast<int>(fl_width(xCall));
 
@@ -4937,9 +5133,9 @@ void create_fl_digi_main_primary() {
 					// squelch
 					mvsquelch = new Fl_Value_Slider2(g->x()+2, g->y()+1, g->w() - 75 - 2, g->h()-2);
 					mvsquelch->type(FL_HOR_NICE_SLIDER);
-					mvsquelch->range(-6.0, 20.0);
-					mvsquelch->value(progStatus.VIEWERsquelch);
-					mvsquelch->step(0.5);
+					mvsquelch->range(-3.0, 6.0);
+					mvsquelch->value(progStatus.VIEWER_psksquelch);
+					mvsquelch->step(0.1);
 					mvsquelch->color( fl_rgb_color(
 						progdefaults.bwsrSliderColor.R, 
 						progdefaults.bwsrSliderColor.G,
@@ -5355,13 +5551,15 @@ Fl_Menu_Item alt_menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {"Olivia", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ "8/250", 0, cb_oliviaA, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "4/500", 0, cb_oliviaF, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "8/500", 0, cb_oliviaB, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "16/500", 0, cb_oliviaC, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ "8/1000", 0, cb_oliviaD, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ "32/1000", 0, cb_oliviaE, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ "64/2000", 0, cb_oliviaG, (void *)MODE_OLIVIA, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_4_250].name, 0, cb_init_mode, (void *)MODE_OLIVIA_4_250, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_8_250].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_250, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_4_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_4_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_8_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_16_500].name, 0, cb_init_mode, (void *)MODE_OLIVIA_16_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_8_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_8_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_16_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_16_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_32_1000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_32_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_OLIVIA_64_2000].name, 0, cb_init_mode, (void *)MODE_OLIVIA_64_2000, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { _("Custom..."), 0, cb_oliviaCustom, (void *)MODE_OLIVIA, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
@@ -5420,26 +5618,18 @@ Fl_Menu_Item alt_menu_[] = {
 { mode_info[MODE_WEFAX_288].name, 0,  cb_init_mode, (void *)MODE_WEFAX_288, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"Navtex/SitorB", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
+{"Navtex/SitorB", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_NAVTEX].name, 0,  cb_init_mode, (void *)MODE_NAVTEX, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_SITORB].name, 0,  cb_init_mode, (void *)MODE_SITORB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
-{"NBEMS modes", 0, 0, 0, FL_SUBMENU | FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_DOMINOEX11].name, 0, cb_init_mode, (void *)MODE_DOMINOEX11, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_DOMINOEX22].name, 0, cb_init_mode, (void *)MODE_DOMINOEX22, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MFSK16].name, 0,  cb_init_mode, (void *)MODE_MFSK16, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MFSK32].name, 0,  cb_init_mode, (void *)MODE_MFSK32, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_PSK125].name, 0, cb_init_mode, (void *)MODE_PSK125, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_PSK250].name, 0, cb_init_mode, (void *)MODE_PSK250, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{0,0,0,0,0,0,0,0,0},
+
+{ mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_ANALYSIS].name, 0, cb_init_mode, (void *)MODE_ANALYSIS, FL_MENU_DIVIDER, FL_NORMAL_LABEL, 0, 14, 0},
 
 { mode_info[MODE_NULL].name, 0, cb_init_mode, (void *)MODE_NULL, 0, FL_NORMAL_LABEL, 0, 14, 0},
 { mode_info[MODE_SSB].name, 0, cb_init_mode, (void *)MODE_SSB, 0, FL_NORMAL_LABEL, 0, 14, 0},
 
-{ mode_info[MODE_WWV].name, 0, cb_init_mode, (void *)MODE_WWV, 0, FL_NORMAL_LABEL, 0, 14, 0},
-
-{ mode_info[MODE_ANALYSIS].name, 0, cb_init_mode, (void *)MODE_ANALYSIS, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {_("&Configure"), 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -6503,7 +6693,7 @@ void set_scope_clear_axis()
 // raw buffer functions can ONLY be called by FLMAIN_TID
 
 //======================================================================
-#define RAW_BUFF_LEN 256
+#define RAW_BUFF_LEN 4096
 
 static char rxtx_raw_chars[RAW_BUFF_LEN+1] = "";
 static char rxtx_raw_buff[RAW_BUFF_LEN+1] = "";
@@ -6521,13 +6711,12 @@ char *get_rxtx_data()
 
 void add_rxtx_char(int data)
 {
+	ENSURE_THREAD(FLMAIN_TID);
 	if (rxtx_raw_len == RAW_BUFF_LEN) {
 		memset(rxtx_raw_buff, 0, RAW_BUFF_LEN+1);
 		rxtx_raw_len = 0;
 	}
-	if (data & 0xFF00) // UTF-8 character
-		rxtx_raw_buff[rxtx_raw_len++] = (data >> 8) & 0xFF;
-	rxtx_raw_buff[rxtx_raw_len++] = (unsigned char)(data & 0xFF);
+	rxtx_raw_buff[rxtx_raw_len++] = (unsigned char)data;
 }
 
 //======================================================================
@@ -6547,13 +6736,12 @@ char *get_rx_data()
 
 void add_rx_char(int data)
 {
+	ENSURE_THREAD(FLMAIN_TID);
 	add_rxtx_char(data);
 	if (rx_raw_len == RAW_BUFF_LEN) {
 		memset(rx_raw_buff, 0, RAW_BUFF_LEN+1);
 		rx_raw_len = 0;
 	}
-	if (data & 0xFF00) // UTF-8 character
-		rx_raw_buff[rx_raw_len++] = (data >> 8) & 0xFF;
 	rx_raw_buff[rx_raw_len++] = (unsigned char)data;
 }
 
@@ -6574,6 +6762,7 @@ char *get_tx_data()
 
 void add_tx_char(int data)
 {
+	ENSURE_THREAD(FLMAIN_TID);
 	add_rxtx_char(data);
 	if (tx_raw_len == RAW_BUFF_LEN) {
 		memset(tx_raw_buff, 0, RAW_BUFF_LEN+1);
@@ -6583,69 +6772,110 @@ void add_tx_char(int data)
 }
 
 //======================================================================
-static unsigned char firstUTF8 = 0;
+static void display_rx_data(const unsigned char data, int style) {
+	ReceiveText->add(data, style);
+	speak(data);
+
+	if (Maillogfile)
+		Maillogfile->log_to_file(cLogfile::LOG_RX, string(1, (const char)data));
+
+	if (progStatus.LOGenabled)
+		logfile->log_to_file(cLogfile::LOG_RX, string(1, (const char)data));
+}
+
+static void rx_parser(const unsigned char data, int style)
+{
+	// assign a style to the incoming data
+	if (extract_wrap || extract_flamp)
+		style = FTextBase::RECV;
+	if ((data < ' ') && iscntrl(data))
+		style = FTextBase::CTRL;
+	if (wf->tmp_carrier())
+		style = FTextBase::ALTR;
+	
+	// Collapse the "\r\n" sequence into "\n".
+	//
+	// The 'data' variable possibly contains only a part of a multi-byte
+	// UTF-8 character. This is not a problem. All data has passed
+	// through a distiller before we got here, so we can be sure that
+	// the input is valid UTF-8. All bytes of a multi-byte character
+	// will therefore have the eight bit set and can not match either
+	// '\r' or '\n'.
+	
+	static unsigned int lastdata = 0;
+	
+	if (data == '\n' && lastdata == '\r');
+	else if (data == '\r') {
+		add_rx_char('\n');
+		display_rx_data('\n', style);
+	} else {
+		add_rx_char(data);
+		display_rx_data(data, style);
+	}
+
+	lastdata = data;
+
+	if (!(data < ' ' && iscntrl(data)) && progStatus.spot_recv)
+		spot_recv(data);
+}
+
 
 static void put_rx_char_flmain(unsigned int data, int style)
 {
 	ENSURE_THREAD(FLMAIN_TID);
+	
+	// save raw data if autoextracting
+	if (progdefaults.autoextract == true)
+		rx_extract_add(data);
 
-	static unsigned int last = 0;
-	const char **asc = ascii;
+	WriteARQ(data);
+
+	// possible destinations for the data
+	enum dest_type {
+		DEST_RECV,	// ordinary received text
+		DEST_ALTR	// alternate received text
+	};
+	static enum dest_type destination = DEST_RECV;
+	static enum dest_type prev_destination = DEST_RECV;
+
+	// Determine the destination of the incoming data. If the destination had
+	// changed, clear the contents of the distiller.
+	destination = (wf->tmp_carrier() ? DEST_ALTR : DEST_RECV);
+
+	if (destination != prev_destination) {
+		rx_chd.reset();
+		rx_chd.clear();
+	}
+	
+	// select a byte translation table
 	trx_mode mode = active_modem->get_mode();
-
+	const char **asc = NULL;
+	
+	if (progdefaults.charset_name == "ASCII")
+		asc = ascii;
 	if (mailclient || mailserver || arqmode)
 		asc = ascii2;
 	if (mode == MODE_RTTY || mode == MODE_CW)
 		asc = ascii;
-
-	if (asc == ascii2 && (data < ' ') && iscntrl(data))
-		style = FTextBase::CTRL;
-	if (wf->tmp_carrier())
-		style = FTextBase::ALTR;
-
-	if (progdefaults.autoextract == true) rx_extract_add(data);
-
-	speak(data);
-
-	if ((data & 0x80) == 0x80) {
-		if (firstUTF8 == 0)
-			firstUTF8 = data;
-		else {
-			add_rx_char(firstUTF8);
-			add_rx_char(data);
-			ReceiveText->add(firstUTF8, style);
-			ReceiveText->add(data, style);
-			firstUTF8 = 0;
-		}
-	} else {
-		firstUTF8 = 0;
-		if (data == '\n' && last == '\r');
-		else if (data == '\r') {
-			add_rx_char('\n');
-			ReceiveText->add('\n', style);
-		} else {
-			add_rx_char(data);
-			ReceiveText->add(data, style);
-		}
+	if (extract_wrap || extract_flamp)
+		asc = ascii3;
+	
+	// pass the data to the distiller
+	if (asc != NULL)
+		rx_chd.rx((unsigned char *)asc[data & 0xFF]);
+	else
+		rx_chd.rx(data & 0xFF);
+	
+	// feed the decoded data into the RX parser
+	if (rx_chd.data_length() > 0) {
+		const char *ptr = rx_chd.data().data();
+		const char *end = ptr + rx_chd.data_length();
+		
+		while (ptr < end)
+			rx_parser((const unsigned char)*ptr++, style);
+		
+		rx_chd.clear();
 	}
-
-	last = data;
-
-	WriteARQ(data);
-
-	string s;
-	if (data < ' ' && iscntrl(data))
-		s = ascii2[data & 0x7F];
-	else {
-		s += data;
-		if (progStatus.spot_recv)
-			spot_recv(data);
-	}
-	if (Maillogfile)
-		Maillogfile->log_to_file(cLogfile::LOG_RX, s);
-
-	if (progStatus.LOGenabled)
-		logfile->log_to_file(cLogfile::LOG_RX, s);
 }
 
 void put_rx_char(unsigned int data, int style, bool extracted)
@@ -6883,171 +7113,203 @@ void do_que_execute(void *)
 }
 
 char szTestChar[] = "E|I|S|T|M|O|A|V";
+
 int get_tx_char(void)
 {
-	int c;
-	static int pending = -1;
 	enum { STATE_CHAR, STATE_CTRL };
 	static int state = STATE_CHAR;
 
-	if (!que_ok) { return -1; }
-	if (Qwait_time) { return -1; }
-	if (Qidle_time) { return -1; }
-	if (macro_idle_on) { return -1; }
-	if (idling) { return -1; }
-
-	if (arq_text_available)
+	if (!que_ok) { return GET_TX_CHAR_NODATA; }
+	if (Qwait_time) { return GET_TX_CHAR_NODATA; }
+	if (Qidle_time) { return GET_TX_CHAR_NODATA; }
+	if (macro_idle_on) { return GET_TX_CHAR_NODATA; }
+	if (idling) { return GET_TX_CHAR_NODATA; }
+	
+	if (arq_text_available) {
 		return arq_get_char();
+	}
 
-    if (active_modem == cw_modem && progdefaults.QSKadjust)
-        return szTestChar[2 * progdefaults.TestChar];
+	if (active_modem == cw_modem && progdefaults.QSKadjust)
+		return szTestChar[2 * progdefaults.TestChar];
 
-	if ( progStatus.repeatMacro && progStatus.repeatIdleTime > 0 &&
+	if ( (progStatus.repeatMacro > -1) && (progStatus.repeatIdleTime > 0) &&
 		 !idling ) {
 		Fl::add_timeout(progStatus.repeatIdleTime, get_tx_char_idle);
 		idling = true;
-		return -1;
+		return GET_TX_CHAR_NODATA;
 	}
 
-	if (pending >= 0) {
-		c = pending;
-		pending = -1;
-		return c;
-	}
+	int c;
+	
+	if ((c = tx_encoder.pop()) != -1)
+		return(c);
 
-	if (progStatus.repeatMacro > -1 && text2repeat.length()) {
-		c = text2repeat[repeatchar];
+	if ((progStatus.repeatMacro > -1) && text2repeat.length()) {
+		string repeat_content;
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+		int utf8size = fl_utf8len1(text2repeat[repeatchar]);
+		for (int i = 0; i < utf8size; i++)
+			repeat_content += text2repeat[repeatchar + i];
+		repeatchar += utf8size;
+#else
+		repeat_content += text2repeat[repeatchar];
 		repeatchar++;
-		if (repeatchar == text2repeat.length()) {
+#endif
+		tx_encoder.push(repeat_content);
+
+		if (repeatchar >= text2repeat.length()) {
 			text2repeat.clear();
 			macros.repeat(progStatus.repeatMacro);
 		}
-		return c;
+		goto transmit;
 	}
 
 	c = TransmitText->nextChar();
+	if (c == GET_TX_CHAR_ETX) {
+		return c;
+	}
 
 	if (c == '^' && state == STATE_CHAR) {
 		state = STATE_CTRL;
 		c = TransmitText->nextChar();
 	}
-	switch (c) {
-	case -1: // no character available
+	
+	if (c == -1) {
 		queue_reset();
-		break;
-	case '\n':
-		pending = '\n';
-		return '\r';
-	case 'r':
-		if (state != STATE_CTRL)
-			break;
-		REQ_SYNC(&FTextTX::clear_sent, TransmitText);
+		return(GET_TX_CHAR_NODATA);
+	}
+	
+	if (state == STATE_CTRL) {
 		state = STATE_CHAR;
-		c = 3; // ETX
-//		if (progStatus.timer)
-//			REQ(startMacroTimer);
-		break;
-	case 'R':
-		if (state != STATE_CTRL)
+		
+		switch (c) {
+		case 'p': case 'P':
+			TransmitText->pause();
 			break;
-		state = STATE_CHAR;
-		if (TransmitText->eot()) {
+		case 'r':
 			REQ_SYNC(&FTextTX::clear_sent, TransmitText);
-			c = 3; // ETX
-//			if (progStatus.timer)
-//				REQ(startMacroTimer);
-		} else
-			c = -1;
-		break;
-	case 'L':
-		if (state != STATE_CTRL)
+			return(GET_TX_CHAR_ETX);
 			break;
-		state = STATE_CHAR;
-		c = -1;
-		REQ(qso_save_now);
-		break;
-	case 'C':
-		if (state != STATE_CTRL)
+		case 'R':
+			if (TransmitText->eot()) {
+				REQ_SYNC(&FTextTX::clear_sent, TransmitText);
+				return(GET_TX_CHAR_ETX);
+			} else
+				return(GET_TX_CHAR_NODATA);
 			break;
-		state = STATE_CHAR;
-		c = -1;
-		REQ(clearQSO);
-		break;
-	case '!':
-		if (state != STATE_CTRL)
+		case 'L':
+			REQ(qso_save_now);
+			return(GET_TX_CHAR_NODATA);
 			break;
-		state = STATE_CHAR;
-		if (queue_must_rx()) {
-			c = 3;
-			que_timeout = 400; // 20 seconds
-			REQ(queue_execute_after_rx, (void *)0);
-			while(que_waiting) MilliSleep(1);
-		} else {
-			c = -1;
-			REQ(do_que_execute, (void*)0);
-			while(que_waiting) MilliSleep(1);
-		}
-		break;
-	case '^':
-		state = STATE_CHAR;
-		break;
-	default:
-		if (state == STATE_CTRL) {
-			state = STATE_CHAR;
-			pending = c;
-			return '^';
+		case 'C':
+			REQ(clearQSO);
+			return(GET_TX_CHAR_NODATA);
+			break;
+		case '!':
+			if (queue_must_rx()) {
+				que_timeout = 400; // 20 seconds
+				REQ(queue_execute_after_rx, (void *)0);
+				while(que_waiting) MilliSleep(1);
+				return(GET_TX_CHAR_ETX);
+			} else {
+				REQ(do_que_execute, (void*)0);
+				while(que_waiting) MilliSleep(1);
+				return(GET_TX_CHAR_NODATA);
+			}
+			break;
+		default:
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+			char utf8_char[6];
+			int utf8_len = fl_utf8encode(c, utf8_char);
+			tx_encoder.push("^" + string(utf8_char, utf8_len));
+#else
+			string tmp("^");
+			tmp += c;
+			tx_encoder.push(tmp);
+#endif
 		}
 	}
+	else if (c == '\n') {
+		tx_encoder.push("\r\n");
+	}
+	else {
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+		char utf8_char[6];
+		int utf8_len = fl_utf8encode(c, utf8_char);
+		tx_encoder.push(string(utf8_char, utf8_len));
+#else
+		string tmp;
+		tmp += c;
+		tx_encoder.push(tmp);
+#endif
+	}
+	
+	transmit:
+	
+	c = tx_encoder.pop();
+	if (c == -1) {
+		LOG_ERROR("TX encoding conversion error: pushed content, but got nothing back");
+		return(GET_TX_CHAR_NODATA);
+	}
 
-	pending = -1;
-	return c;
+	return(c);
 }
 
 void put_echo_char(unsigned int data, int style)
 {
-	if (!data) return;
+        trx_mode mode = active_modem->get_mode();
 
-    if (progdefaults.QSKadjust && (active_modem->get_mode() == MODE_CW))
+	if (mode == MODE_CW && progdefaults.QSKadjust)
 		return;
 
-	static unsigned int last = 0;
-	const char **asc = ascii;
+	REQ(&add_tx_char, data);
 
-	add_tx_char(data);
+	// select a byte translation table
+	const char **asc = NULL;
 
-	if (mailclient || mailserver || arqmode)
+	if (mailclient || mailserver)
 		asc = ascii2;
-	if (active_modem->get_mode() == MODE_RTTY ||
-		active_modem->get_mode() == MODE_CW)
+	else if (arq_text_available)
+		asc = ascii3;
+	else if (mode == MODE_RTTY || mode == MODE_CW)
 		asc = ascii;
 
-	if (data == '\r' && last == '\r') // reject multiple CRs
-		return;
-
-	last = data;
-
+	// assign a style to the data
 	if (asc == ascii2 && iscntrl(data))
 		style = FTextBase::CTRL;
+	
+	// receive and convert the data
+	static unsigned int lastdata = 0;
+
+	if (data == '\r' && lastdata == '\r') // reject multiple CRs
+		return;
+	if (asc != NULL) // MAIL / ARQ / RTTY / CW
+		echo_chd.rx((unsigned char *)asc[data & 0xFF]);
+	else
+		echo_chd.rx(data & 0xFF);
+	
+	lastdata = data;
+
+	if (Maillogfile) {
+		string s = iscntrl(data & 0x7F) ? ascii2[data & 0x7F] : string(1, data);
+		Maillogfile->log_to_file(cLogfile::LOG_TX, s);
+	}
 
 #if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-	string sch;
-	sch.clear();
-	if (data & 0xFF00) {
-		sch += (data >> 8) & 0xFF;
-		sch += (data & 0xFF);
-	} else
-		sch = (data & 0xFF);
-	REQ(&FTextRX::addstr, ReceiveText, sch, style);
 #else
 	REQ(&FTextBase::addchr, ReceiveText, data, style);
 #endif
 
-	string s = iscntrl(data & 0x7F) ? ascii2[data & 0x7F] : string(1, data);
-	if (Maillogfile)
-		Maillogfile->log_to_file(cLogfile::LOG_TX, s);
-
-	if (progStatus.LOGenabled)
-		logfile->log_to_file(cLogfile::LOG_TX, s);
+	if (echo_chd.data_length() > 0)
+	{
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+		REQ(&FTextRX::addstr, ReceiveText, echo_chd.data(), style);
+#endif
+		if (progStatus.LOGenabled)
+			logfile->log_to_file(cLogfile::LOG_TX, echo_chd.data());
+		
+		echo_chd.clear();
+	}
 }
 
 void resetRTTY() {
@@ -7069,7 +7331,9 @@ void resetTHOR() {
 	trx_mode md = active_modem->get_mode();
 	if (md == MODE_THOR4 || md == MODE_THOR5 || md == MODE_THOR8 ||
 		md == MODE_THOR11 ||
-		md == MODE_THOR16 || md == MODE_THOR22 )
+		md == MODE_THOR16 || md == MODE_THOR22 ||
+		md == MODE_THOR25x4 || md == MODE_THOR50x1 ||
+		md == MODE_THOR50x2 || md == MODE_THOR100 )
 		trx_start_modem(active_modem);
 }
 

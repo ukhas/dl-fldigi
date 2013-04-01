@@ -125,6 +125,7 @@ string appname;
 
 string scDevice[2];
 
+bool NBEMSapps_dir = false;
 string BaseDir = "";
 string HomeDir = "";
 string RigsDir = "";
@@ -238,6 +239,41 @@ void delayed_startup(void *)
 int main(int argc, char ** argv)
 {
 	appname = argv[0];
+	string appdir;
+	string test_file_name;
+	FILE *test_file = NULL;
+	{
+		char apptemp[FL_PATH_MAX];
+		fl_filename_expand(apptemp, sizeof(apptemp), appname.c_str());
+		appdir.assign(apptemp);
+
+#ifdef __WOE32__
+		size_t p = appdir.rfind("dl-fldigi.exe");
+		appdir.erase(p);
+#else
+		size_t p = appdir.rfind("dl-fldigi");
+		if (appdir.find("./dl-fldigi") != std::string::npos) {
+			if (getcwd(apptemp, sizeof(apptemp)))
+				appdir.assign(apptemp).append("/");
+		} else
+			appdir.erase(p);
+#endif
+
+		if (p != std::string::npos) {
+			test_file_name.assign(appdir).append("NBEMS.DIR");
+#ifdef __WOE32__
+			while ((p = test_file_name.find("\\")) != std::string::npos)
+				test_file_name[p] = '/';
+#endif
+			test_file = fopen(test_file_name.c_str(),"r");
+			if (test_file != NULL) {
+				fclose(test_file);
+				BaseDir = appdir;
+				NBEMSapps_dir = true;
+			}
+		}
+	}
+
 	debug_exec(argv);
 
 	CREATE_THREAD_ID(); // only call this once
@@ -286,19 +322,6 @@ int main(int argc, char ** argv)
 		if (FLMSG_dir.empty()) FLMSG_dir_default = NBEMS_dir;
 #endif
 	}
-	{
-#ifdef __WOE32__
-		if (HomeDir.empty()) HomeDir.assign(BaseDir).append("fldigi.files/");
-		if (PskMailDir.empty()) PskMailDir = BaseDir;
-		if (NBEMS_dir.empty()) NBEMS_dir.assign(BaseDir).append("NBEMS.files/");
-		if (FLMSG_dir.empty()) FLMSG_dir_default = NBEMS_dir;
-#else
-		if (HomeDir.empty()) HomeDir.assign(BaseDir).append(".fldigi/");
-		if (PskMailDir.empty()) PskMailDir = BaseDir;
-		if (NBEMS_dir.empty()) NBEMS_dir.assign(BaseDir).append(".nbems/");
-		if (FLMSG_dir.empty()) FLMSG_dir_default = NBEMS_dir;
-#endif
-	}
 
 	dl_fldigi::init();
 
@@ -333,6 +356,12 @@ int main(int argc, char ** argv)
 		debug::stop();
 	}
 
+	LOG_INFO("appname: %s", appname.c_str());
+	LOG_INFO("Test file %p", test_file);
+	if (NBEMSapps_dir)
+		LOG_INFO("%s present", test_file_name.c_str());
+	else
+		LOG_INFO("%s not present", test_file_name.c_str());
 	LOG_INFO("HomeDir: %s", HomeDir.c_str());
 	LOG_INFO("RigsDir: %s", RigsDir.c_str());
 	LOG_INFO("ScriptsDir: %s", ScriptsDir.c_str());
@@ -430,16 +459,6 @@ int main(int argc, char ** argv)
 	if (progdefaults.XmlRigFilename.empty())
 		progdefaults.XmlRigFilename = xmlfname;
 
-	if (progStatus.LOGenabled == true) {
-    	Date tdy;
-	    string lfname = HomeDir;
-	    lfname.append("dl-fldigi");
-	    lfname.append(tdy.szDate(2));
-	    lfname.append(".log");
-	    logfile = new cLogfile(lfname);
-	    logfile->log_to_file_start();
-	}
-
 #if BENCHMARK_MODE
 	return setup_benchmark();
 #endif
@@ -447,6 +466,15 @@ int main(int argc, char ** argv)
 	FSEL::create();
 
 	make_colorsfonts();
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR < 3
+		CHARSETlabel->hide();
+		CHARSETstatus->hide();
+#else
+		CHARSETlabel->show();
+		CHARSETstatus->show();
+#endif
+	populate_charset_menu();
+	set_default_charset();
 	setTabColors();
 
 	progdefaults.testCommPorts();

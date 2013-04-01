@@ -70,6 +70,9 @@
 #endif
 
 #define CONFIG_LIST                                                                     \
+	ELEM_(bool, confirmExit, "CONFIRMEXIT",				                \
+	      "Ensure user wants to leave flgidi",			                \
+	      false)							                \
         ELEM_(bool, SaveConfig, "SAVECONFIG",                                           \
               "Save current configuration on exit",                                     \
               false)                                                                    \
@@ -110,6 +113,10 @@
         ELEM_(mode_set_t, rsid_tx_modes, "RSIDTXMODESEXCLUDE",                          \
               "Mode names for which RSID transmission is disabled",                     \
               mode_set_t())                                                             \
+                                                                                        \
+        ELEM_(int, rsid_resolution, "RSID_RESOLUTION",                                  \
+              "values (LOW)  5, 4, 3, 2 (HIGH)",                                        \
+              5)                                                                        \
                                                                                         \
         ELEM_(bool, slowcpu, "SLOWCPU",                                                 \
               "Disable expensive processing in some decoders",                          \
@@ -174,8 +181,8 @@
         ELEM_(bool, StartAtSweetSpot, "STARTATSWEETSPOT",                               \
               "Always start new modems at sweet spot frequencies",                      \
               false)                                                                    \
-        ELEM_(bool, CWOffset, "CWOFFSET",                                                 \
-              "Select if waterfall should compensate for BFO offset in CW",                        \
+        ELEM_(bool, CWOffset, "CWOFFSET",                                               \
+              "Select if waterfall should compensate for BFO offset in CW",             \
               false)                                                                    \
         ELEM_(bool, CWIsLSB, "CWISLSB",                                                 \
               "Select if BFO is injected as LSB instead of USB",                        \
@@ -245,6 +252,14 @@
               "Acquisition S/N (dB)",                                                   \
               9.0)                                                                      \
         /* RTTY */                                                                      \
+        ELEM_(int, kahn_demod, "KAHNDEMOD",                                             \
+              "1 - use Kahn power demodulator\n"                                        \
+              "0 - use ATC (Kok Chen) demodulator",                                     \
+              1)                                                                        \
+        ELEM_(bool, true_scope, "TRUESCOPE",                                            \
+              "Enabled  - XY scope displays Mark/Space channel signals\n"               \
+              "Disabled - XY scope displays pseudo M/S signals",                        \
+              true)                                                                     \
         ELEM_(int, rtty_shift, "RTTYSHIFT",                                             \
               "Carrier shift (Hz). Values are as follows:\n"                            \
               "  0: 23; 1: 85; 2: 160; 3: 170; 4: 182; 5: 200; 6: 240; 7: 350;\n"       \
@@ -256,9 +271,6 @@
         ELEM_(double, RTTY_BW, "RTTYBW",                                                \
               "Receive filter bandwidth (Hz)",                                          \
               68.0)                                                                     \
-        ELEM_(bool, RTTY_BW_AUTO, "RTTYBW",                                             \
-              "Was RTTY_BW set automatically?",                                         \
-              true)                                                                     \
         ELEM_(int, rtty_baud, "RTTYBAUD",                                               \
               "Carrier baud rate. Values are as follows:\n"                             \
               "  1: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"      \
@@ -295,6 +307,12 @@
               "AFC tracking speed. Values are as follows:\n"                            \
               "  0: slow; 1: normal; 2: fast",                                          \
               1)   /* normal */                                                         \
+        ELEM_(int, rtty_filter_quality, "RTTYFILTERQUALITY",                            \
+              "DSP filter length:\n"                                                    \
+              "  0: low, 512, low cpu load\n"                                           \
+              "  1: normal, 1024, medium cpu load\n"                                    \
+              "  2: high, 2048, high cpu load",                                         \
+              1)   /* normal */                                                         \
         ELEM_(bool, useFSKkeyline, "", "",  false)                                      \
         ELEM_(bool, useFSKkeylineDTR, "", "",  false)                                   \
         ELEM_(bool, FSKisLSB, "", "",  true)                                            \
@@ -314,9 +332,6 @@
         ELEM_(bool, useMARKfreq, "USEMARKFREQ",                                         \
               "Use MARK frequency for logging",                                         \
               true)                                                                     \
-        ELEM_(bool, Xagc, "XAGC",                                                       \
-              "This setting is currently unused",                                       \
-              false)                                                                    \
         /* CW */                                                                        \
         ELEM_(bool, useCWkeylineRTS, "", "",  false)                                    \
         ELEM_(bool, useCWkeylineDTR, "", "",  false)                                    \
@@ -452,6 +467,9 @@
         ELEM_(int, oliviasinteg, "OLIVIASINTEG",                                        \
               "Integration period (FEC blocks)",                                        \
               4)                                                                        \
+        ELEM_(bool, olivia_reset_fec, "OLIVIARESETFEC",                                 \
+              "Force Integration (FEC) depth to be reset when new BW/Tones selected",   \
+              false)                                                                    \
         ELEM_(bool, olivia8bit, "OLIVIA8BIT",                                           \
               "8-bit extended characters",                                              \
               true)                                                                     \
@@ -489,7 +507,7 @@
         ELEM_(double, ThorCWI, "THORCWI",                                               \
               "CWI threshold (CWI detection and suppression)",                          \
               0.0)                                                                      \
-        ELEM_(bool, THOR_PREAMBLE, "THORPREAMBLE",                                 \
+        ELEM_(bool, THOR_PREAMBLE, "THORPREAMBLE",                                      \
               "Detect THOR preamble (and flush Rx pipeline)",                           \
               true)                                                                     \
         ELEM_(bool, THOR_SOFTSYMBOLS, "THORSOFTSYMBOLS",                                \
@@ -499,7 +517,7 @@
               "Enable Soft-bit decoding",                                               \
               true)                                                                     \
         /* PACKET */                                                                    \
-        ELEM_(int, PKT_BAUD_SELECT, "PKTBAUDSELECT",                                                 \
+        ELEM_(int, PKT_BAUD_SELECT, "PKTBAUDSELECT",                                    \
               "Packet baud rate. Values are as follows:\n"                              \
               "  0: 1200 (V/UHF); 1: 300 (HF); 2: 2400 (V/UHF)",                        \
               0)   /* 1200 baud (V/UHF) default. */                                     \
@@ -517,14 +535,15 @@
               0.0)                                                                      \
         ELEM_(bool, PKT_PreferXhairScope, "PKTPREFERXHAIRSCOPE",                        \
               "Default to syncscope (detected symbol scope)",                           \
-              false)                                                                    ELEM_(bool, PKT_AudioBoost, "PKTAUDIOBOOST",                                    \
+              false)                                                                    \
+        ELEM_(bool, PKT_AudioBoost, "PKTAUDIOBOOST",                                    \
               "No extra input gain (similar to Mic Boost) by default",                  \
               false)                                                                    \
-        \
+                                                                                        \
         ELEM_(bool, PKT_RXTimestamp, "PKTRXTIMESTAMP",                                  \
               "No timestamps on RX packets by default",                                 \
               false)                                                                    \
-        \
+                                                                                        \
         ELEM_(bool, PKT_expandMicE, "PKTEXPANDMICE",                                    \
               "decode received Mic-E data",                                             \
               false)                                                                    \
@@ -569,7 +588,7 @@
         ELEM_(int, mt63_interleave, "MT63INTERLEAVE",                                   \
               "64-bit (long) interleave.  Values are as follows:\n"                     \
               "  0: short (32-bit); 1: long (64-bit).",                                 \
-              64) /* long interleave */                                                 \
+              1) /* long interleave */                                                  \
         ELEM_(bool, mt63_rx_integration, "MT63INTEGRATION",                             \
               "Long receive integration",                                               \
               false)                                                                    \
@@ -735,6 +754,9 @@
         ELEM_(std::string, flmsg_pathname, "FLMSG_PATHNAME",                            \
               "Full pathname to the flmsg executable",                                  \
               "")                                                                       \
+        ELEM_(double, extract_timeout, "EXTRACT_TIMEOUT",                               \
+              "Abort message extraction after nn.n seconds of inactivity",              \
+              2.0)                                                                      \
         ELEM_(std::string, cty_dat_pathname, "CTYDAT_PATHNAME",                         \
               "Full pathname to the cty.dat data file",                                 \
               "")                                                                       \
@@ -901,6 +923,9 @@
         ELEM_(bool, RigCatVSP, "RIGCATVSP",                                             \
               "VSP support enabled",                                                    \
               false)                                                                    \
+        ELEM_(bool, RigCatRestoreTIO, "RIGCATRESTORETIO",                               \
+              "Restore original state of comm port when closing",                       \
+              false)                                                                    \
         /* Hamlib parameters */                                                         \
         ELEM_(bool, HamlibRTSplus, "HAMLIBRTSPLUS",                                     \
               "RTS +12",                                                                \
@@ -941,7 +966,7 @@
               "Operator name",                                                          \
               "")                                                                       \
         ELEM_(std::string, myLocator, "MYLOC",                                          \
-              "Operator Maidenhead locator",                                                  \
+              "Operator Maidenhead locator",                                            \
               "")                                                                       \
         ELEM_(std::string, myAntenna, "MYANTENNA",                                      \
               "Antenna description (keep short!)",                                      \
@@ -1033,6 +1058,15 @@
         ELEM_(RGB, bwsrSldrSelColor,"BWSRSLDRSELCOLOR",                                 \
               "Button highlight color, signal browser detect level",                    \
               {54, 100, 139})                                                           \
+        ELEM_(RGB, bwsrHiLight1, "BWSRHILIGHT1",                                        \
+              "View Browser highlight color 1, default Dark Red",                       \
+              {128, 0, 0})                                                              \
+        ELEM_(RGB, bwsrHiLight2, "BWSRHILIGHT2",                                        \
+              "View Browser highlight color 2, default Dark Green",                     \
+              {0, 128, 0})                                                              \
+        ELEM_(RGB, bwsrHiLight3, "BWSRHILIGHT3",                                        \
+              "View Browser highlight color 3, default Dark Blue",                      \
+              {0, 0, 128})                                                              \
         ELEM_(RGB, dup_color, "dupcolor",                                               \
               "Callsign background color when duplicate detected",                      \
               {255, 110, 180})                                                          \
@@ -1164,6 +1198,9 @@
               "Macro button foreground ",                                               \
               { 255, 255, 255 })                                                        \
         /* RX / TX / Waterfall text widgets */                                          \
+        ELEM_(std::string, charset_name, "CHARSET_NAME",                                \
+              "Default character set",                                                  \
+              "ASCII")                                                                  \
         ELEM_(std::string, RxFontName, "RXFONTNAME",                                    \
               "RX text font name",                                                      \
               "")                                                                       \

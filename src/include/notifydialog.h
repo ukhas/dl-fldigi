@@ -11,9 +11,9 @@
 extern Fl_Group *grpNotifyEvent;
 #include <FL/Fl_Choice.H>
 extern Fl_Choice *mnuNotifyEvent;
+extern Fl_Input2 *inpNotifyRE;
 #include <FL/Fl_Light_Button.H>
 extern Fl_Light_Button *btnNotifyEnabled;
-extern Fl_Input2 *inpNotifyRE;
 extern Fl_Group *grpNotifyFilter;
 #include <FL/Fl_Round_Button.H>
 extern Fl_Round_Button *chkNotifyFilterCall;

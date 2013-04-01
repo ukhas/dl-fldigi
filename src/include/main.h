@@ -13,6 +13,7 @@
 #endif
 
 extern std::string		appname;
+extern std::string		BaseDir;
 extern std::string		HomeDir;
 extern std::string		RigsDir;
 extern std::string		ScriptsDir;
@@ -47,6 +48,10 @@ extern std::string		FLMSG_ICS_dir;
 extern std::string		FLMSG_ICS_msg_dir;
 extern std::string		FLMSG_ICS_tmp_dir;
 
+extern std::string		FLAMP_dir;
+extern std::string		FLAMP_rx_dir;
+extern std::string		FLAMP_tx_dir;
+
 extern std::string		xmlfname;
 
 extern std::string	 	scDevice[2];
@@ -65,7 +70,7 @@ extern bool			mailclient;
 extern bool			mailserver;
 extern bool			tlfio;
 extern bool			arq_text_available;
-extern char			arq_get_char();
+extern int			arq_get_char();
 
 // ARQ mail implementation
 extern void			arq_init();

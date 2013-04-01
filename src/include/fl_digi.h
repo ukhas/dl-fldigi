@@ -52,6 +52,8 @@ extern Fl_Double_Window *fl_digi_main;
 extern Fl_Double_Window *scopeview;
 //extern Fl_Double_Window *opBrowserView;
 
+extern bool				NBEMSapps_dir;
+
 extern FTextRX			*ReceiveText;
 extern FTextTX			*TransmitText;
 extern pskBrowser		*mainViewer;
@@ -69,6 +71,7 @@ extern Fl_Box			*StatusBar;
 extern Fl_Box			*Status2;
 extern Fl_Box			*Status1;
 extern Fl_Counter2		*cntCW_WPM;
+extern Fl_Counter2		*cntTxLevel;
 extern Fl_Box			*WARNstatus;
 extern Fl_Button		*MODEstatus;
 extern Fl_Slider2		*sldrSquelch;
@@ -260,7 +263,16 @@ extern bool que_ok;
 extern void post_queue_execute(void*);
 extern void queue_execute_after_rx(void*);
 
+extern int rxtx_charset;
 extern void put_rx_data(int *data, int len);
+
+// Values returned by get_tx_char() to signal various conditions to the
+// modems. These values need to be negative so they don't interfere with
+// normal TX data (which is always byte-sized and positive).
+
+#define GET_TX_CHAR_NODATA -1	// no data available
+#define GET_TX_CHAR_ETX -3	// end of transmission requested
+
 extern int get_tx_char();
 extern int  get_secondary_char();
 extern void put_echo_char(unsigned int data, int style = FTextBase::XMIT);
@@ -347,6 +359,11 @@ extern void set_rtty_bw(float bw);
 extern void sync_cw_parameters();
 
 extern void open_recv_folder(const char *fname);
+
+// character set
+extern void cb_charset_menu(Fl_Widget *, void *charset);
+extern void populate_charset_menu(void);
+extern void set_default_charset(void);
 
 // set notch parameter on flrig
 extern int  notch_frequency;
