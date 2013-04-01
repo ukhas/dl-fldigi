@@ -92,7 +92,6 @@
 	#include "hamlib.h"
 #endif
 #include "rigio.h"
-#include "rigMEM.h"
 #include "nullmodem.h"
 #include "psk.h"
 #include "cw.h"
@@ -855,8 +854,6 @@ void cb_contestiaCustom(Fl_Widget *w, void *arg)
 
 void set_rtty_tab_widgets()
 {
-	progdefaults.rtty_parity = 0;
-	progdefaults.rtty_stop = 1;
 	selShift->value(progdefaults.rtty_shift);
 	selCustomShift->deactivate();
 	selBits->value(progdefaults.rtty_bits);
@@ -1122,6 +1119,10 @@ void remove_windows()
 
 void cb_wMain(Fl_Widget*, void*)
 {
+// to prevent anything other than a File / Exit in waterfall only 
+// if wf only and in transmit the escape will abort the transmit
+//	if (bWF_only) return;
+
 #ifdef __APPLE__
 	bool ret = false;
 	if (((Fl::event_state() & FL_COMMAND) == FL_COMMAND) && (Fl::event_key() == 'q'))
@@ -1753,10 +1754,12 @@ void cb_logfile(Fl_Widget* w, void*)
 	    lfname.append(tdy.szDate(2));
 	    lfname.append(".log");
 	   	logfile = new cLogfile(lfname);
-    	logfile->log_to_file_start();
+	   	if (logfile) logfile->log_to_file_start();
     } else {
-        logfile->log_to_file_stop();
-        delete logfile;
+		if (logfile) {
+			logfile->log_to_file_stop();
+			delete logfile;
+		}
         logfile = 0;
     }
 }
@@ -2679,7 +2682,11 @@ void cb_btnClearMViewer(Fl_Widget *w, void *d)
 
 int default_handler(int event)
 {
-	if (bWF_only) return 1;
+	if (bWF_only) {
+		if (Fl::event_key() == FL_Escape)
+			return 1;
+		return 0;
+	}
 
 	if (event != FL_SHORTCUT)
 		return 0;
@@ -2731,6 +2738,64 @@ int default_handler(int event)
 			(Fl::event_ctrl() && ((key == 'z' || key == 'Z')) &&
 			TransmitText->visible_focus()))
 		return 1;
+
+	else if (Fl::event_ctrl()) return w->handle(FL_KEYBOARD);
+
+	return 0;
+}
+
+int wo_default_handler(int event)
+{
+	if (event != FL_SHORTCUT)
+		return 0;
+
+	if (RigViewerFrame && Fl::event_key() == FL_Escape &&
+	    RigViewerFrame->visible() && Fl::event_inside(RigViewerFrame)) {
+		CloseQsoView();
+		return 1;
+	}
+
+	Fl_Widget* w = Fl::focus();
+	int key = Fl::event_key();
+
+	if ((key == FL_F + 4) && Fl::event_alt()) clean_exit(true);
+
+	if (w == fl_digi_main || w->window() == fl_digi_main) {
+		if (key == FL_Escape || (key >= FL_F && key <= FL_F_Last) ||
+			((key == '1' || key == '2' || key == '3' || key == '4') && Fl::event_alt())) {
+//			TransmitText->take_focus();
+//			TransmitText->handle(FL_KEYBOARD);
+//			w->take_focus(); // remove this to leave tx text focused
+			return 1;
+		}
+#ifdef __APPLE__
+		if ((key == '=') && (Fl::event_state() == FL_COMMAND)) {
+#else
+		if (key == '=' && Fl::event_alt()) {
+#endif
+			progdefaults.txlevel += 0.1;
+			if (progdefaults.txlevel > 0) progdefaults.txlevel = 0;
+			cntTxLevel->value(progdefaults.txlevel);
+			return 1;
+		}
+#ifdef __APPLE__
+		if ((key == '-') && (Fl::event_state() == FL_COMMAND)) {
+#else
+		if (key == '-' && Fl::event_alt()) {
+#endif
+			progdefaults.txlevel -= 0.1;
+			if (progdefaults.txlevel < -30) progdefaults.txlevel = -30;
+			cntTxLevel->value(progdefaults.txlevel);
+			return 1;
+		}
+	}
+//	else if (w == dlgLogbook || w->window() == dlgLogbook)
+//		return log_search_handler(event);
+
+//	else if ((Fl::event_key() == FL_Escape) ||
+//			(Fl::event_ctrl() && ((key == 'z' || key == 'Z')) &&
+//			TransmitText->visible_focus()))
+//		return 1;
 
 	else if (Fl::event_ctrl()) return w->handle(FL_KEYBOARD);
 
@@ -2842,8 +2907,6 @@ bool clean_exit(bool ask) {
 	hamlib_close();
 #endif
 	rigCAT_close();
-	rigMEM_close();
-
 
 	if (mixer)
 		mixer->closeMixer();
@@ -6049,6 +6112,8 @@ void create_fl_digi_main_WF_only() {
 			Fl_Group::current()->resizable(StatusBar);
 		hpack->end();
 
+	Fl::add_handler(wo_default_handler);
+
 	fl_digi_main->end();
 	fl_digi_main->callback(cb_wMain);
 	fl_digi_main->resizable(wf);
@@ -6774,6 +6839,9 @@ void add_tx_char(int data)
 //======================================================================
 static void display_rx_data(const unsigned char data, int style) {
 	ReceiveText->add(data, style);
+
+	if (bWF_only) return;
+
 	speak(data);
 
 	if (Maillogfile)
@@ -7485,8 +7553,6 @@ void qsy(long long rfc, int fmid)
 
 	if (progdefaults.chkUSERIGCATis)
 		REQ(rigCAT_set_qsy, rfc);
-	else if (progdefaults.chkUSEMEMMAPis)
-		REQ(rigMEM_set_qsy, rfc);
 #if USE_HAMLIB
 	else if (progdefaults.chkUSEHAMLIBis)
 		REQ(hamlib_set_qsy, rfc);

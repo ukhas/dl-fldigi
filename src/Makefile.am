@@ -373,7 +373,6 @@ dl_fldigi_SOURCES += \
 	include/raster.h \
 	include/re.h \
 	include/rigCAT.h \
-	include/rigMEM.h \
 	include/rigio.h \
 	include/rigsupport.h \
 	include/rigxml.h \
@@ -508,7 +507,6 @@ dl_fldigi_SOURCES += \
 	qrunner/qrunner.cxx \
 	rigcontrol/FreqControl.cxx \
 	rigcontrol/ptt.cxx \
-	rigcontrol/rigMEM.cxx \
 	rigcontrol/rigio.cxx \
 	rigcontrol/rigsupport.cxx \
 	rigcontrol/rigxml.cxx \
