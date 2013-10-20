@@ -2472,7 +2472,7 @@ progdefaults.changed = true;}
               Fl_Value_Slider sldrRTTYbandwidth {
                 label {Receive filter bandwidth}
                 callback {progdefaults.RTTY_BW = o->value();}
-                tooltip {Adjust the DSP bandwidth} xywh {280 84 250 23} type Horizontal align 9 minimum 5 maximum 600 step 1 value 91 textsize 14
+                tooltip {Adjust the DSP bandwidth} xywh {280 84 250 23} type Horizontal align 9 minimum 5 maximum 2400 step 1 value 91 textsize 14
                 code0 {o->value(progdefaults.RTTY_BW);}
                 code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
@@ -2491,7 +2491,7 @@ High gives best performance} xywh {280 114 75 22} down_box BORDER_BOX align 8
               } {}
               Fl_Button btn_optimum_rtty_bw {
                 label Optimum
-                callback {static const double BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300};
+                callback {static const double BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200};
 progdefaults.RTTY_BW = 2 * BAUD[progdefaults.rtty_baud];
 sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
 progdefaults.changed = true;}

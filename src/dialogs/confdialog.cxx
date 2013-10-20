@@ -1917,7 +1917,7 @@ progStatus.rtty_filter_changed = true;
 Fl_Button *btn_optimum_rtty_bw=(Fl_Button *)0;
 
 static void cb_btn_optimum_rtty_bw(Fl_Button*, void*) {
-  static const double BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300};
+  static const double BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200};
 progdefaults.RTTY_BW = 2 * BAUD[progdefaults.rtty_baud];
 sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
 progdefaults.changed = true;
@@ -6186,7 +6186,7 @@ an merging"));
                 sldrRTTYbandwidth->labelsize(14);
                 sldrRTTYbandwidth->labelcolor(FL_FOREGROUND_COLOR);
                 sldrRTTYbandwidth->minimum(5);
-                sldrRTTYbandwidth->maximum(600);
+                sldrRTTYbandwidth->maximum(2400);
                 sldrRTTYbandwidth->step(1);
                 sldrRTTYbandwidth->value(91);
                 sldrRTTYbandwidth->textsize(14);

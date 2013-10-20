@@ -228,7 +228,6 @@ Fl_Light_Button		*btnRSID = (Fl_Light_Button *)0;
 Fl_Light_Button		*btnTxRSID = (Fl_Light_Button *)0;
 Fl_Button		    *btnMacroTimer = (Fl_Button *)0;
 
-Fl_Group			*TiledGroup = 0;
 Panel				*text_panel = 0;
 Fl_Group			*mvgroup = 0;
 
@@ -6439,12 +6438,13 @@ void create_fl_digi_main_dl_fldigi() {
 		habString->when(FL_WHEN_RELEASE);}
 
 		TopFrameHAB->end();
-		Fl_Group::current()->resizable(TopFrameHAB);
 		
-		Y = Hmenu + pad + TopFrameHABheight;
+		Y = Hmenu + TopFrameHABheight + pad;
 		
-		TiledGroup = new Fl_Group(0, Y, WMIN_hab, Htext);
-			ReceiveText = new FTextRX(0, Y, WMIN_hab, minRxHeight, "");
+		text_panel = new Panel(0, Y, WMIN_hab, minRxHeight);
+			ReceiveText = new FTextRX(
+				text_panel->x(), text_panel->y(),
+				text_panel->w(), text_panel->h(), "");
 			ReceiveText->color(
 				fl_rgb_color(
 					progdefaults.RxColor.R,
@@ -6457,22 +6457,24 @@ void create_fl_digi_main_dl_fldigi() {
 			ReceiveText->setFontColor(progdefaults.CTRLcolor, FTextBase::CTRL);
 			ReceiveText->setFontColor(progdefaults.SKIPcolor, FTextBase::SKIP);
 			ReceiveText->setFontColor(progdefaults.ALTRcolor, FTextBase::ALTR);
-	
-			FHdisp = new Raster(0, Y, WMIN_hab, minRxHeight);
+			
+			FHdisp = new Raster(
+				text_panel->x(), text_panel->y(),
+				text_panel->w(), text_panel->h());
+			FHdisp->align(FL_ALIGN_CLIP);
 			FHdisp->hide();
 			
-
-			Fl_Box *minbox = new Fl_Box(0,Y + minRxHeight + 1, WMIN_hab, minRxHeight);
+			Fl_Box *minbox = new Fl_Box(
+				text_panel->x(), text_panel->y() + 66, // fixed by Raster min height
+				text_panel->w() - 100, text_panel->h() - 66 - 60); // fixed by HMIN & Hwfall max
 			minbox->hide();
-
-			TiledGroup->resizable(minbox);
 			
-		TiledGroup->end();
-		Fl_Group::current()->resizable(TiledGroup);
+			text_panel->resizable(minbox);
+		text_panel->end();
 
 		Y = Hmenu + pad + TopFrameHABheight + minRxHeight;
 
-		Fl_Pack *wfpack = new Fl_Pack(0, Y, WMIN_hab, Hwfall);
+		wfpack = new Fl_Pack(0, Y, WMIN_hab, Hwfall);
 			wfpack->type(1);
 			wf = new waterfall(0, Y, Wwfall, Hwfall);
 			wf->end();
@@ -6501,7 +6503,7 @@ void create_fl_digi_main_dl_fldigi() {
 
 		Y += (Hwfall + pad);
 
-		Fl_Pack *hpack = new Fl_Pack(0, Y, WMIN_hab, Hstatus);
+		hpack = new Fl_Pack(0, Y, WMIN_hab, Hstatus);
 			hpack->type(1);
 			MODEstatus = new Fl_Button(0, Y, Wmode+30, Hstatus, "");
 			MODEstatus->box(FL_DOWN_BOX);
@@ -6563,8 +6565,8 @@ void create_fl_digi_main_dl_fldigi() {
 		hpack->end();
 
 	fl_digi_main->end();
+	fl_digi_main->resizable(text_panel);
 	fl_digi_main->callback(cb_wMain);
-	fl_digi_main->resizable(wf);
 
 	ssdv = new ssdv_rx(320, 240 + 60, _("SSDV RX"));
 	ssdv->xclass(PACKAGE_NAME);
@@ -6618,7 +6620,7 @@ void create_fl_digi_main(int argc, char** argv)
 	fl_digi_main->xclass(PACKAGE_NAME);
 
 	if (bHAB)
-		fl_digi_main->size_range(WMIN_hab, HAB_height, 0, HAB_height);
+		fl_digi_main->size_range(WMIN_hab, HAB_height, 0, 0);
 	else
 		fl_digi_main->size_range(
 			WMIN, bWF_only ? WF_only_height : HMIN,
