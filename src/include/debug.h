@@ -23,6 +23,8 @@
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
+#define DEBUG_PSKMAIL 1
+
 #include "util.h"
 
 class debug
@@ -83,6 +85,9 @@ unused__ static uint32_t log_source_ = debug::LOG_OTHER;
 #endif
 
 #define LOG_SET_SOURCE(source__) log_source_ = source__
+
+extern bool	debug_pskmail;
+extern bool	debug_audio;
 
 #endif // _DEBUG_H_
 

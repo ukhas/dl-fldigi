@@ -133,7 +133,6 @@ private:
 	int symbollen;
 	int bytelen;
 	int nbits;
-//	RTTY_PARITY parity;
 	int stoplen;
 	int msb;
 	bool useFSK;
@@ -146,7 +145,6 @@ private:
 	int 		rtty_bits;
 	RTTY_PARITY	rtty_parity;
 	int			rtty_stop;
-	bool 		rtty_reverse;
 	bool		rtty_msbfirst;
 
 	double		mark_noise;

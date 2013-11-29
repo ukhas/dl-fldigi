@@ -33,6 +33,8 @@
 #include <cctype>
 #include <cstdlib>
 
+#include "timeops.h"
+
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
 #  define MAP_TYPE std::tr1::unordered_map
 #  include <tr1/unordered_map>
@@ -339,7 +341,7 @@ void notify_change_callsign(void)
 void notify_rsid(trx_mode mode, int afreq)
 {
 	const char* mode_name = mode_info[mode].name;
-	regmatch_t sub[2] = { { 0, strlen(mode_name) } };
+	regmatch_t sub[2] = { { 0, (regoff_t)strlen(mode_name) } };
 	sub[1] = sub[0];
 	for (notify_list_t::iterator i = notify_list.begin(); i != notify_list.end(); ++i)
 		if (i->event == NOTIFY_EVENT_RSID)
@@ -1253,7 +1255,7 @@ static void notify_test_cb(Fl_Widget* w, void* arg)
 
 	if (notify_tmp.event == NOTIFY_EVENT_RSID) {
 		notify_tmp.mode = active_modem->get_mode();
-		regmatch_t sub[2] = { { 0, strlen(mode_info[notify_tmp.mode].name) } };
+		regmatch_t sub[2] = { { 0, (regoff_t)strlen(mode_info[notify_tmp.mode].name) } };
 		sub[1] = sub[0];
 		notify_recv(notify_tmp.mode, active_modem->get_freq(),
 			    mode_info[notify_tmp.mode].name, sub, 2, &notify_tmp);

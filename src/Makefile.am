@@ -44,15 +44,13 @@ EXTRA_flarq_SOURCES = $(FLARQ_WIN32_RES_SRC) $(COMMON_WIN32_RES_SRC)
 dl_fldigi_SOURCES =
 flarq_SOURCES =
 
+dl_fldigi_SOURCES += $(XMLRPC_SRC)
+
 if ENABLE_HAMLIB
   dl_fldigi_SOURCES += $(HAMLIB_SRC)
 endif
 if NEED_HAMLIB_LOCATOR
   dl_fldigi_SOURCES += $(LOCATOR_SRC)
-endif
-
-if ENABLE_XMLRPC
-  dl_fldigi_SOURCES += $(XMLRPC_SRC)
 endif
 
 if ENABLE_BENCHMARK
@@ -116,13 +114,17 @@ endif
 
 install-exec-local:
 if WANT_FLDIGI
-if ENABLE_XMLRPC
 	if test -f $(srcdir)/../scripts/dl-fldigi-shell; then \
 	    $(mkinstalldirs) $(DESTDIR)/$(bindir); \
             $(INSTALL_SCRIPT) $(srcdir)/../scripts/dl-fldigi-shell $(DESTDIR)/$(bindir); \
         fi
+	if test -f $(srcdir)/../scripts/ftp_kml_files.sh; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(bindir); \
+        $(INSTALL_SCRIPT) $(srcdir)/../scripts/ftp_kml_files.sh $(DESTDIR)/$(bindir); \
+	fi
 endif
-endif
+
+# TODO: xpm files should probably go to $(datadir)/pixmaps/fldigi instead of $(datadir)/pixmaps
 
 install-data-local:
 if WANT_FLDIGI
@@ -141,6 +143,26 @@ if WANT_FLDIGI
 	if test -f $(srcdir)/../data/NAVTEX_Stations.csv; then \
 	    $(mkinstalldirs) $(DESTDIR)/$(pkgdatadir); \
 	    $(INSTALL_DATA) $(srcdir)/../data/NAVTEX_Stations.csv $(DESTDIR)/$(pkgdatadir); \
+	fi
+	if test -f $(srcdir)/../data/nsd_bbsss.txt; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/fldigi; \
+	    $(INSTALL_DATA) $(srcdir)/../data/nsd_bbsss.txt $(DESTDIR)/$(pkgdatadir); \
+	fi
+	if test -f $(srcdir)/../data/station_table.txt; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/fldigi; \
+	    $(INSTALL_DATA) $(srcdir)/../data/station_table.txt $(DESTDIR)/$(pkgdatadir); \
+	fi
+	if test -f $(srcdir)/../data/ToR-Stats-SHIP.csv; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/fldigi; \
+	    $(INSTALL_DATA) $(srcdir)/../data/ToR-Stats-SHIP.csv $(DESTDIR)/$(pkgdatadir); \
+	fi
+	if test -f $(srcdir)/../data/wmo_list.txt; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(datadir)/fldigi; \
+	    $(INSTALL_DATA) $(srcdir)/../data/wmo_list.txt $(DESTDIR)/$(pkgdatadir); \
+	fi
+	if test -f $(srcdir)/../kml/styles.kml; then \
+	    $(mkinstalldirs) $(DESTDIR)/$(pkgdatadir)/kml; \
+	    $(INSTALL_DATA) $(srcdir)/../kml/styles.kml $(DESTDIR)/$(pkgdatadir)/kml; \
 	fi
 endif
 if WANT_FLARQ
@@ -167,8 +189,11 @@ if WANT_FLARQ
 	rm -f $(DESTDIR)/$(datadir)/applications/flarq.desktop
 endif
 
-FLDIGI_FL_SRC = dialogs/confdialog.fl  \
-		logbook/lgbook.fl dialogs/notifydialog.fl
+FLDIGI_FL_SRC = \
+		dialogs/confdialog.fl \
+		dialogs/notifydialog.fl \
+		dialogs/record_browse.fl \
+		logbook/lgbook.fl
 FLARQ_FL_SRC = flarq-src/arqdialogs.fl
 
 if HAVE_FLUID
@@ -262,6 +287,7 @@ dl_fldigi_SOURCES += \
 	dialogs/Viewer.cxx \
 	dialogs/htmlstrings.cxx \
 	dialogs/notifydialog.cxx \
+	dialogs/record_browse.cxx \
 	dtmf/dtmf.cxx \
 	thor/thor.cxx \
 	thor/thorvaricode.cxx \
@@ -330,6 +356,8 @@ dl_fldigi_SOURCES += \
 	include/jalocha/pj_lowpass3.h \
 	include/jalocha/pj_mfsk.h \
 	include/jalocha/pj_struc.h \
+	include/coordinate.h \
+	include/kmlserver.h \
 	include/locator.h \
 	include/log.h \
 	include/logger.h \
@@ -352,6 +380,7 @@ dl_fldigi_SOURCES += \
 	include/newinstall.h \
 	include/notify.h \
 	include/notifydialog.h \
+	include/record_browse.h \
 	include/olivia.h \
 	include/pkg.h \
 	include/picture.h \
@@ -378,8 +407,10 @@ dl_fldigi_SOURCES += \
 	include/rsid.h \
 	include/rtty.h \
 	include/view_rtty.h \
-	include/navtex.h \
+	include/synop.h \
 	include/nullmodem.h \
+	include/record_loader.h \
+	include/record_loader_gui.h \
 	include/rx_extract.h \
 	include/speak.h \
 	include/serial.h \
@@ -466,9 +497,11 @@ dl_fldigi_SOURCES += \
 	misc/charsetdistiller.cxx \
 	misc/charsetlist.cxx \
 	misc/configuration.cxx \
+	misc/coordinate.cxx \
 	misc/debug.cxx \
 	misc/dxcc.cxx \
 	misc/icons.cxx \
+	misc/kmlserver.cxx \
 	misc/log.cxx \
 	misc/macroedit.cxx \
 	misc/macros.cxx \
@@ -480,6 +513,7 @@ dl_fldigi_SOURCES += \
 	misc/pixmaps.cxx \
 	misc/pixmaps_tango.cxx \
 	misc/re.cxx \
+	misc/record_loader.cxx \
 	misc/socket.cxx \
 	misc/stacktrace.cxx \
 	misc/status.cxx \
@@ -493,6 +527,7 @@ dl_fldigi_SOURCES += \
 	mt63/mt63.cxx \
 	mt63/mt63base.cxx \
 	navtex/navtex.cxx \
+	include/navtex.h \
 	olivia/olivia.cxx \
 	psk/psk.cxx \
 	psk/pskcoeff.cxx \
@@ -518,6 +553,7 @@ dl_fldigi_SOURCES += \
 	ssdv/ssdv_rx.cxx \
 	ssdv/rs8.c \
 	ssb/ssb.cxx \
+	synop-src/synop.cxx \
 	throb/throb.cxx \
 	trx/modem.cxx \
 	trx/nullmodem.cxx \
@@ -749,7 +785,7 @@ flarq_SOURCES += \
 	widgets/Fl_Text_Editor_mod.cxx \
 	widgets/FTextView.cxx
 
-# Additional non-source files that we distribute
+# Additional files that we distribute
 EXTRA_DIST = \
 	$(srcdir)/../scripts/mkappbundle.sh \
 	$(srcdir)/../scripts/mkhamlibstatic.sh \
@@ -763,6 +799,9 @@ EXTRA_DIST = \
 	$(srcdir)/../data/dl-fldigi.desktop \
 	$(srcdir)/../data/dl-fldigi-hab.desktop \
 	$(srcdir)/../data/NAVTEX_Stations.csv \
+	$(srcdir)/../data/nsd_bbsss.txt \
+	$(srcdir)/../data/station_table.txt \
+	$(srcdir)/../data/ToR-Stats-SHIP.csv \
 	$(srcdir)/../data/mac/Info.plist.in \
 	$(srcdir)/../data/mac/fldigi.icns \
 	$(srcdir)/../data/win32/fldigi.ico \
@@ -770,6 +809,9 @@ EXTRA_DIST = \
 	$(srcdir)/../data/flarq.xpm \
 	$(srcdir)/../data/mac/flarq.icns \
 	$(srcdir)/../data/win32/flarq.ico \
+	$(srcdir)/synop-src/synop_tool.cxx \
+	$(srcdir)/synop-src/README \
+	$(srcdir)/synop-src/Makefile \
 	$(FLDIGI_FL_SRC) \
 	$(FLARQ_FL_SRC)
 

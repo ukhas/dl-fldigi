@@ -55,12 +55,12 @@ LOG_FILE_SOURCE(debug::LOG_RIGCONTROL);
 using namespace std;
 
 Cserial rigio;
-static pthread_mutex_t  rigCAT_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_t		*rigCAT_thread = 0;
+static pthread_mutex_t	rigCAT_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_t		rigCAT_thread;
 
-static bool			 rigCAT_exit = false;
-static bool			 rigCAT_open = false;
-static bool			 rigCAT_bypass = false;
+static bool			rigCAT_exit = false;
+static bool			rigCAT_open = false;
+static bool			rigCAT_bypass = false;
 
 static string		sRigWidth = "";
 static string		sRigMode = "";
@@ -92,6 +92,8 @@ bool sendCommand (string s, int retnbr)
 	retval = rigio.WriteBuffer((unsigned char *)s.c_str(), numwrite);
 	if (retval <= 0)
 		LOG_VERBOSE("Write error %d", retval);
+
+	if (retnbr == 0) return true;
 
 	memset(replybuff, 0, RXBUFFSIZE + 1);
 	numread = 0;
@@ -393,7 +395,7 @@ long long rigCAT_getfreq(int retries, bool &failed)
 			f = fm_freqdata(rTemp.data, pData);
 			if ( f >= rTemp.data.min && f <= rTemp.data.max)
 				return f;
-			LOG_VERBOSE("freq: %lld", f);
+			LOG_VERBOSE("freq: %" PRId64, f);
 retry_get_freq: ;
 		}
 	}
@@ -405,6 +407,10 @@ retry_get_freq: ;
 
 void rigCAT_setfreq(long long f)
 {
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return;
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	string strCmd;
@@ -444,24 +450,22 @@ void rigCAT_setfreq(long long f)
 			if (preply->SYMBOL == modeCmd.ok) {
 				XMLIOS  rTemp = *preply;
 // send the command
-				bool ok = false;
 				for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-					pthread_mutex_lock(&rigCAT_mutex);
-					ok = sendCommand(strCmd, rTemp.size);
-					pthread_mutex_unlock(&rigCAT_mutex);
-					if (ok) return;
+					MilliSleep(50);
+					guard_lock ser_guard( &rigCAT_mutex );
+					if (rigCAT_exit) return;
+					if (sendCommand(strCmd, rTemp.size)) return;
 				}
 				return;
 			}
 			preply++;
 		}
 	} else {
-		bool ok = false;
 		for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-			pthread_mutex_lock(&rigCAT_mutex);
-			ok = sendCommand(strCmd, 0);
-			pthread_mutex_unlock(&rigCAT_mutex);
-			if (ok) return;
+			MilliSleep(50);
+			guard_lock ser_guard( &rigCAT_mutex );
+			if (rigCAT_exit) return;
+			if (sendCommand(strCmd, 0)) return;
 		}
 	}
 	if (progdefaults.RigCatVSP == false)
@@ -470,6 +474,10 @@ void rigCAT_setfreq(long long f)
 
 string rigCAT_getmode()
 {
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return "";
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	list<MODE>::iterator mode;
@@ -568,6 +576,10 @@ retry_get_mode: ;
 
 void rigCAT_setmode(const string& md)
 {
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return;
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	string strCmd;
@@ -616,24 +628,22 @@ void rigCAT_setmode(const string& md)
 			if (preply->SYMBOL == modeCmd.ok) {
 				XMLIOS  rTemp = *preply;
 // send the command
-				bool ok = false;
 				for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-					pthread_mutex_lock(&rigCAT_mutex);
-					ok = sendCommand(strCmd, rTemp.size);
-					pthread_mutex_unlock(&rigCAT_mutex);
-					if (ok) return;
+					MilliSleep(50);
+					guard_lock ser_guard( &rigCAT_mutex );
+					if (rigCAT_exit) return;
+					if (sendCommand(strCmd, rTemp.size)) return;
 				}
 				return;
 			}
 			preply++;
 		}
 	} else {
-		bool ok = false;
 		for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-			pthread_mutex_lock(&rigCAT_mutex);
-			ok = sendCommand(strCmd, 0);
-			pthread_mutex_unlock(&rigCAT_mutex);
-			if (ok) return;
+			MilliSleep(50);
+			guard_lock ser_guard( &rigCAT_mutex );
+			if (rigCAT_exit) return;
+			if (sendCommand(strCmd, 0)) return;
 		}
 	}
 	if (progdefaults.RigCatVSP == false)
@@ -642,6 +652,10 @@ void rigCAT_setmode(const string& md)
 
 string rigCAT_getwidth()
 {
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return "";
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	list<BW>::iterator bw;
@@ -740,6 +754,10 @@ retry_get_width: ;
 
 void rigCAT_setwidth(const string& w)
 {
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return;
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	string strCmd;
@@ -792,23 +810,21 @@ void rigCAT_setwidth(const string& w)
 			if (preply->SYMBOL == modeCmd.ok) {
 				XMLIOS  rTemp = *preply;
 // send the command
-				bool ok = false;
 				for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-					pthread_mutex_lock(&rigCAT_mutex);
-					ok = sendCommand(strCmd, rTemp.size);
-					pthread_mutex_unlock(&rigCAT_mutex);
-					if (ok) return;
+					MilliSleep(50);
+					guard_lock ser_guard( &rigCAT_mutex );
+					if (rigCAT_exit) return;
+					if (sendCommand(strCmd, rTemp.size)) return;
 				}
 			}
 			preply++;
 		}
 	} else {
-		bool ok = false;
 		for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-			pthread_mutex_lock(&rigCAT_mutex);
-			ok = sendCommand(strCmd, 0);
-			pthread_mutex_unlock(&rigCAT_mutex);
-			if (ok) return;
+			MilliSleep(50);
+			guard_lock ser_guard( &rigCAT_mutex );
+			if (rigCAT_exit) return;
+			if (sendCommand(strCmd, 0)) return;
 		}
 	}
 	LOG_VERBOSE("Retries failed");
@@ -816,6 +832,10 @@ void rigCAT_setwidth(const string& w)
 
 void rigCAT_pttON()
 {
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return;
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	string strCmd;
@@ -845,24 +865,22 @@ void rigCAT_pttON()
 			if (preply->SYMBOL == modeCmd.ok) {
 				XMLIOS  rTemp = *preply;
 // send the command
-				bool ok = false;
 				for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-					pthread_mutex_lock(&rigCAT_mutex);
-					ok = sendCommand(strCmd, rTemp.size);
-					pthread_mutex_unlock(&rigCAT_mutex);
-					if (ok) return;
+					MilliSleep(50);
+					guard_lock ser_guard( &rigCAT_mutex );
+					if (rigCAT_exit) return;
+					if (sendCommand(strCmd, rTemp.size)) return;
 				}
 				return;
 			}
 			preply++;
 		}
 	} else {
-		bool ok = false;
 		for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-			pthread_mutex_lock(&rigCAT_mutex);
-			ok = sendCommand(strCmd, 0);
-			pthread_mutex_unlock(&rigCAT_mutex);
-			if (ok) return;
+			MilliSleep(50);
+			guard_lock ser_guard( &rigCAT_mutex );
+			if (rigCAT_exit) return;
+			if (sendCommand(strCmd, 0)) return;
 		}
 	}
 	LOG_VERBOSE("Retries failed");
@@ -870,6 +888,10 @@ void rigCAT_pttON()
 
 void rigCAT_pttOFF()
 {
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return;
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	string strCmd;
@@ -898,30 +920,33 @@ void rigCAT_pttOFF()
 			if (preply->SYMBOL == modeCmd.ok) {
 				XMLIOS  rTemp = *preply;
 // send the command
-				bool ok = false;
 				for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-					pthread_mutex_lock(&rigCAT_mutex);
-					ok = sendCommand(strCmd, rTemp.size);
-					pthread_mutex_unlock(&rigCAT_mutex);
-					if (ok) return;
+					MilliSleep(50);
+					guard_lock ser_guard( &rigCAT_mutex );
+					if (rigCAT_exit) return;
+					if (sendCommand(strCmd, rTemp.size)) return;
 				}
 				return;
 			}
 			preply++;
 		}
 	} else {
-		bool ok = false;
 		for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-			pthread_mutex_lock(&rigCAT_mutex);
-			ok = sendCommand(strCmd, 0);
-			pthread_mutex_unlock(&rigCAT_mutex);
-			if (ok) return;
+			MilliSleep(50);
+			guard_lock ser_guard( &rigCAT_mutex );
+			if (rigCAT_exit) return;
+			if (sendCommand(strCmd, 0)) return;
 		}
 	}
 	LOG_VERBOSE("Retries failed");
 }
 
-void rigCAT_sendINIT(const string& icmd){
+void rigCAT_sendINIT(const string& icmd)
+{
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		if (rigCAT_exit) return;
+	}
 	XMLIOS modeCmd;
 	list<XMLIOS>::iterator itrCmd;
 	string strCmd;
@@ -950,24 +975,22 @@ void rigCAT_sendINIT(const string& icmd){
 			if (preply->SYMBOL == modeCmd.ok) {
 				XMLIOS  rTemp = *preply;
 // send the command
-				bool ok = false;
 				for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-					pthread_mutex_lock(&rigCAT_mutex);
-					ok = sendCommand(strCmd, rTemp.size);
-					pthread_mutex_unlock(&rigCAT_mutex);
-					if (ok) return;
+					MilliSleep(50);
+					guard_lock ser_guard( &rigCAT_mutex );
+					if (rigCAT_exit) return;
+					if (sendCommand(strCmd, rTemp.size)) return;
 				}
 				return;
 			}
 			preply++;
 		}
 	} else {
-		bool ok = false;
 		for (int n = 0; n < progdefaults.RigCatRetries; n++) {
-			pthread_mutex_lock(&rigCAT_mutex);
-			ok = sendCommand(strCmd, 0);
-			pthread_mutex_unlock(&rigCAT_mutex);
-			if (ok) return;
+			MilliSleep(50);
+			guard_lock ser_guard( &rigCAT_mutex );
+			if (rigCAT_exit) return;
+			if (sendCommand(strCmd, 0)) return;
 		}
 	}
 	LOG_VERBOSE("Retries failed");
@@ -1115,23 +1138,17 @@ echo	   : %c\n",
 			nonCATrig = false;
 			init_Xml_RigDialog();
 		}
-	} else {
+	} else { // rigcat thread just being used for the human interface
 		nonCATrig = true;
 		init_NoRig_RigDialog();
 		llFreq = 0;
 		rigCAT_bypass = false;
-		rigCAT_exit = false;
 
-		rigCAT_thread = new pthread_t;
-
-		if (pthread_create(rigCAT_thread, NULL, rigCAT_loop, NULL) < 0) {
-			LOG_ERROR("nonCATrig pthread_create failed");
+		if (pthread_create(&rigCAT_thread, NULL, rigCAT_loop, NULL) < 0) {
+			LOG_ERROR("%s", "pthread_create failed");
 			rigio.ClosePort();
-			delete rigCAT_thread;
-			rigCAT_thread = 0;
 			return false;
 		}
-		LOG_VERBOSE("New thread for nonCATrig %p", rigCAT_thread);
 
 		rigCAT_open = true;
 		return true;
@@ -1139,18 +1156,12 @@ echo	   : %c\n",
 
 	llFreq = 0;
 	rigCAT_bypass = false;
-	rigCAT_exit = false;
 
-	rigCAT_thread = new pthread_t;
-
-	if (pthread_create(rigCAT_thread, NULL, rigCAT_loop, NULL) < 0) {
-		LOG_ERROR("rigCAT pthread_create failed");
+	if (pthread_create(&rigCAT_thread, NULL, rigCAT_loop, NULL) < 0) {
+		LOG_ERROR("%s", "pthread_create failed");
 		rigio.ClosePort();
-		delete rigCAT_thread;
-		rigCAT_thread = 0;
 		return false;
 	}
-	LOG_VERBOSE("New rigCAT thread %p", rigCAT_thread);
 
 	rigCAT_open = true;
 
@@ -1159,27 +1170,27 @@ echo	   : %c\n",
 
 void rigCAT_close(void)
 {
-	if (rigCAT_open == false || rigCAT_exit)
+	if ( rigCAT_open == false || rigCAT_exit == true)
 		return;
 
-	if (rigCAT_thread == 0) return;
+	{
+		guard_lock ser_guard( &rigCAT_mutex );
+		rigCAT_exit = true;
+	}
+
+	LOG_INFO("%s", "Waiting for rigCAT_thread");
+
+	pthread_join(rigCAT_thread, NULL);
 
 	rigCAT_sendINIT("CLOSE");
 
-	pthread_mutex_lock(&rigCAT_mutex);
-		rigCAT_exit = true;
-	pthread_mutex_unlock(&rigCAT_mutex);
+	rigio.ClosePort();
 
-	if (!rigCAT_thread) return;
-
-	pthread_join(*rigCAT_thread, NULL);
-
-	LOG_VERBOSE("Deleting thread %p", rigCAT_thread);
-	delete rigCAT_thread;
-	rigCAT_thread = 0;
-
-	wf->USB(true);
 	rigCAT_open = false;
+	rigCAT_exit = false;
+	rigCAT_bypass = false;
+	wf->USB(true);
+
 }
 
 bool rigCAT_active(void)
@@ -1238,25 +1249,22 @@ static void *rigCAT_loop(void *args)
 	bool failed;
 
 	for (;;) {
-		MilliSleep(200);
+		MilliSleep(100);
 
-		if (rigCAT_exit == true)
-			break;
+		{
+			guard_lock ser_guard( &rigCAT_mutex );
 
-		if (rigCAT_bypass == true)
-			continue;
+			if (rigCAT_exit == true) {
+				LOG_INFO("%s", "Exit rigCAT loop");
+				return NULL;
+			}
 
-		pthread_mutex_lock(&rigCAT_mutex);
-			freq = rigCAT_getfreq(progdefaults.RigCatRetries, failed);
-		pthread_mutex_unlock(&rigCAT_mutex);
+			if (rigCAT_bypass == true)
+				continue;
 
-		pthread_mutex_lock(&rigCAT_mutex);
-			sWidth = rigCAT_getwidth();
-		pthread_mutex_unlock(&rigCAT_mutex);
+		}
 
-		pthread_mutex_lock(&rigCAT_mutex);
-			sMode = rigCAT_getmode();
-		pthread_mutex_unlock(&rigCAT_mutex);
+		freq = rigCAT_getfreq(progdefaults.RigCatRetries, failed);
 
 		if ((freq > 0) && (freq != llFreq)) {
 			llFreq = freq;
@@ -1267,11 +1275,14 @@ static void *rigCAT_loop(void *args)
 		if (freq > 0)
 			dl_fldigi::hbtint::rig_set_freq(freq);
 
+		sWidth = rigCAT_getwidth();
+
 		if (sWidth.size() && sWidth != sRigWidth) {
 			sRigWidth = sWidth;
 			show_bw(sWidth);
 		}
 
+		sMode = rigCAT_getmode();
 		if (sMode.size() && sMode != sRigMode) {
 			sRigMode = sMode;
 			if (ModeIsLSB(sMode))
@@ -1284,17 +1295,6 @@ static void *rigCAT_loop(void *args)
 		if (sMode.size())
 			dl_fldigi::hbtint::rig_set_mode(sMode);
 	}
-
-	wf->USB(true);
-
-	pthread_mutex_lock(&rigCAT_mutex);
-		LOG_DEBUG("Exiting rigCAT loop, closing serial port");
-		rigio.ClosePort();
-	pthread_mutex_unlock(&rigCAT_mutex);
-
-	rigCAT_open = false;
-	rigCAT_exit = false;
-	rigCAT_bypass = false;
 
 	return NULL;
 }

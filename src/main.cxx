@@ -95,6 +95,7 @@
 #include "dxcc.h"
 #include "newinstall.h"
 #include "Viewer.h"
+#include "kmlserver.h"
 
 #if USE_HAMLIB
 	#include "rigclass.h"
@@ -106,9 +107,7 @@
 #include "qrunner.h"
 #include "stacktrace.h"
 
-#if USE_XMLRPC
-	#include "xmlrpc.h"
-#endif
+#include "xmlrpc.h"
 
 #if BENCHMARK_MODE
 	#include "benchmark.h"
@@ -137,9 +136,11 @@ string MacrosDir = "";
 string WrapDir = "";
 string TalkDir = "";
 string TempDir = "";
+string KmlDir = "";
 string PskMailDir = "";
 
 string NBEMS_dir = "";
+string DATA_dir = "";
 string ARQ_dir = "";
 string ARQ_files_dir = "";
 string ARQ_recv_dir = "";
@@ -180,12 +181,6 @@ bool	mailserver = false, mailclient = false, arqmode = false;
 static bool show_cpucheck = false;
 static bool iconified = false;
 
-RXMSGSTRUC rxmsgst;
-int		rxmsgid = -1;
-
-TXMSGSTRUC txmsgst;
-int txmsgid = -1;
-
 string option_help, version_text, build_text;
 
 qrunner *cbq[NUM_QRUNNER_THREADS];
@@ -224,9 +219,7 @@ void delayed_startup(void *)
 	grpTalker->hide();
 #endif
 
-#if USE_XMLRPC
 	XML_RPC_Server::start(progdefaults.xmlrpc_address.c_str(), progdefaults.xmlrpc_port.c_str());
-#endif
 
 	notify_start();
 
@@ -312,11 +305,13 @@ int main(int argc, char ** argv)
 #ifdef __WOE32__
 		if (HomeDir.empty()) HomeDir.assign(BaseDir).append("dl-fldigi.files/");
 		if (PskMailDir.empty()) PskMailDir = BaseDir;
+		if (DATA_dir.empty()) DATA_dir.assign(BaseDir).append("DATA.files/");
 		if (NBEMS_dir.empty()) NBEMS_dir.assign(BaseDir).append("NBEMS.files/");
 		if (FLMSG_dir.empty()) FLMSG_dir_default = NBEMS_dir;
 #else
 		if (HomeDir.empty()) HomeDir.assign(BaseDir).append(".dl-fldigi/");
 		if (PskMailDir.empty()) PskMailDir = BaseDir;
+		if (DATA_dir.empty()) DATA_dir.assign(HomeDir).append("data/");
 		if (NBEMS_dir.empty()) NBEMS_dir.assign(BaseDir).append(".nbems/");
 		if (FLMSG_dir.empty()) FLMSG_dir_default = NBEMS_dir;
 #endif
@@ -356,7 +351,6 @@ int main(int argc, char ** argv)
 	}
 
 	LOG_INFO("appname: %s", appname.c_str());
-	LOG_INFO("Test file %p", test_file);
 	if (NBEMSapps_dir)
 		LOG_INFO("%s present", test_file_name.c_str());
 	else
@@ -372,8 +366,10 @@ int main(int argc, char ** argv)
 	LOG_INFO("WrapDir: %s", WrapDir.c_str());
 	LOG_INFO("TalkDir: %s", TalkDir.c_str());
 	LOG_INFO("TempDir: %s", TempDir.c_str());
+	LOG_INFO("KmlDir: %s", KmlDir.c_str());
 	LOG_INFO("PskMailDir: %s", PskMailDir.c_str());
 
+	LOG_INFO("DATA_dir: %s", DATA_dir.c_str());
 	LOG_INFO("NBEMS_dir: %s", NBEMS_dir.c_str());
 	LOG_INFO("ARQ_dir: %s", ARQ_dir.c_str());
 	LOG_INFO("ARQ_files_dir: %s", ARQ_files_dir.c_str());
@@ -402,14 +398,7 @@ int main(int argc, char ** argv)
 	xmlfname = HomeDir;
 	xmlfname.append("rig.xml");
 
-#if !defined(__WOE32__) && !defined(__APPLE__)
-   	txmsgid = msgget( (key_t) progdefaults.tx_msgid, 0666 );
-#else
-	txmsgid = -1;
-#endif
-
 	checkTLF();
-
 
 	Fl::lock();  // start the gui thread!!
 	Fl::visual(FL_RGB); // insure 24 bit color operation
@@ -504,6 +493,11 @@ int main(int argc, char ** argv)
 	create_logbook_dialogs();
 	LOGBOOK_colors_font();
 
+	if( progdefaults.kml_save_dir.empty() ) {
+		progdefaults.kml_save_dir = KmlDir ;
+	}
+	kml_init(true);
+
 // OS X will prevent the main window from being resized if we change its
 // size *after* it has been shown. With some X11 window managers, OTOH,
 // the main window will not be restored at its exact saved position if
@@ -534,11 +528,14 @@ int main(int argc, char ** argv)
 
 	int ret = Fl::run();
 
-	arq_close();
+	return ret;
+}
 
-#if USE_XMLRPC
+void exit_process() {
+
+	KmlServer::Exit();
+	arq_close();
 	XML_RPC_Server::stop();
-#endif
 
 	if (progdefaults.usepskrep)
 		pskrep_stop();
@@ -550,7 +547,6 @@ int main(int argc, char ** argv)
 
 	FSEL::destroy();
 
-	return ret;
 }
 
 void generate_option_help(void) {
@@ -617,7 +613,6 @@ void generate_option_help(void) {
 	     << "    Look for wrap_auto_file files in DIRECTORY\n"
 	     << "    The default is " << FLMSG_dir_default << "WRAP/auto/" << "\n\n"
 
-#if USE_XMLRPC
 	     << "  --xmlrpc-server-address HOSTNAME\n"
 	     << "    Set the XML-RPC server address\n"
 	     << "    The default is: " << progdefaults.xmlrpc_address << "\n\n"
@@ -630,7 +625,6 @@ void generate_option_help(void) {
 	     << "    Allow only the methods whose names don't match REGEX\n\n"
 	     << "  --xmlrpc-list\n"
 	     << "    List all available methods\n\n"
-#endif
 
 #if BENCHMARK_MODE
 	     << "  --benchmark-modem ID\n"
@@ -692,6 +686,12 @@ void generate_option_help(void) {
 
 	     << "  --debug-level LEVEL\n"
 	     << "    Set the event log verbosity\n\n"
+
+	     << "  --debug-pskmail\n"
+	     << "    Enable logging for pskmail / arq events\n\n"
+
+	     << "  --debug-audio\n"
+	     << "    Enable logging for sound-card events\n\n"
 
 	     << "  --version\n"
 	     << "    Print version information\n\n"
@@ -778,10 +778,8 @@ int parse_args(int argc, char **argv, int& idx)
 	       OPT_FLMSG_DIR,
 	       OPT_AUTOSEND_DIR,
 
-#if USE_XMLRPC
 	       OPT_CONFIG_XMLRPC_ADDRESS, OPT_CONFIG_XMLRPC_PORT,
 	       OPT_CONFIG_XMLRPC_ALLOW, OPT_CONFIG_XMLRPC_DENY, OPT_CONFIG_XMLRPC_LIST,
-#endif
 
 #if BENCHMARK_MODE
 	       OPT_BENCHMARK_MODEM, OPT_BENCHMARK_AFC, OPT_BENCHMARK_SQL, OPT_BENCHMARK_SQLEVEL,
@@ -795,12 +793,12 @@ int parse_args(int argc, char **argv, int& idx)
 #if USE_PORTAUDIO
                OPT_FRAMES_PER_BUFFER,
 #endif
-	       OPT_NOISE, OPT_DEBUG_LEVEL,
+	       OPT_NOISE, OPT_DEBUG_LEVEL, OPT_DEBUG_PSKMAIL, OPT_DEBUG_AUDIO,
                OPT_EXIT_AFTER,
                OPT_DEPRECATED, OPT_HELP, OPT_VERSION, OPT_BUILD_INFO };
 
-	const char shortopts[] = ":";
-	static struct option longopts[] = {
+	static const char shortopts[] = ":";
+	static const struct option longopts[] = {
 #ifndef __WOE32__
 		{ "rx-ipc-key",	   1, 0, OPT_RX_IPC_KEY },
 		{ "tx-ipc-key",	   1, 0, OPT_TX_IPC_KEY },
@@ -815,13 +813,11 @@ int parse_args(int argc, char **argv, int& idx)
 
 		{ "cpu-speed-test", 0, 0, OPT_SHOW_CPU_CHECK },
 
-#if USE_XMLRPC
 		{ "xmlrpc-server-address", 1, 0, OPT_CONFIG_XMLRPC_ADDRESS },
 		{ "xmlrpc-server-port",    1, 0, OPT_CONFIG_XMLRPC_PORT },
 		{ "xmlrpc-allow",          1, 0, OPT_CONFIG_XMLRPC_ALLOW },
 		{ "xmlrpc-deny",           1, 0, OPT_CONFIG_XMLRPC_DENY },
 		{ "xmlrpc-list",           0, 0, OPT_CONFIG_XMLRPC_LIST },
-#endif
 
 #if BENCHMARK_MODE
 		{ "benchmark-modem", 1, 0, OPT_BENCHMARK_MODEM },
@@ -851,6 +847,8 @@ int parse_args(int argc, char **argv, int& idx)
 
 		{ "noise", 0, 0, OPT_NOISE },
 		{ "debug-level",   1, 0, OPT_DEBUG_LEVEL },
+		{ "debug-pskmail", 0, 0, OPT_DEBUG_PSKMAIL },
+		{ "debug-audio", 0, 0, OPT_DEBUG_AUDIO },
 
 		{ "help",	   0, 0, OPT_HELP },
 		{ "version",	   0, 0, OPT_VERSION },
@@ -930,7 +928,6 @@ int parse_args(int argc, char **argv, int& idx)
 		}
 			break;
 
-#if USE_XMLRPC
 		case OPT_CONFIG_XMLRPC_ADDRESS:
 			progdefaults.xmlrpc_address = optarg;
 			break;
@@ -952,7 +949,6 @@ int parse_args(int argc, char **argv, int& idx)
 		case OPT_CONFIG_XMLRPC_LIST:
 			XML_RPC_Server::list_methods(cout);
 			exit(EXIT_SUCCESS);
-#endif
 
 #if BENCHMARK_MODE
 		case OPT_BENCHMARK_MODEM:
@@ -1057,6 +1053,14 @@ int parse_args(int argc, char **argv, int& idx)
 		}
 			break;
 
+		case OPT_DEBUG_PSKMAIL:
+			debug_pskmail = true;
+			break;
+
+		case OPT_DEBUG_AUDIO:
+			debug_audio = true;
+			break;
+
 		case OPT_DEPRECATED:
 			cerr << "W: the --" << longopts[longindex].name
 			     << " option has been deprecated and will be removed in a future version\n";
@@ -1123,9 +1127,6 @@ void generate_version_text(void)
 #endif
 #if USE_HAMLIB
 	s << "                   " "Hamlib " << HAMLIB_BUILD_VERSION "\n";
-#endif
-#if USE_XMLRPC
-	s << "                   " "XMLRPC-C " << XMLRPC_BUILD_VERSION "\n\n";
 #endif
 
 	s << "\nRuntime information:\n";
@@ -1298,6 +1299,7 @@ static void checkdirectories(void)
 		{ WrapDir, "wrap", 0 },
 		{ TalkDir, "talk", 0 },
 		{ TempDir, "temp", 0 },
+		{ KmlDir, "kml", 0 },
 	};
 
 	int r;
@@ -1419,3 +1421,57 @@ static void arg_error(const char* name, const char* arg, bool missing)
 
 	exit(EXIT_FAILURE);
 }
+
+/// Sets or resets the KML parameters, and loads existing files.
+void kml_init(bool load_files)
+{
+	KmlServer::GetInstance()->InitParams(
+			progdefaults.kml_command,
+			progdefaults.kml_save_dir,
+			(double)progdefaults.kml_merge_distance,
+			progdefaults.kml_retention_time,
+			progdefaults.kml_refresh_interval,
+			progdefaults.kml_balloon_style);
+
+	if(load_files) {
+		KmlServer::GetInstance()->ReloadKmlFiles();
+	}
+
+	/// TODO: Should do this only when the locator has changed.
+	try {
+		/// One special KML object for the user.
+		CoordinateT::Pair myCoo( progdefaults.myLocator );
+
+		/// TODO: Fix this: It does not seem to create a polyline when changing the locator.
+		KmlServer::CustomDataT custData ;
+		custData.Push( "QTH", progdefaults.myQth );
+		custData.Push( "Locator", progdefaults.myLocator );
+		custData.Push( "Antenna", progdefaults.myAntenna );
+		custData.Push( "Name", progdefaults.myName );
+
+		KmlServer::GetInstance()->Broadcast(
+			"User",
+			KmlServer::UniqueEvent,
+			myCoo,
+			0.0, // Altitude.
+			progdefaults.myCall,
+			progdefaults.myLocator,
+			progdefaults.myQth,
+			custData );
+	}
+	catch( const std::exception & exc ) {
+		LOG_WARN("Cannot publish user position:%s", exc.what() );
+	}
+}
+
+/// Tests if a directory exists.
+int directory_is_created( const char * strdir )
+{
+	DIR *dir = opendir(strdir);
+	if (dir) {
+		closedir(dir);
+		return true;
+	}
+	return false;
+}
+

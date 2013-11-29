@@ -78,6 +78,7 @@
 #include "rigsupport.h"
 
 #include "confdialog.h"
+#include "arq_io.h"
 
 LOG_FILE_SOURCE(debug::LOG_RPC);
 
@@ -586,7 +587,8 @@ public:
 				return;
 			}
 		}
-		throw xmlrpc_c::fault("No such modem");
+		*retval = "No such modem";
+		return;
 	}
 };
 
@@ -673,9 +675,10 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
         {
 		if (!(active_modem->get_cap() & modem::CAP_AFC_SR))
-			throw xmlrpc_c::fault("Operation not supported by modem");
-
-		*retval = xmlrpc_c::value_int((int)cntSearchRange->value());
+			*retval = "Operation not supported by modem";
+//			throw xmlrpc_c::fault("Operation not supported by modem");
+		else
+			*retval = xmlrpc_c::value_int((int)cntSearchRange->value());
 	}
 };
 
@@ -690,8 +693,11 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
         {
 		XMLRPC_LOCK;
-		if (!(active_modem->get_cap() & modem::CAP_AFC_SR))
-			throw xmlrpc_c::fault("Operation not supported by modem");
+		if (!(active_modem->get_cap() & modem::CAP_AFC_SR)) {
+			*retval = "Operation not supported by modem";
+			return;
+//			throw xmlrpc_c::fault("Operation not supported by modem");
+		}
 
 		int v = (int)(cntSearchRange->value());
 		REQ(set_valuator, cntSearchRange, params.getInt(0, (int)cntSearchRange->minimum(), (int)cntSearchRange->maximum()));
@@ -710,8 +716,11 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
         {
 		XMLRPC_LOCK;
-		if (!(active_modem->get_cap() & modem::CAP_AFC_SR))
-			throw xmlrpc_c::fault("Operation not supported by modem");
+		if (!(active_modem->get_cap() & modem::CAP_AFC_SR)) {
+			*retval = "Operation not supported by modem";
+			return;
+//			throw xmlrpc_c::fault("Operation not supported by modem");
+		}
 
 		int v = (int)(cntSearchRange->value() + params.getInt(0));
 		REQ(set_valuator, cntSearchRange, v);
@@ -724,15 +733,16 @@ public:
 static Fl_Valuator* get_bw_val(void)
 {
 	if (!(active_modem->get_cap() & modem::CAP_BW))
-		throw xmlrpc_c::fault("Operation not supported by modem");
+		return 0;
+//		throw xmlrpc_c::fault("Operation not supported by modem");
 
 	trx_mode m = active_modem->get_mode();
 	if (m >= MODE_HELL_FIRST && m <= MODE_HELL_LAST)
 		return sldrHellBW;
 	else if (m == MODE_CW)
 		return sldrCWbandwidth;
-
-	throw xmlrpc_c::fault("Unknown CAP_BW modem");
+	return 0;
+//	throw xmlrpc_c::fault("Unknown CAP_BW modem");
 }
 
 class Modem_get_bw : public xmlrpc_c::method
@@ -853,7 +863,8 @@ public:
 		}
 			break;
 		default:
-			throw xmlrpc_c::fault("Invalid Olivia bandwidth");
+			*retval = "Invalid Olivia bandwidth";
+//			throw xmlrpc_c::fault("Invalid Olivia bandwidth");
 		}
 	}
 };
@@ -902,7 +913,8 @@ public:
 			*retval = xmlrpc_c::value_nil();
 		}
 		else
-			throw xmlrpc_c::fault("Invalid Olivia tones");
+			*retval = "Invalid Olivia tones";
+//			throw xmlrpc_c::fault("Invalid Olivia tones");
 	}
 };
 
@@ -976,8 +988,11 @@ public:
         {
 		XMLRPC_LOCK;
 		string s = params.getString(0);
-		if (s != "LSB" && s != "USB")
-			throw xmlrpc_c::fault("Invalid argument");
+		if (s != "LSB" && s != "USB") {
+			*retval = "Invalid argument";
+			return;
+//			throw xmlrpc_c::fault("Invalid argument");
+		}
 
 		if (progdefaults.chkUSERIGCATis)
 			rigCAT_setmode(s);
@@ -1019,7 +1034,9 @@ public:
 		XMLRPC_LOCK;
 		string s = params.getString(0);
 		if (s != "USB" && s != "LSB")
-			throw xmlrpc_c::fault("Invalid argument");
+			*retval = "Invalid argument";
+//			throw xmlrpc_c::fault("Invalid argument");
+		else
 		REQ(static_cast<void (waterfall::*)(bool)>(&waterfall::USB), wf, s == "USB");
 
 		*retval = xmlrpc_c::value_nil();
@@ -1466,8 +1483,10 @@ public:
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
         {
 		XMLRPC_LOCK;
-		if (trx_state == STATE_TX || trx_state == STATE_TUNE)
+		if (trx_state == STATE_TX || trx_state == STATE_TUNE) {
 			REQ(abort_tx);
+			REQ(AbortARQ);
+		}
 		*retval = xmlrpc_c::value_nil();
 	}
 };
@@ -1535,11 +1554,13 @@ public:
 	}
 	void execute(const xmlrpc_c::paramList& params, xmlrpc_c::value* retval)
 	{
-//		if (trx_state == STATE_TX || trx_state == STATE_TUNE)
-		if (btnTune->value() || wf->xmtrcv->value())
+		if (trx_state == STATE_TX || trx_state == STATE_TUNE)
+//		if (btnTune->value() || wf->xmtrcv->value())
 			*retval = xmlrpc_c::value_string("TX");
-		else
+		else if (trx_state == STATE_RX)
 			*retval = xmlrpc_c::value_string("RX");
+		else
+			*retval = xmlrpc_c::value_string("OTHER");
 	}
 };
 
@@ -2980,7 +3001,7 @@ struct Navtex_send_message : public xmlrpc_c::method
 	ELEM_(Spot_get_auto, "spot.get_auto")							\
 	ELEM_(Spot_set_auto, "spot.set_auto")							\
 	ELEM_(Spot_toggle_auto, "spot.toggle_auto")						\
-	ELEM_(Spot_pskrep_get_count, "spot.pskrep.get_count")			\
+	ELEM_(Spot_pskrep_get_count, "spot.pskrep.get_count")				\
 																		\
 	ELEM_(Wefax_state_string, "wefax.state_string")						\
 	ELEM_(Wefax_skip_apt, "wefax.skip_apt")								\
@@ -2994,7 +3015,7 @@ struct Navtex_send_message : public xmlrpc_c::method
 	ELEM_(Wefax_send_file, "wefax.send_file")							\
 																		\
 	ELEM_(Navtex_get_message, "navtex.get_message")						\
-
+	ELEM_(Navtex_send_message, "navtex.send_message")					\
 
 struct rm_pred
 {

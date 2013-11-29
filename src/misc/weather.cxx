@@ -189,16 +189,6 @@ static wxpairs cloud_type[] = {
 {"CI", "cirrus"},
 {NULL, NULL} };
 
-static void wx_busy_cursor(void*)
-{
-	Fl::first_window()->cursor(FL_CURSOR_WAIT);
-}
-
-static void wx_default_cursor(void*)
-{
-	Fl::first_window()->cursor(FL_CURSOR_DEFAULT);
-}
-
 void getwx(string& wx, const char *metar)
 {
 	string url;
@@ -226,7 +216,7 @@ void getwx(string& wx, const char *metar)
 	url.assign("http://weather.noaa.gov/pub/data/observations/metar/decoded/")
 	   .append(wxsta).append(".TXT");
 
-	if (!fetch_http_gui(url, text, 5.0, wx_busy_cursor, 0, wx_default_cursor, 0)) {
+	if (!fetch_http_gui(url, text, 5.0)) {
 		LOG_WARN("%s", "url not available\n");
 		return;
 	}
@@ -238,7 +228,10 @@ void getwx(string& wx, const char *metar)
 		LOG_WARN("%s", "station not found\n");
 		return;
 	}
-	const char *eoh = "Content-Type:";
+
+	string eoh = progdefaults.wx_eoh;
+	if (eoh.empty()) eoh = "Connection: close";
+
 	p1 = text.find(eoh);
 	if (p1 != string::npos) {
 		p1 = text.find("\n",p1);

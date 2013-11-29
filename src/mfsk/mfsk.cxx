@@ -106,6 +106,8 @@ void mfsk::shutdown()
 mfsk::~mfsk()
 {
 	stopflag = true;
+	int msecs = 200;
+	while(--msecs && txstate != TX_STATE_PREAMBLE) MilliSleep(1); 
 	if (picTxWin)
 		picTxWin->hide();
 	if (picRxWin)
@@ -710,7 +712,7 @@ void mfsk::eval_s2n()
 int mfsk::rx_process(const double *buf, int len)
 {
 	complex z;
-	complex* bins;
+	complex* bins = 0;
 
 	while (len-- > 0) {
 // create analytic signal...
