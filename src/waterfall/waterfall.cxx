@@ -1347,6 +1347,7 @@ void xmtrcv_cb(Fl_Widget *w, void *vi)
 				AbortARQ();
 			if (progStatus.timer)
 				progStatus.timer = 0;
+			queue_reset();
 			active_modem->set_stopflag(true);
 		}
 	}
