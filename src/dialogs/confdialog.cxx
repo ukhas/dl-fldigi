@@ -3917,6 +3917,15 @@ if (o->value()) {
 };
 }
 
+Fl_Group *tabWavFile=(Fl_Group *)0;
+
+Fl_Choice *mnuWavSampleRate=(Fl_Choice *)0;
+
+static void cb_mnuWavSampleRate(Fl_Choice* o, void*) {
+  progdefaults.wavSampleRate = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Group *tabID=(Fl_Group *)0;
 
 Fl_Tabs *tabsID=(Fl_Tabs *)0;
@@ -6524,6 +6533,7 @@ an merging"));
           tabsModems->selection_color(FL_LIGHT1);
           tabsModems->align(Fl_Align(FL_ALIGN_TOP_RIGHT));
           { tabCW = new Fl_Group(0, 50, 540, 320, _("CW"));
+            tabCW->hide();
             { tabsCW = new Fl_Tabs(0, 50, 540, 320);
               tabsCW->selection_color(FL_LIGHT1);
               { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("General"));
@@ -7494,7 +7504,6 @@ an merging"));
             tabPSK->end();
           } // Fl_Group* tabPSK
           { tabRTTY = new Fl_Group(0, 50, 540, 320, _("RTTY"));
-            tabRTTY->hide();
             { tabsRTTY = new Fl_Tabs(0, 50, 540, 320);
               tabsRTTY->selection_color(FL_LIGHT1);
               { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("Rx"));
@@ -7926,6 +7935,7 @@ le Earth)"));
         { tabsRig = new Fl_Tabs(0, 23, 540, 345);
           tabsRig->selection_color(FL_LIGHT1);
           { Fl_Group* o = new Fl_Group(0, 48, 540, 320, _("Hardware PTT"));
+            o->hide();
             { Fl_Group* o = new Fl_Group(26, 57, 490, 38);
               o->box(FL_ENGRAVED_FRAME);
               { Fl_Check_Button* o = btnPTTrightchannel = new Fl_Check_Button(45, 66, 250, 20, _("PTT tone on right audio channel "));
@@ -8013,7 +8023,6 @@ le Earth)"));
           } // Fl_Group* o
           { Fl_Group* o = new Fl_Group(0, 48, 540, 320, _("RigCAT"));
             o->tooltip(_("Rig Control using xml spec file"));
-            o->hide();
             { chkUSERIGCAT = new Fl_Check_Button(215, 60, 110, 20, _("Use RigCAT"));
               chkUSERIGCAT->tooltip(_("RigCAT used for rig control"));
               chkUSERIGCAT->down_box(FL_DOWN_BOX);
@@ -8588,7 +8597,7 @@ ll with your audio device."));
           } // Fl_Group* tabAudioOpt
           { tabMixer = new Fl_Group(0, 50, 540, 320, _("Mixer"));
             tabMixer->hide();
-            { Fl_Group* o = new Fl_Group(23, 69, 490, 145, _("OSS mixer"));
+            { Fl_Group* o = new Fl_Group(23, 69, 490, 145, _("OSS Mixer"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { Fl_Check_Button* o = btnMixer = new Fl_Check_Button(33, 98, 125, 25, _("Manage mixer"));
@@ -8679,6 +8688,18 @@ nce.\nYou may change the state from either location.\n..."));
             } // Fl_Group* o
             tabAudioRightChannel->end();
           } // Fl_Group* tabAudioRightChannel
+          { tabWavFile = new Fl_Group(0, 50, 540, 320, _("Wav"));
+            tabWavFile->hide();
+            { Fl_Choice* o = mnuWavSampleRate = new Fl_Choice(60, 96, 150, 24, _("Wav write sample rate"));
+              mnuWavSampleRate->tooltip(_("Pick baud rate from list"));
+              mnuWavSampleRate->down_box(FL_BORDER_BOX);
+              mnuWavSampleRate->callback((Fl_Callback*)cb_mnuWavSampleRate);
+              mnuWavSampleRate->align(Fl_Align(FL_ALIGN_TOP_LEFT));
+              o->add("22050|24000|44100|48000");
+              o->value(progdefaults.wavSampleRate);
+            } // Fl_Choice* mnuWavSampleRate
+            tabWavFile->end();
+          } // Fl_Group* tabWavFile
           tabsSoundCard->end();
         } // Fl_Tabs* tabsSoundCard
         tabSoundCard->end();
@@ -8720,9 +8741,8 @@ d frequency"));
                 chkRSidAutoDisable->value(progdefaults.rsid_auto_disable);
                 if (progdefaults.rsid_notify_only) chkRSidAutoDisable->deactivate();
               } // Fl_Check_Button* chkRSidAutoDisable
-              { Fl_Value_Slider2* o = sldrRSIDresolution = new Fl_Value_Slider2(10, 233, 145, 22, _("Sensitivity"));
-                sldrRSIDresolution->tooltip(_("2 = normal sensitivity / decreased false detection\n5 = high sensitivity / in\
-creased false detection"));
+              { Fl_Value_Slider2* o = sldrRSIDresolution = new Fl_Value_Slider2(10, 233, 145, 22, _("Errors"));
+                sldrRSIDresolution->tooltip(_("Number of errors allowed in RsID comparison"));
                 sldrRSIDresolution->type(1);
                 sldrRSIDresolution->box(FL_DOWN_BOX);
                 sldrRSIDresolution->color(FL_BACKGROUND_COLOR);
@@ -8731,10 +8751,8 @@ creased false detection"));
                 sldrRSIDresolution->labelfont(0);
                 sldrRSIDresolution->labelsize(14);
                 sldrRSIDresolution->labelcolor(FL_FOREGROUND_COLOR);
-                sldrRSIDresolution->minimum(2);
-                sldrRSIDresolution->maximum(5);
+                sldrRSIDresolution->maximum(4);
                 sldrRSIDresolution->step(1);
-                sldrRSIDresolution->value(2);
                 sldrRSIDresolution->textsize(14);
                 sldrRSIDresolution->callback((Fl_Callback*)cb_sldrRSIDresolution);
                 sldrRSIDresolution->align(Fl_Align(FL_ALIGN_RIGHT));

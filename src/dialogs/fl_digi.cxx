@@ -3876,11 +3876,7 @@ int rightof(Fl_Widget* w)
 
 int leftof(Fl_Widget* w)
 {
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 	unsigned int a = w->align();
-#else
-	int a = w->align();
-#endif
 	if (a == FL_ALIGN_CENTER || a & FL_ALIGN_INSIDE)
 		return w->x();
 
@@ -3905,11 +3901,7 @@ int leftof(Fl_Widget* w)
 
 int above(Fl_Widget* w)
 {
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 	unsigned int a = w->align();
-#else
-	int a = w->align();
-#endif
 	if (a == FL_ALIGN_CENTER || a & FL_ALIGN_INSIDE)
 		return w->y();
 
@@ -3918,11 +3910,7 @@ int above(Fl_Widget* w)
 
 int below(Fl_Widget* w)
 {
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 	unsigned int a = w->align();
-#else
-	int a = w->align();
-#endif
 	if (a == FL_ALIGN_CENTER || a & FL_ALIGN_INSIDE)
 		return w->y() + w->h();
 
@@ -7234,15 +7222,10 @@ int get_tx_char(void)
 
 	if ((progStatus.repeatMacro > -1) && text2repeat.length()) {
 		string repeat_content;
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 		int utf8size = fl_utf8len1(text2repeat[repeatchar]);
 		for (int i = 0; i < utf8size; i++)
 			repeat_content += text2repeat[repeatchar + i];
 		repeatchar += utf8size;
-#else
-		repeat_content += text2repeat[repeatchar];
-		repeatchar++;
-#endif
 		tx_encoder.push(repeat_content);
 
 		if (repeatchar >= text2repeat.length()) {
@@ -7306,30 +7289,18 @@ int get_tx_char(void)
 			}
 			break;
 		default:
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 			char utf8_char[6];
 			int utf8_len = fl_utf8encode(c, utf8_char);
 			tx_encoder.push("^" + string(utf8_char, utf8_len));
-#else
-			string tmp("^");
-			tmp += c;
-			tx_encoder.push(tmp);
-#endif
 		}
 	}
 	else if (c == '\n') {
 		tx_encoder.push("\r\n");
 	}
 	else {
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 		char utf8_char[6];
 		int utf8_len = fl_utf8encode(c, utf8_char);
 		tx_encoder.push(string(utf8_char, utf8_len));
-#else
-		string tmp;
-		tmp += c;
-		tx_encoder.push(tmp);
-#endif
 	}
 	
 	transmit:
@@ -7341,11 +7312,7 @@ int get_tx_char(void)
 	}
 
 	if (progdefaults.tx_lowercase)
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 		c = fl_tolower(c);
-#else
-		c = tolower(c);
-#endif
 
 	return(c);
 }
@@ -7390,16 +7357,10 @@ void put_echo_char(unsigned int data, int style)
 		Maillogfile->log_to_file(cLogfile::LOG_TX, s);
 	}
 
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
-#else
-	REQ(&FTextBase::addchr, ReceiveText, data, style);
-#endif
 
 	if (echo_chd.data_length() > 0)
 	{
-#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
 		REQ(&FTextRX::addstr, ReceiveText, echo_chd.data(), style);
-#endif
 		if (progStatus.LOGenabled)
 			logfile->log_to_file(cLogfile::LOG_TX, echo_chd.data());
 		

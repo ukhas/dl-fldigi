@@ -409,7 +409,7 @@ btnApplyConfig->activate();}
         }
       }
       Fl_Group tabUI {
-        label UI open
+        label UI
         xywh {0 25 540 346} hide
       } {
         Fl_Tabs tabsUI {open
@@ -2548,15 +2548,15 @@ behaves inside the waterfall} xywh {34 207 150 22} down_box BORDER_BOX align 8
         }
       }
       Fl_Group tabModems {
-        label Modems open
+        label Modems
         xywh {0 25 595 347}
       } {
         Fl_Tabs tabsModems {open
           xywh {0 25 540 347} selection_color 50 align 9
         } {
           Fl_Group tabCW {
-            label CW selected
-            xywh {0 50 540 320}
+            label CW
+            xywh {0 50 540 320} hide
           } {
             Fl_Tabs tabsCW {open
               xywh {0 50 540 320} selection_color 50
@@ -3407,13 +3407,13 @@ progdefaults.changed = true;}
           }
           Fl_Group tabRTTY {
             label RTTY
-            xywh {0 50 540 320} hide
+            xywh {0 50 540 320}
           } {
             Fl_Tabs tabsRTTY {open
               xywh {0 50 540 320} selection_color 50
             } {
               Fl_Group {} {
-                label Rx open
+                label Rx open selected
                 xywh {0 75 540 295} align 5
               } {
                 Fl_Group {} {
@@ -3841,7 +3841,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabRig {
-        label Rig open
+        label Rig
         tooltip {Transceiver control} xywh {0 23 540 345} hide
       } {
         Fl_Tabs tabsRig {open
@@ -3849,7 +3849,7 @@ progdefaults.changed = true;}
         } {
           Fl_Group {} {
             label {Hardware PTT} open
-            xywh {0 48 540 320}
+            xywh {0 48 540 320} hide
           } {
             Fl_Group {} {
               xywh {26 57 490 38} box ENGRAVED_FRAME
@@ -3986,7 +3986,7 @@ progdefaults.changed = true;}
           }
           Fl_Group {} {
             label RigCAT open
-            tooltip {Rig Control using xml spec file} xywh {0 48 540 320} hide
+            tooltip {Rig Control using xml spec file} xywh {0 48 540 320}
           } {
             Fl_Check_Button chkUSERIGCAT {
               label {Use RigCAT}
@@ -4417,7 +4417,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabSoundCard {
-        label Audio
+        label Audio open
         tooltip {Audio devices} xywh {0 25 540 345} hide
       } {
         Fl_Tabs tabsSoundCard {open
@@ -4593,7 +4593,7 @@ progdefaults.changed = true;}
             xywh {0 50 540 320} hide
           } {
             Fl_Group {} {
-              label {OSS mixer} open
+              label {OSS Mixer} open
               xywh {23 69 490 145} box ENGRAVED_FRAME align 21
             } {
               Fl_Check_Button btnMixer {
@@ -4789,6 +4789,19 @@ if (o->value()) {
               }
             }
           }
+          Fl_Group tabWavFile {
+            label Wav open
+            xywh {0 50 540 320} hide
+          } {
+            Fl_Choice mnuWavSampleRate {
+              label {Wav write sample rate}
+              callback {progdefaults.wavSampleRate = o->value();
+progdefaults.changed = true;} open
+              tooltip {Pick baud rate from list} xywh {60 96 150 24} down_box BORDER_BOX align 5
+              code0 {o->add("22050|24000|44100|48000");}
+              code1 {o->value(progdefaults.wavSampleRate);}
+            } {}
+          }
         }
       }
       Fl_Group tabID {
@@ -4857,11 +4870,10 @@ progdefaults.changed = true;}
                 code2 {if (progdefaults.rsid_notify_only) chkRSidAutoDisable->deactivate();}
               }
               Fl_Value_Slider sldrRSIDresolution {
-                label Sensitivity
+                label Errors
                 callback {progdefaults.rsid_resolution = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {2 = normal sensitivity / decreased false detection
-5 = high sensitivity / increased false detection} xywh {10 233 145 22} type Horizontal align 8 minimum 2 maximum 5 step 1 value 2 textsize 14
+                tooltip {Number of errors allowed in RsID comparison} xywh {10 233 145 22} type Horizontal align 8 maximum 4 step 1 textsize 14
                 code0 {o->value(progdefaults.rsid_resolution);}
                 code2 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
                 class Fl_Value_Slider2
