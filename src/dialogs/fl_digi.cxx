@@ -604,9 +604,12 @@ Fl_Menu_Item quick_change_navtex[] = {
 };
 
 Fl_Menu_Item quick_change_mt63[] = {
-	{ mode_info[MODE_MT63_500].name, 0, cb_init_mode, (void *)MODE_MT63_500 },
-	{ mode_info[MODE_MT63_1000].name, 0, cb_init_mode, (void *)MODE_MT63_1000 },
-	{ mode_info[MODE_MT63_2000].name, 0, cb_init_mode, (void *)MODE_MT63_2000 },
+	{ mode_info[MODE_MT63_500S].name, 0, cb_init_mode, (void *)MODE_MT63_500S },
+	{ mode_info[MODE_MT63_500L].name, 0, cb_init_mode, (void *)MODE_MT63_500L },
+	{ mode_info[MODE_MT63_1000S].name, 0, cb_init_mode, (void *)MODE_MT63_1000S },
+	{ mode_info[MODE_MT63_1000L].name, 0, cb_init_mode, (void *)MODE_MT63_1000L },
+	{ mode_info[MODE_MT63_2000S].name, 0, cb_init_mode, (void *)MODE_MT63_2000S },
+	{ mode_info[MODE_MT63_2000L].name, 0, cb_init_mode, (void *)MODE_MT63_2000L },
 	{ 0 }
 };
 
@@ -1254,7 +1257,8 @@ void init_modem(trx_mode mode, int freq)
 		modem_config_tab = tabNavtex;
 		break;
 
-	case MODE_MT63_500: case MODE_MT63_1000: case MODE_MT63_2000 :
+	case MODE_MT63_500S: case MODE_MT63_1000S: case MODE_MT63_2000S :
+	case MODE_MT63_500L: case MODE_MT63_1000L: case MODE_MT63_2000L :
 		startup_modem(*mode_info[mode].modem ? *mode_info[mode].modem :
 			      *mode_info[mode].modem = new mt63(mode), freq);
 		quick_change = quick_change_mt63;
@@ -1817,12 +1821,12 @@ void cb_mnuCapture(Fl_Widget *w, void *d)
 
 void cb_mnuGenerate(Fl_Widget *w, void *d)
 {
-	if (!scard) return;
 	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
 	if (capval || playval) {
 		m->clear();
 		return;
 	}
+	if (!scard) return;
 	genval = m->value();
 	if (!scard->Generate(genval)) {
 		m->clear();
@@ -3348,6 +3352,8 @@ UI_return:
 			text_panel->orgx(), text_panel->orgy(), 
 			text_panel->x(), 
 			text_panel->y() + (int)(1.0*text_panel->h()*progStatus.tile_y/progStatus.tile_h + 0.5));
+
+	viewer_redraw();
 	fl_digi_main->init_sizes();
 	fl_digi_main->redraw();
 }
@@ -3483,9 +3489,12 @@ Fl_Menu_Item menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {"MT63", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MT63_500].name, 0,  cb_init_mode, (void *)MODE_MT63_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MT63_1000].name, 0,  cb_init_mode, (void *)MODE_MT63_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MT63_2000].name, 0,  cb_init_mode, (void *)MODE_MT63_2000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_500S].name, 0,  cb_init_mode, (void *)MODE_MT63_500S, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_500L].name, 0,  cb_init_mode, (void *)MODE_MT63_500L, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_1000S].name, 0,  cb_init_mode, (void *)MODE_MT63_1000S, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_1000L].name, 0,  cb_init_mode, (void *)MODE_MT63_1000L, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_2000S].name, 0,  cb_init_mode, (void *)MODE_MT63_2000S, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_2000L].name, 0,  cb_init_mode, (void *)MODE_MT63_2000L, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 { OLIVIA_MLABEL, 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
@@ -5191,6 +5200,7 @@ void create_fl_digi_main_primary() {
 				mainViewer->callback((Fl_Callback*)cb_mainViewer);
 				mainViewer->setfont(progdefaults.ViewerFontnbr, progdefaults.ViewerFontsize);
 				mainViewer->tooltip(_("Left click - select\nRight click - clear line"));
+
 // mainViewer uses same regular expression evaluator as Viewer
 				mainViewer->seek_re = &seek_re;
 
@@ -5626,9 +5636,12 @@ Fl_Menu_Item alt_menu_[] = {
 {0,0,0,0,0,0,0,0,0},
 
 {"MT63", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MT63_500].name, 0,  cb_init_mode, (void *)MODE_MT63_500, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MT63_1000].name, 0,  cb_init_mode, (void *)MODE_MT63_1000, 0, FL_NORMAL_LABEL, 0, 14, 0},
-{ mode_info[MODE_MT63_2000].name, 0,  cb_init_mode, (void *)MODE_MT63_2000, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_500S].name, 0,  cb_init_mode, (void *)MODE_MT63_500S, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_500L].name, 0,  cb_init_mode, (void *)MODE_MT63_500L, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_1000S].name, 0,  cb_init_mode, (void *)MODE_MT63_1000S, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_1000L].name, 0,  cb_init_mode, (void *)MODE_MT63_1000L, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_2000S].name, 0,  cb_init_mode, (void *)MODE_MT63_2000S, 0, FL_NORMAL_LABEL, 0, 14, 0},
+{ mode_info[MODE_MT63_2000L].name, 0,  cb_init_mode, (void *)MODE_MT63_2000L, 0, FL_NORMAL_LABEL, 0, 14, 0},
 {0,0,0,0,0,0,0,0,0},
 
 {"Olivia", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 14, 0},
