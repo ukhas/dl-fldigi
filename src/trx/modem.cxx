@@ -432,7 +432,7 @@ void modem::s2nreport(void)
 	double s2n_avg = s2n_sum / s2n_ncount;
 	double s2n_stddev = sqrt((s2n_sum2 / s2n_ncount) - (s2n_avg * s2n_avg));
 
-	REQ(pskmail_notify_s2n, s2n_ncount, s2n_avg, s2n_stddev);
+	pskmail_notify_s2n(s2n_ncount, s2n_avg, s2n_stddev);
 }
 
 void modem::ModulateXmtr(double *buffer, int len)
@@ -784,8 +784,6 @@ void modem::pretone()
 	double phaseincr = 2.0 * M_PI * active_modem->get_txfreq() / sr;
 	double phase = 0.0;
 	double outbuf[symlen];
-
-printf("pretone symlen = %d\nduration = %4.1f\n", symlen, progdefaults.pretone);
 
 	for (int j = 0; j < symlen; j++) {
 		outbuf[j] = (0.5 * (1.0 - cos (M_PI * j / symlen)))*sin(phase);
