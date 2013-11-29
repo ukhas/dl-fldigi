@@ -253,6 +253,7 @@ extern Fl_Choice *mnuRTTYAFCSpeed;
 extern Fl_Check_Button *chkUOSrx;
 #include <FL/Fl_Value_Input.H>
 extern Fl_Value_Input *rtty_rx_shape;
+extern Fl_Check_Button *btnRxTones[3];
 extern Fl_Check_Button *btnPreferXhairScope;
 extern Fl_Check_Button *chk_true_scope;
 extern Fl_Check_Button *chk_useMARKfreq;
@@ -393,6 +394,7 @@ extern Fl_Check_Button *btnPTTrightchannel2;
 extern Fl_Check_Button *btnQSK2;
 extern Fl_Check_Button *chkPseudoFSK2;
 extern Fl_Group *tabID;
+extern Fl_Tabs *tabsID;
 extern Fl_Group *tabRsID;
 extern Fl_Check_Button *chkRSidNotifyOnly;
 extern Fl_Button *bRSIDRxModes;
@@ -479,6 +481,7 @@ extern Fl_Check_Button *btn_wx_mbars;
 #include "weather.h"
 extern Fl_Button *btn_metar_search;
 extern Fl_Group *tabQRZ;
+extern Fl_Tabs *tabsQRZ;
 extern Fl_Round_Button *btnQRZWEBnotavailable;
 extern Fl_Round_Button *btnQRZonline;
 extern Fl_Round_Button *btnHAMCALLonline;

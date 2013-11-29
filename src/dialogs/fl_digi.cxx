@@ -851,8 +851,6 @@ void cb_contestiaCustom(Fl_Widget *w, void *arg)
 	cb_init_mode(w, arg);
 }
 
-//
-
 void set_rtty_tab_widgets()
 {
 	selShift->value(progdefaults.rtty_shift);
@@ -2554,14 +2552,19 @@ void cb_QRZ(Fl_Widget *b, void *)
 void status_cb(Fl_Widget *b, void *arg)
 {
 	if (Fl::event_button() == FL_RIGHT_MOUSE) {
-		progdefaults.loadDefaults();
-		tabsConfigure->value(tabModems);
-		tabsModems->value(modem_config_tab);
+		trx_mode md = active_modem->get_mode();
+		if (md >= MODE_OLIVIA && md <= MODE_OLIVIA_64_2000) {
+			cb_oliviaCustom((Fl_Widget *)0, (void *)MODE_OLIVIA);
+		} else {
+			progdefaults.loadDefaults();
+			tabsConfigure->value(tabModems);
+			tabsModems->value(modem_config_tab);
 #if USE_HAMLIB
-		hamlib_restore_defaults();
+			hamlib_restore_defaults();
 #endif
-		rigCAT_restore_defaults();
-		dlgConfig->show();
+			rigCAT_restore_defaults();
+			dlgConfig->show();
+		}
 	}
 	else {
 		if (!quick_change)
@@ -4132,6 +4135,8 @@ void setTabColors()
 	tabsRig->selection_color(progdefaults.TabsColor);
 	tabsSoundCard->selection_color(progdefaults.TabsColor);
 	tabsMisc->selection_color(progdefaults.TabsColor);
+	tabsID->selection_color(progdefaults.TabsColor);
+	tabsQRZ->selection_color(progdefaults.TabsColor);
 	if (dlgConfig->visible()) dlgConfig->redraw();
 	if (dlgColorFont->visible()) dlgColorFont->redraw();
 }
@@ -7409,7 +7414,8 @@ void resetRTTY() {
 }
 
 void resetOLIVIA() {
-	if (active_modem->get_mode() == MODE_OLIVIA)
+	trx_mode md = active_modem->get_mode();
+	if (md >= MODE_OLIVIA && md <= MODE_OLIVIA_64_2000)
 		trx_start_modem(active_modem);
 }
 
