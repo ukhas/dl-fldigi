@@ -410,7 +410,12 @@ void throb::decodechar(int tone1, int tone2)
 
 void throb::rx(complex in)
 {
+#ifdef __APPLE__
+    complex rxword[11];
+#else
 	complex rxword[num_tones];
+#endif
+    
 	int i, tone1, tone2, maxtone;
 
 	symbol[symptr] = in;
