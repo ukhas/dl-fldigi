@@ -296,7 +296,6 @@ dl_fldigi_SOURCES += \
 	dominoex/dominovar.cxx \
 	feld/feld.cxx \
 	feld/feldfonts.cxx \
-	fft/fft.cxx \
 	fileselector/FL/Native_File_Chooser.H \
 	fileselector/Native_File_Chooser.cxx \
 	fileselector/fileselect.cxx \
@@ -331,7 +330,6 @@ dl_fldigi_SOURCES += \
 	include/dominoex.h \
 	include/dominovar.h \
 	include/feld.h \
-	include/fft.h \
 	include/fftfilt.h \
 	include/filters.h \
 	include/fl_digi.h \
@@ -355,6 +353,7 @@ dl_fldigi_SOURCES += \
 	include/jalocha/pj_mfsk.h \
 	include/jalocha/pj_struc.h \
 	include/coordinate.h \
+	include/gfft.h \
 	include/kmlserver.h \
 	include/locator.h \
 	include/log.h \

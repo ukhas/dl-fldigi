@@ -2036,13 +2036,6 @@ progdefaults.changed = true;
 setwfrange();
 }
 
-Fl_Counter2 *valLatency=(Fl_Counter2 *)0;
-
-static void cb_valLatency(Fl_Counter2* o, void*) {
-  progdefaults.latency = (int)o->value();
-progdefaults.changed = true;
-}
-
 Fl_Check_Button *btnWFaveraging=(Fl_Check_Button *)0;
 
 static void cb_btnWFaveraging(Fl_Check_Button* o, void*) {
@@ -2063,6 +2056,13 @@ static void cb_cntrWfwidth(Fl_Counter2* o, void*) {
   progdefaults.HighFreqCutoff = (int)o->value();
 progdefaults.changed = true;
 setwfrange();
+}
+
+Fl_Counter2 *wf_latency=(Fl_Counter2 *)0;
+
+static void cb_wf_latency(Fl_Counter2* o, void*) {
+  progdefaults.wf_latency = (int)o->value();
+progdefaults.changed = true;
 }
 
 Fl_Counter2 *cntrWfheight=(Fl_Counter2 *)0;
@@ -3032,13 +3032,6 @@ progdefaults.changed = true;
 
 Fl_Group *tabWefax=(Fl_Group *)0;
 
-Fl_Check_Button *btnWefaxAdifLog=(Fl_Check_Button *)0;
-
-static void cb_btnWefaxAdifLog(Fl_Check_Button* o, void*) {
-  progdefaults.WEFAX_AdifLog=o->value();
-progdefaults.changed = true;
-}
-
 Fl_Check_Button *btnWefaxEmbeddedGui=(Fl_Check_Button *)0;
 
 static void cb_btnWefaxEmbeddedGui(Fl_Check_Button* o, void*) {
@@ -3046,21 +3039,31 @@ static void cb_btnWefaxEmbeddedGui(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
-Fl_Value_Input2 *btnWefaxShift=(Fl_Value_Input2 *)0;
+Fl_Check_Button *btnWefaxHideTx=(Fl_Check_Button *)0;
 
-static void cb_btnWefaxShift(Fl_Value_Input2* o, void*) {
-  if( o->value() > 900 ) { o->value(900); return; }
-if( o->value() < 750 ) { o->value(750); return; }
-progdefaults.WEFAX_Shift=o->value();
+static void cb_btnWefaxHideTx(Fl_Check_Button* o, void*) {
+  progdefaults.WEFAX_HideTx=o->value();
 progdefaults.changed = true;
 }
 
-Fl_Value_Input2 *btnWefaxMaxRows=(Fl_Value_Input2 *)0;
+Fl_Check_Button *btnWefaxAdifLog=(Fl_Check_Button *)0;
 
-static void cb_btnWefaxMaxRows(Fl_Value_Input2* o, void*) {
-  if(o->value() > 10000 ) { o->value(10000); return ; }
-if(o->value() < 1000 ) { o->value(1000); return ; }
-progdefaults.WEFAX_MaxRows=o->value();
+static void cb_btnWefaxAdifLog(Fl_Check_Button* o, void*) {
+  progdefaults.WEFAX_AdifLog=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Counter *cntr_wefax_shift=(Fl_Counter *)0;
+
+static void cb_cntr_wefax_shift(Fl_Counter* o, void*) {
+  progdefaults.WEFAX_Shift=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Counter *ctr_wefax_max_rows=(Fl_Counter *)0;
+
+static void cb_ctr_wefax_max_rows(Fl_Counter* o, void*) {
+  progdefaults.WEFAX_MaxRows=o->value();
 progdefaults.changed = true;
 }
 
@@ -3077,13 +3080,6 @@ static void cb_btnSelectFaxDestDir(Fl_Button*, void*) {
   Fl_File_Chooser *fc = new Fl_File_Chooser(".",NULL,Fl_File_Chooser::DIRECTORY,"Input File");
 fc->callback(WefaxDestDirSet);
 fc->show();
-}
-
-Fl_Check_Button *btnWefaxHideTx=(Fl_Check_Button *)0;
-
-static void cb_btnWefaxHideTx(Fl_Check_Button* o, void*) {
-  progdefaults.WEFAX_HideTx=o->value();
-progdefaults.changed = true;
 }
 
 Fl_Check_Button *btnWefaxSaveMonochrome=(Fl_Check_Button *)0;
@@ -3978,10 +3974,10 @@ static void cb_chkRSidAutoDisable(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
-Fl_Value_Slider2 *sldrRSIDresolution=(Fl_Value_Slider2 *)0;
+Fl_Choice *mnu_RsID_errors=(Fl_Choice *)0;
 
-static void cb_sldrRSIDresolution(Fl_Value_Slider2* o, void*) {
-  progdefaults.rsid_resolution = (int)o->value();
+static void cb_mnu_RsID_errors(Fl_Choice* o, void*) {
+  progdefaults.RsID_label_type = o->value();
 progdefaults.changed = true;
 }
 
@@ -4972,6 +4968,215 @@ static void cb_Next(Fl_Button*, void*) {
   dl_fldigi::flights::payload_search(true);
 }
 
+Fl_Group *tabAutoStart=(Fl_Group *)0;
+
+static void cb_tabAutoStart(Fl_Group*, void*) {
+  progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_auto_flrig_pathname=(Fl_Input2 *)0;
+
+static void cb_txt_auto_flrig_pathname(Fl_Input2* o, void*) {
+  progdefaults.auto_flrig_pathname = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_select_flrig=(Fl_Button *)0;
+
+static void cb_btn_select_flrig(Fl_Button*, void*) {
+  std::string str = select_binary_pathname("flrig");
+txt_auto_flrig_pathname->value(str.c_str());
+progdefaults.auto_flrig_pathname = str;
+progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_auto_flamp_pathname=(Fl_Input2 *)0;
+
+static void cb_txt_auto_flamp_pathname(Fl_Input2* o, void*) {
+  progdefaults.auto_flamp_pathname = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_select_auto_flamp=(Fl_Button *)0;
+
+static void cb_btn_select_auto_flamp(Fl_Button*, void*) {
+  std::string str = select_binary_pathname("flamp");
+txt_auto_flamp_pathname->value(str.c_str());
+progdefaults.auto_flamp_pathname = str;
+progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_auto_flnet_pathname=(Fl_Input2 *)0;
+
+static void cb_txt_auto_flnet_pathname(Fl_Input2* o, void*) {
+  progdefaults.flmsg_pathname = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_select_auto_flnet=(Fl_Button *)0;
+
+static void cb_btn_select_auto_flnet(Fl_Button*, void*) {
+  std::string str = select_binary_pathname("flnet");
+txt_auto_flnet_pathname->value(str.c_str());
+progdefaults.auto_flnet_pathname = str;
+progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_auto_fllog_pathname=(Fl_Input2 *)0;
+
+static void cb_txt_auto_fllog_pathname(Fl_Input2* o, void*) {
+  progdefaults.auto_fllog_pathname = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_select_fllog=(Fl_Button *)0;
+
+static void cb_btn_select_fllog(Fl_Button*, void*) {
+  std::string str = select_binary_pathname("fllog");
+txt_auto_fllog_pathname->value(str.c_str());
+progdefaults.auto_fllog_pathname = str;
+progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_auto_prog1_pathname=(Fl_Input2 *)0;
+
+static void cb_txt_auto_prog1_pathname(Fl_Input2* o, void*) {
+  progdefaults.auto_prog1_pathname = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_select_prog1=(Fl_Button *)0;
+
+static void cb_btn_select_prog1(Fl_Button*, void*) {
+  std::string str = select_binary_pathname(progdefaults.auto_prog1_pathname);
+txt_auto_prog1_pathname->value(str.c_str());
+progdefaults.auto_prog1_pathname = str;
+progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_auto_prog2_pathname=(Fl_Input2 *)0;
+
+static void cb_txt_auto_prog2_pathname(Fl_Input2* o, void*) {
+  progdefaults.auto_prog2_pathname = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_select_prog2=(Fl_Button *)0;
+
+static void cb_btn_select_prog2(Fl_Button*, void*) {
+  std::string str = select_binary_pathname(progdefaults.auto_prog2_pathname);
+txt_auto_prog2_pathname->value(str.c_str());
+progdefaults.auto_prog2_pathname = str;
+progdefaults.changed = true;
+}
+
+Fl_Input2 *txt_auto_prog3_pathname=(Fl_Input2 *)0;
+
+static void cb_txt_auto_prog3_pathname(Fl_Input2* o, void*) {
+  progdefaults.auto_prog3_pathname = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_select_prog3=(Fl_Button *)0;
+
+static void cb_btn_select_prog3(Fl_Button*, void*) {
+  std::string str = select_binary_pathname(progdefaults.auto_prog3_pathname);
+txt_auto_prog3_pathname->value(str.c_str());
+progdefaults.auto_prog3_pathname = str;
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_flrig_auto_enable=(Fl_Check_Button *)0;
+
+static void cb_btn_flrig_auto_enable(Fl_Check_Button* o, void*) {
+  progdefaults.flrig_auto_enable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_flamp_auto_enable=(Fl_Check_Button *)0;
+
+static void cb_btn_flamp_auto_enable(Fl_Check_Button* o, void*) {
+  progdefaults.flamp_auto_enable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_flnet_auto_enable=(Fl_Check_Button *)0;
+
+static void cb_btn_flnet_auto_enable(Fl_Check_Button* o, void*) {
+  progdefaults.flnet_auto_enable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_fllog_auto_enable=(Fl_Check_Button *)0;
+
+static void cb_btn_fllog_auto_enable(Fl_Check_Button* o, void*) {
+  progdefaults.fllog_auto_enable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_prog1_auto_enable=(Fl_Check_Button *)0;
+
+static void cb_btn_prog1_auto_enable(Fl_Check_Button* o, void*) {
+  progdefaults.prog1_auto_enable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_prog2_auto_enable=(Fl_Check_Button *)0;
+
+static void cb_btn_prog2_auto_enable(Fl_Check_Button* o, void*) {
+  progdefaults.prog2_auto_enable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_prog3_auto_enable=(Fl_Check_Button *)0;
+
+static void cb_btn_prog3_auto_enable(Fl_Check_Button* o, void*) {
+  progdefaults.prog3_auto_enable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btn_test_flrig=(Fl_Button *)0;
+
+static void cb_btn_test_flrig(Fl_Button*, void*) {
+  start_process(progdefaults.auto_flrig_pathname);
+}
+
+Fl_Button *btn_test_flamp=(Fl_Button *)0;
+
+static void cb_btn_test_flamp(Fl_Button*, void*) {
+  start_process(progdefaults.auto_flamp_pathname);
+}
+
+Fl_Button *btn_test_flnet=(Fl_Button *)0;
+
+static void cb_btn_test_flnet(Fl_Button*, void*) {
+  start_process(progdefaults.auto_flnet_pathname);
+}
+
+Fl_Button *btn_test_fllog=(Fl_Button *)0;
+
+static void cb_btn_test_fllog(Fl_Button*, void*) {
+  start_process(progdefaults.auto_fllog_pathname);
+}
+
+Fl_Button *btn_test_prog1=(Fl_Button *)0;
+
+static void cb_btn_test_prog1(Fl_Button*, void*) {
+  start_process(progdefaults.auto_prog1_pathname);
+}
+
+Fl_Button *btn_test_prog2=(Fl_Button *)0;
+
+static void cb_btn_test_prog2(Fl_Button*, void*) {
+  start_process(progdefaults.auto_prog2_pathname);
+}
+
+Fl_Button *btn_test_prog3=(Fl_Button *)0;
+
+static void cb_btn_test_prog3(Fl_Button*, void*) {
+  start_process(progdefaults.auto_prog3_pathname);
+}
+
 Fl_Button *btnSaveConfig=(Fl_Button *)0;
 
 static void cb_btnSaveConfig(Fl_Button*, void*) {
@@ -5018,7 +5223,7 @@ Fl_Double_Window* ConfigureDialog() {
   static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";
   static const int flight_browser_columns[] = { 180, 160, 190 };
   static const int payload_browser_columns[] = { 180, 350 };
-  { Fl_Double_Window* o = new Fl_Double_Window(540, 400, _("Fldigi configuration"));
+  { Fl_Double_Window* o = new Fl_Double_Window(553, 402, _("Fldigi configuration"));
     w = o;
     o->color(FL_DARK2);
     o->selection_color((Fl_Color)51);
@@ -6372,7 +6577,7 @@ ab and newline are automatically included."));
             o->hide();
             { Fl_Group* o = new Fl_Group(27, 71, 490, 135);
               o->box(FL_ENGRAVED_FRAME);
-              { Fl_Counter2* o = cntLowFreqCutoff = new Fl_Counter2(72, 81, 70, 20, _("Lower limit"));
+              { Fl_Counter2* o = cntLowFreqCutoff = new Fl_Counter2(72, 89, 70, 22, _("Lower limit"));
                 cntLowFreqCutoff->tooltip(_("Low frequency limit in Hz"));
                 cntLowFreqCutoff->type(1);
                 cntLowFreqCutoff->box(FL_UP_BOX);
@@ -6392,34 +6597,13 @@ ab and newline are automatically included."));
                 o->value(progdefaults.LowFreqCutoff);
                 o->labelsize(FL_NORMAL_SIZE);
               } // Fl_Counter2* cntLowFreqCutoff
-              { Fl_Counter2* o = valLatency = new Fl_Counter2(72, 111, 70, 21, _("FFT latency (scan merging)"));
-                valLatency->tooltip(_("Latency increases frequency resolution,\ndecreases time resolution. 1 = no sc\
-an merging"));
-                valLatency->type(1);
-                valLatency->box(FL_UP_BOX);
-                valLatency->color(FL_BACKGROUND_COLOR);
-                valLatency->selection_color(FL_INACTIVE_COLOR);
-                valLatency->labeltype(FL_NORMAL_LABEL);
-                valLatency->labelfont(0);
-                valLatency->labelsize(14);
-                valLatency->labelcolor(FL_FOREGROUND_COLOR);
-                valLatency->minimum(1);
-                valLatency->maximum(8);
-                valLatency->step(1);
-                valLatency->value(4);
-                valLatency->callback((Fl_Callback*)cb_valLatency);
-                valLatency->align(Fl_Align(FL_ALIGN_RIGHT));
-                valLatency->when(FL_WHEN_CHANGED);
-                o->value(progdefaults.latency);
-                o->labelsize(FL_NORMAL_SIZE);
-              } // Fl_Counter2* valLatency
-              { Fl_Check_Button* o = btnWFaveraging = new Fl_Check_Button(72, 142, 120, 20, _("FFT averaging"));
+              { Fl_Check_Button* o = btnWFaveraging = new Fl_Check_Button(72, 125, 120, 20, _("FFT averaging"));
                 btnWFaveraging->tooltip(_("Use averaging to decrease waterfall noise"));
                 btnWFaveraging->down_box(FL_DOWN_BOX);
                 btnWFaveraging->callback((Fl_Callback*)cb_btnWFaveraging);
                 o->value(progdefaults.WFaveraging);
               } // Fl_Check_Button* btnWFaveraging
-              { mnuFFTPrefilter = new Fl_Choice(72, 172, 120, 25, _("FFT prefilter window function"));
+              { mnuFFTPrefilter = new Fl_Choice(72, 155, 120, 24, _("FFT prefilter window function"));
                 mnuFFTPrefilter->tooltip(_("Select the type of FFT prefilter"));
                 mnuFFTPrefilter->down_box(FL_BORDER_BOX);
                 mnuFFTPrefilter->callback((Fl_Callback*)cb_mnuFFTPrefilter);
@@ -6429,7 +6613,7 @@ an merging"));
                 mnuFFTPrefilter->add(_("Triangular"));
                 mnuFFTPrefilter->value(progdefaults.wfPreFilter);
               } // Fl_Choice* mnuFFTPrefilter
-              { Fl_Counter2* o = cntrWfwidth = new Fl_Counter2(295, 81, 95, 21, _("Upper limit"));
+              { Fl_Counter2* o = cntrWfwidth = new Fl_Counter2(295, 89, 95, 22, _("Upper limit"));
                 cntrWfwidth->tooltip(_("High frequency limit in Hz"));
                 cntrWfwidth->type(1);
                 cntrWfwidth->box(FL_UP_BOX);
@@ -6449,13 +6633,33 @@ an merging"));
                 o->value(progdefaults.HighFreqCutoff);
                 o->labelsize(FL_NORMAL_SIZE);
               } // Fl_Counter2* cntrWfwidth
+              { Fl_Counter2* o = wf_latency = new Fl_Counter2(295, 124, 95, 22, _("Latency"));
+                wf_latency->tooltip(_("Signal averaging over time\n0 - least\n4 - greatest"));
+                wf_latency->type(1);
+                wf_latency->box(FL_UP_BOX);
+                wf_latency->color(FL_BACKGROUND_COLOR);
+                wf_latency->selection_color(FL_INACTIVE_COLOR);
+                wf_latency->labeltype(FL_NORMAL_LABEL);
+                wf_latency->labelfont(0);
+                wf_latency->labelsize(14);
+                wf_latency->labelcolor(FL_FOREGROUND_COLOR);
+                wf_latency->minimum(1);
+                wf_latency->maximum(16);
+                wf_latency->step(1);
+                wf_latency->value(8);
+                wf_latency->callback((Fl_Callback*)cb_wf_latency);
+                wf_latency->align(Fl_Align(FL_ALIGN_RIGHT));
+                wf_latency->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.wf_latency);
+                o->labelsize(FL_NORMAL_SIZE);
+              } // Fl_Counter2* wf_latency
               o->end();
             } // Fl_Group* o
             { Fl_Group* o = new Fl_Group(27, 221, 490, 80, _("Changes take effect on next program startup"));
               o->tooltip(_("Show me more or less waterfall"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
-              { Fl_Counter2* o = cntrWfheight = new Fl_Counter2(72, 251, 95, 21, _("Waterfall height in pixels"));
+              { Fl_Counter2* o = cntrWfheight = new Fl_Counter2(72, 251, 95, 22, _("Waterfall height in pixels"));
                 cntrWfheight->tooltip(_("CPU usage increases with waterfall height"));
                 cntrWfheight->type(1);
                 cntrWfheight->box(FL_UP_BOX);
@@ -6529,6 +6733,7 @@ an merging"));
         tabWaterfall->end();
       } // Fl_Group* tabWaterfall
       { tabModems = new Fl_Group(0, 25, 595, 347, _("Modems"));
+        tabModems->hide();
         { tabsModems = new Fl_Tabs(0, 25, 540, 347);
           tabsModems->selection_color(FL_LIGHT1);
           tabsModems->align(Fl_Align(FL_ALIGN_TOP_RIGHT));
@@ -7859,63 +8064,55 @@ le Earth)"));
           { tabWefax = new Fl_Group(0, 50, 540, 320, _("Wefax"));
             tabWefax->hide();
             { Fl_Group* o = new Fl_Group(2, 63, 534, 300);
-              { Fl_Check_Button* o = btnWefaxAdifLog = new Fl_Check_Button(94, 137, 235, 30, _("Log Wefax messages to Adif file"));
-                btnWefaxAdifLog->tooltip(_("Sent and received faxes are logged to Adif file."));
-                btnWefaxAdifLog->down_box(FL_DOWN_BOX);
-                btnWefaxAdifLog->callback((Fl_Callback*)cb_btnWefaxAdifLog);
-                o->value(progdefaults.WEFAX_AdifLog);
-              } // Fl_Check_Button* btnWefaxAdifLog
               { Fl_Check_Button* o = btnWefaxEmbeddedGui = new Fl_Check_Button(94, 74, 235, 30, _("Embedded Wefax Gui"));
                 btnWefaxEmbeddedGui->tooltip(_("Display tx and rx in main fldigi window.\nChange requires restart of fldigi"));
                 btnWefaxEmbeddedGui->down_box(FL_DOWN_BOX);
                 btnWefaxEmbeddedGui->callback((Fl_Callback*)cb_btnWefaxEmbeddedGui);
                 o->value(progdefaults.WEFAX_EmbeddedGui);
               } // Fl_Check_Button* btnWefaxEmbeddedGui
-              { Fl_Value_Input2* o = btnWefaxShift = new Fl_Value_Input2(94, 177, 80, 20, _("Frequency shift (800 Hz)"));
-                btnWefaxShift->tooltip(_("Default 800 Hz. Deutsche Wetterdienst 850Hz"));
-                btnWefaxShift->type(2);
-                btnWefaxShift->box(FL_DOWN_BOX);
-                btnWefaxShift->color(FL_BACKGROUND2_COLOR);
-                btnWefaxShift->selection_color(FL_SELECTION_COLOR);
-                btnWefaxShift->labeltype(FL_NORMAL_LABEL);
-                btnWefaxShift->labelfont(0);
-                btnWefaxShift->labelsize(14);
-                btnWefaxShift->labelcolor(FL_FOREGROUND_COLOR);
-                btnWefaxShift->callback((Fl_Callback*)cb_btnWefaxShift);
-                btnWefaxShift->align(Fl_Align(FL_ALIGN_RIGHT));
-                btnWefaxShift->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.WEFAX_Shift);
-              } // Fl_Value_Input2* btnWefaxShift
-              { Fl_Value_Input2* o = btnWefaxMaxRows = new Fl_Value_Input2(94, 217, 85, 20, _("Received fax maximum rows number (5000)"));
-                btnWefaxMaxRows->tooltip(_("Maximum row number for a received fax image."));
-                btnWefaxMaxRows->type(2);
-                btnWefaxMaxRows->box(FL_DOWN_BOX);
-                btnWefaxMaxRows->color(FL_BACKGROUND2_COLOR);
-                btnWefaxMaxRows->selection_color(FL_SELECTION_COLOR);
-                btnWefaxMaxRows->labeltype(FL_NORMAL_LABEL);
-                btnWefaxMaxRows->labelfont(0);
-                btnWefaxMaxRows->labelsize(14);
-                btnWefaxMaxRows->labelcolor(FL_FOREGROUND_COLOR);
-                btnWefaxMaxRows->callback((Fl_Callback*)cb_btnWefaxMaxRows);
-                btnWefaxMaxRows->align(Fl_Align(FL_ALIGN_RIGHT));
-                btnWefaxMaxRows->when(FL_WHEN_RELEASE);
-                o->value(progdefaults.WEFAX_MaxRows);
-              } // Fl_Value_Input2* btnWefaxMaxRows
-              { Fl_Input* o = btnWefaxSaveDir = new Fl_Input(94, 267, 310, 20, _("Fax images destination directory"));
-                btnWefaxSaveDir->callback((Fl_Callback*)cb_btnWefaxSaveDir);
-                btnWefaxSaveDir->align(Fl_Align(FL_ALIGN_TOP_LEFT));
-                o->value(progdefaults.wefax_save_dir.c_str());
-              } // Fl_Input* btnWefaxSaveDir
-              { btnSelectFaxDestDir = new Fl_Button(424, 267, 80, 20, _("Directory..."));
-                btnSelectFaxDestDir->callback((Fl_Callback*)cb_btnSelectFaxDestDir);
-              } // Fl_Button* btnSelectFaxDestDir
-              { Fl_Check_Button* o = btnWefaxHideTx = new Fl_Check_Button(94, 107, 235, 30, _("Hide Transmission window"));
+              { Fl_Check_Button* o = btnWefaxHideTx = new Fl_Check_Button(94, 119, 235, 30, _("Hide Transmission window"));
                 btnWefaxHideTx->tooltip(_("Hide transmission window by default."));
                 btnWefaxHideTx->down_box(FL_DOWN_BOX);
                 btnWefaxHideTx->callback((Fl_Callback*)cb_btnWefaxHideTx);
                 o->value(progdefaults.WEFAX_HideTx);
               } // Fl_Check_Button* btnWefaxHideTx
-              { Fl_Check_Button* o = btnWefaxSaveMonochrome = new Fl_Check_Button(94, 297, 235, 30, _("Save image as monochrome file"));
+              { Fl_Check_Button* o = btnWefaxAdifLog = new Fl_Check_Button(94, 165, 235, 30, _("Log Wefax messages to Adif file"));
+                btnWefaxAdifLog->tooltip(_("Sent and received faxes are logged to Adif file."));
+                btnWefaxAdifLog->down_box(FL_DOWN_BOX);
+                btnWefaxAdifLog->callback((Fl_Callback*)cb_btnWefaxAdifLog);
+                o->value(progdefaults.WEFAX_AdifLog);
+              } // Fl_Check_Button* btnWefaxAdifLog
+              { Fl_Counter* o = cntr_wefax_shift = new Fl_Counter(95, 211, 90, 22, _("Frequency shift (800 Hz)"));
+                cntr_wefax_shift->tooltip(_("Default 800 Hz. Deutsche Wetterdienst 850Hz"));
+                cntr_wefax_shift->type(1);
+                cntr_wefax_shift->minimum(750);
+                cntr_wefax_shift->maximum(900);
+                cntr_wefax_shift->step(10);
+                cntr_wefax_shift->value(800);
+                cntr_wefax_shift->callback((Fl_Callback*)cb_cntr_wefax_shift);
+                cntr_wefax_shift->align(Fl_Align(FL_ALIGN_RIGHT));
+                o->value(progdefaults.WEFAX_Shift);
+              } // Fl_Counter* cntr_wefax_shift
+              { Fl_Counter* o = ctr_wefax_max_rows = new Fl_Counter(95, 247, 90, 22, _("Rx fax max rows"));
+                ctr_wefax_max_rows->tooltip(_("Default 800 Hz. Deutsche Wetterdienst 850Hz"));
+                ctr_wefax_max_rows->type(1);
+                ctr_wefax_max_rows->minimum(1000);
+                ctr_wefax_max_rows->maximum(10000);
+                ctr_wefax_max_rows->step(50);
+                ctr_wefax_max_rows->value(5000);
+                ctr_wefax_max_rows->callback((Fl_Callback*)cb_ctr_wefax_max_rows);
+                ctr_wefax_max_rows->align(Fl_Align(FL_ALIGN_RIGHT));
+                o->value(progdefaults.WEFAX_MaxRows);
+              } // Fl_Counter* ctr_wefax_max_rows
+              { Fl_Input* o = btnWefaxSaveDir = new Fl_Input(94, 290, 310, 24, _("Fax images destination directory"));
+                btnWefaxSaveDir->callback((Fl_Callback*)cb_btnWefaxSaveDir);
+                btnWefaxSaveDir->align(Fl_Align(FL_ALIGN_TOP_LEFT));
+                o->value(progdefaults.wefax_save_dir.c_str());
+              } // Fl_Input* btnWefaxSaveDir
+              { btnSelectFaxDestDir = new Fl_Button(424, 290, 80, 24, _("Directory..."));
+                btnSelectFaxDestDir->callback((Fl_Callback*)cb_btnSelectFaxDestDir);
+              } // Fl_Button* btnSelectFaxDestDir
+              { Fl_Check_Button* o = btnWefaxSaveMonochrome = new Fl_Check_Button(94, 320, 235, 30, _("Save image as monochrome file"));
                 btnWefaxSaveMonochrome->tooltip(_("Save the fax image as a gray-level PNG file."));
                 btnWefaxSaveMonochrome->down_box(FL_DOWN_BOX);
                 btnWefaxSaveMonochrome->callback((Fl_Callback*)cb_btnWefaxSaveMonochrome);
@@ -8741,25 +8938,14 @@ d frequency"));
                 chkRSidAutoDisable->value(progdefaults.rsid_auto_disable);
                 if (progdefaults.rsid_notify_only) chkRSidAutoDisable->deactivate();
               } // Fl_Check_Button* chkRSidAutoDisable
-              { Fl_Value_Slider2* o = sldrRSIDresolution = new Fl_Value_Slider2(10, 233, 145, 22, _("Errors"));
-                sldrRSIDresolution->tooltip(_("Number of errors allowed in RsID comparison"));
-                sldrRSIDresolution->type(1);
-                sldrRSIDresolution->box(FL_DOWN_BOX);
-                sldrRSIDresolution->color(FL_BACKGROUND_COLOR);
-                sldrRSIDresolution->selection_color(FL_BACKGROUND_COLOR);
-                sldrRSIDresolution->labeltype(FL_NORMAL_LABEL);
-                sldrRSIDresolution->labelfont(0);
-                sldrRSIDresolution->labelsize(14);
-                sldrRSIDresolution->labelcolor(FL_FOREGROUND_COLOR);
-                sldrRSIDresolution->maximum(4);
-                sldrRSIDresolution->step(1);
-                sldrRSIDresolution->textsize(14);
-                sldrRSIDresolution->callback((Fl_Callback*)cb_sldrRSIDresolution);
-                sldrRSIDresolution->align(Fl_Align(FL_ALIGN_RIGHT));
-                sldrRSIDresolution->when(FL_WHEN_CHANGED);
-                o->value(progdefaults.rsid_resolution);
-                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
-              } // Fl_Value_Slider2* sldrRSIDresolution
+              { mnu_RsID_errors = new Fl_Choice(10, 233, 100, 22, _("Allow errors"));
+                mnu_RsID_errors->tooltip(_("Low = zero errors\nMedium = 1 error\nHigh = 2 errors"));
+                mnu_RsID_errors->down_box(FL_BORDER_BOX);
+                mnu_RsID_errors->callback((Fl_Callback*)cb_mnu_RsID_errors);
+                mnu_RsID_errors->align(Fl_Align(FL_ALIGN_RIGHT));
+                mnu_RsID_errors->add(_("Low")); mnu_RsID_errors->add(_("Medium")); mnu_RsID_errors->add(_("High"));
+                mnu_RsID_errors->value(progdefaults.RsID_label_type);
+              } // Fl_Choice* mnu_RsID_errors
               { Fl_Value_Slider2* o = sldrRSIDsquelch = new Fl_Value_Slider2(246, 233, 145, 22, _("Squelch open (sec)"));
                 sldrRSIDsquelch->tooltip(_("Open squelch for nn sec if RSID detected"));
                 sldrRSIDsquelch->type(1);
@@ -9170,9 +9356,10 @@ igured on the\n\"Notifications\" configure dialog."));
                 btnPSKRepQRG->callback((Fl_Callback*)cb_btnPSKRepQRG);
                 btnPSKRepQRG->value(progdefaults.pskrep_qrg);
               } // Fl_Check_Button* btnPSKRepQRG
-              { Fl_Check_Button* o = btn_report_when_visible = new Fl_Check_Button(40, 195, 416, 20, _("Enable spotting only when signal browser(s) are visible"));
-                btn_report_when_visible->tooltip(_("Enable to reduce CPU load"));
+              { Fl_Check_Button* o = btn_report_when_visible = new Fl_Check_Button(40, 195, 416, 20, _("Disable spotting when signal browser(s) are not visible."));
+                btn_report_when_visible->tooltip(_("Check to reduce CPU load in PSK and RTTY modes."));
                 btn_report_when_visible->down_box(FL_DOWN_BOX);
+                btn_report_when_visible->value(1);
                 btn_report_when_visible->callback((Fl_Callback*)cb_btn_report_when_visible);
                 o->value(progdefaults.report_when_visible);
               } // Fl_Check_Button* btn_report_when_visible
@@ -10019,6 +10206,214 @@ and restarted if needed."));
         } // Fl_Tabs* tabsDL
         tabDL->end();
       } // Fl_Group* tabDL
+      { tabAutoStart = new Fl_Group(0, 25, 540, 345, _("Autostart"));
+        tabAutoStart->tooltip(_("Operator information"));
+        tabAutoStart->callback((Fl_Callback*)cb_tabAutoStart);
+        tabAutoStart->when(FL_WHEN_CHANGED);
+        { Fl_Group* o = new Fl_Group(2, 32, 536, 336, _("Auto start programs with fldigi"));
+          o->box(FL_ENGRAVED_BOX);
+          o->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+          { Fl_Input2* o = txt_auto_flrig_pathname = new Fl_Input2(63, 71, 310, 24, _("flrig:"));
+            txt_auto_flrig_pathname->tooltip(_("Enter full path-filename for external program\nOr simple name of program"));
+            txt_auto_flrig_pathname->box(FL_DOWN_BOX);
+            txt_auto_flrig_pathname->color(FL_BACKGROUND2_COLOR);
+            txt_auto_flrig_pathname->selection_color(FL_SELECTION_COLOR);
+            txt_auto_flrig_pathname->labeltype(FL_NORMAL_LABEL);
+            txt_auto_flrig_pathname->labelfont(0);
+            txt_auto_flrig_pathname->labelsize(14);
+            txt_auto_flrig_pathname->labelcolor(FL_FOREGROUND_COLOR);
+            txt_auto_flrig_pathname->callback((Fl_Callback*)cb_txt_auto_flrig_pathname);
+            txt_auto_flrig_pathname->align(Fl_Align(FL_ALIGN_LEFT));
+            txt_auto_flrig_pathname->when(FL_WHEN_CHANGED);
+            o->value(progdefaults.auto_flrig_pathname.c_str());
+          } // Fl_Input2* txt_auto_flrig_pathname
+          { btn_select_flrig = new Fl_Button(380, 71, 70, 24, _("Locate"));
+            btn_select_flrig->tooltip(_("Locate flrig executable"));
+            btn_select_flrig->callback((Fl_Callback*)cb_btn_select_flrig);
+          } // Fl_Button* btn_select_flrig
+          { Fl_Input2* o = txt_auto_flamp_pathname = new Fl_Input2(63, 109, 310, 24, _("flamp:"));
+            txt_auto_flamp_pathname->tooltip(_("Enter full path-filename for external program\nOr simple name of program"));
+            txt_auto_flamp_pathname->box(FL_DOWN_BOX);
+            txt_auto_flamp_pathname->color(FL_BACKGROUND2_COLOR);
+            txt_auto_flamp_pathname->selection_color(FL_SELECTION_COLOR);
+            txt_auto_flamp_pathname->labeltype(FL_NORMAL_LABEL);
+            txt_auto_flamp_pathname->labelfont(0);
+            txt_auto_flamp_pathname->labelsize(14);
+            txt_auto_flamp_pathname->labelcolor(FL_FOREGROUND_COLOR);
+            txt_auto_flamp_pathname->callback((Fl_Callback*)cb_txt_auto_flamp_pathname);
+            txt_auto_flamp_pathname->align(Fl_Align(FL_ALIGN_LEFT));
+            txt_auto_flamp_pathname->when(FL_WHEN_CHANGED);
+            o->value(progdefaults.auto_flamp_pathname.c_str());
+          } // Fl_Input2* txt_auto_flamp_pathname
+          { btn_select_auto_flamp = new Fl_Button(380, 109, 70, 24, _("Locate"));
+            btn_select_auto_flamp->tooltip(_("Locate flamp executable"));
+            btn_select_auto_flamp->callback((Fl_Callback*)cb_btn_select_auto_flamp);
+          } // Fl_Button* btn_select_auto_flamp
+          { Fl_Input2* o = txt_auto_flnet_pathname = new Fl_Input2(63, 147, 310, 24, _("flnet:"));
+            txt_auto_flnet_pathname->tooltip(_("Enter full path-filename for external program\nOr simple name of program"));
+            txt_auto_flnet_pathname->box(FL_DOWN_BOX);
+            txt_auto_flnet_pathname->color(FL_BACKGROUND2_COLOR);
+            txt_auto_flnet_pathname->selection_color(FL_SELECTION_COLOR);
+            txt_auto_flnet_pathname->labeltype(FL_NORMAL_LABEL);
+            txt_auto_flnet_pathname->labelfont(0);
+            txt_auto_flnet_pathname->labelsize(14);
+            txt_auto_flnet_pathname->labelcolor(FL_FOREGROUND_COLOR);
+            txt_auto_flnet_pathname->callback((Fl_Callback*)cb_txt_auto_flnet_pathname);
+            txt_auto_flnet_pathname->align(Fl_Align(FL_ALIGN_LEFT));
+            txt_auto_flnet_pathname->when(FL_WHEN_CHANGED);
+            o->value(progdefaults.auto_flnet_pathname.c_str());
+          } // Fl_Input2* txt_auto_flnet_pathname
+          { btn_select_auto_flnet = new Fl_Button(380, 147, 70, 24, _("Locate"));
+            btn_select_auto_flnet->tooltip(_("Locate flnet executable"));
+            btn_select_auto_flnet->callback((Fl_Callback*)cb_btn_select_auto_flnet);
+          } // Fl_Button* btn_select_auto_flnet
+          { Fl_Input2* o = txt_auto_fllog_pathname = new Fl_Input2(63, 186, 310, 24, _("fllog:"));
+            txt_auto_fllog_pathname->tooltip(_("Enter full path-filename for external program\nOr simple name of program"));
+            txt_auto_fllog_pathname->box(FL_DOWN_BOX);
+            txt_auto_fllog_pathname->color(FL_BACKGROUND2_COLOR);
+            txt_auto_fllog_pathname->selection_color(FL_SELECTION_COLOR);
+            txt_auto_fllog_pathname->labeltype(FL_NORMAL_LABEL);
+            txt_auto_fllog_pathname->labelfont(0);
+            txt_auto_fllog_pathname->labelsize(14);
+            txt_auto_fllog_pathname->labelcolor(FL_FOREGROUND_COLOR);
+            txt_auto_fllog_pathname->callback((Fl_Callback*)cb_txt_auto_fllog_pathname);
+            txt_auto_fllog_pathname->align(Fl_Align(FL_ALIGN_LEFT));
+            txt_auto_fllog_pathname->when(FL_WHEN_CHANGED);
+            o->value(progdefaults.auto_fllog_pathname.c_str());
+          } // Fl_Input2* txt_auto_fllog_pathname
+          { btn_select_fllog = new Fl_Button(380, 186, 70, 24, _("Locate"));
+            btn_select_fllog->tooltip(_("Locate fllog executable"));
+            btn_select_fllog->callback((Fl_Callback*)cb_btn_select_fllog);
+          } // Fl_Button* btn_select_fllog
+          { Fl_Input2* o = txt_auto_prog1_pathname = new Fl_Input2(63, 224, 310, 24, _("Prog 1:"));
+            txt_auto_prog1_pathname->tooltip(_("Enter full path-filename for external program\nOr simple name of program"));
+            txt_auto_prog1_pathname->box(FL_DOWN_BOX);
+            txt_auto_prog1_pathname->color(FL_BACKGROUND2_COLOR);
+            txt_auto_prog1_pathname->selection_color(FL_SELECTION_COLOR);
+            txt_auto_prog1_pathname->labeltype(FL_NORMAL_LABEL);
+            txt_auto_prog1_pathname->labelfont(0);
+            txt_auto_prog1_pathname->labelsize(14);
+            txt_auto_prog1_pathname->labelcolor(FL_FOREGROUND_COLOR);
+            txt_auto_prog1_pathname->callback((Fl_Callback*)cb_txt_auto_prog1_pathname);
+            txt_auto_prog1_pathname->align(Fl_Align(FL_ALIGN_LEFT));
+            txt_auto_prog1_pathname->when(FL_WHEN_CHANGED);
+            o->value(progdefaults.auto_prog1_pathname.c_str());
+          } // Fl_Input2* txt_auto_prog1_pathname
+          { btn_select_prog1 = new Fl_Button(380, 224, 70, 24, _("Locate"));
+            btn_select_prog1->tooltip(_("Locate program #1 executable"));
+            btn_select_prog1->callback((Fl_Callback*)cb_btn_select_prog1);
+          } // Fl_Button* btn_select_prog1
+          { Fl_Input2* o = txt_auto_prog2_pathname = new Fl_Input2(63, 262, 310, 24, _("Prog 2:"));
+            txt_auto_prog2_pathname->tooltip(_("Enter full path-filename for external program\nOr simple name of program"));
+            txt_auto_prog2_pathname->box(FL_DOWN_BOX);
+            txt_auto_prog2_pathname->color(FL_BACKGROUND2_COLOR);
+            txt_auto_prog2_pathname->selection_color(FL_SELECTION_COLOR);
+            txt_auto_prog2_pathname->labeltype(FL_NORMAL_LABEL);
+            txt_auto_prog2_pathname->labelfont(0);
+            txt_auto_prog2_pathname->labelsize(14);
+            txt_auto_prog2_pathname->labelcolor(FL_FOREGROUND_COLOR);
+            txt_auto_prog2_pathname->callback((Fl_Callback*)cb_txt_auto_prog2_pathname);
+            txt_auto_prog2_pathname->align(Fl_Align(FL_ALIGN_LEFT));
+            txt_auto_prog2_pathname->when(FL_WHEN_CHANGED);
+            o->value(progdefaults.auto_prog2_pathname.c_str());
+          } // Fl_Input2* txt_auto_prog2_pathname
+          { btn_select_prog2 = new Fl_Button(380, 262, 70, 24, _("Locate"));
+            btn_select_prog2->tooltip(_("Locate program #2 executable"));
+            btn_select_prog2->callback((Fl_Callback*)cb_btn_select_prog2);
+          } // Fl_Button* btn_select_prog2
+          { Fl_Input2* o = txt_auto_prog3_pathname = new Fl_Input2(63, 301, 310, 24, _("Prog 3:"));
+            txt_auto_prog3_pathname->tooltip(_("Enter full path-filename for external program\nOr simple name of program"));
+            txt_auto_prog3_pathname->box(FL_DOWN_BOX);
+            txt_auto_prog3_pathname->color(FL_BACKGROUND2_COLOR);
+            txt_auto_prog3_pathname->selection_color(FL_SELECTION_COLOR);
+            txt_auto_prog3_pathname->labeltype(FL_NORMAL_LABEL);
+            txt_auto_prog3_pathname->labelfont(0);
+            txt_auto_prog3_pathname->labelsize(14);
+            txt_auto_prog3_pathname->labelcolor(FL_FOREGROUND_COLOR);
+            txt_auto_prog3_pathname->callback((Fl_Callback*)cb_txt_auto_prog3_pathname);
+            txt_auto_prog3_pathname->align(Fl_Align(FL_ALIGN_LEFT));
+            txt_auto_prog3_pathname->when(FL_WHEN_CHANGED);
+            o->value(progdefaults.auto_prog3_pathname.c_str());
+          } // Fl_Input2* txt_auto_prog3_pathname
+          { btn_select_prog3 = new Fl_Button(380, 301, 70, 24, _("Locate"));
+            btn_select_prog3->tooltip(_("Locate program #3 executable"));
+            btn_select_prog3->callback((Fl_Callback*)cb_btn_select_prog3);
+          } // Fl_Button* btn_select_prog3
+          { Fl_Check_Button* o = btn_flrig_auto_enable = new Fl_Check_Button(455, 75, 19, 15, _("Enable\n-"));
+            btn_flrig_auto_enable->tooltip(_("Enable this entry when fldigi first starts"));
+            btn_flrig_auto_enable->down_box(FL_DOWN_BOX);
+            btn_flrig_auto_enable->callback((Fl_Callback*)cb_btn_flrig_auto_enable);
+            btn_flrig_auto_enable->align(Fl_Align(FL_ALIGN_TOP));
+            o->value(progdefaults.flrig_auto_enable);
+          } // Fl_Check_Button* btn_flrig_auto_enable
+          { Fl_Check_Button* o = btn_flamp_auto_enable = new Fl_Check_Button(455, 113, 23, 15);
+            btn_flamp_auto_enable->tooltip(_("Enable this entry when fldigi first starts"));
+            btn_flamp_auto_enable->down_box(FL_DOWN_BOX);
+            btn_flamp_auto_enable->callback((Fl_Callback*)cb_btn_flamp_auto_enable);
+            o->value(progdefaults.flamp_auto_enable);
+          } // Fl_Check_Button* btn_flamp_auto_enable
+          { Fl_Check_Button* o = btn_flnet_auto_enable = new Fl_Check_Button(455, 151, 23, 15);
+            btn_flnet_auto_enable->tooltip(_("Enable this entry when fldigi first starts"));
+            btn_flnet_auto_enable->down_box(FL_DOWN_BOX);
+            btn_flnet_auto_enable->callback((Fl_Callback*)cb_btn_flnet_auto_enable);
+            o->value(progdefaults.flnet_auto_enable);
+          } // Fl_Check_Button* btn_flnet_auto_enable
+          { Fl_Check_Button* o = btn_fllog_auto_enable = new Fl_Check_Button(455, 190, 23, 15);
+            btn_fllog_auto_enable->tooltip(_("Enable this entry when fldigi first starts"));
+            btn_fllog_auto_enable->down_box(FL_DOWN_BOX);
+            btn_fllog_auto_enable->callback((Fl_Callback*)cb_btn_fllog_auto_enable);
+            o->value(progdefaults.fllog_auto_enable);
+          } // Fl_Check_Button* btn_fllog_auto_enable
+          { Fl_Check_Button* o = btn_prog1_auto_enable = new Fl_Check_Button(455, 228, 23, 15);
+            btn_prog1_auto_enable->tooltip(_("Enable this entry when fldigi first starts"));
+            btn_prog1_auto_enable->down_box(FL_DOWN_BOX);
+            btn_prog1_auto_enable->callback((Fl_Callback*)cb_btn_prog1_auto_enable);
+            o->value(progdefaults.prog1_auto_enable);
+          } // Fl_Check_Button* btn_prog1_auto_enable
+          { Fl_Check_Button* o = btn_prog2_auto_enable = new Fl_Check_Button(455, 266, 23, 15);
+            btn_prog2_auto_enable->tooltip(_("Enable this entry when fldigi first starts"));
+            btn_prog2_auto_enable->down_box(FL_DOWN_BOX);
+            btn_prog2_auto_enable->callback((Fl_Callback*)cb_btn_prog2_auto_enable);
+            o->value(progdefaults.prog2_auto_enable);
+          } // Fl_Check_Button* btn_prog2_auto_enable
+          { Fl_Check_Button* o = btn_prog3_auto_enable = new Fl_Check_Button(455, 305, 23, 15);
+            btn_prog3_auto_enable->tooltip(_("Enable this entry when fldigi first starts"));
+            btn_prog3_auto_enable->down_box(FL_DOWN_BOX);
+            btn_prog3_auto_enable->callback((Fl_Callback*)cb_btn_prog3_auto_enable);
+            o->value(progdefaults.prog3_auto_enable);
+          } // Fl_Check_Button* btn_prog3_auto_enable
+          { btn_test_flrig = new Fl_Button(479, 71, 50, 24, _("Test"));
+            btn_test_flrig->tooltip(_("Start flrig"));
+            btn_test_flrig->callback((Fl_Callback*)cb_btn_test_flrig);
+          } // Fl_Button* btn_test_flrig
+          { btn_test_flamp = new Fl_Button(479, 109, 50, 24, _("Test"));
+            btn_test_flamp->tooltip(_("Start flamp"));
+            btn_test_flamp->callback((Fl_Callback*)cb_btn_test_flamp);
+          } // Fl_Button* btn_test_flamp
+          { btn_test_flnet = new Fl_Button(479, 147, 50, 24, _("Test"));
+            btn_test_flnet->tooltip(_("Start flnet"));
+            btn_test_flnet->callback((Fl_Callback*)cb_btn_test_flnet);
+          } // Fl_Button* btn_test_flnet
+          { btn_test_fllog = new Fl_Button(479, 186, 50, 24, _("Test"));
+            btn_test_fllog->tooltip(_("Start fllog"));
+            btn_test_fllog->callback((Fl_Callback*)cb_btn_test_fllog);
+          } // Fl_Button* btn_test_fllog
+          { btn_test_prog1 = new Fl_Button(479, 224, 50, 24, _("Test"));
+            btn_test_prog1->tooltip(_("Start prog1"));
+            btn_test_prog1->callback((Fl_Callback*)cb_btn_test_prog1);
+          } // Fl_Button* btn_test_prog1
+          { btn_test_prog2 = new Fl_Button(479, 262, 50, 24, _("Test"));
+            btn_test_prog2->tooltip(_("Start prog2"));
+            btn_test_prog2->callback((Fl_Callback*)cb_btn_test_prog2);
+          } // Fl_Button* btn_test_prog2
+          { btn_test_prog3 = new Fl_Button(479, 301, 50, 24, _("Test"));
+            btn_test_prog3->tooltip(_("Start prog3"));
+            btn_test_prog3->callback((Fl_Callback*)cb_btn_test_prog3);
+          } // Fl_Button* btn_test_prog3
+          o->end();
+        } // Fl_Group* o
+        tabAutoStart->end();
+      } // Fl_Group* tabAutoStart
       tabsConfigure->end();
     } // Fl_Tabs* tabsConfigure
     { btnSaveConfig = new Fl_Button(290, 375, 115, 22, _("Save"));

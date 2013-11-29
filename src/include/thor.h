@@ -30,7 +30,6 @@
 #include "complex.h"
 #include "modem.h"
 #include "globals.h"
-#include "fft.h"
 #include "filters.h"
 #include "fftfilt.h"
 #include "dominovar.h"
@@ -68,7 +67,7 @@
 #define MAXPATHS (8 * THORFASTPATHS * THORNUMTONES )
 
 struct THORrxpipe {
-	complex vector[THORMAXFFTS * THORNUMTONES * 6];
+	cmplx vector[THORMAXFFTS * THORNUMTONES * 6];
 };
 
 class thor : public modem {
@@ -110,7 +109,7 @@ protected:
 	mbuffer<double, 0, 2>	scopedata;
 	mbuffer<double, 0, 2>	videodata;
 
-	complex currvector;
+	cmplx currvector;
 
 	int currsymbol;
 	int prev1symbol;
@@ -156,7 +155,7 @@ protected:
 
 	
 private:
-	complex	mixer(int n, const complex& in);
+	cmplx	mixer(int n, const cmplx& in);
 
 // Rx
 	void	recvchar(int c);

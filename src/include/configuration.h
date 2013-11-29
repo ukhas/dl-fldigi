@@ -115,9 +115,9 @@
               "Mode names for which RSID transmission is disabled",                     \
               mode_set_t())                                                             \
                                                                                         \
-        ELEM_(int, rsid_resolution, "RSID_RESOLUTION",                                  \
-              "values (LOW)  5, 4, 3, 2 (HIGH)",                                        \
-              5)                                                                        \
+        ELEM_(int, RsID_label_type, "RSID_ERRORS",                                      \
+              "values (low, medium, high)  0, 1, 2",                                    \
+              1)                                                                        \
         ELEM_(bool, disable_rsid_warning_dialog_box, "DISABLE_RSID_WARNING_DIALOG_BOX", \
               "disable displaying the rsid warning dialog box",                         \
               false)                                                                    \
@@ -642,9 +642,9 @@
         ELEM_(bool, WFaveraging, "WFAVERAGING",                                         \
               "Use FFT averaging to decrease waterfall noise",                          \
               false)                                                                    \
-        ELEM_(int, latency, "LATENCY",                                                  \
-              "Waterfal FFT latency (scan merging)",                                    \
-              4)                                                                        \
+        ELEM_(int, wf_latency, "WF_LATENCY",                                            \
+              "Waterfal latency, 1...16",                                               \
+              8)                                                                        \
         ELEM_(bool, UseCursorLines, "USECURSORLINES",                                   \
               "Draw cursor with vertical lines",                                        \
               true)                                                                     \
@@ -1627,6 +1627,48 @@
        ELEM_(int, kml_balloon_style, "KML_BALLOON_STYLE",                               \
              "KML balloons data displayed as text, HTML tables, HTML single matrix",    \
              2)                                                                         \
+        ELEM_(std::string, auto_flrig_pathname, "AUTO_FLRIG_PATHNAME",                  \
+              "Full pathname to the flrig executable",                                  \
+              "")                                                                       \
+        ELEM_(std::string, auto_flamp_pathname, "AUTO_FLAMP_PATHNAME",                  \
+              "Full pathname to the flamp executable",                                  \
+              "")                                                                       \
+        ELEM_(std::string, auto_flnet_pathname, "AUTO_FLNET_PATHNAME",                  \
+              "Full pathname to the flnet executable",                                  \
+              "")                                                                       \
+        ELEM_(std::string, auto_fllog_pathname, "AUTO_FLLOG_PATHNAME",                  \
+              "Full pathname to the fllog executable",                                  \
+              "")                                                                       \
+        ELEM_(std::string, auto_prog1_pathname, "AUTO_PROG1_PATHNAME",                  \
+              "Full pathname to the prog1 executable",                                  \
+              "")                                                                       \
+        ELEM_(std::string, auto_prog2_pathname, "AUTO_PROG2_PATHNAME",                  \
+              "Full pathname to the prog2 executable",                                  \
+              "")                                                                       \
+        ELEM_(std::string, auto_prog3_pathname, "AUTO_PROG3_PATHNAME",                  \
+              "Full pathname to the prog3 executable",                                  \
+              "")                                                                       \
+        ELEM_(bool, flrig_auto_enable, "FLRIG_AUTO_ENABLE",                             \
+              "Enable on program start",                                                \
+              false)                                                                    \
+        ELEM_(bool, flnet_auto_enable, "FLNET_AUTO_ENABLE",                             \
+              "Enable on program start",                                                \
+              false)                                                                    \
+        ELEM_(bool, fllog_auto_enable, "FLLOG_AUTO_ENABLE",                             \
+              "Enable on program start",                                                \
+              false)                                                                    \
+        ELEM_(bool, flamp_auto_enable, "FLAMP_AUTO_ENABLE",                             \
+              "Enable on program start",                                                \
+              false)                                                                    \
+        ELEM_(bool, prog1_auto_enable, "PROG1_AUTO_ENABLE",                             \
+              "Enable on program start",                                                \
+              false)                                                                    \
+        ELEM_(bool, prog2_auto_enable, "PROG2_AUTO_ENABLE",                             \
+              "Enable on program start",                                                \
+              false)                                                                    \
+        ELEM_(bool, prog3_auto_enable, "PROG3_AUTO_ENABLE",                             \
+              "Enable on program start",                                                \
+              false)                                                                    \
 
 
 // declare the struct

@@ -34,7 +34,6 @@
 #include "modem.h"
 #include "filters.h"
 #include "fftfilt.h"
-//#include "mfilt.h"	//AG1LE: added this 
 #include "mbuffer.h"
 
 
@@ -204,7 +203,7 @@ protected:
 	void	update_tracking(int dot, int dash);
 	
 	void	makeshape();
-	complex mixer(complex in);
+	cmplx mixer(cmplx in);
 
 	static const SOM_TABLE som_table[];
 	float cw_buffer[512];

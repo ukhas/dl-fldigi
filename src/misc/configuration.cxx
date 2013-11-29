@@ -654,7 +654,6 @@ int configuration::setDefaults()
 	chkID_SMALL->value(ID_SMALL);
 
 	wf->setPrefilter(wfPreFilter);
-	valLatency->value(latency);
 	btnWFaveraging->value(WFaveraging);
 
 	memcpy(&palette[0], &cfgpal0, sizeof(palette[0]));
@@ -776,7 +775,6 @@ void configuration::initInterface()
 		}
 #endif
 	} else if (chkUSEXMLRPCis) {
-		wf->setXMLRPC(1);
 		if (rigCAT_init(false)) {
 			LOG_VERBOSE("%s", "using XMLRPC");
 			wf->USB(true);

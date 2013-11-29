@@ -304,7 +304,7 @@ static const char szProsigns[] = "~|%|&|+|=|{|}|<|>|[|]| ";} {}
   code {static const int payload_browser_columns[] = { 180, 350 };} {}
   Fl_Window {} {
     label {Fldigi configuration} open
-    xywh {627 44 540 400} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
+    xywh {627 44 553 402} type Double color 45 selection_color 51 labelsize 18 align 80 non_modal visible
   } {
     Fl_Tabs tabsConfigure {open
       xywh {-5 0 600 374} color 50 selection_color 50
@@ -2179,7 +2179,7 @@ progdefaults.changed = true;}
         }
       }
       Fl_Group tabWaterfall {
-        label Waterfall
+        label Waterfall open
         xywh {-2 25 563 347} hide
       } {
         Fl_Tabs tabsWaterfall {open
@@ -2438,18 +2438,8 @@ progdefaults.changed = true;}
                 callback {progdefaults.LowFreqCutoff=(int)(o->value());
 progdefaults.changed = true;
 setwfrange();}
-                tooltip {Low frequency limit in Hz} xywh {72 81 70 20} type Simple align 8 minimum 0 maximum 500 step 50 value 300
+                tooltip {Low frequency limit in Hz} xywh {72 89 70 22} type Simple align 8 minimum 0 maximum 500 step 50 value 300
                 code0 {o->value(progdefaults.LowFreqCutoff);}
-                code1 {o->labelsize(FL_NORMAL_SIZE);}
-                class Fl_Counter2
-              }
-              Fl_Counter valLatency {
-                label {FFT latency (scan merging)}
-                callback {progdefaults.latency = (int)o->value();
-progdefaults.changed = true;}
-                tooltip {Latency increases frequency resolution,
-decreases time resolution. 1 = no scan merging} xywh {72 111 70 21} type Simple align 8 minimum 1 maximum 8 step 1 value 4
-                code0 {o->value(progdefaults.latency);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Counter2
               }
@@ -2457,14 +2447,14 @@ decreases time resolution. 1 = no scan merging} xywh {72 111 70 21} type Simple 
                 label {FFT averaging}
                 callback {progdefaults.WFaveraging = o->value();
 progdefaults.changed = true;}
-                tooltip {Use averaging to decrease waterfall noise} xywh {72 142 120 20} down_box DOWN_BOX
+                tooltip {Use averaging to decrease waterfall noise} xywh {72 125 120 20} down_box DOWN_BOX
                 code0 {o->value(progdefaults.WFaveraging);}
               }
               Fl_Choice mnuFFTPrefilter {
                 label {FFT prefilter window function}
                 callback {progdefaults.wfPreFilter = o->value();
 progdefaults.changed = true;} open
-                tooltip {Select the type of FFT prefilter} xywh {72 172 120 25} down_box BORDER_BOX align 8
+                tooltip {Select the type of FFT prefilter} xywh {72 155 120 24} down_box BORDER_BOX align 8
                 code0 {mnuFFTPrefilter->add(_("Rectangular")); mnuFFTPrefilter->add("Blackman");}
                 code1 {mnuFFTPrefilter->add("Hamming"); mnuFFTPrefilter->add("Hanning");}
                 code2 {mnuFFTPrefilter->add(_("Triangular"));}
@@ -2475,8 +2465,19 @@ progdefaults.changed = true;} open
                 callback {progdefaults.HighFreqCutoff = (int)o->value();
 progdefaults.changed = true;
 setwfrange();}
-                tooltip {High frequency limit in Hz} xywh {295 81 95 21} type Simple align 8 minimum 2000 maximum 4000 step 100 value 3000
+                tooltip {High frequency limit in Hz} xywh {295 89 95 22} type Simple align 8 minimum 2000 maximum 4000 step 100 value 3000
                 code0 {o->value(progdefaults.HighFreqCutoff);}
+                code1 {o->labelsize(FL_NORMAL_SIZE);}
+                class Fl_Counter2
+              }
+              Fl_Counter wf_latency {
+                label Latency
+                callback {progdefaults.wf_latency = (int)o->value();
+progdefaults.changed = true;}
+                tooltip {Signal averaging over time
+0 - least
+4 - greatest} xywh {295 124 95 22} type Simple align 8 minimum 1 maximum 16 step 1 value 8
+                code0 {o->value(progdefaults.wf_latency);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Counter2
               }
@@ -2489,7 +2490,7 @@ setwfrange();}
                 label {Waterfall height in pixels}
                 callback {progdefaults.wfheight = (int)o->value();
 progdefaults.changed = true;}
-                tooltip {CPU usage increases with waterfall height} xywh {72 251 95 21} type Simple align 8 minimum 100 maximum 160 step 5 value 120
+                tooltip {CPU usage increases with waterfall height} xywh {72 251 95 22} type Simple align 8 minimum 100 maximum 160 step 5 value 120
                 code0 {o->value(progdefaults.wfheight);}
                 code1 {o->labelsize(FL_NORMAL_SIZE);}
                 class Fl_Counter2
@@ -2548,8 +2549,8 @@ behaves inside the waterfall} xywh {34 207 150 22} down_box BORDER_BOX align 8
         }
       }
       Fl_Group tabModems {
-        label Modems
-        xywh {0 25 595 347}
+        label Modems open
+        xywh {0 25 595 347} hide
       } {
         Fl_Tabs tabsModems {open
           xywh {0 25 540 347} selection_color 50 align 9
@@ -3413,7 +3414,7 @@ progdefaults.changed = true;}
               xywh {0 50 540 320} selection_color 50
             } {
               Fl_Group {} {
-                label Rx open selected
+                label Rx open
                 xywh {0 75 540 295} align 5
               } {
                 Fl_Group {} {
@@ -3767,19 +3768,12 @@ progdefaults.changed = true;}
             }
           }
           Fl_Group tabWefax {
-            label Wefax
+            label Wefax open
             xywh {0 50 540 320} hide
           } {
             Fl_Group {} {open
               xywh {2 63 534 300}
             } {
-              Fl_Check_Button btnWefaxAdifLog {
-                label {Log Wefax messages to Adif file}
-                callback {progdefaults.WEFAX_AdifLog=o->value();
-progdefaults.changed = true;}
-                tooltip {Sent and received faxes are logged to Adif file.} xywh {94 137 235 30} down_box DOWN_BOX
-                code0 {o->value(progdefaults.WEFAX_AdifLog);}
-              }
               Fl_Check_Button btnWefaxEmbeddedGui {
                 label {Embedded Wefax Gui}
                 callback {progdefaults.WEFAX_EmbeddedGui=o->value();
@@ -3788,31 +3782,39 @@ progdefaults.changed = true;}
 Change requires restart of fldigi} xywh {94 74 235 30} down_box DOWN_BOX
                 code0 {o->value(progdefaults.WEFAX_EmbeddedGui);}
               }
-              Fl_Input btnWefaxShift {
-                label {Frequency shift (800 Hz)}
-                callback {if( o->value() > 900 ) { o->value(900); return; }
-if( o->value() < 750 ) { o->value(750); return; }
-progdefaults.WEFAX_Shift=o->value();
+              Fl_Check_Button btnWefaxHideTx {
+                label {Hide Transmission window}
+                callback {progdefaults.WEFAX_HideTx=o->value();
 progdefaults.changed = true;}
-                tooltip {Default 800 Hz. Deutsche Wetterdienst 850Hz} xywh {94 177 80 20} type Int align 8
-                code0 {o->value(progdefaults.WEFAX_Shift);}
-                class Fl_Value_Input2
+                tooltip {Hide transmission window by default.} xywh {94 119 235 30} down_box DOWN_BOX
+                code0 {o->value(progdefaults.WEFAX_HideTx);}
               }
-              Fl_Input btnWefaxMaxRows {
-                label {Received fax maximum rows number (5000)}
-                callback {if(o->value() > 10000 ) { o->value(10000); return ; }
-if(o->value() < 1000 ) { o->value(1000); return ; }
-progdefaults.WEFAX_MaxRows=o->value();
+              Fl_Check_Button btnWefaxAdifLog {
+                label {Log Wefax messages to Adif file}
+                callback {progdefaults.WEFAX_AdifLog=o->value();
 progdefaults.changed = true;}
-                tooltip {Maximum row number for a received fax image.} xywh {94 217 85 20} type Int align 8
+                tooltip {Sent and received faxes are logged to Adif file.} xywh {94 165 235 30} down_box DOWN_BOX
+                code0 {o->value(progdefaults.WEFAX_AdifLog);}
+              }
+              Fl_Counter cntr_wefax_shift {
+                label {Frequency shift (800 Hz)}
+                callback {progdefaults.WEFAX_Shift=o->value();
+progdefaults.changed = true;}
+                tooltip {Default 800 Hz. Deutsche Wetterdienst 850Hz} xywh {95 211 90 22} type Simple align 8 minimum 750 maximum 900 step 10 value 800
+                code0 {o->value(progdefaults.WEFAX_Shift);}
+              }
+              Fl_Counter ctr_wefax_max_rows {
+                label {Rx fax max rows}
+                callback {progdefaults.WEFAX_MaxRows=o->value();
+progdefaults.changed = true;}
+                tooltip {Default 800 Hz. Deutsche Wetterdienst 850Hz} xywh {95 247 90 22} type Simple align 8 minimum 1000 maximum 10000 step 50 value 5000
                 code0 {o->value(progdefaults.WEFAX_MaxRows);}
-                class Fl_Value_Input2
               }
               Fl_Input btnWefaxSaveDir {
                 label {Fax images destination directory}
                 callback {progdefaults.wefax_save_dir=o->value();
 progdefaults.changed = true;}
-                xywh {94 267 310 20} align 5
+                xywh {94 290 310 24} align 5
                 code0 {o->value(progdefaults.wefax_save_dir.c_str());}
               }
               Fl_Button btnSelectFaxDestDir {
@@ -3820,20 +3822,13 @@ progdefaults.changed = true;}
                 callback {Fl_File_Chooser *fc = new Fl_File_Chooser(".",NULL,Fl_File_Chooser::DIRECTORY,"Input File");
 fc->callback(WefaxDestDirSet);
 fc->show();}
-                xywh {424 267 80 20}
-              }
-              Fl_Check_Button btnWefaxHideTx {
-                label {Hide Transmission window}
-                callback {progdefaults.WEFAX_HideTx=o->value();
-progdefaults.changed = true;}
-                tooltip {Hide transmission window by default.} xywh {94 107 235 30} down_box DOWN_BOX
-                code0 {o->value(progdefaults.WEFAX_HideTx);}
+                xywh {424 290 80 24}
               }
               Fl_Check_Button btnWefaxSaveMonochrome {
                 label {Save image as monochrome file}
                 callback {progdefaults.WEFAX_SaveMonochrome=o->value();
 progdefaults.changed = true;}
-                tooltip {Save the fax image as a gray-level PNG file.} xywh {94 297 235 30} down_box DOWN_BOX
+                tooltip {Save the fax image as a gray-level PNG file.} xywh {94 320 235 30} down_box DOWN_BOX
                 code0 {o->value(progdefaults.WEFAX_SaveMonochrome);}
               }
             }
@@ -4869,15 +4864,16 @@ progdefaults.changed = true;}
                 code1 {chkRSidAutoDisable->value(progdefaults.rsid_auto_disable);}
                 code2 {if (progdefaults.rsid_notify_only) chkRSidAutoDisable->deactivate();}
               }
-              Fl_Value_Slider sldrRSIDresolution {
-                label Errors
-                callback {progdefaults.rsid_resolution = (int)o->value();
-progdefaults.changed = true;}
-                tooltip {Number of errors allowed in RsID comparison} xywh {10 233 145 22} type Horizontal align 8 maximum 4 step 1 textsize 14
-                code0 {o->value(progdefaults.rsid_resolution);}
-                code2 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
-                class Fl_Value_Slider2
-              }
+              Fl_Choice mnu_RsID_errors {
+                label {Allow errors}
+                callback {progdefaults.RsID_label_type = o->value();
+progdefaults.changed = true;} open
+                tooltip {Low = zero errors
+Medium = 1 error
+High = 2 errors} xywh {10 233 100 22} down_box BORDER_BOX align 8
+                code0 {mnu_RsID_errors->add(_("Low")); mnu_RsID_errors->add(_("Medium")); mnu_RsID_errors->add(_("High"));}
+                code1 {mnu_RsID_errors->value(progdefaults.RsID_label_type);}
+              } {}
               Fl_Value_Slider sldrRSIDsquelch {
                 label {Squelch open (sec)}
                 callback {progdefaults.rsid_squelch = (int)o->value();
@@ -5243,10 +5239,10 @@ progdefaults.changed = true;}
                 code0 {btnPSKRepQRG->value(progdefaults.pskrep_qrg);}
               }
               Fl_Check_Button btn_report_when_visible {
-                label {Enable spotting only when signal browser(s) are visible}
+                label {Disable spotting when signal browser(s) are not visible.}
                 callback {progdefaults.report_when_visible = o->value();
 progdefaults.changed = true;}
-                tooltip {Enable to reduce CPU load} xywh {40 195 416 20} down_box DOWN_BOX
+                tooltip {Check to reduce CPU load in PSK and RTTY modes.} xywh {40 195 416 20} down_box DOWN_BOX value 1
                 code0 {o->value(progdefaults.report_when_visible);}
               }
               Fl_Input inpPSKRepHost {
@@ -6190,6 +6186,215 @@ dl_fldigi::hbtint::uthr->payloads();}
                 xywh {245 300 60 25}
               }
             }
+          }
+        }
+      }
+      Fl_Group tabAutoStart {
+        label Autostart
+        callback {progdefaults.changed = true;} open selected
+        tooltip {Operator information} xywh {0 25 540 345} when 1
+      } {
+        Fl_Group {} {
+          label {Auto start programs with fldigi} open
+          xywh {2 32 536 336} box ENGRAVED_BOX align 17
+        } {
+          Fl_Input txt_auto_flrig_pathname {
+            label {flrig:}
+            callback {progdefaults.auto_flrig_pathname = o->value();
+progdefaults.changed = true;}
+            tooltip {Enter full path-filename for external program
+Or simple name of program} xywh {63 71 310 24} when 1
+            code0 {o->value(progdefaults.auto_flrig_pathname.c_str());}
+            class Fl_Input2
+          }
+          Fl_Button btn_select_flrig {
+            label Locate
+            callback {std::string str = select_binary_pathname("flrig");
+txt_auto_flrig_pathname->value(str.c_str());
+progdefaults.auto_flrig_pathname = str;
+progdefaults.changed = true;}
+            tooltip {Locate flrig executable} xywh {380 71 70 24}
+          }
+          Fl_Input txt_auto_flamp_pathname {
+            label {flamp:}
+            callback {progdefaults.auto_flamp_pathname = o->value();
+progdefaults.changed = true;}
+            tooltip {Enter full path-filename for external program
+Or simple name of program} xywh {63 109 310 24} when 1
+            code0 {o->value(progdefaults.auto_flamp_pathname.c_str());}
+            class Fl_Input2
+          }
+          Fl_Button btn_select_auto_flamp {
+            label Locate
+            callback {std::string str = select_binary_pathname("flamp");
+txt_auto_flamp_pathname->value(str.c_str());
+progdefaults.auto_flamp_pathname = str;
+progdefaults.changed = true;}
+            tooltip {Locate flamp executable} xywh {380 109 70 24}
+          }
+          Fl_Input txt_auto_flnet_pathname {
+            label {flnet:}
+            callback {progdefaults.flmsg_pathname = o->value();
+progdefaults.changed = true;}
+            tooltip {Enter full path-filename for external program
+Or simple name of program} xywh {63 147 310 24} when 1
+            code0 {o->value(progdefaults.auto_flnet_pathname.c_str());}
+            class Fl_Input2
+          }
+          Fl_Button btn_select_auto_flnet {
+            label Locate
+            callback {std::string str = select_binary_pathname("flnet");
+txt_auto_flnet_pathname->value(str.c_str());
+progdefaults.auto_flnet_pathname = str;
+progdefaults.changed = true;}
+            tooltip {Locate flnet executable} xywh {380 147 70 24}
+          }
+          Fl_Input txt_auto_fllog_pathname {
+            label {fllog:}
+            callback {progdefaults.auto_fllog_pathname = o->value();
+progdefaults.changed = true;}
+            tooltip {Enter full path-filename for external program
+Or simple name of program} xywh {63 186 310 24} when 1
+            code0 {o->value(progdefaults.auto_fllog_pathname.c_str());}
+            class Fl_Input2
+          }
+          Fl_Button btn_select_fllog {
+            label Locate
+            callback {std::string str = select_binary_pathname("fllog");
+txt_auto_fllog_pathname->value(str.c_str());
+progdefaults.auto_fllog_pathname = str;
+progdefaults.changed = true;}
+            tooltip {Locate fllog executable} xywh {380 186 70 24}
+          }
+          Fl_Input txt_auto_prog1_pathname {
+            label {Prog 1:}
+            callback {progdefaults.auto_prog1_pathname = o->value();
+progdefaults.changed = true;}
+            tooltip {Enter full path-filename for external program
+Or simple name of program} xywh {63 224 310 24} when 1
+            code0 {o->value(progdefaults.auto_prog1_pathname.c_str());}
+            class Fl_Input2
+          }
+          Fl_Button btn_select_prog1 {
+            label Locate
+            callback {std::string str = select_binary_pathname(progdefaults.auto_prog1_pathname);
+txt_auto_prog1_pathname->value(str.c_str());
+progdefaults.auto_prog1_pathname = str;
+progdefaults.changed = true;}
+            tooltip {Locate program \#1 executable} xywh {380 224 70 24}
+          }
+          Fl_Input txt_auto_prog2_pathname {
+            label {Prog 2:}
+            callback {progdefaults.auto_prog2_pathname = o->value();
+progdefaults.changed = true;}
+            tooltip {Enter full path-filename for external program
+Or simple name of program} xywh {63 262 310 24} when 1
+            code0 {o->value(progdefaults.auto_prog2_pathname.c_str());}
+            class Fl_Input2
+          }
+          Fl_Button btn_select_prog2 {
+            label Locate
+            callback {std::string str = select_binary_pathname(progdefaults.auto_prog2_pathname);
+txt_auto_prog2_pathname->value(str.c_str());
+progdefaults.auto_prog2_pathname = str;
+progdefaults.changed = true;}
+            tooltip {Locate program \#2 executable} xywh {380 262 70 24}
+          }
+          Fl_Input txt_auto_prog3_pathname {
+            label {Prog 3:}
+            callback {progdefaults.auto_prog3_pathname = o->value();
+progdefaults.changed = true;}
+            tooltip {Enter full path-filename for external program
+Or simple name of program} xywh {63 301 310 24} when 1
+            code0 {o->value(progdefaults.auto_prog3_pathname.c_str());}
+            class Fl_Input2
+          }
+          Fl_Button btn_select_prog3 {
+            label Locate
+            callback {std::string str = select_binary_pathname(progdefaults.auto_prog3_pathname);
+txt_auto_prog3_pathname->value(str.c_str());
+progdefaults.auto_prog3_pathname = str;
+progdefaults.changed = true;}
+            tooltip {Locate program \#3 executable} xywh {380 301 70 24}
+          }
+          Fl_Check_Button btn_flrig_auto_enable {
+            label {Enable
+-}
+            callback {progdefaults.flrig_auto_enable = o->value();
+progdefaults.changed = true;}
+            tooltip {Enable this entry when fldigi first starts} xywh {455 75 19 15} down_box DOWN_BOX align 1
+            code0 {o->value(progdefaults.flrig_auto_enable);}
+          }
+          Fl_Check_Button btn_flamp_auto_enable {
+            callback {progdefaults.flamp_auto_enable = o->value();
+progdefaults.changed = true;}
+            tooltip {Enable this entry when fldigi first starts} xywh {455 113 23 15} down_box DOWN_BOX
+            code0 {o->value(progdefaults.flamp_auto_enable);}
+          }
+          Fl_Check_Button btn_flnet_auto_enable {
+            callback {progdefaults.flnet_auto_enable = o->value();
+progdefaults.changed = true;}
+            tooltip {Enable this entry when fldigi first starts} xywh {455 151 23 15} down_box DOWN_BOX
+            code0 {o->value(progdefaults.flnet_auto_enable);}
+          }
+          Fl_Check_Button btn_fllog_auto_enable {
+            callback {progdefaults.fllog_auto_enable = o->value();
+progdefaults.changed = true;}
+            tooltip {Enable this entry when fldigi first starts} xywh {455 190 23 15} down_box DOWN_BOX
+            code0 {o->value(progdefaults.fllog_auto_enable);}
+          }
+          Fl_Check_Button btn_prog1_auto_enable {
+            callback {progdefaults.prog1_auto_enable = o->value();
+progdefaults.changed = true;}
+            tooltip {Enable this entry when fldigi first starts} xywh {455 228 23 15} down_box DOWN_BOX
+            code0 {o->value(progdefaults.prog1_auto_enable);}
+          }
+          Fl_Check_Button btn_prog2_auto_enable {
+            callback {progdefaults.prog2_auto_enable = o->value();
+progdefaults.changed = true;}
+            tooltip {Enable this entry when fldigi first starts} xywh {455 266 23 15} down_box DOWN_BOX
+            code0 {o->value(progdefaults.prog2_auto_enable);}
+          }
+          Fl_Check_Button btn_prog3_auto_enable {
+            callback {progdefaults.prog3_auto_enable = o->value();
+progdefaults.changed = true;}
+            tooltip {Enable this entry when fldigi first starts} xywh {455 305 23 15} down_box DOWN_BOX
+            code0 {o->value(progdefaults.prog3_auto_enable);}
+          }
+          Fl_Button btn_test_flrig {
+            label Test
+            callback {start_process(progdefaults.auto_flrig_pathname);}
+            tooltip {Start flrig} xywh {479 71 50 24}
+          }
+          Fl_Button btn_test_flamp {
+            label Test
+            callback {start_process(progdefaults.auto_flamp_pathname);}
+            tooltip {Start flamp} xywh {479 109 50 24}
+          }
+          Fl_Button btn_test_flnet {
+            label Test
+            callback {start_process(progdefaults.auto_flnet_pathname);}
+            tooltip {Start flnet} xywh {479 147 50 24}
+          }
+          Fl_Button btn_test_fllog {
+            label Test
+            callback {start_process(progdefaults.auto_fllog_pathname);}
+            tooltip {Start fllog} xywh {479 186 50 24}
+          }
+          Fl_Button btn_test_prog1 {
+            label Test
+            callback {start_process(progdefaults.auto_prog1_pathname);}
+            tooltip {Start prog1} xywh {479 224 50 24}
+          }
+          Fl_Button btn_test_prog2 {
+            label Test
+            callback {start_process(progdefaults.auto_prog2_pathname);}
+            tooltip {Start prog2} xywh {479 262 50 24}
+          }
+          Fl_Button btn_test_prog3 {
+            label Test
+            callback {start_process(progdefaults.auto_prog3_pathname);}
+            tooltip {Start prog3} xywh {479 301 50 24}
           }
         }
       }

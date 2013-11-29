@@ -33,7 +33,6 @@
 
 #include "globals.h"
 #include "modem.h"
-#include "fft.h"
 #include "filters.h"
 #include "interleave.h"
 #include "viterbi.h"
@@ -72,6 +71,7 @@ extern	void	deleteTxViewer();
 
 extern void cb_picRxClose( Fl_Widget *w, void *);
 extern void cb_picRxAbort( Fl_Widget *w, void *);
+extern void picTxSendColor();
 extern void cb_picTxSendColor( Fl_Widget *w, void *);
 extern void cb_picTxSendGrey( Fl_Widget *w, void *);
 extern void cb_picTxSendAbort( Fl_Widget *w, void *);
@@ -98,11 +98,11 @@ extern	unsigned char *xmtimg;
 extern	unsigned char *xmtpicbuff;
 
 struct rxpipe {
-	complex vector[MAX_SYMBOLS];	//numtones <= 32
+	cmplx vector[MAX_SYMBOLS];	//numtones <= 32
 };
 
 struct history {
-	complex val;
+	cmplx val;
 	int symnbr;
 };
 	
@@ -113,6 +113,7 @@ class mfsk : public modem {
 friend void updateTxPic(unsigned char data);
 friend void cb_picRxClose( Fl_Widget *w, void *);
 friend void cb_picRxAbort( Fl_Widget *w, void *);
+friend void pic_TxSendColor();
 friend void cb_picTxSendColor( Fl_Widget *w, void *);
 friend void cb_picTxSendGrey( Fl_Widget *w, void *);
 friend void cb_picTxSendAbort( Fl_Widget *w, void *);
@@ -150,11 +151,13 @@ protected:
 	double tonespacing;
 	double basefreq;
 	int counter;
+	int depth;
 // receive
 	int				rxstate;
 	C_FIR_filter	*hbfilt;
 	sfft			*binsfft;
 	C_FIR_filter	*bpfilt;
+	C_FIR_filter	*xmtfilt;
 	Cmovavg			*vidfilter[SCOPESIZE];
 	Cmovavg			*syncfilter;
 
@@ -170,9 +173,9 @@ protected:
 	//VK2ETA high speed modes
 	int	preamble;
 
-	complex currvector;
-	complex prev1vector;
-	complex prev2vector;
+	cmplx currvector;
+	cmplx prev1vector;
+	cmplx prev2vector;
 
 	int currsymbol;
 	int prev1symbol;
@@ -212,8 +215,9 @@ protected:
 // Picutre data and methods
 	int picturesize;
 	char picheader[PICHEADER];
-	complex prevz;
+	cmplx prevz;
 	double picf;
+	unsigned char prepost[128];
 	
 	int		row;
 	int		col;
@@ -229,25 +233,29 @@ protected:
 	bool		startpic;
 	bool		abortxmt;
 
-	void	recvpic(complex z);
+	void	recvpic(cmplx z);
 	void	recvchar(int c);
 	void	recvbit(int bit);
 
 // internal processes
 	void	decodesymbol(unsigned char symbol);
-	void	softdecode(complex *bins);
-	complex	mixer(complex in, double f);
-	int		harddecode(complex *in);
+	void	softdecode(cmplx *bins);
+	cmplx	mixer(cmplx in, double f);
+	int		harddecode(cmplx *in);
 	void	update_syncscope();
 	void	synchronize();
 	void	afc();
 	void	reset_afc();
 	void	eval_s2n();
+	void	transmit(double *, int);
 	void 	sendsymbol(int sym);
 	void	sendbit(int bit);
 	void	sendchar(unsigned char c);
 	void	sendidle();
-	void	flushtx();
+	void	flush_xmt_filter(int);
+	void	send_prologue();
+	void	send_epilogue();
+	void	flushtx(int nbits);
 	void	clearbits();
 	void	sendpic(unsigned char *data, int len);
 	bool	check_picture_header(char c);
@@ -263,6 +271,7 @@ public:
 	void	restart() {};
 	int		rx_process(const double *buf, int len);
 	int		tx_process();
+	void	send_image(std::string s);
 	void	shutdown();
 };
 

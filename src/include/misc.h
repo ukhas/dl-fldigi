@@ -55,19 +55,14 @@ inline double clamp(double x, double min, double max)
 	return (x < min) ? min : ((x > max) ? max : x);
 }
 
-inline double decayavg(double average, double input, double weight)
+/// This is always called with an int weight
+inline double decayavg(double average, double input, int weight)
 {
-	if (weight <= 1.0) return input;
-	return input * (1.0 / weight) + average * (1.0 - (1.0 / weight));
+	if (weight <= 1) return input;
+	return ( ( input - average ) / (double)weight ) + average ;
 }
 
 // following are defined inline to provide best performance
-
-inline double rect(double x)
-{
-	return 1.0;
-}
-
 inline double blackman(double x)
 {
 	return (0.42 - 0.50 * cos(2 * M_PI * x) + 0.08 * cos(4 * M_PI * x));
@@ -86,8 +81,9 @@ inline double hanning(double x)
 inline double rcos( double t, double T, double alpha=1.0 )
 {
     if( t == 0 ) return 1.0;
-    if( fabs(t) == ( T/(2.0*alpha) ) ) return ((alpha/2.0) * sin(M_PI/(2.0*alpha)));
-    return sin(M_PI*t/T)/(M_PI*t/T)*cos(alpha*M_PI*t/T)/(1.0-(2.0*alpha*t/T)*(2.0*alpha*t/T));
+    double taT = T / (2.0 * alpha);
+    if( fabs(t) == taT ) return ((alpha/2.0) * sin(M_PI/(2.0*alpha)));
+    return (sin(M_PI*t/T)/(M_PI*t/T))*cos(alpha*M_PI*t/T)/(1.0-(t/taT)*(t/taT));
 }
 
 // Rectangular - no pre filtering of data array
@@ -100,7 +96,5 @@ void HanningWindow(double *array, int n);
 void BlackmanWindow(double *array, int n);
 // Simple about effective as Hamming or Hanning
 void TriangularWindow(double *array, int n);
-
-#define fftabs(a,b) sqrt((a)*(a) + (b)*(b))
 
 #endif

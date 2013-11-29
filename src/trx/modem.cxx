@@ -55,6 +55,8 @@ modem *mfsk22_modem = 0;
 modem *mfsk31_modem = 0;
 modem *mfsk64_modem = 0;
 modem *mfsk128_modem = 0;
+modem *mfsk64l_modem = 0;
+modem *mfsk128l_modem = 0;
 
 modem *wefax576_modem = 0;
 modem *wefax288_modem = 0;
@@ -201,6 +203,7 @@ modem::modem()
 	s2n_ncount = s2n_sum = s2n_sum2 = s2n_metric = 0.0;
 	s2n_valid = false;
 	track_freq_lock = 0;
+	bandwidth = 0.0;
 }
 
 // modem types CW and RTTY do not use the base init()

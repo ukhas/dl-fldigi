@@ -123,6 +123,8 @@ public:
 	void		videoText();
 	void		pretone();
 
+	virtual void		send_image(std::string) {}
+
 	void		set_stopflag(bool b) { stopflag = b;};
 	bool		get_stopflag() const { return stopflag; };
 
@@ -205,6 +207,8 @@ extern modem *mfsk22_modem;
 extern modem *mfsk31_modem;
 extern modem *mfsk64_modem;
 extern modem *mfsk128_modem;
+extern modem *mfsk64l_modem;
+extern modem *mfsk128l_modem;
 
 extern modem *wefax576_modem;
 extern modem *wefax288_modem;

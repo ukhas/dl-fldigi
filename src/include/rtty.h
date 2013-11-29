@@ -164,8 +164,8 @@ private:
 	double *dsppipe;
 	int pipeptr;
 
-	complex mark_history[MAXPIPE];
-	complex space_history[MAXPIPE];
+	cmplx mark_history[MAXPIPE];
+	cmplx space_history[MAXPIPE];
 
 	RTTY_RX_STATE rxstate;
 
@@ -182,15 +182,15 @@ private:
     int lost;
 
 	double prevsymbol;
-	complex prevsmpl;
+	cmplx prevsmpl;
 
 	double xy_phase;
 	double rotate;
 
-	complex QI[MAXPIPE];
+	cmplx QI[MAXPIPE];
 	int inp_ptr;
 
-	complex xy;
+	cmplx xy;
 
 	bool   clear_zdata;
 	double sigpwr;
@@ -217,7 +217,7 @@ private:
 	void Update_syncscope();
 
 	double IF_freq;
-	inline complex mixer(double &phase, double f, complex in);
+	inline cmplx mixer(double &phase, double f, cmplx in);
 
 	unsigned char Bit_reverse(unsigned char in, int n);
 	int decode_char();
