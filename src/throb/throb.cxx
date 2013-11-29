@@ -37,6 +37,8 @@
 #include "fl_digi.h"
 #include "status.h"
 
+#define MAX_TONES	15
+
 #undef  CLAMP
 #define CLAMP(x,low,high)       (((x)>(high))?(high):(((x)<(low))?(low):(x)))
 
@@ -413,9 +415,8 @@ void throb::rx(complex in)
 #ifdef __APPLE__
     complex rxword[11];
 #else
-	complex rxword[num_tones];
+	complex rxword[MAX_TONES];
 #endif
-    
 	int i, tone1, tone2, maxtone;
 
 	symbol[symptr] = in;

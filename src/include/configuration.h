@@ -70,9 +70,9 @@
 #endif
 
 #define CONFIG_LIST                                                                     \
-	ELEM_(bool, confirmExit, "CONFIRMEXIT",				                \
-	      "Ensure user wants to leave flgidi",			                \
-	      false)							                \
+    ELEM_(bool, confirmExit, "CONFIRMEXIT",                                             \
+          "Ensure user wants to leave flgidi",                                          \
+          false)                                                                        \
         ELEM_(bool, SaveConfig, "SAVECONFIG",                                           \
               "Save current configuration on exit",                                     \
               false)                                                                    \
@@ -117,11 +117,18 @@
         ELEM_(int, rsid_resolution, "RSID_RESOLUTION",                                  \
               "values (LOW)  5, 4, 3, 2 (HIGH)",                                        \
               5)                                                                        \
-                                                                                        \
+        ELEM_(bool, disable_rsid_warning_dialog_box, "DISABLE_RSID_WARNING_DIALOG_BOX", \
+              "disable displaying the rsid warning dialog box",                         \
+              false)                                                                    \
         ELEM_(bool, slowcpu, "SLOWCPU",                                                 \
               "Disable expensive processing in some decoders",                          \
               true)                                                                     \
-                                                                                        \
+        ELEM_(bool, disable_rsid_freq_change, "DISABLERSIDFREQCHANGE",                  \
+              "disable changing frequency on rsid modem change/reset",                  \
+              false)                                                                    \
+		ELEM_(bool, retain_freq_lock, "RETAINFREQLOCK",                                 \
+			 "retain frequency lock on rsid modem change/reset",                   \
+			 false)                                                                     \
         ELEM_(bool, changed, "", "",  false)                                            \
                                                                                         \
         ELEM_(double, wfRefLevel, "WFREFLEVEL",                                         \
@@ -211,6 +218,9 @@
         ELEM_(bool, rx_lowercase, "RX_LOWERCASE",                                       \
               "Print Rx in lowercase for CW, RTTY, CONTESTIA and THROB",                \
               false)                                                                    \
+        ELEM_(bool, tx_lowercase, "TX_LOWERCASE",                                       \
+              "Transmit all text in lowercase",                                         \
+              false)                                                                    \
         /* PSK, filter can be 0, 1, 2, 3 or 4 */                                        \
         ELEM_(int, PSK_filter, "PSKFILTER",                                             \
               "Not configurable; must always be 0",                                     \
@@ -271,6 +281,13 @@
         ELEM_(double, RTTY_BW, "RTTYBW",                                                \
               "Receive filter bandwidth (Hz)",                                          \
               68.0)                                                                     \
+        ELEM_(double, rtty_filter, "RTTYFILTER",                                        \
+              "Rtty Rx Filter shape factor, K * (t/T)\n"                                \
+              "You may alter this value using a text editor\n"                          \
+              "change will be effective when restarting fldigi\n"                       \
+              "K = 1.25; best for W1HKJ (default)\n"                                    \
+              "K = 1.5 - best for DO2SMF",                                              \
+              1.25)                                                                     \
         ELEM_(int, rtty_baud, "RTTYBAUD",                                               \
               "Carrier baud rate. Values are as follows:\n"                             \
               "  1: 45; 1: 45.45; 2: 50; 3: 56; 4: 75; 5: 100; 6: 110; 7: 150; \n"      \
@@ -306,12 +323,6 @@
         ELEM_(int, rtty_afcspeed, "RTTYAFCSPEED",                                       \
               "AFC tracking speed. Values are as follows:\n"                            \
               "  0: slow; 1: normal; 2: fast",                                          \
-              1)   /* normal */                                                         \
-        ELEM_(int, rtty_filter_quality, "RTTYFILTERQUALITY",                            \
-              "DSP filter length:\n"                                                    \
-              "  0: low, 512, low cpu load\n"                                           \
-              "  1: normal, 1024, medium cpu load\n"                                    \
-              "  2: high, 2048, high cpu load",                                         \
               1)   /* normal */                                                         \
         ELEM_(bool, useFSKkeyline, "", "",  false)                                      \
         ELEM_(bool, useFSKkeylineDTR, "", "",  false)                                   \
@@ -491,6 +502,9 @@
         ELEM_(bool, contestia8bit, "CONTESTIA8BIT",                                     \
               "8-bit extended characters",                                              \
               true)                                                                     \
+		ELEM_(bool, contestia_reset_fec, "CONTESTIARESETFEC",                           \
+		      "Force Integration (FEC) depth to be reset when new BW/Tones selected",   \
+			  false)                                                                    \
         /* THOR */                                                                      \
         ELEM_(double, THOR_BW, "THORBW",                                                \
               "Filter bandwidth factor (bandwidth relative to signal width)",           \
@@ -1027,6 +1041,10 @@
         ELEM_(int, TxOffset, "TXOFFSET",                                                \
               "Difference between RX and TX freq (rig offset)",                         \
               0)                                                                        \
+        ELEM_(bool, loop_playback, "LOOPPLAYBACK",                                      \
+              "true = continuous loop of sound file playback\n"                         \
+              "false = single pass through playback file.",                             \
+              false)                                                                    \
         ELEM_(int, PTT_on_delay, "PTTONDELAY",                                          \
               "Start of transmit delay before sending audio",                           \
               0)                                                                        \
@@ -1052,15 +1070,21 @@
         ELEM_(RGB, bwsrSldrSelColor,"BWSRSLDRSELCOLOR",                                 \
               "Button highlight color, signal browser detect level",                    \
               {54, 100, 139})                                                           \
-        ELEM_(RGB, bwsrHiLight1, "BWSRHILIGHT1",                                        \
+        ELEM_(int, bwsrHiLight1, "BWSRHILIGHT1",                                        \
               "View Browser highlight color 1, default Dark Red",                       \
-              {128, 0, 0})                                                              \
-        ELEM_(RGB, bwsrHiLight2, "BWSRHILIGHT2",                                        \
+              FL_RED)                                                                   \
+        ELEM_(int, bwsrHiLight2, "BWSRHILIGHT2",                                        \
               "View Browser highlight color 2, default Dark Green",                     \
-              {0, 128, 0})                                                              \
-        ELEM_(RGB, bwsrHiLight3, "BWSRHILIGHT3",                                        \
-              "View Browser highlight color 3, default Dark Blue",                      \
-              {0, 0, 128})                                                              \
+              FL_GREEN)                                                                 \
+        ELEM_(int, bwsrBackgnd1, "BWSRBACKGND1",                                        \
+              "View Browser background odd lines",                                      \
+              55)                                                                       \
+        ELEM_(int, bwsrBackgnd2, "BWSRBACKGND2",                                        \
+              "View Browser background odd lines",                                      \
+              53)                                                                       \
+        ELEM_(int, bwsrSelect, "BWSRSELECT",                                            \
+              "View Browser line select color",                                         \
+              FL_BLUE)                                                                  \
         ELEM_(RGB, dup_color, "dupcolor",                                               \
               "Callsign background color when duplicate detected",                      \
               {255, 110, 180})                                                          \
@@ -1422,6 +1446,9 @@
               false)                                                                    \
         ELEM_(bool, pskrep_qrg, "PSKREPQRG",                                            \
               "Include rig frequency in reception report",                              \
+              false)                                                                    \
+        ELEM_(bool, report_when_visible, "REPORTWHENVISIBLE",                           \
+              "Enable Reporter ONLY when a signal browser is visible",                  \
               false)                                                                    \
         ELEM_(std::string, pskrep_host, "PSKREPHOST",                                   \
               "Reception report server address",                                        \

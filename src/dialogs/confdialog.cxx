@@ -258,42 +258,47 @@ static void cb_bwsrSldrSelColor(Fl_Button* o, void*) {
 
 Fl_Button *bwsrHiLite_1_color=(Fl_Button *)0;
 
-static void cb_bwsrHiLite_1_color(Fl_Button* o, void*) {
-  uchar r, g, b;
-    r = progdefaults.bwsrHiLight1.R;
-    g = progdefaults.bwsrHiLight1.G;
-    b = progdefaults.bwsrHiLight1.B;
-
-    if (fl_color_chooser("Slider Color", r, g, b) == 0)
-        return;
-    progdefaults.bwsrHiLight1.R = r;
-    progdefaults.bwsrHiLight1.G = g;
-    progdefaults.bwsrHiLight1.B = b;
-    o->color(fl_rgb_color(r,g,b));
-    o->redraw();
-
-    viewer_redraw();
-    progdefaults.changed = true;
+static void cb_bwsrHiLite_1_color(Fl_Button*, void*) {
+  progdefaults.bwsrHiLight1 = fl_show_colormap(progdefaults.bwsrHiLight1);
+bwsrHiLite_1_color->color(progdefaults.bwsrHiLight1);
+viewer_redraw();
+progdefaults.changed = true;
 }
 
 Fl_Button *bwsrHiLite_2_color=(Fl_Button *)0;
 
-static void cb_bwsrHiLite_2_color(Fl_Button* o, void*) {
-  uchar r, g, b;
-    r = progdefaults.bwsrHiLight2.R;
-    g = progdefaults.bwsrHiLight2.G;
-    b = progdefaults.bwsrHiLight2.B;
+static void cb_bwsrHiLite_2_color(Fl_Button*, void*) {
+  progdefaults.bwsrHiLight2 = fl_show_colormap(progdefaults.bwsrHiLight2);
+bwsrHiLite_2_color->color(progdefaults.bwsrHiLight2);
+viewer_redraw();
+progdefaults.changed = true;
+}
 
-    if (fl_color_chooser("Slider Color", r, g, b) == 0)
-        return;
-    progdefaults.bwsrHiLight2.R = r;
-    progdefaults.bwsrHiLight2.G = g;
-    progdefaults.bwsrHiLight2.B = b;
-    o->color(fl_rgb_color(r,g,b));
-    o->redraw();
+Fl_Button *bwsrHiLite_even_lines=(Fl_Button *)0;
 
-    viewer_redraw();
-    progdefaults.changed = true;
+static void cb_bwsrHiLite_even_lines(Fl_Button*, void*) {
+  progdefaults.bwsrBackgnd2 = fl_show_colormap(progdefaults.bwsrBackgnd2);
+bwsrHiLite_even_lines->color(progdefaults.bwsrBackgnd2);
+viewer_redraw();
+progdefaults.changed = true;;
+}
+
+Fl_Button *bwsrHiLite_odd_lines=(Fl_Button *)0;
+
+static void cb_bwsrHiLite_odd_lines(Fl_Button*, void*) {
+  progdefaults.bwsrBackgnd1 = fl_show_colormap(progdefaults.bwsrBackgnd1);
+bwsrHiLite_odd_lines->color(progdefaults.bwsrBackgnd1);
+viewer_redraw();
+progdefaults.changed = true;
+}
+
+Fl_Button *bwsrHiLite_select=(Fl_Button *)0;
+
+static void cb_bwsrHiLite_select(Fl_Button*, void*) {
+  progdefaults.bwsrSelect = fl_show_colormap(progdefaults.bwsrSelect);
+bwsrHiLite_select->color(progdefaults.bwsrSelect);
+viewer_redraw();
+progdefaults.changed = true;
 }
 
 Fl_Group *tabContest=(Fl_Group *)0;
@@ -460,6 +465,13 @@ Fl_Check_Button *btn_rx_lowercase=(Fl_Check_Button *)0;
 
 static void cb_btn_rx_lowercase(Fl_Check_Button* o, void*) {
   progdefaults.rx_lowercase = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_tx_lowercase=(Fl_Check_Button *)0;
+
+static void cb_btn_tx_lowercase(Fl_Check_Button* o, void*) {
+  progdefaults.tx_lowercase = o->value();
 progdefaults.changed = true;
 }
 
@@ -1750,6 +1762,13 @@ resetCONTESTIA();
 progdefaults.changed = true;
 }
 
+Fl_Check_Button *btn_contestia_reset_fec=(Fl_Check_Button *)0;
+
+static void cb_btn_contestia_reset_fec(Fl_Check_Button* o, void*) {
+  progdefaults.contestia_reset_fec = o->value();
+progdefaults.changed = true;
+}
+
 Fl_Check_Button *btnContestia_8bit=(Fl_Check_Button *)0;
 
 static void cb_btnContestia_8bit(Fl_Check_Button* o, void*) {
@@ -1796,6 +1815,65 @@ progdefaults.changed = true;
 }
 
 Fl_Group *tabRTTY=(Fl_Group *)0;
+
+Fl_Tabs *tabsRTTY=(Fl_Tabs *)0;
+
+Fl_Choice *mnuRTTYAFCSpeed=(Fl_Choice *)0;
+
+static void cb_mnuRTTYAFCSpeed(Fl_Choice* o, void*) {
+  progdefaults.rtty_afcspeed = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkUOSrx=(Fl_Check_Button *)0;
+
+static void cb_chkUOSrx(Fl_Check_Button* o, void*) {
+  progdefaults.UOSrx=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Value_Input *rtty_rx_shape=(Fl_Value_Input *)0;
+
+static void cb_rtty_rx_shape(Fl_Value_Input* o, void*) {
+  progdefaults.rtty_filter = o->value();
+progStatus.rtty_filter_changed = true;
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btnPreferXhairScope=(Fl_Check_Button *)0;
+
+static void cb_btnPreferXhairScope(Fl_Check_Button* o, void*) {
+  progdefaults.PreferXhairScope=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chk_true_scope=(Fl_Check_Button *)0;
+
+static void cb_chk_true_scope(Fl_Check_Button* o, void*) {
+  progdefaults.true_scope=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chk_useMARKfreq=(Fl_Check_Button *)0;
+
+static void cb_chk_useMARKfreq(Fl_Check_Button* o, void*) {
+  progdefaults.useMARKfreq=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *btnRTTY_mark_color=(Fl_Button *)0;
+
+static void cb_btnRTTY_mark_color(Fl_Button* o, void*) {
+  if (fl_color_chooser("MARK freq track",
+  progdefaults.rttymarkRGBI.R, 
+  progdefaults.rttymarkRGBI.G, 
+  progdefaults.rttymarkRGBI.B) ) {
+o->color(fl_rgb_color(progdefaults.rttymarkRGBI.R,progdefaults.rttymarkRGBI.G,progdefaults.rttymarkRGBI.B));
+o->redraw();
+wf->redraw_marker();
+progdefaults.changed = true;
+};
+}
 
 Fl_Choice *selShift=(Fl_Choice *)0;
 
@@ -1853,25 +1931,6 @@ resetRTTY();
 progdefaults.changed = true;
 }
 
-Fl_Check_Button *chkPseudoFSK=(Fl_Check_Button *)0;
-
-static void cb_chkPseudoFSK(Fl_Check_Button* o, void*) {
-  progdefaults.PseudoFSK = o->value();
-chkPseudoFSK2->value(o->value());
-progdefaults.changed = true;
-if (o->value()) {
-  progdefaults.sig_on_right_channel = false;
-  chkAudioStereoOut->value(0);
-  progdefaults.PTTrightchannel = false;
-  btnPTTrightchannel->value(0);
-  if (progdefaults.mono_audio) {
-    progdefaults.mono_audio = false;
-    chkForceMono->value(0);
-    resetSoundCard();
-  }
-};
-}
-
 Fl_Check_Button *btnAUTOCRLF=(Fl_Check_Button *)0;
 
 static void cb_btnAUTOCRLF(Fl_Check_Button* o, void*) {
@@ -1900,82 +1959,22 @@ static void cb_chkUOStx(Fl_Check_Button* o, void*) {
 progdefaults.changed = true;
 }
 
-Fl_Value_Slider2 *sldrRTTYbandwidth=(Fl_Value_Slider2 *)0;
+Fl_Check_Button *chkPseudoFSK=(Fl_Check_Button *)0;
 
-static void cb_sldrRTTYbandwidth(Fl_Value_Slider2* o, void*) {
-  progdefaults.RTTY_BW = o->value();
-}
-
-Fl_Choice *mnu_RTTY_filter_quality=(Fl_Choice *)0;
-
-static void cb_mnu_RTTY_filter_quality(Fl_Choice* o, void*) {
-  progdefaults.rtty_filter_quality = o->value();
+static void cb_chkPseudoFSK(Fl_Check_Button* o, void*) {
+  progdefaults.PseudoFSK = o->value();
+chkPseudoFSK2->value(o->value());
 progdefaults.changed = true;
-progStatus.rtty_filter_changed = true;
-}
-
-Fl_Button *btn_optimum_rtty_bw=(Fl_Button *)0;
-
-static void cb_btn_optimum_rtty_bw(Fl_Button*, void*) {
-  static const double BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200};
-progdefaults.RTTY_BW = 2 * BAUD[progdefaults.rtty_baud];
-sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
-progdefaults.changed = true;
-}
-
-Fl_Choice *mnuRTTYAFCSpeed=(Fl_Choice *)0;
-
-static void cb_mnuRTTYAFCSpeed(Fl_Choice* o, void*) {
-  progdefaults.rtty_afcspeed = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Choice *mnu_kahn_demod=(Fl_Choice *)0;
-
-static void cb_mnu_kahn_demod(Fl_Choice* o, void*) {
-  progdefaults.kahn_demod = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *chkUOSrx=(Fl_Check_Button *)0;
-
-static void cb_chkUOSrx(Fl_Check_Button* o, void*) {
-  progdefaults.UOSrx=o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *btnPreferXhairScope=(Fl_Check_Button *)0;
-
-static void cb_btnPreferXhairScope(Fl_Check_Button* o, void*) {
-  progdefaults.PreferXhairScope=o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *chk_true_scope=(Fl_Check_Button *)0;
-
-static void cb_chk_true_scope(Fl_Check_Button* o, void*) {
-  progdefaults.true_scope=o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *chk_useMARKfreq=(Fl_Check_Button *)0;
-
-static void cb_chk_useMARKfreq(Fl_Check_Button* o, void*) {
-  progdefaults.useMARKfreq=o->value();
-progdefaults.changed = true;
-}
-
-Fl_Button *btnRTTY_mark_color=(Fl_Button *)0;
-
-static void cb_btnRTTY_mark_color(Fl_Button* o, void*) {
-  if (fl_color_chooser("MARK freq track",
-  progdefaults.rttymarkRGBI.R, 
-  progdefaults.rttymarkRGBI.G, 
-  progdefaults.rttymarkRGBI.B) ) {
-o->color(fl_rgb_color(progdefaults.rttymarkRGBI.R,progdefaults.rttymarkRGBI.G,progdefaults.rttymarkRGBI.B));
-o->redraw();
-wf->redraw_marker();
-progdefaults.changed = true;
+if (o->value()) {
+  progdefaults.sig_on_right_channel = false;
+  chkAudioStereoOut->value(0);
+  progdefaults.PTTrightchannel = false;
+  btnPTTrightchannel->value(0);
+  if (progdefaults.mono_audio) {
+    progdefaults.mono_audio = false;
+    chkForceMono->value(0);
+    resetSoundCard();
+  }
 };
 }
 
@@ -2952,6 +2951,112 @@ if (o->value()) {
 
 Fl_Group *tabID=(Fl_Group *)0;
 
+Fl_Group *tabRsID=(Fl_Group *)0;
+
+Fl_Check_Button *chkRSidNotifyOnly=(Fl_Check_Button *)0;
+
+static void cb_chkRSidNotifyOnly(Fl_Check_Button* o, void*) {
+  progdefaults.rsid_notify_only = o->value();
+notify_create_rsid_event(progdefaults.rsid_notify_only);
+if (progdefaults.rsid_notify_only) {
+    chkRSidAutoDisable->value(0);
+    chkRSidAutoDisable->deactivate();
+}
+else
+    chkRSidAutoDisable->activate();
+progdefaults.changed = true;
+}
+
+Fl_Button *bRSIDRxModes=(Fl_Button *)0;
+
+static void cb_bRSIDRxModes(Fl_Button* o, void*) {
+  mode_browser->label(o->label());
+mode_browser->callback(0);
+mode_browser->show(&progdefaults.rsid_rx_modes);
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkRSidWideSearch=(Fl_Check_Button *)0;
+
+static void cb_chkRSidWideSearch(Fl_Check_Button* o, void*) {
+  progdefaults.rsidWideSearch=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkRSidMark=(Fl_Check_Button *)0;
+
+static void cb_chkRSidMark(Fl_Check_Button* o, void*) {
+  progdefaults.rsid_mark = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkRSidAutoDisable=(Fl_Check_Button *)0;
+
+static void cb_chkRSidAutoDisable(Fl_Check_Button* o, void*) {
+  progdefaults.rsid_auto_disable = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Value_Slider2 *sldrRSIDresolution=(Fl_Value_Slider2 *)0;
+
+static void cb_sldrRSIDresolution(Fl_Value_Slider2* o, void*) {
+  progdefaults.rsid_resolution = (int)o->value();
+progdefaults.changed = true;
+}
+
+Fl_Value_Slider2 *sldrRSIDsquelch=(Fl_Value_Slider2 *)0;
+
+static void cb_sldrRSIDsquelch(Fl_Value_Slider2* o, void*) {
+  progdefaults.rsid_squelch = (int)o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkRSidShowAlert=(Fl_Check_Button *)0;
+
+static void cb_chkRSidShowAlert(Fl_Check_Button* o, void*) {
+  progdefaults.disable_rsid_warning_dialog_box = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkRetainFreqLock=(Fl_Check_Button *)0;
+
+static void cb_chkRetainFreqLock(Fl_Check_Button* o, void*) {
+  progdefaults.retain_freq_lock = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *chkDisableFreqChange=(Fl_Check_Button *)0;
+
+static void cb_chkDisableFreqChange(Fl_Check_Button* o, void*) {
+  progdefaults.disable_rsid_freq_change = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Counter *val_pretone=(Fl_Counter *)0;
+
+static void cb_val_pretone(Fl_Counter* o, void*) {
+  progdefaults.pretone = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Button *bRSIDTxModes=(Fl_Button *)0;
+
+static void cb_bRSIDTxModes(Fl_Button* o, void*) {
+  mode_browser->label(o->label());
+mode_browser->callback(0);
+mode_browser->show(&progdefaults.rsid_tx_modes);
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_post_rsid=(Fl_Check_Button *)0;
+
+static void cb_btn_post_rsid(Fl_Check_Button* o, void*) {
+  progdefaults.rsid_post=o->value();
+progdefaults.changed = true;
+}
+
+Fl_Group *tabVideoID=(Fl_Group *)0;
+
 Fl_Check_Button *btnsendid=(Fl_Check_Button *)0;
 
 static void cb_btnsendid(Fl_Check_Button* o, void*) {
@@ -3010,6 +3115,8 @@ mode_browser->show(&progdefaults.videoid_modes);
 progdefaults.changed = true;
 }
 
+Fl_Group *tabCwID=(Fl_Group *)0;
+
 Fl_Group *sld=(Fl_Group *)0;
 
 Fl_Check_Button *btnCWID=(Fl_Check_Button *)0;
@@ -3032,87 +3139,6 @@ static void cb_bCWIDModes(Fl_Button* o, void*) {
   mode_browser->label(o->label());
 mode_browser->callback(0);
 mode_browser->show(&progdefaults.cwid_modes);
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *chkRSidWideSearch=(Fl_Check_Button *)0;
-
-static void cb_chkRSidWideSearch(Fl_Check_Button* o, void*) {
-  progdefaults.rsidWideSearch=o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *chkRSidMark=(Fl_Check_Button *)0;
-
-static void cb_chkRSidMark(Fl_Check_Button* o, void*) {
-  progdefaults.rsid_mark = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *chkRSidAutoDisable=(Fl_Check_Button *)0;
-
-static void cb_chkRSidAutoDisable(Fl_Check_Button* o, void*) {
-  progdefaults.rsid_auto_disable = o->value();
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *chkRSidNotifyOnly=(Fl_Check_Button *)0;
-
-static void cb_chkRSidNotifyOnly(Fl_Check_Button* o, void*) {
-  progdefaults.rsid_notify_only = o->value();
-notify_create_rsid_event(progdefaults.rsid_notify_only);
-if (progdefaults.rsid_notify_only) {
-    chkRSidAutoDisable->value(0);
-    chkRSidAutoDisable->deactivate();
-}
-else
-    chkRSidAutoDisable->activate();
-progdefaults.changed = true;
-}
-
-Fl_Button *bRSIDRxModes=(Fl_Button *)0;
-
-static void cb_bRSIDRxModes(Fl_Button* o, void*) {
-  mode_browser->label(o->label());
-mode_browser->callback(0);
-mode_browser->show(&progdefaults.rsid_rx_modes);
-progdefaults.changed = true;
-}
-
-Fl_Value_Slider2 *sldrRSIDsquelch=(Fl_Value_Slider2 *)0;
-
-static void cb_sldrRSIDsquelch(Fl_Value_Slider2* o, void*) {
-  progdefaults.rsid_squelch = (int)o->value();
-progdefaults.changed = true;
-}
-
-Fl_Value_Slider2 *sldrRSIDresolution=(Fl_Value_Slider2 *)0;
-
-static void cb_sldrRSIDresolution(Fl_Value_Slider2* o, void*) {
-  progdefaults.rsid_resolution = (int)o->value();
-progdefaults.changed = true;
-}
-
-Fl_Button *bRSIDTxModes=(Fl_Button *)0;
-
-static void cb_bRSIDTxModes(Fl_Button* o, void*) {
-  mode_browser->label(o->label());
-mode_browser->callback(0);
-mode_browser->show(&progdefaults.rsid_tx_modes);
-progdefaults.changed = true;
-}
-
-Fl_Check_Button *btn_post_rsid=(Fl_Check_Button *)0;
-
-static void cb_btn_post_rsid(Fl_Check_Button* o, void*) {
-  progdefaults.rsid_post=o->value();
-progdefaults.changed = true;
-}
-
-Fl_Counter *val_pretone=(Fl_Counter *)0;
-
-static void cb_val_pretone(Fl_Counter* o, void*) {
-  progdefaults.pretone = o->value();
 progdefaults.changed = true;
 }
 
@@ -3249,6 +3275,13 @@ Fl_Check_Button *btnPSKRepQRG=(Fl_Check_Button *)0;
 
 static void cb_btnPSKRepQRG(Fl_Check_Button* o, void*) {
   progdefaults.pskrep_qrg = o->value();
+progdefaults.changed = true;
+}
+
+Fl_Check_Button *btn_report_when_visible=(Fl_Check_Button *)0;
+
+static void cb_btn_report_when_visible(Fl_Check_Button* o, void*) {
+  progdefaults.report_when_visible = o->value();
 progdefaults.changed = true;
 }
 
@@ -3930,6 +3963,7 @@ Fl_Double_Window* ConfigureDialog() {
         tabOperator->tooltip(_("Operator information"));
         tabOperator->callback((Fl_Callback*)cb_tabOperator);
         tabOperator->when(FL_WHEN_CHANGED);
+        tabOperator->hide();
         { Fl_Group* o = new Fl_Group(27, 35, 490, 205, _("Station"));
           o->box(FL_ENGRAVED_FRAME);
           o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
@@ -4121,15 +4155,15 @@ Fl_Double_Window* ConfigureDialog() {
                 btnBrowserHistory->callback((Fl_Callback*)cb_btnBrowserHistory);
                 o->value(progdefaults.VIEWERhistory);
               } // Fl_Check_Button* btnBrowserHistory
-              { Fl_Group* o = new Fl_Group(42, 281, 187, 60, _("Detection Level Colors"));
+              { Fl_Group* o = new Fl_Group(34, 281, 144, 60, _("Detection Level"));
                 o->box(FL_ENGRAVED_FRAME);
-                { bwsrSliderColor = new Fl_Button(49, 304, 80, 24, _("Backgnd"));
+                { bwsrSliderColor = new Fl_Button(41, 304, 60, 24, _("Backgnd"));
                 bwsrSliderColor->tooltip(_("Background color of signal viewer squelch control"));
                 bwsrSliderColor->callback((Fl_Callback*)cb_bwsrSliderColor);
                 bwsrSliderColor->align(Fl_Align(FL_ALIGN_TOP));
                 bwsrSliderColor->color(fl_rgb_color(progdefaults.bwsrSliderColor.R, progdefaults.bwsrSliderColor.G,progdefaults.bwsrSliderColor.B));
                 } // Fl_Button* bwsrSliderColor
-                { bwsrSldrSelColor = new Fl_Button(141, 304, 80, 24, _("Button"));
+                { bwsrSldrSelColor = new Fl_Button(109, 304, 60, 24, _("Button"));
                 bwsrSldrSelColor->tooltip(_("Slider hilite color of signal viewer squelch control"));
                 bwsrSldrSelColor->callback((Fl_Callback*)cb_bwsrSldrSelColor);
                 bwsrSldrSelColor->align(Fl_Align(FL_ALIGN_TOP));
@@ -4137,20 +4171,38 @@ Fl_Double_Window* ConfigureDialog() {
                 } // Fl_Button* bwsrSldrSelColor
                 o->end();
               } // Fl_Group* o
-              { Fl_Group* o = new Fl_Group(237, 281, 187, 60, _("Parser Colors"));
+              { Fl_Group* o = new Fl_Group(186, 281, 326, 60, _("Browser Line Colors"));
                 o->box(FL_ENGRAVED_FRAME);
-                { bwsrHiLite_1_color = new Fl_Button(245, 303, 80, 24, _("HiLite 1"));
+                { bwsrHiLite_1_color = new Fl_Button(192, 303, 60, 24, _("HiLite 1"));
                 bwsrHiLite_1_color->tooltip(_("PSK/RTTY Viewer HiLite Color 1"));
                 bwsrHiLite_1_color->callback((Fl_Callback*)cb_bwsrHiLite_1_color);
                 bwsrHiLite_1_color->align(Fl_Align(FL_ALIGN_TOP));
-                bwsrHiLite_1_color->color(fl_rgb_color(progdefaults.bwsrHiLight1.R, progdefaults.bwsrHiLight1.G,progdefaults.bwsrHiLight1.B));
+                bwsrHiLite_1_color->color(progdefaults.bwsrHiLight1);
                 } // Fl_Button* bwsrHiLite_1_color
-                { bwsrHiLite_2_color = new Fl_Button(333, 303, 80, 24, _("HiLite 2"));
+                { bwsrHiLite_2_color = new Fl_Button(255, 303, 60, 24, _("HiLite 2"));
                 bwsrHiLite_2_color->tooltip(_("PSK/RTTY Viewer HiLite Color 2"));
                 bwsrHiLite_2_color->callback((Fl_Callback*)cb_bwsrHiLite_2_color);
                 bwsrHiLite_2_color->align(Fl_Align(FL_ALIGN_TOP));
-                bwsrHiLite_2_color->color(fl_rgb_color(progdefaults.bwsrHiLight2.R, progdefaults.bwsrHiLight2.G,progdefaults.bwsrHiLight2.B));
+                bwsrHiLite_2_color->color(progdefaults.bwsrHiLight2);
                 } // Fl_Button* bwsrHiLite_2_color
+                { bwsrHiLite_even_lines = new Fl_Button(318, 303, 60, 24, _("Even"));
+                bwsrHiLite_even_lines->tooltip(_("Even lines"));
+                bwsrHiLite_even_lines->callback((Fl_Callback*)cb_bwsrHiLite_even_lines);
+                bwsrHiLite_even_lines->align(Fl_Align(FL_ALIGN_TOP));
+                bwsrHiLite_even_lines->color(progdefaults.bwsrBackgnd2);
+                } // Fl_Button* bwsrHiLite_even_lines
+                { bwsrHiLite_odd_lines = new Fl_Button(381, 303, 60, 24, _("Odd"));
+                bwsrHiLite_odd_lines->tooltip(_("Odd lines"));
+                bwsrHiLite_odd_lines->callback((Fl_Callback*)cb_bwsrHiLite_odd_lines);
+                bwsrHiLite_odd_lines->align(Fl_Align(FL_ALIGN_TOP));
+                bwsrHiLite_odd_lines->color(progdefaults.bwsrBackgnd1);
+                } // Fl_Button* bwsrHiLite_odd_lines
+                { bwsrHiLite_select = new Fl_Button(445, 303, 60, 24, _("Select"));
+                bwsrHiLite_select->tooltip(_("Select line"));
+                bwsrHiLite_select->callback((Fl_Callback*)cb_bwsrHiLite_select);
+                bwsrHiLite_select->align(Fl_Align(FL_ALIGN_TOP));
+                bwsrHiLite_select->color(progdefaults.bwsrSelect);
+                } // Fl_Button* bwsrHiLite_select
                 o->end();
               } // Fl_Group* o
               o->end();
@@ -4349,52 +4401,62 @@ Fl_Double_Window* ConfigureDialog() {
               } // Fl_Choice* mnuLang
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(21, 133, 496, 60);
+            { Fl_Group* o = new Fl_Group(21, 132, 496, 34);
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Check_Button* o = btn_rx_lowercase = new Fl_Check_Button(56, 149, 389, 20, _("Print CW / RTTY / THROB / CONTESTIA in lowercase"));
+              { Fl_Check_Button* o = btn_rx_lowercase = new Fl_Check_Button(56, 139, 389, 20, _("Print CW / RTTY / THROB / CONTESTIA in lowercase"));
                 btn_rx_lowercase->down_box(FL_DOWN_BOX);
                 btn_rx_lowercase->callback((Fl_Callback*)cb_btn_rx_lowercase);
                 o->value(progdefaults.rx_lowercase);
               } // Fl_Check_Button* btn_rx_lowercase
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(21, 195, 496, 114, _("Exit prompts"));
+            { Fl_Group* o = new Fl_Group(21, 167, 496, 34);
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Check_Button* o = btn_save_config_on_exit = new Fl_Check_Button(56, 261, 233, 20, _("Prompt to save Configuration"));
+              { Fl_Check_Button* o = btn_tx_lowercase = new Fl_Check_Button(56, 175, 389, 20, _("Transmit all text in lower case"));
+                btn_tx_lowercase->down_box(FL_DOWN_BOX);
+                btn_tx_lowercase->callback((Fl_Callback*)cb_btn_tx_lowercase);
+                o->value(progdefaults.tx_lowercase);
+              } // Fl_Check_Button* btn_tx_lowercase
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(21, 202, 496, 110, _("Exit prompts"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+              { Fl_Check_Button* o = btn_save_config_on_exit = new Fl_Check_Button(56, 265, 233, 20, _("Prompt to save Configuration"));
                 btn_save_config_on_exit->down_box(FL_DOWN_BOX);
                 btn_save_config_on_exit->callback((Fl_Callback*)cb_btn_save_config_on_exit);
                 o->value(progdefaults.SaveConfig);
               } // Fl_Check_Button* btn_save_config_on_exit
-              { Fl_Check_Button* o = btn2_save_macros_on_exit = new Fl_Check_Button(56, 283, 233, 20, _("Prompt to save macro file"));
+              { Fl_Check_Button* o = btn2_save_macros_on_exit = new Fl_Check_Button(56, 287, 233, 20, _("Prompt to save macro file"));
                 btn2_save_macros_on_exit->tooltip(_("Write current macro set on program exit"));
                 btn2_save_macros_on_exit->down_box(FL_DOWN_BOX);
                 btn2_save_macros_on_exit->callback((Fl_Callback*)cb_btn2_save_macros_on_exit);
                 o->value(progdefaults.SaveMacros);
               } // Fl_Check_Button* btn2_save_macros_on_exit
-              { Fl_Check_Button* o = btn2NagMe = new Fl_Check_Button(300, 261, 166, 20, _("Prompt to save log"));
+              { Fl_Check_Button* o = btn2NagMe = new Fl_Check_Button(300, 265, 166, 20, _("Prompt to save log"));
                 btn2NagMe->tooltip(_("Bug me about saving log entries"));
                 btn2NagMe->down_box(FL_DOWN_BOX);
                 btn2NagMe->callback((Fl_Callback*)cb_btn2NagMe);
                 o->value(progdefaults.NagMe);
               } // Fl_Check_Button* btn2NagMe
-              { Fl_Box* o = new Fl_Box(61, 215, 436, 40, _("Exit prompts active only when File/Exit menu item selected.\nNot active if wi\
+              { Fl_Box* o = new Fl_Box(61, 219, 436, 40, _("Exit prompts active only when File/Exit menu item selected.\nNot active if wi\
 ndow decoration close button pressed."));
                 o->box(FL_BORDER_BOX);
                 o->align(Fl_Align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE));
               } // Fl_Box* o
-              { Fl_Check_Button* o = btn2_confirm_exit = new Fl_Check_Button(300, 283, 200, 20, _("Confirm exit"));
+              { Fl_Check_Button* o = btn2_confirm_exit = new Fl_Check_Button(300, 287, 200, 20, _("Confirm exit"));
                 btn2_confirm_exit->down_box(FL_DOWN_BOX);
                 btn2_confirm_exit->callback((Fl_Callback*)cb_btn2_confirm_exit);
                 o->value(progdefaults.confirmExit);
               } // Fl_Check_Button* btn2_confirm_exit
               o->end();
             } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(21, 311, 496, 56, _("Check for updates"));
+            { Fl_Group* o = new Fl_Group(21, 314, 496, 54, _("Check for updates"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Check_Button* o = btn_check_for_updates = new Fl_Check_Button(56, 335, 324, 20, _("Check for updates when online"));
+              { Fl_Check_Button* o = btn_check_for_updates = new Fl_Check_Button(56, 337, 324, 20, _("Check for updates when online"));
                 btn_check_for_updates->down_box(FL_DOWN_BOX);
                 btn_check_for_updates->callback((Fl_Callback*)cb_btn_check_for_updates);
                 o->value(progdefaults.check_for_updates);
@@ -5083,11 +5145,11 @@ an merging"));
         tabWaterfall->end();
       } // Fl_Group* tabWaterfall
       { tabModems = new Fl_Group(-4, 25, 595, 347, _("Modems"));
-        tabModems->hide();
         { tabsModems = new Fl_Tabs(-4, 25, 595, 347);
           tabsModems->selection_color(FL_LIGHT1);
           tabsModems->align(Fl_Align(FL_ALIGN_TOP_RIGHT));
           { tabCW = new Fl_Group(0, 50, 540, 320, _("CW"));
+            tabCW->hide();
             { tabsCW = new Fl_Tabs(0, 50, 540, 320);
               tabsCW->selection_color(FL_LIGHT1);
               { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("General"));
@@ -5846,7 +5908,7 @@ an merging"));
                 cntOlivia_smargin->when(FL_WHEN_CHANGED);
                 o->labelsize(FL_NORMAL_SIZE);
                 } // Fl_Counter2* cntOlivia_smargin
-                { Fl_Counter2* o = cntOlivia_sinteg = new Fl_Counter2(99, 196, 70, 20, _("Integration period (FEC blocks)"));
+                { Fl_Counter2* o = cntOlivia_sinteg = new Fl_Counter2(99, 198, 70, 20, _("Integration period (FEC blocks)"));
                 cntOlivia_sinteg->tooltip(_("Change ONLY to experiment"));
                 cntOlivia_sinteg->type(1);
                 cntOlivia_sinteg->box(FL_UP_BOX);
@@ -5873,7 +5935,7 @@ an merging"));
                 } // Fl_Check_Button* btn_olivia_reset_fec
                 o->end();
               } // Fl_Group* o
-              { btnOlivia_8bit = new Fl_Check_Button(79, 291, 265, 20, _("8-bit extended characters (UTF-8)"));
+              { btnOlivia_8bit = new Fl_Check_Button(100, 291, 265, 20, _("8-bit extended characters (UTF-8)"));
                 btnOlivia_8bit->tooltip(_("Enable this for UTF-8 character transmission"));
                 btnOlivia_8bit->down_box(FL_DOWN_BOX);
                 btnOlivia_8bit->callback((Fl_Callback*)cb_btnOlivia_8bit);
@@ -5884,9 +5946,9 @@ an merging"));
           } // Fl_Group* tabOlivia
           { tabContestia = new Fl_Group(0, 50, 540, 320, _("Cont\'"));
             tabContestia->hide();
-            { Fl_Group* o = new Fl_Group(24, 80, 490, 200);
+            { Fl_Group* o = new Fl_Group(25, 80, 490, 200);
               o->box(FL_ENGRAVED_FRAME);
-              { Fl_Choice* o = mnuContestia_Bandwidth = new Fl_Choice(79, 100, 85, 20, _("Bandwidth"));
+              { Fl_Choice* o = mnuContestia_Bandwidth = new Fl_Choice(80, 100, 85, 20, _("Bandwidth"));
                 mnuContestia_Bandwidth->tooltip(_("Select bandwidth"));
                 mnuContestia_Bandwidth->down_box(FL_BORDER_BOX);
                 mnuContestia_Bandwidth->callback((Fl_Callback*)cb_mnuContestia_Bandwidth);
@@ -5894,7 +5956,7 @@ an merging"));
                 o->add(szContestiaBandwidth);
                 o->value(2);
               } // Fl_Choice* mnuContestia_Bandwidth
-              { Fl_Choice* o = mnuContestia_Tones = new Fl_Choice(340, 100, 70, 20, _("Tones"));
+              { Fl_Choice* o = mnuContestia_Tones = new Fl_Choice(341, 100, 70, 20, _("Tones"));
                 mnuContestia_Tones->tooltip(_("Select number of tones"));
                 mnuContestia_Tones->down_box(FL_BORDER_BOX);
                 mnuContestia_Tones->callback((Fl_Callback*)cb_mnuContestia_Tones);
@@ -5902,10 +5964,10 @@ an merging"));
                 o->add(szContestiaTones);
                 o->value(2);
               } // Fl_Choice* mnuContestia_Tones
-              { Fl_Group* o = new Fl_Group(79, 139, 379, 100, _("Receive synchronizer"));
+              { Fl_Group* o = new Fl_Group(63, 139, 414, 131, _("Receive synchronizer"));
                 o->box(FL_ENGRAVED_FRAME);
                 o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-                { Fl_Counter2* o = cntContestia_smargin = new Fl_Counter2(99, 170, 70, 20, _("Tune margin (tone frequency spacing)"));
+                { Fl_Counter2* o = cntContestia_smargin = new Fl_Counter2(97, 170, 70, 20, _("Tune margin (tone frequency spacing)"));
                 cntContestia_smargin->tooltip(_("Change ONLY to experiment"));
                 cntContestia_smargin->type(1);
                 cntContestia_smargin->box(FL_UP_BOX);
@@ -5924,7 +5986,7 @@ an merging"));
                 cntContestia_smargin->when(FL_WHEN_CHANGED);
                 o->labelsize(FL_NORMAL_SIZE);
                 } // Fl_Counter2* cntContestia_smargin
-                { Fl_Counter2* o = cntContestia_sinteg = new Fl_Counter2(99, 200, 70, 20, _("Integration period (FEC blocks)"));
+                { Fl_Counter2* o = cntContestia_sinteg = new Fl_Counter2(97, 202, 70, 20, _("Integration period (FEC blocks)"));
                 cntContestia_sinteg->tooltip(_("Change ONLY to experiment"));
                 cntContestia_sinteg->type(1);
                 cntContestia_sinteg->box(FL_UP_BOX);
@@ -5943,9 +6005,15 @@ an merging"));
                 cntContestia_sinteg->when(FL_WHEN_CHANGED);
                 o->labelsize(FL_NORMAL_SIZE);
                 } // Fl_Counter2* cntContestia_sinteg
+                { Fl_Check_Button* o = btn_contestia_reset_fec = new Fl_Check_Button(108, 235, 349, 20, _("Reset FEC blocks when changing BW or Tones"));
+                btn_contestia_reset_fec->tooltip(_("Enable this for UTF-8 character transmission"));
+                btn_contestia_reset_fec->down_box(FL_DOWN_BOX);
+                btn_contestia_reset_fec->callback((Fl_Callback*)cb_btn_contestia_reset_fec);
+                o->value(progdefaults.contestia_reset_fec);
+                } // Fl_Check_Button* btn_contestia_reset_fec
                 o->end();
               } // Fl_Group* o
-              { btnContestia_8bit = new Fl_Check_Button(79, 249, 200, 20, _("8-bit extended characters"));
+              { btnContestia_8bit = new Fl_Check_Button(80, 249, 200, 20, _("8-bit extended characters"));
                 btnContestia_8bit->tooltip(_("Enable this for Latin-1 accented characters"));
                 btnContestia_8bit->down_box(FL_DOWN_BOX);
                 btnContestia_8bit->callback((Fl_Callback*)cb_btnContestia_8bit);
@@ -6057,20 +6125,92 @@ an merging"));
             } // Fl_Tabs* tabsPSK
             tabPSK->end();
           } // Fl_Group* tabPSK
-          { tabRTTY = new Fl_Group(0, 50, 548, 320, _("RTTY"));
-            tabRTTY->hide();
-            { Fl_Group* o = new Fl_Group(2, 57, 267, 182, _("Transmit /Receive"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Choice* o = selShift = new Fl_Choice(30, 78, 100, 20, _("Carrier shift"));
+          { tabRTTY = new Fl_Group(0, 50, 540, 320, _("RTTY"));
+            { tabsRTTY = new Fl_Tabs(0, 50, 540, 320);
+              tabsRTTY->selection_color(FL_LIGHT1);
+              { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("Rx"));
+                o->align(Fl_Align(FL_ALIGN_TOP_LEFT));
+                { Fl_Group* o = new Fl_Group(2, 82, 535, 70, _("Receive"));
+                o->box(FL_ENGRAVED_FRAME);
+                o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+                { Fl_Choice* o = mnuRTTYAFCSpeed = new Fl_Choice(77, 110, 90, 22, _("AFC speed"));
+                mnuRTTYAFCSpeed->tooltip(_("AFC tracking speed"));
+                mnuRTTYAFCSpeed->down_box(FL_BORDER_BOX);
+                mnuRTTYAFCSpeed->callback((Fl_Callback*)cb_mnuRTTYAFCSpeed);
+                mnuRTTYAFCSpeed->align(Fl_Align(FL_ALIGN_TOP));
+                o->add("Slow"); o->add("Normal"); o->add("Fast");
+                o->value(progdefaults.rtty_afcspeed);
+                } // Fl_Choice* mnuRTTYAFCSpeed
+                { Fl_Check_Button* o = chkUOSrx = new Fl_Check_Button(181, 110, 63, 22, _("RX - unshift on space"));
+                chkUOSrx->tooltip(_("Revert to unshifted char\'s on a space"));
+                chkUOSrx->down_box(FL_DOWN_BOX);
+                chkUOSrx->callback((Fl_Callback*)cb_chkUOSrx);
+                o->value(progdefaults.UOSrx);
+                } // Fl_Check_Button* chkUOSrx
+                { Fl_Value_Input* o = rtty_rx_shape = new Fl_Value_Input(415, 108, 48, 25, _("Filter Shape Factor"));
+                rtty_rx_shape->tooltip(_("rcos timing coefficient:\n1.0 ... 2.0\nW1HKJ best 1.275\nDO2SMF best 1.500"));
+                rtty_rx_shape->minimum(1);
+                rtty_rx_shape->maximum(2);
+                rtty_rx_shape->step(0.001);
+                rtty_rx_shape->value(1.25);
+                rtty_rx_shape->callback((Fl_Callback*)cb_rtty_rx_shape);
+                rtty_rx_shape->align(Fl_Align(FL_ALIGN_TOP));
+                rtty_rx_shape->hide();
+                o->value(progdefaults.rtty_filter);
+                } // Fl_Value_Input* rtty_rx_shape
+                o->end();
+                } // Fl_Group* o
+                { Fl_Group* o = new Fl_Group(2, 153, 535, 55, _("RTTY Scope Display"));
+                o->box(FL_ENGRAVED_FRAME);
+                o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+                { Fl_Check_Button* o = btnPreferXhairScope = new Fl_Check_Button(90, 175, 165, 22, _("Use cross hair scope"));
+                btnPreferXhairScope->tooltip(_("Default to cross hair digiscope"));
+                btnPreferXhairScope->down_box(FL_DOWN_BOX);
+                btnPreferXhairScope->callback((Fl_Callback*)cb_btnPreferXhairScope);
+                o->value(progdefaults.PreferXhairScope);
+                } // Fl_Check_Button* btnPreferXhairScope
+                { Fl_Check_Button* o = chk_true_scope = new Fl_Check_Button(310, 175, 70, 22, _("XY - classic scope"));
+                chk_true_scope->tooltip(_("Enabled - use Mark/Space filter outputs\nDisabled - use pseudo signals"));
+                chk_true_scope->down_box(FL_DOWN_BOX);
+                chk_true_scope->callback((Fl_Callback*)cb_chk_true_scope);
+                o->value(progdefaults.true_scope);
+                } // Fl_Check_Button* chk_true_scope
+                o->end();
+                } // Fl_Group* o
+                { Fl_Group* o = new Fl_Group(2, 210, 535, 65, _("Log RTTY frequency"));
+                o->box(FL_ENGRAVED_FRAME);
+                o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+                { Fl_Check_Button* o = chk_useMARKfreq = new Fl_Check_Button(90, 236, 146, 22, _("Use MARK freq\'"));
+                chk_useMARKfreq->tooltip(_("Enabled - log QSO using Mark frequency\nDisabled - log QSO using center frequ\
+ency"));
+                chk_useMARKfreq->down_box(FL_DOWN_BOX);
+                chk_useMARKfreq->value(1);
+                chk_useMARKfreq->callback((Fl_Callback*)cb_chk_useMARKfreq);
+                o->value(progdefaults.useMARKfreq);
+                } // Fl_Check_Button* chk_useMARKfreq
+                { Fl_Button* o = btnRTTY_mark_color = new Fl_Button(310, 236, 41, 18, _("track color"));
+                btnRTTY_mark_color->tooltip(_("Color of Mark Track"));
+                btnRTTY_mark_color->color((Fl_Color)2);
+                btnRTTY_mark_color->callback((Fl_Callback*)cb_btnRTTY_mark_color);
+                btnRTTY_mark_color->align(Fl_Align(FL_ALIGN_RIGHT));
+                o->color(fl_rgb_color(progdefaults.rttymarkRGBI.R,progdefaults.rttymarkRGBI.G,progdefaults.rttymarkRGBI.B));
+                } // Fl_Button* btnRTTY_mark_color
+                o->end();
+                } // Fl_Group* o
+                o->end();
+              } // Fl_Group* o
+              { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("Tx"));
+                o->align(Fl_Align(FL_ALIGN_TOP_LEFT));
+                o->hide();
+                { Fl_Choice* o = selShift = new Fl_Choice(35, 104, 100, 20, _("Carrier shift"));
                 selShift->tooltip(_("Select carrier shift"));
                 selShift->down_box(FL_BORDER_BOX);
                 selShift->callback((Fl_Callback*)cb_selShift);
                 selShift->align(Fl_Align(FL_ALIGN_RIGHT));
                 selShift->when(FL_WHEN_CHANGED);
-                o->add(szShifts);
-              } // Fl_Choice* selShift
-              { Fl_Counter2* o = selCustomShift = new Fl_Counter2(30, 104, 100, 20, _("Custom shift"));
+                o->add(szShifts);o->value(progdefaults.rtty_shift);
+                } // Fl_Choice* selShift
+                { Fl_Counter2* o = selCustomShift = new Fl_Counter2(35, 137, 100, 20, _("Custom shift"));
                 selCustomShift->tooltip(_("Input carrier shift"));
                 selCustomShift->box(FL_UP_BOX);
                 selCustomShift->color(FL_BACKGROUND_COLOR);
@@ -6088,57 +6228,46 @@ an merging"));
                 selCustomShift->when(FL_WHEN_CHANGED);
                 o->lstep(10.0);
                 o->labelsize(FL_NORMAL_SIZE);
-              } // Fl_Counter2* selCustomShift
-              { Fl_Choice* o = selBaud = new Fl_Choice(30, 130, 100, 20, _("Baud rate"));
+                } // Fl_Counter2* selCustomShift
+                { Fl_Choice* o = selBaud = new Fl_Choice(35, 170, 100, 20, _("Baud rate"));
                 selBaud->tooltip(_("Select carrier baudrate"));
                 selBaud->down_box(FL_BORDER_BOX);
                 selBaud->callback((Fl_Callback*)cb_selBaud);
                 selBaud->align(Fl_Align(FL_ALIGN_RIGHT));
                 selBaud->when(FL_WHEN_CHANGED);
-                o->add(szBauds);
-              } // Fl_Choice* selBaud
-              { Fl_Choice* o = selBits = new Fl_Choice(30, 156, 100, 20, _("Bits per character"));
+                o->add(szBauds);o->value(progdefaults.rtty_baud);
+                } // Fl_Choice* selBaud
+                { Fl_Choice* o = selBits = new Fl_Choice(35, 203, 100, 20, _("Bits per character"));
                 selBits->tooltip(_("Select # bits / char"));
                 selBits->down_box(FL_BORDER_BOX);
                 selBits->callback((Fl_Callback*)cb_selBits);
                 selBits->align(Fl_Align(FL_ALIGN_RIGHT));
                 selBits->when(FL_WHEN_CHANGED);
-                o->add(szSelBits);
-              } // Fl_Choice* selBits
-              { Fl_Choice* o = selParity = new Fl_Choice(30, 182, 100, 20, _("Parity"));
+                o->add(szSelBits);o->value(progdefaults.rtty_bits);
+                } // Fl_Choice* selBits
+                { Fl_Choice* o = selParity = new Fl_Choice(35, 236, 100, 20, _("Parity"));
                 selParity->tooltip(_("Select parity"));
                 selParity->down_box(FL_BORDER_BOX);
                 selParity->callback((Fl_Callback*)cb_selParity);
                 selParity->align(Fl_Align(FL_ALIGN_RIGHT));
                 selParity->when(FL_WHEN_CHANGED);
-                o->add(szParity);
-              } // Fl_Choice* selParity
-              { Fl_Choice* o = selStopBits = new Fl_Choice(30, 208, 100, 20, _("Stop bits"));
+                o->add(szParity);o->value(progdefaults.rtty_parity);
+                } // Fl_Choice* selParity
+                { Fl_Choice* o = selStopBits = new Fl_Choice(35, 270, 100, 20, _("Stop bits"));
                 selStopBits->tooltip(_("Select # stop bits"));
                 selStopBits->down_box(FL_BORDER_BOX);
                 selStopBits->callback((Fl_Callback*)cb_selStopBits);
                 selStopBits->align(Fl_Align(FL_ALIGN_RIGHT));
                 selStopBits->when(FL_WHEN_CHANGED);
-                o->add(szStopBits);
-              } // Fl_Choice* selStopBits
-              o->end();
-            } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(2, 242, 267, 124, _("Transmit"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Check_Button* o = chkPseudoFSK = new Fl_Check_Button(32, 264, 212, 22, _("Pseudo-FSK - right channel"));
-                chkPseudoFSK->tooltip(_("Create keyed square wave on right audio channel"));
-                chkPseudoFSK->down_box(FL_DOWN_BOX);
-                chkPseudoFSK->callback((Fl_Callback*)cb_chkPseudoFSK);
-                o->value(progdefaults.PseudoFSK);
-              } // Fl_Check_Button* chkPseudoFSK
-              { Fl_Check_Button* o = btnAUTOCRLF = new Fl_Check_Button(32, 288, 90, 22, _("AutoCRLF"));
+                o->add(szStopBits);o->value(progdefaults.rtty_stop);
+                } // Fl_Choice* selStopBits
+                { Fl_Check_Button* o = btnAUTOCRLF = new Fl_Check_Button(286, 103, 90, 22, _("AutoCRLF"));
                 btnAUTOCRLF->tooltip(_("Add CRLF after page width characters"));
                 btnAUTOCRLF->down_box(FL_DOWN_BOX);
                 btnAUTOCRLF->callback((Fl_Callback*)cb_btnAUTOCRLF);
                 o->value(progdefaults.rtty_autocrlf);
-              } // Fl_Check_Button* btnAUTOCRLF
-              { Fl_Counter2* o = cntrAUTOCRLF = new Fl_Counter2(143, 289, 65, 20, _("chars"));
+                } // Fl_Check_Button* btnAUTOCRLF
+                { Fl_Counter2* o = cntrAUTOCRLF = new Fl_Counter2(397, 104, 65, 20, _("chars"));
                 cntrAUTOCRLF->tooltip(_("Auto CRLF line length"));
                 cntrAUTOCRLF->type(1);
                 cntrAUTOCRLF->box(FL_UP_BOX);
@@ -6156,115 +6285,30 @@ an merging"));
                 cntrAUTOCRLF->align(Fl_Align(FL_ALIGN_RIGHT));
                 cntrAUTOCRLF->when(FL_WHEN_CHANGED);
                 o->labelsize(FL_NORMAL_SIZE);
-              } // Fl_Counter2* cntrAUTOCRLF
-              { Fl_Check_Button* o = btnCRCRLF = new Fl_Check_Button(32, 312, 90, 22, _("CR-CR-LF"));
+                } // Fl_Counter2* cntrAUTOCRLF
+                { Fl_Check_Button* o = btnCRCRLF = new Fl_Check_Button(286, 136, 90, 22, _("CR-CR-LF"));
                 btnCRCRLF->tooltip(_("Use \"cr cr lf\" for \"cr lf\""));
                 btnCRCRLF->down_box(FL_DOWN_BOX);
                 btnCRCRLF->callback((Fl_Callback*)cb_btnCRCRLF);
                 btnCRCRLF->when(FL_WHEN_RELEASE_ALWAYS);
                 o->value(progdefaults.rtty_crcrlf);
-              } // Fl_Check_Button* btnCRCRLF
-              { Fl_Check_Button* o = chkUOStx = new Fl_Check_Button(32, 336, 63, 22, _("TX - unshift on space"));
+                } // Fl_Check_Button* btnCRCRLF
+                { Fl_Check_Button* o = chkUOStx = new Fl_Check_Button(286, 169, 63, 22, _("TX - unshift on space"));
                 chkUOStx->tooltip(_("Revert to Unsifted char\'s on a space"));
                 chkUOStx->down_box(FL_DOWN_BOX);
                 chkUOStx->callback((Fl_Callback*)cb_chkUOStx);
                 o->value(progdefaults.UOStx);
-              } // Fl_Check_Button* chkUOStx
-              o->end();
-            } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(271, 57, 267, 250, _("Receive"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Value_Slider2* o = sldrRTTYbandwidth = new Fl_Value_Slider2(280, 84, 250, 23, _("Receive filter bandwidth"));
-                sldrRTTYbandwidth->tooltip(_("Adjust the DSP bandwidth"));
-                sldrRTTYbandwidth->type(1);
-                sldrRTTYbandwidth->box(FL_DOWN_BOX);
-                sldrRTTYbandwidth->color(FL_BACKGROUND_COLOR);
-                sldrRTTYbandwidth->selection_color(FL_BACKGROUND_COLOR);
-                sldrRTTYbandwidth->labeltype(FL_NORMAL_LABEL);
-                sldrRTTYbandwidth->labelfont(0);
-                sldrRTTYbandwidth->labelsize(14);
-                sldrRTTYbandwidth->labelcolor(FL_FOREGROUND_COLOR);
-                sldrRTTYbandwidth->minimum(5);
-                sldrRTTYbandwidth->maximum(2400);
-                sldrRTTYbandwidth->step(1);
-                sldrRTTYbandwidth->value(91);
-                sldrRTTYbandwidth->textsize(14);
-                sldrRTTYbandwidth->callback((Fl_Callback*)cb_sldrRTTYbandwidth);
-                sldrRTTYbandwidth->align(Fl_Align(FL_ALIGN_TOP_RIGHT));
-                sldrRTTYbandwidth->when(FL_WHEN_CHANGED);
-                o->value(progdefaults.RTTY_BW);
-                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
-              } // Fl_Value_Slider2* sldrRTTYbandwidth
-              { Fl_Choice* o = mnu_RTTY_filter_quality = new Fl_Choice(280, 114, 75, 22, _("Filter Quality"));
-                mnu_RTTY_filter_quality->tooltip(_("Low -> High\nDSP filter length\nLow reduces load on CPU\nHigh gives best perf\
-ormance"));
-                mnu_RTTY_filter_quality->down_box(FL_BORDER_BOX);
-                mnu_RTTY_filter_quality->callback((Fl_Callback*)cb_mnu_RTTY_filter_quality);
-                mnu_RTTY_filter_quality->align(Fl_Align(FL_ALIGN_RIGHT));
-                o->add("Low"); o->add("Normal"); o->add("High");
-                o->value(progdefaults.rtty_filter_quality);
-              } // Fl_Choice* mnu_RTTY_filter_quality
-              { btn_optimum_rtty_bw = new Fl_Button(455, 114, 75, 23, _("Optimum"));
-                btn_optimum_rtty_bw->tooltip(_("Reset Filter to Optimum bandwidth"));
-                btn_optimum_rtty_bw->callback((Fl_Callback*)cb_btn_optimum_rtty_bw);
-              } // Fl_Button* btn_optimum_rtty_bw
-              { Fl_Choice* o = mnuRTTYAFCSpeed = new Fl_Choice(280, 144, 75, 22, _("AFC speed"));
-                mnuRTTYAFCSpeed->tooltip(_("AFC tracking speed"));
-                mnuRTTYAFCSpeed->down_box(FL_BORDER_BOX);
-                mnuRTTYAFCSpeed->callback((Fl_Callback*)cb_mnuRTTYAFCSpeed);
-                mnuRTTYAFCSpeed->align(Fl_Align(FL_ALIGN_RIGHT));
-                o->add("Slow"); o->add("Normal"); o->add("Fast");
-                o->value(progdefaults.rtty_afcspeed);
-              } // Fl_Choice* mnuRTTYAFCSpeed
-              { Fl_Choice* o = mnu_kahn_demod = new Fl_Choice(280, 174, 75, 22, _("Demodulator"));
-                mnu_kahn_demod->tooltip(_("Select demodulator type\nKahn power detector\nAutomatic Threshold Correcting"));
-                mnu_kahn_demod->down_box(FL_BORDER_BOX);
-                mnu_kahn_demod->callback((Fl_Callback*)cb_mnu_kahn_demod);
-                mnu_kahn_demod->align(Fl_Align(FL_ALIGN_RIGHT));
-                o->add("ATC"); o->add("Kahn");
-                o->value(progdefaults.kahn_demod);
-              } // Fl_Choice* mnu_kahn_demod
-              { Fl_Check_Button* o = chkUOSrx = new Fl_Check_Button(288, 204, 63, 22, _("RX - unshift on space"));
-                chkUOSrx->tooltip(_("Revert to unshifted char\'s on a space"));
-                chkUOSrx->down_box(FL_DOWN_BOX);
-                chkUOSrx->callback((Fl_Callback*)cb_chkUOSrx);
-                o->value(progdefaults.UOSrx);
-              } // Fl_Check_Button* chkUOSrx
-              { Fl_Check_Button* o = btnPreferXhairScope = new Fl_Check_Button(288, 234, 165, 22, _("Use cross hair scope"));
-                btnPreferXhairScope->tooltip(_("Default to cross hair digiscope"));
-                btnPreferXhairScope->down_box(FL_DOWN_BOX);
-                btnPreferXhairScope->callback((Fl_Callback*)cb_btnPreferXhairScope);
-                o->value(progdefaults.PreferXhairScope);
-              } // Fl_Check_Button* btnPreferXhairScope
-              { Fl_Check_Button* o = chk_true_scope = new Fl_Check_Button(288, 264, 70, 22, _("XY - classic scope"));
-                chk_true_scope->tooltip(_("Enabled - use Mark/Space filter outputs\nDisabled - use pseudo signals"));
-                chk_true_scope->down_box(FL_DOWN_BOX);
-                chk_true_scope->callback((Fl_Callback*)cb_chk_true_scope);
-                o->value(progdefaults.true_scope);
-              } // Fl_Check_Button* chk_true_scope
-              o->end();
-            } // Fl_Group* o
-            { Fl_Group* o = new Fl_Group(271, 310, 267, 55, _("Log RTTY frequency"));
-              o->box(FL_ENGRAVED_FRAME);
-              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-              { Fl_Check_Button* o = chk_useMARKfreq = new Fl_Check_Button(288, 333, 74, 22, _("Use MARK freq\'"));
-                chk_useMARKfreq->tooltip(_("Enabled - log QSO using Mark frequency\nDisabled - log QSO using center frequ\
-ency"));
-                chk_useMARKfreq->down_box(FL_DOWN_BOX);
-                chk_useMARKfreq->value(1);
-                chk_useMARKfreq->callback((Fl_Callback*)cb_chk_useMARKfreq);
-                o->value(progdefaults.useMARKfreq);
-              } // Fl_Check_Button* chk_useMARKfreq
-              { Fl_Button* o = btnRTTY_mark_color = new Fl_Button(437, 336, 21, 18, _("track clr"));
-                btnRTTY_mark_color->tooltip(_("Color of Mark Track"));
-                btnRTTY_mark_color->color((Fl_Color)2);
-                btnRTTY_mark_color->callback((Fl_Callback*)cb_btnRTTY_mark_color);
-                btnRTTY_mark_color->align(Fl_Align(FL_ALIGN_RIGHT));
-                o->color(fl_rgb_color(progdefaults.rttymarkRGBI.R,progdefaults.rttymarkRGBI.G,progdefaults.rttymarkRGBI.B));
-              } // Fl_Button* btnRTTY_mark_color
-              o->end();
-            } // Fl_Group* o
+                } // Fl_Check_Button* chkUOStx
+                { Fl_Check_Button* o = chkPseudoFSK = new Fl_Check_Button(286, 202, 212, 22, _("Pseudo-FSK - right channel"));
+                chkPseudoFSK->tooltip(_("Create keyed square wave on right audio channel"));
+                chkPseudoFSK->down_box(FL_DOWN_BOX);
+                chkPseudoFSK->callback((Fl_Callback*)cb_chkPseudoFSK);
+                o->value(progdefaults.PseudoFSK);
+                } // Fl_Check_Button* chkPseudoFSK
+                o->end();
+              } // Fl_Group* o
+              tabsRTTY->end();
+            } // Fl_Tabs* tabsRTTY
             tabRTTY->end();
           } // Fl_Group* tabRTTY
           { tabTHOR = new Fl_Group(0, 50, 540, 320, _("Thor"));
@@ -6474,6 +6518,7 @@ ency"));
         { tabsRig = new Fl_Tabs(0, 23, 540, 345);
           tabsRig->selection_color(FL_LIGHT1);
           { Fl_Group* o = new Fl_Group(0, 48, 540, 320, _("Hardware PTT"));
+            o->hide();
             { Fl_Group* o = new Fl_Group(26, 57, 490, 38);
               o->box(FL_ENGRAVED_FRAME);
               { Fl_Check_Button* o = btnPTTrightchannel = new Fl_Check_Button(45, 66, 250, 20, _("PTT tone on right audio channel "));
@@ -6938,7 +6983,6 @@ ency"));
             tabHamlib->end();
           } // Fl_Group* tabHamlib
           { tabXMLRPC = new Fl_Group(0, 48, 540, 320, _("XML-RPC"));
-            tabXMLRPC->hide();
             { grpXMLRPC = new Fl_Group(23, 61, 490, 160);
               grpXMLRPC->box(FL_ENGRAVED_FRAME);
               { Fl_Output* o = new Fl_Output(178, 80, 190, 58);
@@ -7229,217 +7273,249 @@ nce.\nYou may change the state from either location.\n..."));
         } // Fl_Tabs* tabsSoundCard
         tabSoundCard->end();
       } // Fl_Group* tabSoundCard
-      { tabID = new Fl_Group(0, 25, 540, 346, _("ID"));
+      { tabID = new Fl_Group(0, 23, 541, 348, _("ID"));
         tabID->hide();
-        { Fl_Group* o = new Fl_Group(22, 35, 490, 103, _("Video Preamble ID"));
-          o->box(FL_ENGRAVED_FRAME);
-          o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-          { btnsendid = new Fl_Check_Button(32, 58, 150, 20, _("Transmit mode ID"));
-            btnsendid->tooltip(_("Waterfall video ID"));
-            btnsendid->down_box(FL_DOWN_BOX);
-            btnsendid->callback((Fl_Callback*)cb_btnsendid);
-          } // Fl_Check_Button* btnsendid
-          { Fl_Check_Button* o = btnsendvideotext = new Fl_Check_Button(32, 83, 155, 20, _("Transmit video text"));
-            btnsendvideotext->tooltip(_("Waterfall video text"));
-            btnsendvideotext->down_box(FL_DOWN_BOX);
-            btnsendvideotext->callback((Fl_Callback*)cb_btnsendvideotext);
-            o->value(progdefaults.sendtextid);
-          } // Fl_Check_Button* btnsendvideotext
-          { Fl_Input2* o = valVideotext = new Fl_Input2(199, 83, 161, 20, _(":"));
-            valVideotext->tooltip(_("Limit to a few characters,\nas in CQEM or IOTA etc."));
-            valVideotext->box(FL_DOWN_BOX);
-            valVideotext->color(FL_BACKGROUND2_COLOR);
-            valVideotext->selection_color(FL_SELECTION_COLOR);
-            valVideotext->labeltype(FL_NORMAL_LABEL);
-            valVideotext->labelfont(0);
-            valVideotext->labelsize(14);
-            valVideotext->labelcolor(FL_FOREGROUND_COLOR);
-            valVideotext->callback((Fl_Callback*)cb_valVideotext);
-            valVideotext->align(Fl_Align(FL_ALIGN_LEFT));
-            valVideotext->when(FL_WHEN_RELEASE);
-            o->value(progdefaults.strTextid.c_str());
-            valVideotext->labelsize(FL_NORMAL_SIZE);
-          } // Fl_Input2* valVideotext
-          { Fl_Check_Button* o = chkID_SMALL = new Fl_Check_Button(32, 109, 120, 20, _("Use small font"));
-            chkID_SMALL->tooltip(_("ON - small font\nOFF - large font"));
-            chkID_SMALL->down_box(FL_DOWN_BOX);
-            chkID_SMALL->value(1);
-            chkID_SMALL->callback((Fl_Callback*)cb_chkID_SMALL);
-            o->value(progdefaults.ID_SMALL);
-          } // Fl_Check_Button* chkID_SMALL
-          { Fl_Value_Slider2* o = sldrVideowidth = new Fl_Value_Slider2(260, 109, 100, 20, _("Chars/Row:"));
-            sldrVideowidth->tooltip(_("Set the number of characters per row"));
-            sldrVideowidth->type(1);
-            sldrVideowidth->box(FL_DOWN_BOX);
-            sldrVideowidth->color(FL_BACKGROUND_COLOR);
-            sldrVideowidth->selection_color(FL_BACKGROUND_COLOR);
-            sldrVideowidth->labeltype(FL_NORMAL_LABEL);
-            sldrVideowidth->labelfont(0);
-            sldrVideowidth->labelsize(14);
-            sldrVideowidth->labelcolor(FL_FOREGROUND_COLOR);
-            sldrVideowidth->minimum(1);
-            sldrVideowidth->maximum(8);
-            sldrVideowidth->step(1);
-            sldrVideowidth->value(4);
-            sldrVideowidth->textsize(14);
-            sldrVideowidth->callback((Fl_Callback*)cb_sldrVideowidth);
-            sldrVideowidth->align(Fl_Align(FL_ALIGN_LEFT));
-            sldrVideowidth->when(FL_WHEN_CHANGED);
-            o->value(progdefaults.videowidth);
-            o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
-          } // Fl_Value_Slider2* sldrVideowidth
-          { Fl_Check_Button* o = btn_vidlimit = new Fl_Check_Button(369, 85, 110, 15, _("500 Hz limit"));
-            btn_vidlimit->down_box(FL_DOWN_BOX);
-            btn_vidlimit->callback((Fl_Callback*)cb_btn_vidlimit);
-            o->value(progdefaults.vidlimit);
-          } // Fl_Check_Button* btn_vidlimit
-          { Fl_Check_Button* o = btn_vidmodelimit = new Fl_Check_Button(369, 111, 110, 15, _("Mode width limit"));
-            btn_vidmodelimit->down_box(FL_DOWN_BOX);
-            btn_vidmodelimit->callback((Fl_Callback*)cb_btn_vidmodelimit);
-            o->value(progdefaults.vidmodelimit);
-          } // Fl_Check_Button* btn_vidmodelimit
-          { bVideoIDModes = new Fl_Button(240, 58, 120, 20, _("Video ID modes"));
-            bVideoIDModes->callback((Fl_Callback*)cb_bVideoIDModes);
-          } // Fl_Button* bVideoIDModes
-          o->end();
-        } // Fl_Group* o
-        { sld = new Fl_Group(22, 138, 490, 60, _("CW Postamble ID"));
-          sld->box(FL_ENGRAVED_FRAME);
-          sld->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-          { Fl_Check_Button* o = btnCWID = new Fl_Check_Button(32, 165, 140, 20, _("Transmit callsign"));
-            btnCWID->tooltip(_("Send Callsign in CW at end of every transmission"));
-            btnCWID->down_box(FL_DOWN_BOX);
-            btnCWID->callback((Fl_Callback*)cb_btnCWID);
-            o->value(progdefaults.CWid);
-          } // Fl_Check_Button* btnCWID
-          { Fl_Value_Slider2* o = sldrCWIDwpm = new Fl_Value_Slider2(182, 165, 180, 20, _("Speed (WPM):"));
-            sldrCWIDwpm->tooltip(_("Send at this WPM"));
-            sldrCWIDwpm->type(1);
-            sldrCWIDwpm->box(FL_DOWN_BOX);
-            sldrCWIDwpm->color(FL_BACKGROUND_COLOR);
-            sldrCWIDwpm->selection_color(FL_BACKGROUND_COLOR);
-            sldrCWIDwpm->labeltype(FL_NORMAL_LABEL);
-            sldrCWIDwpm->labelfont(0);
-            sldrCWIDwpm->labelsize(14);
-            sldrCWIDwpm->labelcolor(FL_FOREGROUND_COLOR);
-            sldrCWIDwpm->minimum(15);
-            sldrCWIDwpm->maximum(40);
-            sldrCWIDwpm->step(1);
-            sldrCWIDwpm->value(18);
-            sldrCWIDwpm->textsize(14);
-            sldrCWIDwpm->callback((Fl_Callback*)cb_sldrCWIDwpm);
-            sldrCWIDwpm->align(Fl_Align(FL_ALIGN_TOP));
-            sldrCWIDwpm->when(FL_WHEN_CHANGED);
-            o->value(progdefaults.CWIDwpm);
-            o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
-          } // Fl_Value_Slider2* sldrCWIDwpm
-          { bCWIDModes = new Fl_Button(382, 165, 120, 20, _("CW ID modes"));
-            bCWIDModes->callback((Fl_Callback*)cb_bCWIDModes);
-          } // Fl_Button* bCWIDModes
-          sld->end();
-        } // Fl_Group* sld
-        { Fl_Group* o = new Fl_Group(22, 198, 295, 167, _("Reed-Solomon ID (Rx)"));
-          o->box(FL_ENGRAVED_FRAME);
-          o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-          { Fl_Check_Button* o = chkRSidWideSearch = new Fl_Check_Button(32, 247, 270, 20, _("Detector searches entire passband"));
-            chkRSidWideSearch->tooltip(_("ON - search over entire waterfall\nOFF - limit search to +/- 200 Hz"));
-            chkRSidWideSearch->down_box(FL_DOWN_BOX);
-            chkRSidWideSearch->callback((Fl_Callback*)cb_chkRSidWideSearch);
-            o->value(progdefaults.rsidWideSearch);
-          } // Fl_Check_Button* chkRSidWideSearch
-          { chkRSidMark = new Fl_Check_Button(32, 270, 270, 20, _("Mark previous frequency and mode"));
-            chkRSidMark->tooltip(_("Insert RX text marker before\nchanging frequency and modem"));
-            chkRSidMark->down_box(FL_DOWN_BOX);
-            chkRSidMark->callback((Fl_Callback*)cb_chkRSidMark);
-            chkRSidMark->value(progdefaults.rsid_mark);
-          } // Fl_Check_Button* chkRSidMark
-          { chkRSidAutoDisable = new Fl_Check_Button(32, 293, 200, 20, _("Reception disables detector"));
-            chkRSidAutoDisable->tooltip(_("Disable further detection when RSID is received"));
-            chkRSidAutoDisable->down_box(FL_DOWN_BOX);
-            chkRSidAutoDisable->callback((Fl_Callback*)cb_chkRSidAutoDisable);
-            if (progdefaults.rsid_notify_only) progdefaults.rsid_auto_disable = false;
-            chkRSidAutoDisable->value(progdefaults.rsid_auto_disable);
-            if (progdefaults.rsid_notify_only) chkRSidAutoDisable->deactivate();
-          } // Fl_Check_Button* chkRSidAutoDisable
-          { chkRSidNotifyOnly = new Fl_Check_Button(32, 317, 101, 20, _("Notify only"));
-            chkRSidNotifyOnly->tooltip(_("Check this to be notified when an RSID is received\nwithout changing modem an\
+        { Fl_Tabs* o = new Fl_Tabs(0, 23, 541, 345);
+          { tabRsID = new Fl_Group(0, 48, 541, 320, _("RsID"));
+            { Fl_Group* o = new Fl_Group(2, 55, 535, 193, _("Reed-Solomon ID (Rx)"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+              { chkRSidNotifyOnly = new Fl_Check_Button(11, 88, 90, 20, _("Notify only"));
+                chkRSidNotifyOnly->tooltip(_("Check this to be notified when an RSID is received\nwithout changing modem an\
 d frequency"));
-            chkRSidNotifyOnly->down_box(FL_DOWN_BOX);
-            chkRSidNotifyOnly->callback((Fl_Callback*)cb_chkRSidNotifyOnly);
-            chkRSidNotifyOnly->value(progdefaults.rsid_notify_only);
-          } // Fl_Check_Button* chkRSidNotifyOnly
-          { bRSIDRxModes = new Fl_Button(32, 224, 130, 20, _("Receive modes"));
-            bRSIDRxModes->callback((Fl_Callback*)cb_bRSIDRxModes);
-          } // Fl_Button* bRSIDRxModes
-          { Fl_Value_Slider2* o = sldrRSIDsquelch = new Fl_Value_Slider2(32, 339, 144, 18, _("Squelch open (sec)"));
-            sldrRSIDsquelch->tooltip(_("Open squelch for nn sec if RSID detected"));
-            sldrRSIDsquelch->type(1);
-            sldrRSIDsquelch->box(FL_DOWN_BOX);
-            sldrRSIDsquelch->color(FL_BACKGROUND_COLOR);
-            sldrRSIDsquelch->selection_color(FL_BACKGROUND_COLOR);
-            sldrRSIDsquelch->labeltype(FL_NORMAL_LABEL);
-            sldrRSIDsquelch->labelfont(0);
-            sldrRSIDsquelch->labelsize(14);
-            sldrRSIDsquelch->labelcolor(FL_FOREGROUND_COLOR);
-            sldrRSIDsquelch->maximum(20);
-            sldrRSIDsquelch->step(1);
-            sldrRSIDsquelch->textsize(14);
-            sldrRSIDsquelch->callback((Fl_Callback*)cb_sldrRSIDsquelch);
-            sldrRSIDsquelch->align(Fl_Align(FL_ALIGN_RIGHT));
-            sldrRSIDsquelch->when(FL_WHEN_CHANGED);
-            o->value(progdefaults.rsid_squelch);
-            o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
-          } // Fl_Value_Slider2* sldrRSIDsquelch
-          { Fl_Value_Slider2* o = sldrRSIDresolution = new Fl_Value_Slider2(133, 317, 90, 18, _("Sensitivity"));
-            sldrRSIDresolution->tooltip(_("2 = low sensitivity / decreased false detection\n5 = high sensitivity / incre\
+                chkRSidNotifyOnly->down_box(FL_DOWN_BOX);
+                chkRSidNotifyOnly->callback((Fl_Callback*)cb_chkRSidNotifyOnly);
+                chkRSidNotifyOnly->value(progdefaults.rsid_notify_only);
+              } // Fl_Check_Button* chkRSidNotifyOnly
+              { bRSIDRxModes = new Fl_Button(348, 86, 130, 24, _("Receive modes"));
+                bRSIDRxModes->callback((Fl_Callback*)cb_bRSIDRxModes);
+              } // Fl_Button* bRSIDRxModes
+              { Fl_Check_Button* o = chkRSidWideSearch = new Fl_Check_Button(11, 119, 90, 20, _("Searches passband"));
+                chkRSidWideSearch->tooltip(_("ON - search over entire waterfall\nOFF - limit search to +/- 200 Hz"));
+                chkRSidWideSearch->down_box(FL_DOWN_BOX);
+                chkRSidWideSearch->callback((Fl_Callback*)cb_chkRSidWideSearch);
+                o->value(progdefaults.rsidWideSearch);
+              } // Fl_Check_Button* chkRSidWideSearch
+              { chkRSidMark = new Fl_Check_Button(11, 151, 90, 20, _("Mark prev freq/mode"));
+                chkRSidMark->tooltip(_("Insert RX text marker before\nchanging frequency and modem"));
+                chkRSidMark->down_box(FL_DOWN_BOX);
+                chkRSidMark->callback((Fl_Callback*)cb_chkRSidMark);
+                chkRSidMark->value(progdefaults.rsid_mark);
+              } // Fl_Check_Button* chkRSidMark
+              { chkRSidAutoDisable = new Fl_Check_Button(11, 183, 90, 20, _("Disables detector"));
+                chkRSidAutoDisable->tooltip(_("Disable further detection when RSID is received"));
+                chkRSidAutoDisable->down_box(FL_DOWN_BOX);
+                chkRSidAutoDisable->callback((Fl_Callback*)cb_chkRSidAutoDisable);
+                if (progdefaults.rsid_notify_only) progdefaults.rsid_auto_disable = false;
+                chkRSidAutoDisable->value(progdefaults.rsid_auto_disable);
+                if (progdefaults.rsid_notify_only) chkRSidAutoDisable->deactivate();
+              } // Fl_Check_Button* chkRSidAutoDisable
+              { Fl_Value_Slider2* o = sldrRSIDresolution = new Fl_Value_Slider2(12, 215, 145, 22, _("Sensitivity"));
+                sldrRSIDresolution->tooltip(_("2 = low sensitivity / decreased false detection\n5 = high sensitivity / incre\
 ased false detection"));
-            sldrRSIDresolution->type(1);
-            sldrRSIDresolution->box(FL_DOWN_BOX);
-            sldrRSIDresolution->color(FL_BACKGROUND_COLOR);
-            sldrRSIDresolution->selection_color(FL_BACKGROUND_COLOR);
-            sldrRSIDresolution->labeltype(FL_NORMAL_LABEL);
-            sldrRSIDresolution->labelfont(0);
-            sldrRSIDresolution->labelsize(14);
-            sldrRSIDresolution->labelcolor(FL_FOREGROUND_COLOR);
-            sldrRSIDresolution->minimum(2);
-            sldrRSIDresolution->maximum(5);
-            sldrRSIDresolution->step(1);
-            sldrRSIDresolution->value(5);
-            sldrRSIDresolution->textsize(14);
-            sldrRSIDresolution->callback((Fl_Callback*)cb_sldrRSIDresolution);
-            sldrRSIDresolution->align(Fl_Align(FL_ALIGN_RIGHT));
-            sldrRSIDresolution->when(FL_WHEN_CHANGED);
-            o->value(progdefaults.rsid_resolution);
-            o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
-          } // Fl_Value_Slider2* sldrRSIDresolution
+                sldrRSIDresolution->type(1);
+                sldrRSIDresolution->box(FL_DOWN_BOX);
+                sldrRSIDresolution->color(FL_BACKGROUND_COLOR);
+                sldrRSIDresolution->selection_color(FL_BACKGROUND_COLOR);
+                sldrRSIDresolution->labeltype(FL_NORMAL_LABEL);
+                sldrRSIDresolution->labelfont(0);
+                sldrRSIDresolution->labelsize(14);
+                sldrRSIDresolution->labelcolor(FL_FOREGROUND_COLOR);
+                sldrRSIDresolution->minimum(2);
+                sldrRSIDresolution->maximum(5);
+                sldrRSIDresolution->step(1);
+                sldrRSIDresolution->value(5);
+                sldrRSIDresolution->textsize(14);
+                sldrRSIDresolution->callback((Fl_Callback*)cb_sldrRSIDresolution);
+                sldrRSIDresolution->align(Fl_Align(FL_ALIGN_RIGHT));
+                sldrRSIDresolution->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.rsid_resolution);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
+              } // Fl_Value_Slider2* sldrRSIDresolution
+              { Fl_Value_Slider2* o = sldrRSIDsquelch = new Fl_Value_Slider2(246, 215, 145, 22, _("Squelch open (sec)"));
+                sldrRSIDsquelch->tooltip(_("Open squelch for nn sec if RSID detected"));
+                sldrRSIDsquelch->type(1);
+                sldrRSIDsquelch->box(FL_DOWN_BOX);
+                sldrRSIDsquelch->color(FL_BACKGROUND_COLOR);
+                sldrRSIDsquelch->selection_color(FL_BACKGROUND_COLOR);
+                sldrRSIDsquelch->labeltype(FL_NORMAL_LABEL);
+                sldrRSIDsquelch->labelfont(0);
+                sldrRSIDsquelch->labelsize(14);
+                sldrRSIDsquelch->labelcolor(FL_FOREGROUND_COLOR);
+                sldrRSIDsquelch->maximum(20);
+                sldrRSIDsquelch->step(1);
+                sldrRSIDsquelch->textsize(14);
+                sldrRSIDsquelch->callback((Fl_Callback*)cb_sldrRSIDsquelch);
+                sldrRSIDsquelch->align(Fl_Align(FL_ALIGN_RIGHT));
+                sldrRSIDsquelch->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.rsid_squelch);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
+              } // Fl_Value_Slider2* sldrRSIDsquelch
+              { Fl_Check_Button* o = chkRSidShowAlert = new Fl_Check_Button(246, 119, 90, 20, _("Disable alert dialog"));
+                chkRSidShowAlert->tooltip(_("Do not show RsID alert dialog box"));
+                chkRSidShowAlert->down_box(FL_DOWN_BOX);
+                chkRSidShowAlert->callback((Fl_Callback*)cb_chkRSidShowAlert);
+                o->value(progdefaults.disable_rsid_warning_dialog_box);
+              } // Fl_Check_Button* chkRSidShowAlert
+              { Fl_Check_Button* o = chkRetainFreqLock = new Fl_Check_Button(246, 151, 90, 20, _("Retain tx freq lock"));
+                chkRetainFreqLock->tooltip(_("Do not show RsID alert dialog box"));
+                chkRetainFreqLock->down_box(FL_DOWN_BOX);
+                chkRetainFreqLock->callback((Fl_Callback*)cb_chkRetainFreqLock);
+                o->value(progdefaults.retain_freq_lock);
+              } // Fl_Check_Button* chkRetainFreqLock
+              { Fl_Check_Button* o = chkDisableFreqChange = new Fl_Check_Button(246, 183, 90, 20, _("Disable freq change"));
+                chkDisableFreqChange->tooltip(_("Do not show RsID alert dialog box"));
+                chkDisableFreqChange->down_box(FL_DOWN_BOX);
+                chkDisableFreqChange->callback((Fl_Callback*)cb_chkDisableFreqChange);
+                o->value(progdefaults.disable_rsid_freq_change);
+              } // Fl_Check_Button* chkDisableFreqChange
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(3, 250, 265, 97, _("Pre-Signal Tone"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+              { Fl_Counter* o = val_pretone = new Fl_Counter(59, 288, 140, 21, _("Seconds"));
+                val_pretone->tooltip(_("Use for triggering amplifier carrier detect"));
+                val_pretone->minimum(0);
+                val_pretone->maximum(10);
+                val_pretone->callback((Fl_Callback*)cb_val_pretone);
+                o->value(progdefaults.pretone);
+              } // Fl_Counter* val_pretone
+              o->end();
+            } // Fl_Group* o
+            { Fl_Group* o = new Fl_Group(271, 250, 265, 97, _("Reed-Solomon ID (Tx)"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+              { bRSIDTxModes = new Fl_Button(348, 277, 130, 24, _("Transmit modes"));
+                bRSIDTxModes->callback((Fl_Callback*)cb_bRSIDTxModes);
+              } // Fl_Button* bRSIDTxModes
+              { Fl_Check_Button* o = btn_post_rsid = new Fl_Check_Button(348, 312, 97, 17, _("End of xmt ID"));
+                btn_post_rsid->tooltip(_("Add RsID signal to end of transmission"));
+                btn_post_rsid->down_box(FL_DOWN_BOX);
+                btn_post_rsid->callback((Fl_Callback*)cb_btn_post_rsid);
+                o->value(progdefaults.rsid_post);
+              } // Fl_Check_Button* btn_post_rsid
+              o->end();
+            } // Fl_Group* o
+            tabRsID->end();
+          } // Fl_Group* tabRsID
+          { tabVideoID = new Fl_Group(0, 48, 540, 320, _("Video"));
+            tabVideoID->hide();
+            { Fl_Group* o = new Fl_Group(2, 55, 536, 189, _("Video Preamble ID"));
+              o->box(FL_ENGRAVED_FRAME);
+              o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+              { btnsendid = new Fl_Check_Button(20, 89, 150, 20, _("Transmit mode ID"));
+                btnsendid->tooltip(_("Waterfall video ID"));
+                btnsendid->down_box(FL_DOWN_BOX);
+                btnsendid->callback((Fl_Callback*)cb_btnsendid);
+              } // Fl_Check_Button* btnsendid
+              { Fl_Check_Button* o = btnsendvideotext = new Fl_Check_Button(20, 121, 155, 20, _("Transmit video text"));
+                btnsendvideotext->tooltip(_("Waterfall video text"));
+                btnsendvideotext->down_box(FL_DOWN_BOX);
+                btnsendvideotext->callback((Fl_Callback*)cb_btnsendvideotext);
+                o->value(progdefaults.sendtextid);
+              } // Fl_Check_Button* btnsendvideotext
+              { Fl_Input2* o = valVideotext = new Fl_Input2(187, 119, 323, 24, _(":"));
+                valVideotext->tooltip(_("Limit to a few characters,\nas in CQEM or IOTA etc."));
+                valVideotext->box(FL_DOWN_BOX);
+                valVideotext->color(FL_BACKGROUND2_COLOR);
+                valVideotext->selection_color(FL_SELECTION_COLOR);
+                valVideotext->labeltype(FL_NORMAL_LABEL);
+                valVideotext->labelfont(0);
+                valVideotext->labelsize(14);
+                valVideotext->labelcolor(FL_FOREGROUND_COLOR);
+                valVideotext->callback((Fl_Callback*)cb_valVideotext);
+                valVideotext->align(Fl_Align(FL_ALIGN_LEFT));
+                valVideotext->when(FL_WHEN_RELEASE);
+                o->value(progdefaults.strTextid.c_str());
+                valVideotext->labelsize(FL_NORMAL_SIZE);
+              } // Fl_Input2* valVideotext
+              { Fl_Check_Button* o = chkID_SMALL = new Fl_Check_Button(20, 153, 120, 20, _("Use small font"));
+                chkID_SMALL->tooltip(_("ON - small font\nOFF - large font"));
+                chkID_SMALL->down_box(FL_DOWN_BOX);
+                chkID_SMALL->value(1);
+                chkID_SMALL->callback((Fl_Callback*)cb_chkID_SMALL);
+                o->value(progdefaults.ID_SMALL);
+              } // Fl_Check_Button* chkID_SMALL
+              { Fl_Value_Slider2* o = sldrVideowidth = new Fl_Value_Slider2(260, 151, 125, 24, _("Chars/Row:"));
+                sldrVideowidth->tooltip(_("Set the number of characters per row"));
+                sldrVideowidth->type(1);
+                sldrVideowidth->box(FL_DOWN_BOX);
+                sldrVideowidth->color(FL_BACKGROUND_COLOR);
+                sldrVideowidth->selection_color(FL_BACKGROUND_COLOR);
+                sldrVideowidth->labeltype(FL_NORMAL_LABEL);
+                sldrVideowidth->labelfont(0);
+                sldrVideowidth->labelsize(14);
+                sldrVideowidth->labelcolor(FL_FOREGROUND_COLOR);
+                sldrVideowidth->minimum(1);
+                sldrVideowidth->maximum(8);
+                sldrVideowidth->step(1);
+                sldrVideowidth->value(4);
+                sldrVideowidth->textsize(14);
+                sldrVideowidth->callback((Fl_Callback*)cb_sldrVideowidth);
+                sldrVideowidth->align(Fl_Align(FL_ALIGN_LEFT));
+                sldrVideowidth->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.videowidth);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
+              } // Fl_Value_Slider2* sldrVideowidth
+              { Fl_Check_Button* o = btn_vidlimit = new Fl_Check_Button(20, 185, 110, 15, _("500 Hz limit"));
+                btn_vidlimit->down_box(FL_DOWN_BOX);
+                btn_vidlimit->callback((Fl_Callback*)cb_btn_vidlimit);
+                o->value(progdefaults.vidlimit);
+              } // Fl_Check_Button* btn_vidlimit
+              { Fl_Check_Button* o = btn_vidmodelimit = new Fl_Check_Button(20, 213, 110, 15, _("Mode width limit"));
+                btn_vidmodelimit->down_box(FL_DOWN_BOX);
+                btn_vidmodelimit->callback((Fl_Callback*)cb_btn_vidmodelimit);
+                o->value(progdefaults.vidmodelimit);
+              } // Fl_Check_Button* btn_vidmodelimit
+              { bVideoIDModes = new Fl_Button(390, 86, 120, 24, _("Video ID modes"));
+                bVideoIDModes->callback((Fl_Callback*)cb_bVideoIDModes);
+              } // Fl_Button* bVideoIDModes
+              o->end();
+            } // Fl_Group* o
+            tabVideoID->end();
+          } // Fl_Group* tabVideoID
+          { tabCwID = new Fl_Group(0, 48, 540, 320, _("CW"));
+            tabCwID->hide();
+            { sld = new Fl_Group(2, 56, 536, 127, _("CW Postamble ID"));
+              sld->box(FL_ENGRAVED_FRAME);
+              sld->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
+              { Fl_Check_Button* o = btnCWID = new Fl_Check_Button(109, 94, 140, 24, _("Transmit callsign"));
+                btnCWID->tooltip(_("Send Callsign in CW at end of every transmission"));
+                btnCWID->down_box(FL_DOWN_BOX);
+                btnCWID->callback((Fl_Callback*)cb_btnCWID);
+                o->value(progdefaults.CWid);
+              } // Fl_Check_Button* btnCWID
+              { Fl_Value_Slider2* o = sldrCWIDwpm = new Fl_Value_Slider2(109, 137, 180, 20, _("Speed (WPM):"));
+                sldrCWIDwpm->tooltip(_("Send at this WPM"));
+                sldrCWIDwpm->type(1);
+                sldrCWIDwpm->box(FL_DOWN_BOX);
+                sldrCWIDwpm->color(FL_BACKGROUND_COLOR);
+                sldrCWIDwpm->selection_color(FL_BACKGROUND_COLOR);
+                sldrCWIDwpm->labeltype(FL_NORMAL_LABEL);
+                sldrCWIDwpm->labelfont(0);
+                sldrCWIDwpm->labelsize(14);
+                sldrCWIDwpm->labelcolor(FL_FOREGROUND_COLOR);
+                sldrCWIDwpm->minimum(15);
+                sldrCWIDwpm->maximum(40);
+                sldrCWIDwpm->step(1);
+                sldrCWIDwpm->value(18);
+                sldrCWIDwpm->textsize(14);
+                sldrCWIDwpm->callback((Fl_Callback*)cb_sldrCWIDwpm);
+                sldrCWIDwpm->align(Fl_Align(FL_ALIGN_TOP));
+                sldrCWIDwpm->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.CWIDwpm);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
+              } // Fl_Value_Slider2* sldrCWIDwpm
+              { bCWIDModes = new Fl_Button(382, 94, 120, 24, _("CW ID modes"));
+                bCWIDModes->callback((Fl_Callback*)cb_bCWIDModes);
+              } // Fl_Button* bCWIDModes
+              sld->end();
+            } // Fl_Group* sld
+            tabCwID->end();
+          } // Fl_Group* tabCwID
           o->end();
-        } // Fl_Group* o
-        { Fl_Group* o = new Fl_Group(317, 198, 195, 85, _("Reed-Solomon ID (Tx)"));
-          o->box(FL_ENGRAVED_FRAME);
-          o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-          { bRSIDTxModes = new Fl_Button(345, 222, 130, 20, _("Transmit modes"));
-            bRSIDTxModes->callback((Fl_Callback*)cb_bRSIDTxModes);
-          } // Fl_Button* bRSIDTxModes
-          { Fl_Check_Button* o = btn_post_rsid = new Fl_Check_Button(345, 256, 70, 15, _("End of xmt ID"));
-            btn_post_rsid->tooltip(_("Add RsID signal to end of transmission"));
-            btn_post_rsid->down_box(FL_DOWN_BOX);
-            btn_post_rsid->callback((Fl_Callback*)cb_btn_post_rsid);
-            o->value(progdefaults.rsid_post);
-          } // Fl_Check_Button* btn_post_rsid
-          o->end();
-        } // Fl_Group* o
-        { Fl_Group* o = new Fl_Group(317, 284, 195, 80, _("Pre-Signal Tone"));
-          o->box(FL_ENGRAVED_FRAME);
-          o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
-          { Fl_Counter* o = val_pretone = new Fl_Counter(340, 310, 140, 21, _("Seconds"));
-            val_pretone->tooltip(_("Use for triggering amplifier carrier detect"));
-            val_pretone->minimum(0);
-            val_pretone->maximum(10);
-            val_pretone->callback((Fl_Callback*)cb_val_pretone);
-            o->value(progdefaults.pretone);
-          } // Fl_Counter* val_pretone
-          o->end();
-        } // Fl_Group* o
+        } // Fl_Tabs* o
         tabID->end();
       } // Fl_Group* tabID
       { tabMisc = new Fl_Group(0, 25, 540, 345, _("Misc"));
@@ -7447,6 +7523,7 @@ ased false detection"));
         { tabsMisc = new Fl_Tabs(0, 25, 540, 345);
           tabsMisc->selection_color(FL_LIGHT1);
           { tabCPUspeed = new Fl_Group(0, 50, 540, 320, _("CPU"));
+            tabCPUspeed->hide();
             { Fl_Group* o = new Fl_Group(25, 75, 490, 51);
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
@@ -7638,8 +7715,7 @@ ased false detection"));
             tabPskmail->end();
           } // Fl_Group* tabPskmail
           { tabSpot = new Fl_Group(0, 50, 540, 320, _("Spotting"));
-            tabSpot->hide();
-            { Fl_Group* o = new Fl_Group(30, 72, 490, 215, _("PSK Reporter"));
+            { Fl_Group* o = new Fl_Group(30, 72, 490, 254, _("PSK Reporter"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
               { btnPSKRepAuto = new Fl_Check_Button(40, 103, 324, 20, _("Automatically spot callsigns in decoded text"));
@@ -7654,13 +7730,19 @@ ased false detection"));
                 btnPSKRepLog->callback((Fl_Callback*)cb_btnPSKRepLog);
                 btnPSKRepLog->value(progdefaults.pskrep_log);
               } // Fl_Check_Button* btnPSKRepLog
-              { btnPSKRepQRG = new Fl_Check_Button(40, 163, 416, 20, _("Report rig frequency (enable only if you have rig control!)"));
+              { btnPSKRepQRG = new Fl_Check_Button(40, 164, 416, 20, _("Report rig frequency (enable only if you have rig control!)"));
                 btnPSKRepQRG->tooltip(_("Include the transmit frequency"));
                 btnPSKRepQRG->down_box(FL_DOWN_BOX);
                 btnPSKRepQRG->callback((Fl_Callback*)cb_btnPSKRepQRG);
                 btnPSKRepQRG->value(progdefaults.pskrep_qrg);
               } // Fl_Check_Button* btnPSKRepQRG
-              { inpPSKRepHost = new Fl_Input2(81, 203, 220, 24, _("Host:"));
+              { Fl_Check_Button* o = btn_report_when_visible = new Fl_Check_Button(40, 195, 416, 20, _("Enable spotting only when signal browser(s) are visible"));
+                btn_report_when_visible->tooltip(_("Enable to reduce CPU load"));
+                btn_report_when_visible->down_box(FL_DOWN_BOX);
+                btn_report_when_visible->callback((Fl_Callback*)cb_btn_report_when_visible);
+                o->value(progdefaults.report_when_visible);
+              } // Fl_Check_Button* btn_report_when_visible
+              { inpPSKRepHost = new Fl_Input2(83, 228, 220, 24, _("Host:"));
                 inpPSKRepHost->tooltip(_("To whom the connection is made"));
                 inpPSKRepHost->box(FL_DOWN_BOX);
                 inpPSKRepHost->color(FL_BACKGROUND2_COLOR);
@@ -7675,7 +7757,7 @@ ased false detection"));
                 inpPSKRepHost->value(progdefaults.pskrep_host.c_str());
                 inpPSKRepHost->labelsize(FL_NORMAL_SIZE);
               } // Fl_Input2* inpPSKRepHost
-              { inpPSKRepPort = new Fl_Input2(450, 203, 60, 24, _("Port:"));
+              { inpPSKRepPort = new Fl_Input2(452, 228, 60, 24, _("Port:"));
                 inpPSKRepPort->tooltip(_("Using UDP port #"));
                 inpPSKRepPort->box(FL_DOWN_BOX);
                 inpPSKRepPort->color(FL_BACKGROUND2_COLOR);
@@ -7690,11 +7772,11 @@ ased false detection"));
                 inpPSKRepPort->value(progdefaults.pskrep_port.c_str());
                 inpPSKRepPort->labelsize(FL_NORMAL_SIZE);
               } // Fl_Input2* inpPSKRepPort
-              { btnPSKRepInit = new Fl_Button(430, 248, 80, 24, _("Initialize"));
+              { btnPSKRepInit = new Fl_Button(432, 273, 80, 24, _("Initialize"));
                 btnPSKRepInit->tooltip(_("Initialize the socket client"));
                 btnPSKRepInit->callback((Fl_Callback*)cb_btnPSKRepInit);
               } // Fl_Button* btnPSKRepInit
-              { boxPSKRepMsg = new Fl_Box(40, 232, 300, 48, _("<PSK Reporter error message>"));
+              { boxPSKRepMsg = new Fl_Box(42, 257, 300, 48, _("<PSK Reporter error message>"));
                 boxPSKRepMsg->labelfont(2);
                 boxPSKRepMsg->label(0);
               } // Fl_Box* boxPSKRepMsg

@@ -76,6 +76,8 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<MYQTH>\tmy QTH"));
 	w->add(_("<MYRST>\tmy RST"));
 	w->add(_("<ANTENNA>\tmy antenna"));
+	w->add(_("<BAND>\toperating band"));
+	w->add(LINE_SEP);
 	w->add(_("<VER>\tFldigi version"));
 
 	w->add(LINE_SEP);
@@ -86,6 +88,8 @@ void loadBrowser(Fl_Widget *widget) {
 	w->add(_("<NAME>\tother name"));
 	w->add(_("<QTH>\tother QTH"));
 	w->add(_("<RST>\tother RST"));
+	w->add(_("<QSONBR>\t# QSO recs"));
+	w->add(_("<NXTNBR>\tnext QSO rec #"));
 	w->add(_("<MAPIT>\tmap on google"));
 	w->add(_("<MAPIT:adr/lat/loc>\tmap by value"));
  
@@ -223,7 +227,7 @@ void loadBrowser(Fl_Widget *widget) {
 		w->add(s);
 	}
 	// add some RTTY macros
-	const char* rtty[] = { "170:45.45:5:90", "170:50:5:100", "850:75:5:150" };
+	const char* rtty[] = { "170:45.45:5", "170:50:5", "850:75:5" };
 	for (size_t i = 0; i < sizeof(rtty)/sizeof(*rtty); i++) {
 		snprintf(s, sizeof(s), "<MODEM:%s:%s>", mode_info[MODE_RTTY].sname, rtty[i]);
 		w->add(s);

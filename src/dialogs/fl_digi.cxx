@@ -739,6 +739,8 @@ void cb_oliviaCustom(Fl_Widget *w, void *arg)
 // Contestia
 void set_contestia_default_integ()
 {
+	if (!progdefaults.contestia_reset_fec) return;
+
 	int tones = progdefaults.contestiatones;
 	int bw = progdefaults.contestiabw;
 
@@ -981,7 +983,6 @@ void startup_modem(modem* m, int f)
 	}
 
 	if (id == MODE_RTTY) {
-		sldrRTTYbandwidth->value(progdefaults.RTTY_BW);
 		if (mvsquelch) {
 			mvsquelch->value(progStatus.VIEWER_rttysquelch);
 			mvsquelch->range(-12.0, 6.0);
@@ -1396,9 +1397,11 @@ void init_modem(trx_mode mode, int freq)
 	progStatus.lastmode = mode;
 
 	if (wf->xmtlock->value() == 1 && !mailserver) {
-		wf->xmtlock->value(0);
-		wf->xmtlock->damage();
-		active_modem->set_freqlock(false);
+		if(!progdefaults.retain_freq_lock) {
+			wf->xmtlock->value(0);
+			wf->xmtlock->damage();
+			active_modem->set_freqlock(false);
+		}
 	}
 }
 
@@ -1829,15 +1832,25 @@ void cb_mnuGenerate(Fl_Widget *w, void *d)
 	}
 }
 
+Fl_Menu_Item *Playback_menu_item = (Fl_Menu_Item *)0;
+void reset_mnuPlayback()
+{
+	if (Playback_menu_item == 0) return;
+	Playback_menu_item->clear();
+}
+
 void cb_mnuPlayback(Fl_Widget *w, void *d)
 {
 	if (!scard) return;
 	Fl_Menu_Item *m = getMenuItem(((Fl_Menu_*)w)->mvalue()->label());
+	Playback_menu_item = m;
 	if (capval || genval) {
 		m->clear();
+		bHighSpeed = false;
 		return;
 	}
 	playval = m->value();
+	if (!playval) bHighSpeed = false;
 
 	int err = scard->Playback(playval);
 
@@ -1857,6 +1870,7 @@ void cb_mnuPlayback(Fl_Widget *w, void *d)
 		}
 		m->clear();
 		playval = false;
+		bHighSpeed = false;
 	}
 	else if (btnAutoSpot->value()) {
 		put_status(_("Spotting disabled"), 3.0);
@@ -7322,6 +7336,13 @@ int get_tx_char(void)
 		return(GET_TX_CHAR_NODATA);
 	}
 
+	if (progdefaults.tx_lowercase)
+#if FLDIGI_FLTK_API_MAJOR == 1 && FLDIGI_FLTK_API_MINOR == 3
+		c = fl_tolower(c);
+#else
+		c = tolower(c);
+#endif
+
 	return(c);
 }
 
@@ -7771,8 +7792,6 @@ void set_rtty_bits(int bits)
 
 void set_rtty_bw(float bw)
 {
-	sldrRTTYbandwidth->value(bw);
-	sldrRTTYbandwidth->do_callback();
 }
 
 int notch_frequency = 0;

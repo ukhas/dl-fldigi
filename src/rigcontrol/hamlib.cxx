@@ -200,8 +200,8 @@ void hamlib_init_defaults()
 bool hamlib_init(bool bPtt)
 {
 	freq_t freq;
-	rmode_t mode;
-	pbwidth_t width;
+//	rmode_t mode;
+//	pbwidth_t width;
 
 	hamlib_ptt = bPtt;
 
@@ -313,7 +313,7 @@ bool hamlib_init(bool bPtt)
 		if ( !xcvr->canGetMode() ) need_mode = false;
 		else {
 			need_mode = true;
-			mode = xcvr->getMode(width);
+//			mode = xcvr->getMode(width);
 		}
 	}
 	catch (const RigException& Ex) {

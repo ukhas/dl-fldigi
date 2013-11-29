@@ -57,6 +57,7 @@
 #  include <dirent.h>
 #  include <limits.h>
 #  include <errno.h>
+#  include <glob.h>
 #endif
 #ifdef __APPLE__
 #  include <glob.h>
@@ -903,12 +904,9 @@ static bool open_serial(const char* dev)
 
 void configuration::testCommPorts()
 {
-	int retval;
-
 	inpTTYdev->clear();
 	inpRIGdev->clear();
 	inpXmlRigDevice->clear();
-	inpGPSdev->clear();
 
 #ifndef PATH_MAX
 #  define PATH_MAX 1024
@@ -921,57 +919,12 @@ void configuration::testCommPorts()
 	char ttyname[PATH_MAX + 1];
 #endif
 
-#ifdef __linux__
-	bool ret = false;
-	DIR* sys = NULL;
-	char cwd[PATH_MAX] = { '.', '\0' };
-	if (getcwd(cwd, sizeof(cwd)) == NULL || chdir("/sys/class/tty") == -1 ||
-	    (sys = opendir(".")) == NULL)
-		goto out;
-
-	ssize_t len;
-	struct dirent* dp;
-	while ((dp = readdir(sys))) {
-#  ifdef _DIRENT_HAVE_D_TYPE
-		if (dp->d_type != DT_LNK)
-			continue;
-#  endif
-		if ((len = readlink(dp->d_name, ttyname, sizeof(ttyname)-1)) == -1)
-			continue;
-		ttyname[len] = '\0';
-		if (!strstr(ttyname, "/devices/virtual/")) {
-			snprintf(ttyname, sizeof(ttyname), "/dev/%s", dp->d_name);
-			if (stat(ttyname, &st) == -1 || !S_ISCHR(st.st_mode))
-				continue;
-			LOG_INFO("Found serial port %s", ttyname);
-			inpTTYdev->add(ttyname);
-#if USE_HAMLIB
-			inpRIGdev->add(ttyname);
-#endif
-			inpXmlRigDevice->add(ttyname);
-			inpGPSdev->add(ttyname);
-		}
-	}
-	ret = true;
-
-out:
-	if (sys)
-		closedir(sys);
-	retval = chdir(cwd);
-	if (ret) // do we need to fall back to the probe code below?
-		return;
-#endif // __linux__
-
-	// TODO: will the mingw probing work for cygwin too?
-
 	const char* tty_fmt[] = {
 #if defined(__linux__)
 		"/dev/ttyS%u",
 		"/dev/ttyUSB%u",
 		"/dev/usb/ttyUSB%u"
-#elif defined(__FreeBSD__)
-		"/dev/ttyd%u"
-#elif defined(__OpenBSD__) || defined(__NetBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 		"/dev/tty%2.2u"
 #elif defined(__CYGWIN__)
 		"/dev/ttyS%u"
@@ -991,6 +944,23 @@ out:
 #  define TTY_MAX 4
 #else
 #  define TTY_MAX 8
+	glob_t gbuf;
+#endif
+
+#ifdef __linux__
+	glob("/dev/serial/by-id/*", 0, NULL, &gbuf);
+	for (size_t j = 0; j < gbuf.gl_pathc; j++) {
+		if ( !(stat(gbuf.gl_pathv[j], &st) == 0 && S_ISCHR(st.st_mode)) ||
+		     strstr(gbuf.gl_pathv[j], "modem") )
+			continue;
+		LOG_INFO("Found serial port %s", gbuf.gl_pathv[j]);
+		inpTTYdev->add(gbuf.gl_pathv[j]);
+#  if USE_HAMLIB
+		inpRIGdev->add(gbuf.gl_pathv[j]);
+#  endif
+		inpXmlRigDevice->add(gbuf.gl_pathv[j]);
+	}
+	globfree(&gbuf);
 #endif
 
 	for (size_t i = 0; i < sizeof(tty_fmt)/sizeof(*tty_fmt); i++) {

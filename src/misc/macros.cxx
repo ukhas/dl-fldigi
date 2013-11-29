@@ -522,6 +522,28 @@ static void pTUNE(std::string &s, size_t &i, size_t endbracket)
 	s.replace(i, endbracket - i + 1, "");
 }
 
+static void pQSONBR(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	char szqsonbr[10];
+	snprintf(szqsonbr, sizeof(szqsonbr), "%d", qsodb.nbrRecs());
+	s.replace(i, endbracket - i + 1, szqsonbr);
+}
+
+static void pNXTNBR(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+	char szqsonbr[10];
+	snprintf(szqsonbr, sizeof(szqsonbr), "%d", qsodb.nbrRecs() + 1);
+	s.replace(i, endbracket - i + 1, szqsonbr);
+}
+
 static void pNRSID(std::string &s, size_t &i, size_t endbracket)
 {
 	if (within_exec) {
@@ -632,6 +654,11 @@ static void pGET(std::string &s, size_t &i, size_t endbracket)
 static void pFREQ(std::string &s, size_t &i, size_t endbracket)
 {
 	s.replace( i, 6, inpFreq->value() );
+}
+
+static void pBAND(std::string &s, size_t &i, size_t endbracket)
+{
+	s.replace( i, 6, band_name( band( wf->rfcarrier() ) ) );
 }
 
 static void pLOC(std::string &s, size_t &i, size_t endbracket)
@@ -898,10 +925,8 @@ static void pDECR(std::string &s, size_t &i, size_t endbracket)
 		s.replace(i, endbracket - i + 1, "");
 		return;
 	}
-	int  contestval;
 	contest_count.count--;
 	if (contest_count.count < 0) contest_count.count = 0;
-	contestval = contest_count.count;
 	s.replace (i, 6, "");
 	updateOutSerNo();
 }
@@ -912,9 +937,7 @@ static void pINCR(std::string &s, size_t &i, size_t endbracket)
 		s.replace(i, endbracket - i + 1, "");
 		return;
 	}
-	int  contestval;
 	contest_count.count++;
-	contestval = contest_count.count;
 	s.replace (i, 6, "");
 	updateOutSerNo();
 }
@@ -1079,8 +1102,6 @@ static void doMODEM(std::string s)
 				set_rtty_baud((float)args[1]);
 			if (args.at(2) != DBL_MIN)
 				set_rtty_bits((int)args[2]);
-			if (args.at(3) != DBL_MIN)
-				set_rtty_bw((float)args[3]);
 			break;
 		case MODE_CONTESTIA: // bandwidth, tones
 			if (args.at(0) != DBL_MIN)
@@ -1183,8 +1204,6 @@ static void pMODEM(std::string &s, size_t &i, size_t endbracket)
 				set_rtty_baud((float)args[1]);
 			if (args.at(2) != DBL_MIN)
 				set_rtty_bits((int)args[2]);
-			if (args.at(3) != DBL_MIN)
-				set_rtty_bw((float)args[3]);
 			break;
 		case MODE_CONTESTIA: // bandwidth, tones
 			if (args.at(0) != DBL_MIN)
@@ -1268,6 +1287,27 @@ static void pREV(std::string &s, size_t &i, size_t endbracket)
   }
   s.replace(i, endbracket - i + 1, "");
 }
+
+// <HS:on|off|t>
+static void pHS(std::string &s, size_t &i, size_t endbracket)
+{
+	if (within_exec) {
+		s.replace(i, endbracket - i + 1, "");
+		return;
+	}
+  std::string sVal = s.substr(i+4, endbracket - i - 4);
+  if (sVal.length() > 0) {
+// sVal = on|off|t   [ON, OFF or Toggle]
+    if (sVal.compare(0,2,"on") == 0)
+      bHighSpeed = 1;
+    else if (sVal.compare(0,3,"off") == 0)
+      bHighSpeed = 0;
+    else if (sVal.compare(0,1,"t") == 0)
+      bHighSpeed = !bHighSpeed;
+  }
+  s.replace(i, endbracket - i + 1, "");
+}
+
 
 static void pLOCK(std::string &s, size_t &i, size_t endbracket)
 {
@@ -2081,6 +2121,7 @@ static const MTAGS mtags[] = {
 {"<COMMENT:",	pCOMMENT},
 {"<CALL>",		pCALL},
 {"<FREQ>",		pFREQ},
+{"<BAND>",		pBAND},
 {"<LOC>",		pLOC},
 {"<MODE>",		pMODE},
 {"<NAME>",		pNAME},
@@ -2093,6 +2134,8 @@ static const MTAGS mtags[] = {
 {"<MYRST>",		pMYRST},
 {"<ANTENNA>",	pANTENNA},
 {"<QSOTIME>",	pQSOTIME},
+{"<QSONBR>",	pQSONBR},
+{"<NXTNBR>",	pNXTNBR},
 {"<INFO1>",		pINFO1},
 {"<INFO2>",		pINFO2},
 {"<LDT>",		pLDT},
@@ -2146,6 +2189,7 @@ static const MTAGS mtags[] = {
 {"<AFC:",		pAFC},
 {"<LOCK:",		pLOCK},
 {"<REV:",		pREV},
+{"<HS:",		pHS},
 {"<RXRSID:",	pRX_RSID},
 {"<TXRSID:",	pTX_RSID},
 {"<DTMF:",		pDTMF},
@@ -2190,7 +2234,6 @@ int MACROTEXT::loadMacros(const std::string& filename)
 	std::string mLine;
 	std::string mName;
 	std::string mDef;
-	bool   inMacro = false;
 	int    mNumber = 0;
 	unsigned long int	   crlf; // 64 bit cpu's
 	char   szLine[4096];
@@ -2217,7 +2260,6 @@ int MACROTEXT::loadMacros(const std::string& filename)
 		name[i] = "";
 		text[i] = "";
 	}
-	inMacro = false;
 	while (!mFile.eof()) {
 		mFile.getline(szLine,4095);
 		mLine = szLine;

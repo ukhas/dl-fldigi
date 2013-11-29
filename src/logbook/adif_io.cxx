@@ -131,7 +131,7 @@ static inline int findfield( char *p )
 			pos = p;
 			do { *pos = toupper(*pos); } while (++pos < p1);
 			*p1 = 0;
-			pos = strstr(fastlookup, p);
+			pos = strcasestr(fastlookup, p);
 			*p1 = ':';
 			if (pos) return fields[(pos - fastlookup) / maxlen].type;
 		}
@@ -188,7 +188,6 @@ void cAdifIO::do_readfile(const char *fname, cQsoDb *db)
 	long filesize = 0;
 	char *buff;
 	int found;
-	int retval;
 
 LOG_INFO("Reading %s", fname);
 
@@ -221,8 +220,12 @@ LOG_INFO("Cannot open %s", fname);
 // read the entire file into the buffer
 
 	fseek (adiFile, 0, SEEK_SET);
-	retval = fread (buff, filesize, 1, adiFile);
+	int retval = fread (buff, filesize, 1, adiFile);
 	fclose (adiFile);
+	if (retval != 1) {
+		LOG_ERROR(_("Error reading %s"), fl_filename_name(fname));
+		return;
+	}
 
 // relaxed file integrity test to all importing from non conforming log programs
 	if (strcasestr(buff, "<CALL:") == 0) {

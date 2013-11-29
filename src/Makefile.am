@@ -318,7 +318,6 @@ dl_fldigi_SOURCES += \
 	include/flinput2.h \
 	include/flmisc.h \
 	include/flslider2.h \
-	include/flstring.h \
 	include/font_browser.h \
 	include/fontdef.h \
 	include/gettext.h \
@@ -471,7 +470,6 @@ dl_fldigi_SOURCES += \
 	misc/configuration.cxx \
 	misc/debug.cxx \
 	misc/dxcc.cxx \
-	misc/flstring.c \
 	misc/icons.cxx \
 	misc/log.cxx \
 	misc/macroedit.cxx \

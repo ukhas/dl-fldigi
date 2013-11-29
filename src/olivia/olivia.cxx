@@ -55,8 +55,6 @@ double olivia::nco(double freq)
 
 void olivia::tx_init(SoundBase *sc)
 {
-	unsigned char c;
-
 	scard = sc;
 	phaseacc = 0;
 	prevsymbol = complex (1.0, 0.0);
@@ -67,10 +65,7 @@ void olivia::tx_init(SoundBase *sc)
 	postamblesent = 0;
 	txbasefreq = get_txfreq_woffset();
 
-	Rx->Flush();
-
-	while (Rx->GetChar(c) > 0)
-		put_rx_char(c);
+	rx_flush();
 
 	double fc_offset = Tx->Bandwidth*(1.0 - 0.5/Tx->Tones)/2.0;
 	if (reverse) { 
@@ -86,6 +81,16 @@ void olivia::tx_init(SoundBase *sc)
 	Tx->Preset();
 	Tx->Start();
 	escape = 0;
+}
+
+void olivia::rx_flush()
+{
+	unsigned char c;
+//	if(Rx) {
+		Rx->Flush();
+		while (Rx->GetChar(c) > 0)
+			put_rx_char(c);
+//	}
 }
 
 void olivia::send_tones()
