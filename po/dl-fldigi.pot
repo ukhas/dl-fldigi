@@ -4987,13 +4987,8 @@ msgstr ""
 msgid "Connect/disconnect to Talker socket server"
 msgstr ""
 
-<<<<<<< HEAD:po/dl-fldigi.pot
 #: src/dialogs/confdialog.cxx:7612
 msgid "Auto connect when dl-fldigi opens (server must be up)"
-=======
-#: src/dialogs/confdialog.cxx:9168
-msgid "Auto connect when fldigi opens (server must be up)"
->>>>>>> cd1939df3d1647c4570111dabcb620cbccbff399:po/fldigi.pot
 msgstr ""
 
 #: src/dialogs/confdialog.cxx:9175
