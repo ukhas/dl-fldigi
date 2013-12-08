@@ -236,7 +236,10 @@ void rtty::restart()
 	symbollen = (int) (samplerate / rtty_baud + 0.5);
 	set_bandwidth(shift);
 
-	rtty_BW = progdefaults.RTTY_BW = rtty_baud * 2;
+    
+    rtty_BW = progdefaults.RTTY_BW;
+
+    //rtty_BW = progdefaults.RTTY_BW = rtty_baud * 2;
 
 	wf->redraw_marker();
 

@@ -340,6 +340,7 @@ extern Fl_Counter2 *cntrAUTOCRLF;
 extern Fl_Check_Button *btnCRCRLF;
 extern Fl_Check_Button *chkUOStx;
 extern Fl_Check_Button *chkPseudoFSK;
+extern Fl_Value_Slider2 *sldrRTTYbandwidth;
 extern Fl_Check_Button *btnSynopAdifDecoding;
 extern Fl_Check_Button *btnSynopKmlDecoding;
 extern Fl_Check_Button *btnSynopInterleaved;

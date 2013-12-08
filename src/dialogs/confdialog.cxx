@@ -2933,6 +2933,14 @@ if (o->value()) {
 };
 }
 
+Fl_Value_Slider2 *sldrRTTYbandwidth=(Fl_Value_Slider2 *)0;
+
+static void cb_sldrRTTYbandwidth(Fl_Value_Slider2* o, void*) {
+  progdefaults.RTTY_BW = o->value();
+resetRTTY();
+progdefaults.changed = true;
+}
+
 Fl_Check_Button *btnSynopAdifDecoding=(Fl_Check_Button *)0;
 
 static void cb_btnSynopAdifDecoding(Fl_Check_Button* o, void*) {
@@ -5229,7 +5237,7 @@ Fl_Double_Window* ConfigureDialog() {
     o->selection_color((Fl_Color)51);
     o->labelsize(18);
     o->align(Fl_Align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE));
-    { tabsConfigure = new Fl_Tabs(-5, 0, 600, 374);
+    { tabsConfigure = new Fl_Tabs(-5, 0, 600, 375);
       tabsConfigure->color(FL_LIGHT1);
       tabsConfigure->selection_color(FL_LIGHT1);
       { tabOperator = new Fl_Group(0, 25, 540, 345, _("Operator"));
@@ -6733,7 +6741,6 @@ ab and newline are automatically included."));
         tabWaterfall->end();
       } // Fl_Group* tabWaterfall
       { tabModems = new Fl_Group(0, 25, 595, 347, _("Modems"));
-        tabModems->hide();
         { tabsModems = new Fl_Tabs(0, 25, 540, 347);
           tabsModems->selection_color(FL_LIGHT1);
           tabsModems->align(Fl_Align(FL_ALIGN_TOP_RIGHT));
@@ -7713,6 +7720,7 @@ ab and newline are automatically included."));
               tabsRTTY->selection_color(FL_LIGHT1);
               { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("Rx"));
                 o->align(Fl_Align(FL_ALIGN_TOP_LEFT));
+                o->hide();
                 { Fl_Group* o = new Fl_Group(2, 82, 535, 70, _("Receive"));
                 o->box(FL_ENGRAVED_FRAME);
                 o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
@@ -7804,7 +7812,6 @@ ency"));
               } // Fl_Group* o
               { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("Tx"));
                 o->align(Fl_Align(FL_ALIGN_TOP_LEFT));
-                o->hide();
                 { Fl_Choice* o = selShift = new Fl_Choice(35, 104, 100, 20, _("Carrier shift"));
                 selShift->tooltip(_("Select carrier shift"));
                 selShift->down_box(FL_BORDER_BOX);
@@ -7908,6 +7915,27 @@ ency"));
                 chkPseudoFSK->callback((Fl_Callback*)cb_chkPseudoFSK);
                 o->value(progdefaults.PseudoFSK);
                 } // Fl_Check_Button* chkPseudoFSK
+                { Fl_Value_Slider2* o = sldrRTTYbandwidth = new Fl_Value_Slider2(35, 320, 335, 20, _("Filter bandwidth"));
+                sldrRTTYbandwidth->tooltip(_("RTTY filter bandwidth"));
+                sldrRTTYbandwidth->type(1);
+                sldrRTTYbandwidth->box(FL_DOWN_BOX);
+                sldrRTTYbandwidth->color(FL_BACKGROUND_COLOR);
+                sldrRTTYbandwidth->selection_color(FL_BACKGROUND_COLOR);
+                sldrRTTYbandwidth->labeltype(FL_NORMAL_LABEL);
+                sldrRTTYbandwidth->labelfont(0);
+                sldrRTTYbandwidth->labelsize(14);
+                sldrRTTYbandwidth->labelcolor(FL_FOREGROUND_COLOR);
+                sldrRTTYbandwidth->minimum(10);
+                sldrRTTYbandwidth->maximum(1000);
+                sldrRTTYbandwidth->step(1);
+                sldrRTTYbandwidth->value(100);
+                sldrRTTYbandwidth->textsize(14);
+                sldrRTTYbandwidth->callback((Fl_Callback*)cb_sldrRTTYbandwidth);
+                sldrRTTYbandwidth->align(Fl_Align(FL_ALIGN_TOP_LEFT));
+                sldrRTTYbandwidth->when(FL_WHEN_CHANGED);
+                o->value(progdefaults.RTTY_BW);
+                o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);
+                } // Fl_Value_Slider2* sldrRTTYbandwidth
                 o->end();
               } // Fl_Group* o
               { Fl_Group* o = new Fl_Group(0, 75, 540, 295, _("Synop"));
@@ -9948,7 +9976,6 @@ and restarted if needed."));
         tabDL->hide();
         { tabsDL = new Fl_Tabs(0, 25, 540, 348);
           { tabDLEnable = new Fl_Group(0, 50, 540, 320, _("Enable"));
-            tabDLEnable->hide();
             { Fl_Group* o = new Fl_Group(5, 59, 530, 76, _("habitat"));
               o->box(FL_ENGRAVED_FRAME);
               o->align(Fl_Align(FL_ALIGN_TOP_LEFT|FL_ALIGN_INSIDE));
@@ -10174,6 +10201,7 @@ and restarted if needed."));
             tabDLFlights->end();
           } // Fl_Group* tabDLFlights
           { tabDLPayloads = new Fl_Group(0, 50, 540, 323, _("All payloads (testing)"));
+            tabDLPayloads->hide();
             { Fl_Browser* o = payload_browser = new Fl_Browser(5, 60, 530, 225);
               payload_browser->type(2);
               payload_browser->callback((Fl_Callback*)cb_payload_browser);
@@ -10210,6 +10238,7 @@ and restarted if needed."));
         tabAutoStart->tooltip(_("Operator information"));
         tabAutoStart->callback((Fl_Callback*)cb_tabAutoStart);
         tabAutoStart->when(FL_WHEN_CHANGED);
+        tabAutoStart->hide();
         { Fl_Group* o = new Fl_Group(2, 32, 536, 336, _("Auto start programs with fldigi"));
           o->box(FL_ENGRAVED_BOX);
           o->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
