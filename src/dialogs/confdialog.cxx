@@ -2856,6 +2856,8 @@ Fl_Choice *selBaud=(Fl_Choice *)0;
 
 static void cb_selBaud(Fl_Choice* o, void*) {
   progdefaults.rtty_baud = o->value();
+const double BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200, 0};
+progdefaults.RTTY_BW = BAUD[progdefaults.rtty_baud] * 2;
 resetRTTY();
 progdefaults.changed = true;
 }

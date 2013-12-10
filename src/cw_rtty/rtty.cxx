@@ -1,4 +1,4 @@
-// ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
 // rtty.cxx  --  RTTY modem
 //
 // Copyright (C) 2012
@@ -497,7 +497,8 @@ bool rtty::rx(bool bit) // original modified for probability test
 						if (c == '\r' && lastchar == '\r');
 						else if (c == '\n' && lastchar == '\n');
 						else
-							put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c);
+							//put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c);
+                            put_rx_char(progdefaults.rx_lowercase ? tolower(c) : c, FTextBase::RECV, true);
 						lastchar = c;
 					}
 					flag = true;

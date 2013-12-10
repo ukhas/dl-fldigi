@@ -3562,8 +3562,10 @@ progdefaults.changed = true;}
                 Fl_Choice selBaud {
                   label {Baud rate}
                   callback {progdefaults.rtty_baud = o->value();
+const double BAUD[]  = {45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300, 600, 1200, 0};
+progdefaults.RTTY_BW = BAUD[progdefaults.rtty_baud] * 2;
 resetRTTY();
-progdefaults.changed = true;} open
+progdefaults.changed = true;} open selected
                   tooltip {Select carrier baudrate} xywh {35 170 100 20} down_box BORDER_BOX align 8 when 1
                   code0 {o->add(szBauds);o->value(progdefaults.rtty_baud);}
                 } {}
@@ -3645,7 +3647,7 @@ if (o->value()) {
                   label {Filter bandwidth}
                   callback {progdefaults.RTTY_BW = o->value();
 resetRTTY();
-progdefaults.changed = true;} selected
+progdefaults.changed = true;}
                   tooltip {RTTY filter bandwidth} xywh {35 320 335 20} type Horizontal align 5 minimum 10 maximum 1000 step 1 value 100 textsize 14
                   code0 {o->value(progdefaults.RTTY_BW);}
                   code1 {o->labelsize(FL_NORMAL_SIZE); o->textsize(FL_NORMAL_SIZE);}
