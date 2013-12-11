@@ -40,6 +40,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <memory.h>
+#include "configuration.h"
 
 #include "misc.h"
 #include "fftfilt.h"
@@ -246,33 +247,35 @@ void fftfilt::rtty_filter(double f)
 //   1.4   .0054
 //   1.5   .0062
 //   1.6   .0076
-/*//////////////////////////////////jcoxon
-	f *= 1.4;
+    if(progdefaults.RTTY_BW <= 100){
+        f *= 1.4;
 
-	double dht;
-	for( int i = 0; i < flen2; ++i ) {
-		double x = (double)i/(double)(flen2);	
+        double dht;
+        for( int i = 0; i < flen2; ++i ) {
+            double x = (double)i/(double)(flen2);	
 
-// raised cosine response (changed for -1.0...+1.0 times Nyquist-f
-// instead of books versions ranging from -1..+1 times samplerate)
+    // raised cosine response (changed for -1.0...+1.0 times Nyquist-f
+    // instead of books versions ranging from -1..+1 times samplerate)
 
-		dht =
-			x <= 0 ? 1.0 :
-			x > 2.0 * f ? 0.0 :
-			cos((M_PI * x) / (f * 4.0));
+            dht =
+                x <= 0 ? 1.0 :
+                x > 2.0 * f ? 0.0 :
+                cos((M_PI * x) / (f * 4.0));
 
-		dht *= dht; // cos^2
+            dht *= dht; // cos^2
 
-// amplitude equalized nyquist-channel response
-		dht /= sinc(2.0 * i * f);
+    // amplitude equalized nyquist-channel response
+            dht /= sinc(2.0 * i * f);
 
-		filter[i].real() = dht*cos((double)i* - 0.5*M_PI);
-		filter[i].imag() = dht*sin((double)i* - 0.5*M_PI);
+            filter[i].real() = dht*cos((double)i* - 0.5*M_PI);
+            filter[i].imag() = dht*sin((double)i* - 0.5*M_PI);
 
-		filter[(flen-i)%flen].real() = dht*cos((double)i*+0.5*M_PI);
-		filter[(flen-i)%flen].imag() = dht*sin((double)i*+0.5*M_PI);
-	}
-*///////////////////////////////////jcoxon
+            filter[(flen-i)%flen].real() = dht*cos((double)i*+0.5*M_PI);
+            filter[(flen-i)%flen].imag() = dht*sin((double)i*+0.5*M_PI);
+        }
+    }
+    else{
+    }
     
 // perform the reverse fft to obtain h(t)
 // for testing
