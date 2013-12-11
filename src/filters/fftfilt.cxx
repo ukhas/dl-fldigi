@@ -246,7 +246,7 @@ void fftfilt::rtty_filter(double f)
 //   1.4   .0054
 //   1.5   .0062
 //   1.6   .0076
-
+/*//////////////////////////////////jcoxon
 	f *= 1.4;
 
 	double dht;
@@ -272,7 +272,8 @@ void fftfilt::rtty_filter(double f)
 		filter[(flen-i)%flen].real() = dht*cos((double)i*+0.5*M_PI);
 		filter[(flen-i)%flen].imag() = dht*sin((double)i*+0.5*M_PI);
 	}
-
+*///////////////////////////////////jcoxon
+    
 // perform the reverse fft to obtain h(t)
 // for testing
 // uncomment to obtain filter characteristics
