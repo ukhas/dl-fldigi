@@ -46,13 +46,12 @@ AC_CANONICAL_HOST
 # define target, target_cpu, target_vendor, target_os
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([-Wall foreign std-options 1.9.6])
+AM_INIT_AUTOMAKE([-Wall foreign std-options subdir-objects -Wno-portability 1.9.6])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/main.cxx])
 AC_CONFIG_HEADER([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
-
 
 FLDIGI_AUTHORS="Dave Freese, Stelios Bounanos, Leigh Klotz, Remi Chateauneu, and others"
 FLARQ_AUTHORS="Dave Freese"
@@ -130,6 +129,7 @@ AC_PRESERVE_HELP_ORDER
 
 ### Internationalization
 AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION(0.14)
 AM_CONDITIONAL([USE_NLS], [test "x$USE_NLS" = "xyes"])
 
 ### Programs
