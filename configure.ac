@@ -129,6 +129,7 @@ AC_PRESERVE_HELP_ORDER
 
 ### Internationalization
 AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION(0.14)
 AM_CONDITIONAL([USE_NLS], [test "x$USE_NLS" = "xyes"])
 
 ### Programs
@@ -180,7 +181,7 @@ AC_FLDIGI_BENCHMARK
 ### TLS flag
 # Set ac_cv_tls to yes/no
 # Define USE_TLS in config.h
-AC_FLDIGI_TLS
+#AC_FLDIGI_TLS
 
 ### std::bind or alternatives
 # Set ac_cv_std_bind or ac_cv_std_tr1_bind to yes/no
