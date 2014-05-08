@@ -46,7 +46,7 @@ AC_CANONICAL_HOST
 # define target, target_cpu, target_vendor, target_os
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([-Wall foreign std-options subdir-objects 1.9.6])
+AM_INIT_AUTOMAKE([-Wall foreign std-options subdir-objects -Wno-portability 1.9.6])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/main.cxx])
@@ -181,7 +181,7 @@ AC_FLDIGI_BENCHMARK
 ### TLS flag
 # Set ac_cv_tls to yes/no
 # Define USE_TLS in config.h
-#AC_FLDIGI_TLS
+AC_FLDIGI_TLS
 
 ### std::bind or alternatives
 # Set ac_cv_std_bind or ac_cv_std_tr1_bind to yes/no
