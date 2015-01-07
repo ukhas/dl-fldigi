@@ -22,18 +22,12 @@ config = yaml.load(open(config_file))
 os.chdir(app_dir)
 
 
-def git_rev_parse(name):
-    arg = name + "^{}"
-    commit = subprocess.check_output(["git", "rev-parse", "--verify", arg])
-    return commit.strip()
-
-
 def git_rev_list(commit):
-    commits = subprocess.check_output(["git", "rev-list", commit])
+    commits = subprocess.check_output(["git", "rev-list", commit + "^{}"])
     return set(commits.split("\n")[1:])
 
 # Store commits considered old
-old_commits = git_rev_list(git_rev_parse(config['latest_release']))
+old_commits = git_rev_list(config['latest_release'])
 
 
 @app.route("/")
