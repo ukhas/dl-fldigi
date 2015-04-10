@@ -13,6 +13,7 @@ config.log
 config.status
 configure
 doc/*.1
+doc/guide.html
 po/POTFILES
 po/*.gmo
 po/stamp-po
