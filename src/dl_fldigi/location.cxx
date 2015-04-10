@@ -63,7 +63,7 @@ void update_distance_bearing()
     alt2 = balloon_altitude;
 
     double radius, d_lon, sa, sb, bearing, aa, ab, angle_at_centre,
-           great_circle_distance, ta, tb, ea, eb, elevation, distance;
+           ta, tb, ea, eb, elevation, distance;
 
     radius = 6371000.0;
 
@@ -74,7 +74,6 @@ void update_distance_bearing()
     aa = sqrt((sa * sa) + (sb * sb));
     ab = (sin(lat1) * sin(lat2)) + (cos(lat1) * cos(lat2) * cos(d_lon));
     angle_at_centre = atan2(aa, ab);
-    great_circle_distance = angle_at_centre * radius;
 
     ta = radius + alt1;
     tb = radius + alt2;
