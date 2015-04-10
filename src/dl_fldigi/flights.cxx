@@ -479,7 +479,6 @@ static void populate_flights()
         const Json::Value &root = flight_docs[i];
 
         string id, name, callsign_list, date;
-        bool root_ok = false;
 
         if (root.isObject() && root.size() &&
             root["_id"].isString() && root["name"].isString())
@@ -488,12 +487,12 @@ static void populate_flights()
             name = root["name"].asString();
             callsign_list = flight_callsign_list(root);
             date = flight_launch_date(root);
-            root_ok = true;
         }
 
-        if (!id.size() || !name.size())
+        bool root_ok = (id.size() && name.size());
+
+        if (!root_ok)
         {
-            root_ok = false;
             name = "Invalid flight doc";
             LOG_WARN("invalid flight doc");
         }
@@ -547,7 +546,6 @@ static void populate_payloads()
         const Json::Value &root = payload_docs[i];
 
         string id, name, callsign_list, description;
-        bool root_ok;
 
         if (root.isObject() && root.size() &&
             root["_id"].isString() && root["name"].isString())
@@ -560,11 +558,10 @@ static void populate_payloads()
                 description = root["metadata"]["description"].asString();
         }
 
-        if (!id.size() || !name.size())
-        {
+        bool root_ok = (id.size() && name.size());
+
+        if (!root_ok)
             LOG_WARN("invalid payload doc");
-            root_ok = false;
-        }
 
         string browser_item = payload_browser_item(name, callsign_list,
                                                    description);
