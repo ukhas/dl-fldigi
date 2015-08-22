@@ -1,9 +1,4 @@
 update:
     url: "http://ukhas.org.uk/projects:dl-fldigi"
     text: "There is a new version of dl-fldigi available!"
-expect:
-    win32: "that would be self description"
-    linux: "which is unfortunately not possible"
-    macosx:
-        - "well, technically it is,"
-        - "but I don't have a super computer"
+latest_release: "DL3.1"
